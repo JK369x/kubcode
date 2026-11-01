@@ -1,0 +1,14 @@
+.DS_Store
+node_modules/
+.next/
+out/
+coverage/
+playwright-report/
+test-results/
+.env
+.env.*
+!.env.example
+*.tsbuildinfo
+next-env.d.ts
+.impeccable/review/
+.impeccable/mocks/
