@@ -150,28 +150,24 @@ jobs:
           loc=$(curl -sS -o /dev/null -w '%{http_code} %{redirect_url}' "$URL/api/auth/providers")
           [ "$loc" = "303 ${CANONICAL_ORIGIN}/account" ] || { echo "::error::auth runtime env check failed: $loc"; exit 1; }
 
+      # REST API instead of `vercel promote`: the CLI resolved the wrong team
+      # scope in CI ("Deployment belongs to a different team"). Waits until
+      # kubcode.dev really serves the new id (5 minute timeout).
       - name: Promote to kubcode.dev
+        id: promote
         env:
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
-          URL: ${{ steps.deploy.outputs.url }}
-        run: vercel promote "$URL" --yes --timeout 5m --token "$VERCEL_TOKEN"
+          NEW_ID: ${{ steps.deploy.outputs.id }}
+        run: npx tsx scripts/ci-vercel-release.ts promote "$NEW_ID"
 
+      # Always runs after a successful deploy, even if promote failed:
+      #   live == previous -> promote never happened: fail, no action
+      #   live == new      -> smoke kubcode.dev; on failure re-promote previous
+      #   anything else    -> fail, no automatic action
       - name: Smoke test kubcode.dev (re-promote previous on failure)
+        if: always() && steps.deploy.outcome == 'success'
         env:
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
           NEW_ID: ${{ steps.deploy.outputs.id }}
           PREVIOUS_ID: ${{ steps.previous.outputs.id }}
-        run: |
-          fail() {
-            echo "::error::$1; re-promoting previous deployment $PREVIOUS_ID"
-            vercel promote "$PREVIOUS_ID" --yes --timeout 5m --token "$VERCEL_TOKEN" || echo "::error::re-promote failed: roll back manually"
-            exit 1
-          }
-          live=$(curl -fsS -H "Authorization: Bearer $VERCEL_TOKEN" \
-            "https://api.vercel.com/v13/deployments/kubcode.dev?teamId=${VERCEL_ORG_ID}" | jq -r '.id')
-          [ "$live" = "$NEW_ID" ] || fail "kubcode.dev serves $live, expected $NEW_ID"
-          providers=$(curl -fsS --retry 3 "${CANONICAL_ORIGIN}/api/auth/providers" | jq -c 'keys') || fail "providers endpoint failed"
-          [ "$providers" = '["google","line"]' ] || fail "unexpected providers $providers"
-          code=$(curl -sS -o /dev/null -w '%{http_code}' "${CANONICAL_ORIGIN}/account")
-          [ "$code" = "200" ] || fail "/account returned $code"
-          echo "Production: $NEW_ID live on kubcode.dev (previous $PREVIOUS_ID)" >> "$GITHUB_STEP_SUMMARY"
+        run: npx tsx scripts/ci-vercel-release.ts post-promote "$NEW_ID" "$PREVIOUS_ID"
