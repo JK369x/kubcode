@@ -42,11 +42,21 @@ export type PageState = {
   stars: number;
   starred: boolean;
   viewer: { signedIn: boolean; isOwner: boolean };
+  /** One page of threads, newest first, each followed by its replies (oldest first). */
   comments: PublicComment[];
+  /** Threads visible to this viewer on the whole page. */
+  commentCount: number;
+  /** Pass as `before` to load the next (older) page; null on the last page. */
+  nextCursor: string | null;
 };
 
+export type PageOptions = { limit?: number; before?: string | null };
+
+/** Threads per page; the route clamps caller limits to this maximum. */
+export const COMMENT_PAGE_SIZE = 20;
+
 export interface InteractionStore {
-  pageState(page: PageKey, viewer: SessionClaims | null): Promise<PageState>;
+  pageState(page: PageKey, viewer: SessionClaims | null, options?: PageOptions): Promise<PageState>;
   toggleStar(viewer: SessionClaims, page: PageKey): Promise<{ ok: true; starred: boolean; stars: number } | Failure>;
   addComment(
     viewer: SessionClaims,
@@ -115,6 +125,15 @@ const starCount = async (c: Pick<PoolClient, "query">, page: PageKey) =>
     ).rows[0].n,
   );
 
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
+
+const COMMENT_SELECT = `
+  SELECT c.id, c.parent_id, c.user_id, c.body, c.status, c.created_at, c.edited_at,
+         ${AUTHOR_SQL} AS author,
+         (SELECT count(*) FROM kubcode_accounts.comment_reports r WHERE r.comment_id = c.id) AS reports
+    FROM kubcode_accounts.page_comments c
+    JOIN kubcode_accounts.users u ON u.id = c.user_id`;
+
 type CommentRow = {
   id: string;
   parent_id: string | null;
@@ -125,8 +144,6 @@ type CommentRow = {
   edited_at: Date | null;
   author: string | null;
   reports: string;
-  has_live_replies: boolean;
-  moderated: boolean;
 };
 
 export function createPgInteractionStore(pool: Pool): InteractionStore {
@@ -143,10 +160,18 @@ export function createPgInteractionStore(pool: Pool): InteractionStore {
   }
 
   return {
-    async pageState(page, session) {
+    async pageState(page, session, options = {}) {
       const viewer = await viewerOf(pool, session);
       const owner = viewer?.isOwner ?? false;
-      const [stars, starred, comments] = await Promise.all([
+      const limit = Math.min(Math.max(1, options.limit ?? COMMENT_PAGE_SIZE), COMMENT_PAGE_SIZE);
+      const before = options.before && UUID.test(options.before) ? options.before : null;
+      // A thread is shown if visible, hidden (owner only), or deleted but still
+      // anchoring live replies and never moderated.
+      const threadVisible = `c.parent_id IS NULL AND (
+          c.status = 'visible' OR (c.status = 'hidden' AND $3::boolean)
+          OR (c.status = 'deleted' AND c.moderated_at IS NULL AND EXISTS (
+                SELECT 1 FROM kubcode_accounts.page_comments r WHERE r.parent_id = c.id AND r.status = 'visible')))`;
+      const [stars, starred, count, threads] = await Promise.all([
         starCount(pool, page),
         viewer
           ? pool
@@ -156,44 +181,51 @@ export function createPgInteractionStore(pool: Pool): InteractionStore {
               )
               .then((r) => r.rowCount === 1)
           : false,
+        pool.query<{ n: string }>(
+          `SELECT count(*) AS n FROM kubcode_accounts.page_comments c
+            WHERE c.page_kind = $1 AND c.page_slug = $2 AND ${threadVisible}`,
+          [page.kind, page.slug, owner],
+        ),
         pool.query<CommentRow>(
-          `SELECT c.id, c.parent_id, c.user_id, c.body, c.status, c.created_at, c.edited_at,
-                  ${AUTHOR_SQL} AS author,
-                  (SELECT count(*) FROM kubcode_accounts.comment_reports r WHERE r.comment_id = c.id) AS reports,
-                  EXISTS (SELECT 1 FROM kubcode_accounts.page_comments r
-                           WHERE r.parent_id = c.id AND r.status = 'visible') AS has_live_replies,
-                  c.moderated_at IS NOT NULL AS moderated
-             FROM kubcode_accounts.page_comments c
-             JOIN kubcode_accounts.users u ON u.id = c.user_id
-            WHERE c.page_kind = $1 AND c.page_slug = $2
-            ORDER BY c.created_at, c.id`,
-          [page.kind, page.slug],
+          `${COMMENT_SELECT}
+            WHERE c.page_kind = $1 AND c.page_slug = $2 AND ${threadVisible}
+              AND ($4::uuid IS NULL OR (c.created_at, c.id) <
+                   (SELECT x.created_at, x.id FROM kubcode_accounts.page_comments x WHERE x.id = $4::uuid))
+            ORDER BY c.created_at DESC, c.id DESC
+            LIMIT $5`,
+          [page.kind, page.slug, owner, before, limit + 1],
         ),
       ]);
-      const visible = comments.rows.filter((r) => {
-        if (r.status === "visible") return true;
-        if (r.status === "hidden") return owner;
-        // Deleted: kept only as an anchor for live replies, never if moderated.
-        return r.parent_id === null && r.has_live_replies && !r.moderated;
+      const pageThreads = threads.rows.slice(0, limit);
+      const replies = pageThreads.length
+        ? (
+            await pool.query<CommentRow>(
+              `${COMMENT_SELECT}
+                WHERE c.parent_id = ANY($1::uuid[])
+                  AND (c.status = 'visible' OR (c.status = 'hidden' AND $2::boolean))
+                ORDER BY c.created_at, c.id`,
+              [pageThreads.map((t) => t.id), owner],
+            )
+          ).rows
+        : [];
+      const toPublic = (r: CommentRow): PublicComment => ({
+        id: r.id,
+        parentId: r.parent_id,
+        author: r.status === "deleted" ? FALLBACK_AUTHOR : (r.author ?? FALLBACK_AUTHOR),
+        body: r.body ?? "",
+        deleted: r.status === "deleted",
+        createdAt: r.created_at.toISOString(),
+        editedAt: r.edited_at?.toISOString() ?? null,
+        mine: viewer !== null && r.user_id === viewer.id && r.status !== "deleted",
+        ...(owner ? { hidden: r.status === "hidden", reports: Number(r.reports) } : {}),
       });
-      const shownIds = new Set(visible.map((r) => r.id));
       return {
         stars,
         starred,
         viewer: { signedIn: viewer !== null, isOwner: owner },
-        comments: visible
-          .filter((r) => r.parent_id === null || shownIds.has(r.parent_id))
-          .map((r) => ({
-            id: r.id,
-            parentId: r.parent_id,
-            author: r.status === "deleted" ? FALLBACK_AUTHOR : (r.author ?? FALLBACK_AUTHOR),
-            body: r.body ?? "",
-            deleted: r.status === "deleted",
-            createdAt: r.created_at.toISOString(),
-            editedAt: r.edited_at?.toISOString() ?? null,
-            mine: viewer !== null && r.user_id === viewer.id && r.status !== "deleted",
-            ...(owner ? { hidden: r.status === "hidden", reports: Number(r.reports) } : {}),
-          })),
+        comments: pageThreads.flatMap((t) => [toPublic(t), ...replies.filter((r) => r.parent_id === t.id).map(toPublic)]),
+        commentCount: Number(count.rows[0].n),
+        nextCursor: threads.rows.length > limit ? pageThreads[pageThreads.length - 1].id : null,
       };
     },
 

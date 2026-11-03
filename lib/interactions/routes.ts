@@ -14,7 +14,7 @@ import { sessionClaims, type SessionClaims } from "../accounts/session";
 import { rawSkills } from "../catalog";
 import { getContent, slugProblem } from "../content";
 import { guardWrite } from "./http";
-import { getInteractionStore, type InteractionStore, type PageKey, type StoreErrorCode } from "./store";
+import { COMMENT_PAGE_SIZE, getInteractionStore, type InteractionStore, type PageKey, type StoreErrorCode } from "./store";
 
 /**
  * Stars and comments stay off until this is exactly "true", independent of
@@ -129,9 +129,13 @@ export async function handlePageState(request: Request, deps: InteractionDeps = 
   const url = new URL(request.url);
   const page = pageFrom(url.searchParams.get("kind"), url.searchParams.get("slug"));
   if (!page) return badRequest();
+  const before = url.searchParams.get("before");
+  if (before !== null && !UUID.test(before)) return badRequest();
+  const askedLimit = Number(url.searchParams.get("limit") ?? COMMENT_PAGE_SIZE);
+  const limit = Number.isInteger(askedLimit) ? Math.min(Math.max(askedLimit, 1), COMMENT_PAGE_SIZE) : COMMENT_PAGE_SIZE;
   if (!ctx.pageExists(page)) return errorResponse("PAGE_NOT_FOUND");
   try {
-    return jsonNoStore(await ctx.store.pageState(page, ctx.session));
+    return jsonNoStore(await ctx.store.pageState(page, ctx.session, { before, limit }));
   } catch (error) {
     logDbFailure("PAGE_STATE", error);
     return accountErrorResponse("ACCOUNTS_UNAVAILABLE");

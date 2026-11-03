@@ -150,7 +150,7 @@ test("page state is public and passes a null viewer when signed out", async () =
   const read = new Request("https://kubcode.dev/api/interactions?kind=tool&slug=remotion", { headers: { host: "kubcode.dev" } });
   const res = await handlePageState(
     read,
-    deps({ pageState: async (_p, v) => ((viewer = v), { stars: 1, starred: false, viewer: { signedIn: false, isOwner: false }, comments: [] }) }),
+    deps({ pageState: async (_p, v) => ((viewer = v), { stars: 1, starred: false, viewer: { signedIn: false, isOwner: false }, comments: [], commentCount: 0, nextCursor: null }) }),
   );
   assert.equal(res.status, 200);
   assert.equal(res.headers.get("cache-control"), "no-store");
@@ -196,4 +196,17 @@ test("accounts on but interactions not enabled (0002 not applied yet): reads say
     503,
     "INTERACTIONS_DISABLED",
   );
+});
+
+test("page state passes a validated cursor and clamps the page size", async () => {
+  let seen: unknown;
+  const store = { pageState: async (_p: unknown, _v: unknown, o: unknown) => ((seen = o), { stars: 0, starred: false, viewer: { signedIn: false, isOwner: false }, comments: [], commentCount: 0, nextCursor: null }) };
+  const url = (q: string) => new Request(`https://kubcode.dev/api/interactions?kind=tool&slug=remotion${q}`, { headers: { host: "kubcode.dev" } });
+  assert.equal((await handlePageState(url(`&before=${CID}&limit=500`), deps(store as never))).status, 200);
+  assert.deepEqual(seen, { before: CID, limit: 20 });
+  await handlePageState(url(""), deps(store as never));
+  assert.deepEqual(seen, { before: null, limit: 20 });
+  await handlePageState(url("&limit=5"), deps(store as never));
+  assert.deepEqual(seen, { before: null, limit: 5 });
+  await expectError(await handlePageState(url("&before=nope"), deps(untouchable)), 400, "BAD_REQUEST");
 });

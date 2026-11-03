@@ -211,3 +211,35 @@ test("a hidden comment stays moderated: its author cannot edit it, and deleting 
   assert.equal(shown.includes(top.comment.id), false);
   assert.equal(shown.includes(reply.comment.id), false);
 });
+
+test("comments page newest thread first with a cursor; replies ride with their thread; total counts threads", async () => {
+  const PAGE = { kind: "skill", slug: "thai-survival" } as const;
+  const a = await member();
+  const b = await member();
+  const ids: string[] = [];
+  for (let i = 1; i <= 5; i++) {
+    const c = await store.addComment(a, PAGE, `เธรดที่ ${i}`, null);
+    assert.ok(c.ok);
+    ids.push(c.comment.id);
+    await age(a, 60); // keep the 20 s interval out of the way and order deterministic
+  }
+  const reply = await store.addComment(b, PAGE, "ตอบเธรดแรก", ids[0]);
+  assert.ok(reply.ok);
+
+  const first = await store.pageState(PAGE, null, { limit: 2 });
+  assert.equal(first.commentCount, 5);
+  const tops = (s: typeof first) => s.comments.filter((c) => c.parentId === null).map((c) => c.body);
+  assert.deepEqual(tops(first), ["เธรดที่ 5", "เธรดที่ 4"]);
+  assert.ok(first.nextCursor);
+
+  const second = await store.pageState(PAGE, null, { limit: 2, before: first.nextCursor });
+  assert.deepEqual(tops(second), ["เธรดที่ 3", "เธรดที่ 2"]);
+  const last = await store.pageState(PAGE, null, { limit: 2, before: second.nextCursor });
+  assert.deepEqual(tops(last), ["เธรดที่ 1"]);
+  assert.equal(last.nextCursor, null);
+  assert.deepEqual(
+    last.comments.filter((c) => c.parentId === ids[0]).map((c) => c.body),
+    ["ตอบเธรดแรก"],
+    "replies come with their thread",
+  );
+});
