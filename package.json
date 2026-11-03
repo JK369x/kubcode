@@ -14,7 +14,8 @@
     "test:accounts-db": "tsx --test --test-concurrency=1 tests/accounts-db/*.test.ts",
     "db:migrate:accounts": "tsx scripts/accounts-migrate.ts",
     "test:accounts-browser": "tsx tests/accounts-settings-browser.ts",
-    "test:browser": "node tests/project-visual-audit-browser.mjs && node tests/kinetic-hero-browser.mjs after && node tests/native-media-browser.mjs && node tests/shared-download-browser.mjs"
+    "test:browser": "node tests/project-visual-audit-browser.mjs && node tests/kinetic-hero-browser.mjs after && node tests/native-media-browser.mjs && node tests/shared-download-browser.mjs",
+    "test:interactions-app": "tsx tests/interactions-actual-app.ts"
   },
   "dependencies": {
     "@fontsource/anuphan": "^5.2.5",

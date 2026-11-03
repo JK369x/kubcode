@@ -3,7 +3,7 @@ import type { Page } from "@/lib/content";
 /** Credits upstream sources and shows when the page was last updated. */
 export function SourceCredits({ page }: { page: Page }) {
   return (
-    <footer className="source-note">
+    <div className="source-note">
       {page.sources.length > 0 && (
         <>
           ที่มา:{" "}
@@ -24,6 +24,6 @@ export function SourceCredits({ page }: { page: Page }) {
       {page.sourceNote && <> · {page.sourceNote}</>}
       <br />
       อัปเดต <time dateTime={page.updated}>{page.updated}</time>
-    </footer>
+    </div>
   );
 }
