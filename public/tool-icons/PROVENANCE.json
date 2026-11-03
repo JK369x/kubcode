@@ -1,0 +1,80 @@
+[
+  {
+    "file": "claude.svg",
+    "status": "fetched",
+    "repository": "lobehub/lobe-icons",
+    "commit": "8064bdc847be0a94c956c00440eb67586af2871f",
+    "source": "https://raw.githubusercontent.com/lobehub/lobe-icons/8064bdc847be0a94c956c00440eb67586af2871f/packages/static-svg/icons/claude-color.svg",
+    "sha256": "a3101f3047a119aa11825ad9369510f0c472428c8c52d420e31bc62db44a8364",
+    "modifications": "none"
+  },
+  {
+    "file": "claudecode.svg",
+    "status": "fetched",
+    "repository": "lobehub/lobe-icons",
+    "commit": "8064bdc847be0a94c956c00440eb67586af2871f",
+    "source": "https://raw.githubusercontent.com/lobehub/lobe-icons/8064bdc847be0a94c956c00440eb67586af2871f/packages/static-svg/icons/claudecode-color.svg",
+    "sha256": "670b3d8d749d0815ad8f7e62a59d51cb5e2053cb19403f3541a8aed7036a877f",
+    "modifications": "none"
+  },
+  {
+    "file": "codex.svg",
+    "status": "fetched",
+    "repository": "lobehub/lobe-icons",
+    "commit": "8064bdc847be0a94c956c00440eb67586af2871f",
+    "source": "https://raw.githubusercontent.com/lobehub/lobe-icons/8064bdc847be0a94c956c00440eb67586af2871f/packages/static-svg/icons/codex-color.svg",
+    "sha256": "4a2f43ce46b5b6e3722c95088f88d26ef91e6a8c2e598e70642a1c54367386e4",
+    "modifications": "none"
+  },
+  {
+    "file": "opencode.svg",
+    "status": "fetched",
+    "repository": "lobehub/lobe-icons",
+    "commit": "8064bdc847be0a94c956c00440eb67586af2871f",
+    "source": "https://raw.githubusercontent.com/lobehub/lobe-icons/8064bdc847be0a94c956c00440eb67586af2871f/packages/static-svg/icons/opencode.svg",
+    "sha256": "7cfa6e9d6726f7c9fa26c7d9aef0dfec52d20a137380454340f30f12ccbfd302",
+    "modifications": "none"
+  },
+  {
+    "file": "react.svg",
+    "status": "fetched",
+    "repository": "devicons/devicon",
+    "commit": "32fe1d3b3f36ad11f90ab94f7db59738139c2bf6",
+    "source": "https://raw.githubusercontent.com/devicons/devicon/32fe1d3b3f36ad11f90ab94f7db59738139c2bf6/icons/react/react-original.svg",
+    "sha256": "5825b649c8c04dec13ecf01d0182401bd0ec71789d2fa06224866d882cd1515f",
+    "modifications": "none"
+  },
+  {
+    "file": "ffmpeg.svg",
+    "status": "fetched",
+    "repository": "simple-icons/simple-icons",
+    "commit": "90646e4bf7f3b89df6c37e65baf3e7bc759a517c",
+    "source": "https://raw.githubusercontent.com/simple-icons/simple-icons/90646e4bf7f3b89df6c37e65baf3e7bc759a517c/icons/ffmpeg.svg",
+    "sha256": "076e200007de7d3f03ddc970e63a23f7cb46a772d1f4e7c670ceb22a9d46ed35",
+    "modifications": "none"
+  },
+  {
+    "file": "gsap.svg",
+    "status": "fetched",
+    "repository": "simple-icons/simple-icons",
+    "commit": "90646e4bf7f3b89df6c37e65baf3e7bc759a517c",
+    "source": "https://raw.githubusercontent.com/simple-icons/simple-icons/90646e4bf7f3b89df6c37e65baf3e7bc759a517c/icons/gsap.svg",
+    "sha256": "3a5839e0dbee31a3291d7c16454dec2601467a0f502cfded0e477dc811f5ae6a",
+    "modifications": "none"
+  },
+  {
+    "file": "remotion.svg",
+    "status": "unavailable",
+    "source": "https://raw.githubusercontent.com/simple-icons/simple-icons/90646e4bf7f3b89df6c37e65baf3e7bc759a517c/icons/remotion.svg",
+    "error": "HTTP Error 404: Not Found"
+  },
+  {
+    "file": "threejs.svg",
+    "status": "fetched",
+    "repository": "devicons/devicon",
+    "commit": "32fe1d3b3f36ad11f90ab94f7db59738139c2bf6",
+    "source": "https://raw.githubusercontent.com/devicons/devicon/32fe1d3b3f36ad11f90ab94f7db59738139c2bf6/icons/threejs/threejs-original.svg",
+    "sha256": "e4ee5630ae19950b31603bd894d1a6e99fe8f5c2cf7aa4ce6e8ca6214f63c077",
+    "modifications": "none"
+  }
+]

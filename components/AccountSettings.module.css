@@ -1,0 +1,66 @@
+.settings {
+  max-width: 560px;
+}
+.heading {
+  margin-top: 12px;
+  font-size: 20px;
+}
+.methods {
+  display: grid;
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.method {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 16px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--surface);
+}
+.method strong {
+  display: block;
+  font-weight: 500;
+  overflow-wrap: anywhere;
+}
+/* Doubled class outranks the global `.account-form p` rule where needed. */
+.meta.meta {
+  display: block;
+  margin-top: 2px;
+  color: var(--muted);
+  font-size: 13px;
+  overflow-wrap: anywhere;
+}
+.step {
+  display: grid;
+  gap: 10px;
+  padding: 18px;
+  border: 1px solid var(--purple);
+  border-radius: 12px;
+}
+.step h2 {
+  font-size: 18px;
+}
+.step p {
+  color: var(--ink);
+  font-size: 14px;
+}
+.status.status {
+  min-height: 1.5em;
+  color: var(--purple);
+  font-size: 14px;
+}
+.status:empty {
+  min-height: 0;
+}
+@media (max-width: 640px) {
+  .method {
+    flex-direction: column;
+    align-items: stretch;
+  }
+}

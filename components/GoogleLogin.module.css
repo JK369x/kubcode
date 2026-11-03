@@ -1,0 +1,42 @@
+.identity {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 16px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--surface);
+}
+.avatar {
+  flex: none;
+  width: 44px;
+  height: 44px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--surface-soft);
+  color: var(--purple);
+  font-weight: 600;
+  font-size: 18px;
+}
+.name {
+  display: block;
+  font-weight: 500;
+}
+.email {
+  display: block;
+  color: var(--muted);
+  font-size: 14px;
+  overflow-wrap: anywhere;
+}
+.provider {
+  display: block;
+  margin-top: 2px;
+  color: var(--muted);
+  font-size: 13px;
+}
+/* Doubled class outranks the global `.account-form p` rule. */
+.note.note {
+  color: var(--purple);
+  font-size: 14px;
+}

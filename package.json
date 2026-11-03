@@ -1,0 +1,40 @@
+{
+  "name": "jk-fieldwork-library",
+  "version": "0.1.0",
+  "private": true,
+  "license": "UNLICENSED",
+  "scripts": {
+    "dev": "next dev --hostname 127.0.0.1 --port 3040",
+    "build": "next build",
+    "start": "next start --hostname 127.0.0.1 --port 3040",
+    "typecheck": "tsc --noEmit",
+    "test": "tsx --test tests/*.test.ts",
+    "test:local-media": "tsx --test tests/local-media/*.test.ts",
+    "test:accounts": "tsx --test tests/accounts.test.ts",
+    "test:accounts-db": "tsx --test --test-concurrency=1 tests/accounts-db/*.test.ts",
+    "db:migrate:accounts": "tsx scripts/accounts-migrate.ts",
+    "test:accounts-browser": "tsx tests/accounts-settings-browser.ts",
+    "test:browser": "node tests/project-visual-audit-browser.mjs && node tests/kinetic-hero-browser.mjs after && node tests/native-media-browser.mjs && node tests/shared-download-browser.mjs"
+  },
+  "dependencies": {
+    "@fontsource/anuphan": "^5.2.5",
+    "@fontsource/archivo": "^5.2.5",
+    "lucide-react": "^0.468.0",
+    "next": "16.4.3",
+    "next-auth": "4.24.15",
+    "pg": "8.23.1",
+    "react": "19.2.0",
+    "react-dom": "19.2.0",
+    "shaders": "4.0.6"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.56.0",
+    "@types/node": "^22.0.0",
+    "@types/pg": "8.23.1",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "prettier": "^3.9.10",
+    "tsx": "^4.20.0",
+    "typescript": "^5.9.3"
+  }
+}

@@ -1,0 +1,43 @@
+/* Text-only LINE sign-in treatment. No LINE logo asset is fetched or embedded
+   and this is not an officially certified LINE button; it only uses a readable
+   green that meets WCAG AA text contrast in both themes. */
+.line {
+  width: 100%;
+  min-height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  border: 2px solid #5fe39a;
+  border-radius: 12px;
+  background: var(--surface);
+  color: #5fe39a; /* ~10.9:1 on the dark surface */
+  font-weight: 600;
+  line-height: 1.35;
+  text-align: center;
+}
+.line:hover:not(:disabled) {
+  border-color: #8af0b6;
+  background: #12301f;
+  color: #8af0b6;
+}
+.line[aria-busy="true"] {
+  cursor: progress;
+}
+/* Disabled stays legible (muted text, dashed edge) instead of fading out. */
+.line:disabled {
+  opacity: 1;
+  border-style: dashed;
+  border-color: var(--line);
+  background: transparent;
+  color: var(--muted);
+}
+:global(:root[data-theme="light"]) .line:not(:disabled) {
+  border-color: #05692f;
+  color: #05692f; /* ~6.8:1 on white */
+}
+:global(:root[data-theme="light"]) .line:hover:not(:disabled) {
+  background: #e3f5e9;
+  border-color: #04531f;
+  color: #04531f;
+}

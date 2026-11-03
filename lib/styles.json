@@ -1,0 +1,74 @@
+[
+  {
+    "id": "freshstack-what-if",
+    "name": "What If Lab",
+    "status": "draft",
+    "version": "0.1.0",
+    "approvalScope": "Imported real tested samples are available for selection/study only; no user style, motion, voice, factual, production or publication approval inferred.",
+    "tags": ["what-if", "svg", "remotion", "opencode", "glm", "landscape"]
+  },
+  {
+    "id": "genhaha-horror-story",
+    "name": "Midnight Stories",
+    "status": "draft",
+    "version": "0.1",
+    "approvalScope": "เพิ่มจากชุดต้นฉบับในเครื่อง · รอตรวจภาพและ motion",
+    "tags": ["horror", "svg", "portrait"]
+  },
+  {
+    "id": "genhaha-map-story",
+    "name": "Map Stories",
+    "status": "draft",
+    "version": "0.1",
+    "approvalScope": "เพิ่มจากชุดต้นฉบับในเครื่อง · รอตรวจภาพและ motion",
+    "tags": ["map", "satellite", "portrait"]
+  },
+  {
+    "id": "growkaz-stickman",
+    "name": "Stickman Cinema",
+    "status": "draft",
+    "version": "0.1.0",
+    "approvalScope": "Imported real tested samples are available for selection/study only; no user style, motion, voice, factual, production or publication approval inferred.",
+    "tags": ["stickman", "cinematic", "canvas", "claude", "codex", "portrait"]
+  },
+  {
+    "id": "jk-soft-story",
+    "name": "Soft Story",
+    "status": "selected",
+    "version": "2",
+    "approvalScope": "เลือกแนวภาพนิ่ง v2 แล้ว · animation และเสียงรอตรวจแยก",
+    "tags": ["2d", "soft-shading", "storytelling"]
+  },
+  {
+    "id": "jk-soft-story-motion-v2",
+    "name": "Soft Story Motion",
+    "status": "draft",
+    "version": "0.1",
+    "approvalScope": "ทดลองจังหวะเล่าและกล้องจาก motion study เดิม · ยังรอตรวจ",
+    "tags": ["2d", "storytelling", "motion-pilot"]
+  },
+  {
+    "id": "low-poly-urban",
+    "name": "Low-poly Urban",
+    "status": "selected",
+    "version": "0.3",
+    "approvalScope": "ภาพ/motion ผ่านตัวอย่าง 8s เดิม · ซับไทยไฮไลต์คำสำคัญ + อังกฤษเล็ก ผ่าน 29 ต.ค. 2026 · เสียงและฉากใหม่ตรวจแยก",
+    "tags": null
+  },
+  {
+    "id": "thai-survival",
+    "name": "Survival Stories",
+    "status": "draft",
+    "version": "0.1.0",
+    "approvalScope": "Imported real tested samples are available for selection/study only; no user style, motion, voice, factual, production or publication approval inferred.",
+    "tags": [
+      "thai",
+      "survival-fiction",
+      "svg",
+      "hyperframes",
+      "claude",
+      "codex",
+      "portrait"
+    ]
+  }
+]
