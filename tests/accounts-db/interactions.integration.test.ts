@@ -177,3 +177,21 @@ test("the runtime role cannot hard-delete comments, rewrite reports or read the 
     c.release();
   }
 });
+
+test("the public name starts as the provider name, is editable, and an empty name shows the fallback", async () => {
+  const a = await member({ name: "Provider Name" });
+  assert.deepEqual(await store.profile(a), { ok: true, publicName: "Provider Name" });
+  const c = await store.addComment(a, TOOL, "ชื่อที่แสดง", null);
+  assert.ok(c.ok);
+  const author = async () => (await store.pageState(TOOL, null)).comments.find((x) => x.id === c.comment.id)?.author;
+  assert.equal(await author(), "Provider Name");
+
+  assert.deepEqual(await store.setPublicName(a, "  JK  Studio "), { ok: true, publicName: "JK Studio" });
+  assert.equal(await author(), "JK Studio");
+  assert.deepEqual(await store.profile(a), { ok: true, publicName: "JK Studio" });
+
+  assert.deepEqual(await store.setPublicName(a, "spam.com"), { ok: false, code: "NAME_INVALID" });
+  assert.deepEqual(await store.setPublicName(a, ""), { ok: true, publicName: "" });
+  assert.equal(await author(), "สมาชิก");
+  assert.deepEqual(await store.setPublicName({ ...a, sv: a.sv + 1 }, "x"), { ok: false, code: "NOT_SIGNED_IN" });
+});

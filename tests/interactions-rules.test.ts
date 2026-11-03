@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { commentDecision, countLinks, INTERACTION_LIMITS, starDecision } from "../lib/interactions/rules";
+import { commentDecision, countLinks, INTERACTION_LIMITS, publicNameDecision, starDecision } from "../lib/interactions/rules";
 
 const base = {
   accountAgeHours: 48,
@@ -20,6 +20,7 @@ test("limits live in one config with the PRD values", () => {
     maxCommentChars: 2000,
     duplicateWindowHours: 24,
     starTogglesPerHour: 60,
+    maxPublicNameChars: 40,
   });
 });
 
@@ -68,4 +69,13 @@ test("links are counted as http(s) URLs and www. hosts", () => {
 test("stars: at most 60 toggles per hour", () => {
   assert.deepEqual(starDecision({ togglesLastHour: 59 }), { ok: true });
   assert.deepEqual(starDecision({ togglesLastHour: 60 }), { ok: false, code: "RATE_LIMITED" });
+});
+
+test("public names are trimmed, at most 40 characters, with no links or control characters", () => {
+  assert.deepEqual(publicNameDecision("  สมชาย   ใจดี  "), { ok: true, name: "สมชาย ใจดี" });
+  assert.deepEqual(publicNameDecision(""), { ok: true, name: "" });
+  assert.deepEqual(publicNameDecision("ก".repeat(41)), { ok: false, code: "NAME_INVALID" });
+  for (const bad of ["see https://x.dev", "www.spam.com", "buy at spam.com", "tab\tname", "line\nbreak"]) {
+    assert.deepEqual(publicNameDecision(bad), { ok: false, code: "NAME_INVALID" }, bad);
+  }
 });

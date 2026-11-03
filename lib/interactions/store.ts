@@ -7,7 +7,15 @@ import { createHash } from "node:crypto";
 import type { Pool, PoolClient } from "pg";
 import type { SessionClaims } from "../accounts/session";
 import { getPool, withTransaction } from "../accounts/db";
-import { INTERACTION_LIMITS, bodyDecision, commentDecision, normalizeComment, starDecision, type InteractionErrorCode } from "./rules";
+import {
+  INTERACTION_LIMITS,
+  bodyDecision,
+  commentDecision,
+  normalizeComment,
+  publicNameDecision,
+  starDecision,
+  type InteractionErrorCode,
+} from "./rules";
 
 export type PageKind = "tool" | "skill";
 export type PageKey = { kind: PageKind; slug: string };
@@ -50,10 +58,19 @@ export interface InteractionStore {
   deleteComment(viewer: SessionClaims, id: string): Promise<{ ok: true } | Failure>;
   setHidden(viewer: SessionClaims, id: string, hidden: boolean): Promise<{ ok: true } | Failure>;
   report(viewer: SessionClaims, id: string): Promise<{ ok: true } | Failure>;
+  /** The name currently shown with this member's comments ("" = fallback). */
+  profile(viewer: SessionClaims): Promise<{ ok: true; publicName: string } | Failure>;
+  setPublicName(viewer: SessionClaims, name: string): Promise<{ ok: true; publicName: string } | Failure>;
 }
 
 /** Shown when a member has no display name from their provider. */
 export const FALLBACK_AUTHOR = "สมาชิก";
+
+// Chosen public name, else the provider display name; NULL means fallback.
+const AUTHOR_SQL = `CASE WHEN u.public_name IS NOT NULL THEN NULLIF(u.public_name, '')
+  ELSE (SELECT i.display_name FROM kubcode_accounts.user_identities i
+         WHERE i.user_id = u.id AND i.display_name IS NOT NULL
+         ORDER BY i.provider LIMIT 1) END`;
 
 type Member = { id: string; ageHours: number; isOwner: boolean };
 
@@ -140,13 +157,12 @@ export function createPgInteractionStore(pool: Pool): InteractionStore {
           : false,
         pool.query<CommentRow>(
           `SELECT c.id, c.parent_id, c.user_id, c.body, c.status, c.created_at, c.edited_at,
-                  (SELECT i.display_name FROM kubcode_accounts.user_identities i
-                    WHERE i.user_id = c.user_id AND i.display_name IS NOT NULL
-                    ORDER BY i.provider LIMIT 1) AS author,
+                  ${AUTHOR_SQL} AS author,
                   (SELECT count(*) FROM kubcode_accounts.comment_reports r WHERE r.comment_id = c.id) AS reports,
                   EXISTS (SELECT 1 FROM kubcode_accounts.page_comments r
                            WHERE r.parent_id = c.id AND r.status = 'visible') AS has_live_replies
              FROM kubcode_accounts.page_comments c
+             JOIN kubcode_accounts.users u ON u.id = c.user_id
             WHERE c.page_kind = $1 AND c.page_slug = $2
             ORDER BY c.created_at, c.id`,
           [page.kind, page.slug],
@@ -305,6 +321,32 @@ export function createPgInteractionStore(pool: Pool): InteractionStore {
           [id, m.id],
         );
         return { ok: true as const };
+      });
+    },
+
+    async profile(session) {
+      return tx(async (c) => {
+        const m = await lockMember(c, session);
+        if (!m) return fail("NOT_SIGNED_IN");
+        const { rows } = await c.query<{ author: string | null }>(
+          `SELECT ${AUTHOR_SQL} AS author FROM kubcode_accounts.users u WHERE u.id = $1`,
+          [m.id],
+        );
+        return { ok: true as const, publicName: rows[0].author ?? "" };
+      });
+    },
+
+    async setPublicName(session, raw) {
+      return tx(async (c) => {
+        const m = await lockMember(c, session);
+        if (!m) return fail("NOT_SIGNED_IN");
+        const decision = publicNameDecision(raw);
+        if (!decision.ok) return decision;
+        await c.query("UPDATE kubcode_accounts.users SET public_name = $2, updated_at = now() WHERE id = $1", [
+          m.id,
+          decision.name,
+        ]);
+        return { ok: true as const, publicName: decision.name };
       });
     },
   };

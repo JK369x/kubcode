@@ -7,6 +7,11 @@
 -- Owner: may hide comments. Set by an operator with SQL; no UI grants it.
 ALTER TABLE kubcode_accounts.users ADD COLUMN IF NOT EXISTS is_owner boolean NOT NULL DEFAULT false;
 
+-- Name shown with comments. NULL = not chosen yet (the provider display name
+-- is shown); '' = member cleared it (the generic fallback is shown).
+ALTER TABLE kubcode_accounts.users ADD COLUMN IF NOT EXISTS public_name text
+  CHECK (public_name IS NULL OR char_length(public_name) <= 40);
+
 -- Pages are addressed by kind + stable ASCII slug (PRD SEO slug rule).
 CREATE TABLE IF NOT EXISTS kubcode_accounts.page_stars (
   user_id uuid NOT NULL REFERENCES kubcode_accounts.users (id) ON DELETE CASCADE,
