@@ -14,18 +14,24 @@
     "test:accounts-db": "tsx --test --test-concurrency=1 tests/accounts-db/*.test.ts",
     "db:migrate:accounts": "tsx scripts/accounts-migrate.ts",
     "test:accounts-browser": "tsx tests/accounts-settings-browser.ts",
-    "test:browser": "node tests/project-visual-audit-browser.mjs && node tests/kinetic-hero-browser.mjs after && node tests/native-media-browser.mjs && node tests/shared-download-browser.mjs"
+    "test:browser": "node tests/project-visual-audit-browser.mjs && node tests/kinetic-hero-browser.mjs after && node tests/native-media-browser.mjs && node tests/shared-download-browser.mjs",
+    "test:interactions-app": "tsx tests/interactions-actual-app.ts",
+    "test:reading-browser": "tsx tests/reading-browser.ts"
   },
   "dependencies": {
     "@fontsource/anuphan": "^5.2.5",
     "@fontsource/archivo": "^5.2.5",
+    "@mdx-js/mdx": "3.1.1",
+    "@shikijs/rehype": "4.5.0",
     "lucide-react": "^0.468.0",
     "next": "16.4.3",
     "next-auth": "4.24.15",
     "pg": "8.23.1",
     "react": "19.2.0",
     "react-dom": "19.2.0",
-    "shaders": "4.0.6"
+    "shaders": "4.0.6",
+    "shiki": "4.5.0",
+    "yaml": "2.9.1"
   },
   "devDependencies": {
     "@playwright/test": "^1.56.0",

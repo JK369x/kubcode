@@ -1,0 +1,43 @@
+---
+slug: what-if-animation
+title: "What If animation skill — ทำแอนิเมชันจากคำถามบรรทัดเดียว"
+name: "What If Animation"
+description: "skill โอเพนซอร์ส (MIT) สำหรับ Claude Code และ OpenCode เปลี่ยนคำถาม What if บรรทัดเดียวเป็นแอนิเมชัน 15–25 วินาที วาดฉากด้วย SVG เรนเดอร์ด้วย Remotion"
+tags: [animation, ai-agent, renderer]
+category: render
+refs:
+  - tool:opencode
+  - tool:remotion
+  - tool:elevenlabs
+  - tool:ffmpeg
+  - skill:freshstack-what-if
+links:
+  repo: https://github.com/kelano86/what-if-animation
+license: "MIT (Copyright 2026 FreshStack) · ฟอนต์ใช้ SIL OFL"
+updated: 2026-11-03
+go: [whatif]
+sources:
+  - title: "kelano86/what-if-animation README"
+    url: https://github.com/kelano86/what-if-animation
+---
+## คืออะไร
+
+skill ที่ FreshStack เผยแพร่ให้ใช้กับ Claude Code และ [OpenCode](/tools/opencode) รับคำถามแนว "ถ้าเกิดว่า…" หนึ่งบรรทัด แล้วพา agent ผลิตคลิปแอนิเมชันตัวละครเส้นยาว 15–25 วินาทีจนจบ ไม่ใช้โมเดลสร้างภาพหรือวิดีโอเลย ทุกฉากเป็นโค้ด SVG จึงคุมหน้าตาตัวละครให้เหมือนเดิมได้ทุกตอน
+
+## ขั้นตอนที่ skill พาทำ
+
+บท → เสียงบรรยาย → ลำดับช็อต → สตอรีบอร์ดภาพนิ่ง → ตรวจตัวเอง → แอนิเมชัน → เสียงประกอบ → ปรับความดังรวมด้วย [FFmpeg](/tools/ffmpeg) ฉากทั้งหมดเรนเดอร์ด้วย [Remotion](/tools/remotion) และใช้ [ElevenLabs](/tools/elevenlabs) ทำเสียง
+
+## ต้องมีอะไร
+
+- Node 18 ขึ้นไป, Python 3.9 ขึ้นไป (numpy, Pillow), FFmpeg พร้อม ffprobe
+- ElevenLabs API key (ต้นทางระบุว่าใช้ราว 150–240 เครดิตต่อตอน)
+- คำสั่ง `/what-if` สำหรับ OpenCode อยู่ใน repo แล้ว
+
+## สิทธิ์และข้อควรระวัง
+
+- โค้ดของ skill ใช้ MIT แต่เงื่อนไขของ Remotion และ ElevenLabs ยังมีผลแยกกัน
+- ตัวอย่างเสียงใน repo สร้างด้วยแผนเสียเงินของผู้เขียน ไม่ใช่สิทธิ์ใช้เสียงนั้นเชิงพาณิชย์ของเรา
+- กติกาของ skill: ใช้ตัวละครและเรื่องที่คิดเอง ไม่เลียนแบบตัวละครดัง และทุกข้อเท็จจริงต้องมีแหล่งอ้างอิง
+
+ตัวอย่างที่เราทดลองกับ skill นี้อยู่ที่หน้า [What If Lab](/skills/freshstack-what-if)

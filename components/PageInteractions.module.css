@@ -1,0 +1,270 @@
+.starRow {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex: none;
+}
+.star {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--surface);
+  color: var(--ink);
+  font: inherit;
+  font-size: 14px;
+  text-decoration: none;
+  cursor: pointer;
+}
+.star[aria-pressed="true"] {
+  border-color: var(--purple);
+  color: var(--purple);
+}
+.count {
+  color: var(--muted);
+  font-size: 14px;
+}
+.meta {
+  margin: 0;
+  color: var(--muted);
+  font-size: 13px;
+}
+.meta a {
+  color: var(--purple);
+  text-decoration: underline;
+}
+
+/* Panel: header, independently scrolling list, composer pinned below. */
+.panel {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: var(--surface);
+  overflow: hidden;
+}
+/* Closed (interactions off): just the notice, no tall empty box. */
+.panelClosed {
+  flex: none;
+}
+.panelHead {
+  flex: none;
+  margin: 0;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--line);
+  font-size: 15px;
+  font-weight: 600;
+}
+.scroll {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  overscroll-behavior: contain;
+  padding: 14px 16px;
+}
+.empty {
+  padding: 14px 16px;
+}
+.status:empty {
+  display: none;
+}
+.status {
+  flex: none;
+  padding: 6px 16px 0;
+}
+.composer {
+  flex: none;
+  padding: 12px 16px 14px;
+  border-top: 1px solid var(--line);
+  background: var(--surface-soft);
+}
+.list,
+.replies {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: grid;
+  gap: 16px;
+}
+.replies {
+  margin: 12px 0 0 6px;
+  padding-left: 12px;
+  border-left: 2px solid var(--line);
+}
+.comment {
+  display: grid;
+  gap: 4px;
+}
+.hidden {
+  opacity: 0.6;
+}
+.body {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.75;
+  overflow-wrap: anywhere;
+}
+.body a {
+  color: var(--purple);
+  text-decoration: underline;
+}
+.actions {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.actions button,
+.more {
+  background: none;
+  border: 0;
+  padding: 0;
+  font: inherit;
+  font-size: 13px;
+  color: var(--muted);
+  cursor: pointer;
+}
+.actions button:hover,
+.more:hover {
+  color: var(--ink);
+}
+.more {
+  display: block;
+  width: 100%;
+  margin-top: 16px;
+  padding: 8px;
+  border: 1px dashed var(--line);
+  border-radius: 10px;
+  color: var(--purple);
+}
+.form {
+  display: grid;
+  gap: 6px;
+}
+.comment .form {
+  margin-top: 8px;
+}
+.label {
+  font-size: 13px;
+  color: var(--muted);
+}
+.form textarea {
+  width: 100%;
+  font: inherit;
+  font-size: 14px;
+  padding: 8px 10px;
+  border-radius: 10px;
+  border: 1px solid var(--line);
+  background: var(--surface);
+  color: var(--ink);
+  resize: vertical;
+}
+.formRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.formActions {
+  display: flex;
+  gap: 8px;
+  margin-left: auto;
+}
+.formActions button {
+  padding: 6px 14px;
+}
+
+/* Mobile/tablet: floating bar and bottom sheet; the rail takes over ≥1180px. */
+.mobileBar {
+  position: fixed;
+  right: 16px;
+  bottom: 16px;
+  z-index: 40;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--surface);
+  box-shadow: 0 8px 24px rgb(0 0 0 / 0.25);
+}
+.mobileBar .count {
+  display: none;
+}
+.fab {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--selected);
+  color: var(--selected-ink);
+  font: inherit;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+}
+@media (min-width: 1180px) {
+  .mobileBar {
+    display: none;
+  }
+}
+.sheet {
+  position: fixed;
+  inset: auto 0 0 0;
+  width: 100%;
+  max-width: 720px;
+  height: min(85vh, 760px);
+  max-height: none;
+  margin: 0 auto;
+  padding: 0;
+  border: 1px solid var(--line);
+  border-bottom: 0;
+  border-radius: 20px 20px 0 0;
+  background: var(--surface);
+  color: var(--ink);
+}
+.sheet[open] {
+  display: flex;
+  flex-direction: column;
+  animation: sheet-up 0.32s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.sheet::backdrop {
+  background: rgb(0 0 0 / 0.5);
+}
+.sheet .panel {
+  border: 0;
+  border-radius: 0;
+}
+.sheetClose {
+  position: absolute;
+  top: 8px;
+  right: 10px;
+  z-index: 1;
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--ink);
+  cursor: pointer;
+}
+@keyframes sheet-up {
+  from {
+    transform: translateY(40px);
+    opacity: 0;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .sheet[open] {
+    animation: none;
+  }
+}

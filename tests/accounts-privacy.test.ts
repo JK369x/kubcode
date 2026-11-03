@@ -92,3 +92,12 @@ test("legacy POST /api/account stays 503 with a truthful membership message", as
   assert.match(body.message, /ไม่ได้สร้างสิทธิ์สมาชิก/);
   assert.doesNotMatch(body.message, /Supabase|ไม่ได้สร้างบัญชี|บันทึกข้อมูล/);
 });
+
+test("privacy: stars, comments and the public comment name are disclosed", () => {
+  const text = privacyText();
+  assert.match(text, /ดาวและคอมเมนต์/);
+  assert.match(text, /ชื่อที่แสดงกับคอมเมนต์/);
+  assert.match(text, /ชื่อที่แสดงจาก Google หรือ LINE/);
+  assert.match(privacyHtml(), /href="\/account\/settings"/);
+  assert.match(text, /รายงาน/);
+});

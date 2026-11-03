@@ -1,0 +1,41 @@
+---
+slug: glm-5-3-flash
+title: "GLM-5.3-Flash — โมเดลที่ใช้ฟรีผ่าน OpenCode"
+name: "GLM-5.3-Flash"
+description: "GLM-5.3-Flash ของ Z.ai ใช้ฟรีชั่วคราวผ่าน OpenCode Zen แต่ถ้าเรียกผ่าน API ของ Z.ai เองต้องจ่ายเงิน อ่านเงื่อนไขก่อนวางแผนผลิตระยะยาว"
+tags: [ai-agent, free-tier]
+category: script
+refs:
+  - tool:opencode
+  - skill:freshstack-what-if
+links:
+  website: https://z.ai/blog/glm-5.3-flash
+  docs: https://docs.z.ai/guides/llm/glm-5.3-flash
+license: "ฟรีชั่วคราวผ่าน OpenCode Zen เท่านั้น · API ของ Z.ai คิดเงิน"
+updated: 2026-11-03
+go: [glm]
+sources:
+  - title: "OpenCode Zen — free models"
+    url: https://opencode.ai/docs/zen/
+  - title: "Z.ai pricing"
+    url: https://docs.z.ai/guides/overview/pricing
+---
+## คืออะไร
+
+GLM-5.3-Flash เป็นโมเดลภาษาตระกูล GLM-5 จาก Z.ai (Zhipu) รองรับข้อความยาวมากและเป็นรุ่นที่ออกแบบให้เร็วและถูก เราใช้มันเป็นสมองของ agent ตอนผลิตคลิปแอนิเมชันแต่ละตอน
+
+## ฟรีตรงไหน
+
+- **ฟรีผ่าน OpenCode Zen:** ในเมนูโมเดลของ [OpenCode](/tools/opencode) มีรุ่น "GLM-5.3-Flash Free" ที่เปิดฟรีแบบมีระยะเวลา ตามหน้า Zen รุ่นนี้ไม่เก็บข้อมูลและไม่นำไปฝึกโมเดล
+- **ไม่ฟรีบน API ของ Z.ai:** ถ้าเรียกรุ่นเดียวกันตรงจาก Z.ai จะคิดค่าใช้จ่ายตามจำนวน token
+- **ทางเลือกที่ Z.ai เปิดฟรีบน API ของตัวเอง** คือรุ่นเก่ากว่า เช่น GLM-4.7-Flash
+
+## จากการใช้จริง
+
+- รันตาม skill ที่เขียนไว้ดีแล้วได้จนจบ แต่สร้าง skill ใหม่เองได้ไม่ละเอียดเท่าโมเดลแบบเสียเงิน
+- หนึ่งตอนใช้ context มาก ให้เริ่ม session ใหม่ทุกตอน
+- การค้นหาข้อมูลยังพลาดได้ ตรวจแหล่งอ้างอิงในบทด้วยตัวเองทุกครั้ง
+
+## ก่อนเริ่ม
+
+ข้อเสนอฟรีอาจหมดเมื่อไรก็ได้ ถ้าจะผลิตต่อเนื่อง ให้เตรียมทางสำรอง เช่น โมเดลผ่าน API ที่เสียเงิน หรือรุ่นฟรีของ Z.ai และทดสอบ skill กับโมเดลสำรองไว้ก่อน

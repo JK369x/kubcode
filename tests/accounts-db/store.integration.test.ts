@@ -32,7 +32,18 @@ const BOTH = { google: true, line: true } as const;
 const NO_ENV = {}; // loopback + non-production: plaintext allowed by policy
 const DB_NAME_SHAPE = /^kc_it_[0-9a-f]{12}_test$/;
 const SUPABASE_ROLES = ["anon", "authenticated"] as const;
-const ACCOUNT_TABLES = ["users", "user_identities", "account_link_intents", "account_audit_events", "schema_migrations"];
+const ACCOUNT_TABLES = [
+  "users",
+  "user_identities",
+  "account_link_intents",
+  "account_audit_events",
+  "schema_migrations",
+  "page_stars",
+  "star_toggles",
+  "page_comments",
+  "comment_reports",
+];
+const ALL_VERSIONS = ["0001_accounts", "0002_interactions"];
 
 // Refuses anything that is not clearly a local test database BEFORE any
 // connection is attempted.
@@ -190,13 +201,13 @@ test("plan on a fresh database is read-only: no ledger, nothing created, every m
   assert.equal(flat.at(-1), "ROLLBACK", "plan never commits");
   assert.equal(flat.some((s) => /\b(CREATE|INSERT|UPDATE|DELETE|ALTER|DROP|GRANT|REVOKE)\b/i.test(s)), false, "no writes");
   assert.equal((await raw.query("SELECT to_regnamespace('kubcode_accounts') AS n")).rows[0].n, null, "schema not created");
-  assert.deepEqual(planMigrations(loadMigrations(), done).pending.map((m) => m.version), ["0001_accounts"]);
+  assert.deepEqual(planMigrations(loadMigrations(), done).pending.map((m) => m.version), ALL_VERSIONS);
   assert.deepEqual(rec.releases, [undefined]);
 });
 
 test("runner: one bounded transaction with a transaction-scoped advisory lock (pooler-safe)", async () => {
   const rec = recording(pool);
-  assert.deepEqual((await migrate(rec.proxy)).applied, ["0001_accounts"]);
+  assert.deepEqual((await migrate(rec.proxy)).applied, ALL_VERSIONS);
   const flat = rec.sql.map((s) => s.replace(/\s+/g, " ").trim());
   assert.match(flat[0], /^BEGIN\b/);
   assert.equal(flat.at(-1), "COMMIT");
@@ -214,18 +225,18 @@ test("runner: one bounded transaction with a transaction-scoped advisory lock (p
 test("migrations are idempotent and serialize under concurrent runners", async () => {
   const results = await Promise.all([migrate(pool), migrate(pool), migrate(pool)]);
   assert.deepEqual(results.map((r) => r.applied), [[], [], []]);
-  assert.deepEqual(await ledger(), ["0001_accounts"]);
+  assert.deepEqual(await ledger(), ALL_VERSIONS);
   // Re-running the raw SQL is harmless (IF NOT EXISTS everywhere).
-  await pool.query(loadMigrations()[0].sql);
+  for (const m of loadMigrations()) await pool.query(m.sql);
   assert.deepEqual((await migrate(pool)).applied, []);
 });
 
 test("plan after apply: ledger read under READ ONLY, nothing pending, drift detected without writing", async () => {
   const done = await readLedger(pool);
-  assert.deepEqual([...done.keys()], ["0001_accounts"]);
+  assert.deepEqual([...done.keys()], ALL_VERSIONS);
   assert.deepEqual(planMigrations(loadMigrations(), done).pending, []);
   const tampered = loadMigrations().map((m) => ({ ...m, checksum: "0".repeat(64) }));
-  assert.deepEqual(planMigrations(tampered, done).checksumMismatch, ["0001_accounts"]);
+  assert.deepEqual(planMigrations(tampered, done).checksumMismatch, ALL_VERSIONS);
   // A write attempted through the same read-only transaction shape must fail.
   const client = await pool.connect();
   try {
@@ -238,26 +249,26 @@ test("plan after apply: ledger read under READ ONLY, nothing pending, drift dete
 });
 
 test("a failing pending migration rolls back every pending migration and discards the client", async () => {
-  const good = fixtureMigration("0002_fixture_ok", "CREATE TABLE kubcode_accounts.kc_fixture_partial (id int);");
-  const bad = fixtureMigration("0003_fixture_broken", "SELECT 1 / 0;");
+  const good = fixtureMigration("0098_fixture_ok", "CREATE TABLE kubcode_accounts.kc_fixture_partial (id int);");
+  const bad = fixtureMigration("0099_fixture_broken", "SELECT 1 / 0;");
   const rec = recording(pool);
   await assert.rejects(migrate(rec.proxy, [...loadMigrations(), good, bad]), (e) => pgErrorCode(e) === "22012");
-  assert.deepEqual(await ledger(), ["0001_accounts"]);
+  assert.deepEqual(await ledger(), ALL_VERSIONS);
   assert.equal((await raw.query("SELECT to_regclass('kubcode_accounts.kc_fixture_partial') AS t")).rows[0].t, null);
   assert.deepEqual(rec.releases, [true], "client discarded after a failed migration");
 });
 
 test("checksum drift aborts inside the transaction before anything pending applies", async () => {
-  const pending = fixtureMigration("0002_fixture_ok", "CREATE TABLE kubcode_accounts.kc_fixture_after_drift (id int);");
+  const pending = fixtureMigration("0098_fixture_ok", "CREATE TABLE kubcode_accounts.kc_fixture_after_drift (id int);");
   const tampered = loadMigrations().map((m) => ({ ...m, checksum: "0".repeat(64) }));
   await assert.rejects(migrate(pool, [...tampered, pending]), MigrationChecksumError);
-  assert.deepEqual(await ledger(), ["0001_accounts"]);
+  assert.deepEqual(await ledger(), ALL_VERSIONS);
   assert.equal((await raw.query("SELECT to_regclass('kubcode_accounts.kc_fixture_after_drift') AS t")).rows[0].t, null);
 });
 
 // ------------------------------------------------- private schema + Supabase
 
-test("account data lives only in kubcode_accounts: no public objects, RLS on, no policies", async () => {
+test("account data lives only in kubcode_accounts: no public objects, RLS on, policies only for the runtime role", async () => {
   const pub = await raw.query(
     `SELECT count(*) AS n FROM pg_class c JOIN pg_namespace n ON n.oid = c.relnamespace
       WHERE n.nspname = 'public' AND c.relkind IN ('r', 'p', 'v', 'm', 'S', 'f')`,
@@ -269,7 +280,16 @@ test("account data lives only in kubcode_accounts: no public objects, RLS on, no
   );
   assert.deepEqual(rls.rows.map((r) => r.relname), [...ACCOUNT_TABLES].sort());
   assert.ok(rls.rows.every((r) => r.relrowsecurity), "RLS enabled on every account table");
-  assert.equal(await count("SELECT count(*) AS n FROM pg_policies WHERE schemaname = 'kubcode_accounts'"), 0);
+  // 0001 tables have no policy here (their server policy is an operator step);
+  // 0002 grants its own tables to the runtime role only, never to API roles.
+  const policies = await raw.query<{ tablename: string; policyname: string; roles: string[] }>(
+    "SELECT tablename, policyname, roles::text[] AS roles FROM pg_policies WHERE schemaname = 'kubcode_accounts'",
+  );
+  for (const p of policies.rows) {
+    assert.ok(["page_stars", "star_toggles", "page_comments", "comment_reports"].includes(p.tablename), p.tablename);
+    assert.equal(p.policyname, "kubcode_server_access");
+    assert.deepEqual(p.roles, ["kubcode_app"]);
+  }
   // The runtime pool does not have the private schema on its search_path.
   assert.doesNotMatch((await pool.query("SHOW search_path")).rows[0].search_path, /kubcode_accounts/);
 });

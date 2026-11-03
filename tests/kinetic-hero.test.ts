@@ -233,7 +233,9 @@ test("hero makes no download claims and renders the action slot", () => {
 test("Library: hero, selected example and catalog keep their contracts", () => {
   const { Library } =
     require("../components/Library") as typeof import("../components/Library");
-  const html = render(createElement(Library));
+  const articles = [{ slug: "a-slug", title: "ชื่อบทความ", description: "สรุป" }];
+  const html = render(createElement(Library, { articles }));
+  assert.match(html, /<a[^>]*href="\/articles\/a-slug"[^>]*>[\s\S]*?ชื่อบทความ/);
   assert.equal((html.match(/<h1\b/g) || []).length, 1);
   assert.equal((html.match(/id="selected-example"/g) || []).length, 1);
   assert.equal((html.match(/id="skill-index"/g) || []).length, 1);
