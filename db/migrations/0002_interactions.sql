@@ -45,6 +45,10 @@ CREATE TABLE IF NOT EXISTS kubcode_accounts.page_comments (
   status text NOT NULL DEFAULT 'visible' CHECK (status IN ('visible', 'hidden', 'deleted')),
   created_at timestamptz NOT NULL DEFAULT now(),
   edited_at timestamptz,
+  -- Set while hidden by the owner and kept if the author later deletes it,
+  -- so a moderated thread never resurfaces as a deleted anchor.
+  moderated_at timestamptz,
+  CONSTRAINT page_comments_hidden_moderated CHECK (status <> 'hidden' OR moderated_at IS NOT NULL),
   CONSTRAINT page_comments_deleted_wiped CHECK (
     (status = 'deleted') = (body IS NULL) AND (body IS NULL) = (body_hash IS NULL)
   ),

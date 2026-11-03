@@ -126,6 +126,7 @@ type CommentRow = {
   author: string | null;
   reports: string;
   has_live_replies: boolean;
+  moderated: boolean;
 };
 
 export function createPgInteractionStore(pool: Pool): InteractionStore {
@@ -160,7 +161,8 @@ export function createPgInteractionStore(pool: Pool): InteractionStore {
                   ${AUTHOR_SQL} AS author,
                   (SELECT count(*) FROM kubcode_accounts.comment_reports r WHERE r.comment_id = c.id) AS reports,
                   EXISTS (SELECT 1 FROM kubcode_accounts.page_comments r
-                           WHERE r.parent_id = c.id AND r.status = 'visible') AS has_live_replies
+                           WHERE r.parent_id = c.id AND r.status = 'visible') AS has_live_replies,
+                  c.moderated_at IS NOT NULL AS moderated
              FROM kubcode_accounts.page_comments c
              JOIN kubcode_accounts.users u ON u.id = c.user_id
             WHERE c.page_kind = $1 AND c.page_slug = $2
@@ -171,7 +173,8 @@ export function createPgInteractionStore(pool: Pool): InteractionStore {
       const visible = comments.rows.filter((r) => {
         if (r.status === "visible") return true;
         if (r.status === "hidden") return owner;
-        return r.parent_id === null && r.has_live_replies; // deleted: keep only as a thread anchor
+        // Deleted: kept only as an anchor for live replies, never if moderated.
+        return r.parent_id === null && r.has_live_replies && !r.moderated;
       });
       const shownIds = new Set(visible.map((r) => r.id));
       return {
@@ -267,7 +270,7 @@ export function createPgInteractionStore(pool: Pool): InteractionStore {
         if (!m) return fail("NOT_SIGNED_IN");
         const row = await lockComment(c, id);
         if (!row || row.status === "deleted") return fail("NOT_FOUND");
-        if (row.user_id !== m.id) return fail("FORBIDDEN");
+        if (row.user_id !== m.id || row.status === "hidden") return fail("FORBIDDEN");
         const decision = bodyDecision(body, m.ageHours);
         if (!decision.ok) return decision;
         const text = normalizeComment(body);
@@ -301,10 +304,11 @@ export function createPgInteractionStore(pool: Pool): InteractionStore {
         if (!m.isOwner) return fail("FORBIDDEN");
         const row = await lockComment(c, id);
         if (!row || row.status === "deleted") return fail("NOT_FOUND");
-        await c.query("UPDATE kubcode_accounts.page_comments SET status = $2 WHERE id = $1", [
-          id,
-          hidden ? "hidden" : "visible",
-        ]);
+        await c.query(
+          `UPDATE kubcode_accounts.page_comments
+              SET status = $2, moderated_at = CASE WHEN $2 = 'hidden' THEN now() END WHERE id = $1`,
+          [id, hidden ? "hidden" : "visible"],
+        );
         return { ok: true as const };
       });
     },

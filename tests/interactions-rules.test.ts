@@ -79,3 +79,11 @@ test("public names are trimmed, at most 40 characters, with no links or control 
     assert.deepEqual(publicNameDecision(bad), { ok: false, code: "NAME_INVALID" }, bad);
   }
 });
+
+test("public names are NFKC-normalized and reject invisible, bidi and dot-like domain tricks", () => {
+  assert.deepEqual(publicNameDecision("ＪＫ"), { ok: true, name: "JK" });
+  for (const bad of ["JK\u200bStudio", "abc\u202Eexe", "spam。club", "spam．online", "x.example", "A\u2028B"]) {
+    assert.deepEqual(publicNameDecision(bad), { ok: false, code: "NAME_INVALID" }, JSON.stringify(bad));
+  }
+  assert.deepEqual(publicNameDecision("สมชาย ใจดี"), { ok: true, name: "สมชาย ใจดี" });
+});

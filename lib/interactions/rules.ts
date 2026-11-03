@@ -75,16 +75,20 @@ export function starDecision(c: { togglesLastHour: number }): Decision {
   return c.togglesLastHour >= INTERACTION_LIMITS.starTogglesPerHour ? { ok: false, code: "RATE_LIMITED" } : { ok: true };
 }
 
-// Bare domains like "spam.com" also count as links in a name.
-const DOMAIN = /\b[a-z0-9-]+\.(?:com|net|org|dev|io|ai|co|th|me|app|xyz|link|site|shop)\b/i;
+// Any dot-like character between a word and 2+ letters reads as a domain
+// ("spam.com", "spam。club", "x.example"), whatever the TLD.
+const DOMAIN = /[\p{L}\p{N}-][.\u3002\uff0e\uff61]\p{L}{2,}/u;
+// Control, format (zero-width, bidi overrides) and line/paragraph separators.
+const INVISIBLE = /[\p{Cc}\p{Cf}\p{Zl}\p{Zp}]/u;
 
 /**
- * The member-chosen name shown with comments. "" is allowed and shows the
- * generic fallback; names never carry links or control characters.
+ * The member-chosen name shown with comments, NFKC-normalized. "" is allowed
+ * and shows the generic fallback; names never carry links or hidden characters.
  */
 export function publicNameDecision(raw: string): { ok: true; name: string } | { ok: false; code: "NAME_INVALID" } {
-  if (/[\u0000-\u001f\u007f]/.test(raw)) return { ok: false, code: "NAME_INVALID" };
-  const name = raw.replace(/\s+/g, " ").trim();
+  const normalized = raw.normalize("NFKC");
+  if (INVISIBLE.test(normalized)) return { ok: false, code: "NAME_INVALID" };
+  const name = normalized.replace(/\s+/g, " ").trim();
   if ([...name].length > INTERACTION_LIMITS.maxPublicNameChars) return { ok: false, code: "NAME_INVALID" };
   if (countLinks(name) > 0 || DOMAIN.test(name)) return { ok: false, code: "NAME_INVALID" };
   return { ok: true, name };

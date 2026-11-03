@@ -195,3 +195,19 @@ test("the public name starts as the provider name, is editable, and an empty nam
   assert.equal(await author(), "สมาชิก");
   assert.deepEqual(await store.setPublicName({ ...a, sv: a.sv + 1 }, "x"), { ok: false, code: "NOT_SIGNED_IN" });
 });
+
+test("a hidden comment stays moderated: its author cannot edit it, and deleting it never resurfaces the thread", async () => {
+  const owner = await member({ owner: true });
+  const a = await member();
+  const b = await member();
+  const top = await store.addComment(a, SKILL, "เธรดที่ถูกซ่อน", null);
+  assert.ok(top.ok);
+  const reply = await store.addComment(b, SKILL, "คำตอบในเธรด", top.comment.id);
+  assert.ok(reply.ok);
+  assert.deepEqual(await store.setHidden(owner, top.comment.id, true), { ok: true });
+  assert.deepEqual(await store.editComment(a, top.comment.id, "แอบแก้"), { ok: false, code: "FORBIDDEN" });
+  assert.deepEqual(await store.deleteComment(a, top.comment.id), { ok: true });
+  const shown = (await store.pageState(SKILL, null)).comments.map((c) => c.id);
+  assert.equal(shown.includes(top.comment.id), false);
+  assert.equal(shown.includes(reply.comment.id), false);
+});
