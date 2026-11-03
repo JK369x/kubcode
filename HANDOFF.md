@@ -80,7 +80,7 @@ Fresh readback interval (UTC): `2026-11-03T14:45:36.327111+00:00` → `2026-11-0
 - [ ] ตรวจ Google OAuth audience/publishing/domain และ LINE channel Developing/Published, audience, linked-OA consent กับเจ้าของจริง; ห้าม publish audience หรือเพิ่ม scope เงียบ ๆ
 - [ ] ตรวจ branding/consent ของ LINE ตาม provider; ปุ่ม text-only สีเขียวไม่ใช่ใบรับรอง compliance
 - [ ] เก็บ source/tests/docs เข้าระบบ version control อย่างปลอดภัย ปัจจุบัน `main` มี last commit `895af8b` และไฟล์แอปส่วนใหญ่ยัง untracked; **ห้าม `git add .`, `git clean`, `git reset --hard` หรือ push ก่อนตรวจ private assets/credentials/remote owner** — 2026-11-03: commit source/tests/scripts/docs ลง local branch `chore/track-source` แล้ว (สแกน secret ก่อน stage, `.qa/`/previews/ZIP/dotenv ถูก ignore) ยังไม่ merge เข้า `main` และยังไม่มี remote
-- [ ] ยืนยัน personal remote/ขอบเขตการ push กับเจ้าของ; ยังไม่มีหลักฐาน Git push หรือ hosted GitHub CI pass
+- [x] ยืนยัน personal remote/ขอบเขตการ push กับเจ้าของ: private `https://github.com/JK369x/kubcode` (2026-11-03) push `main` แล้วและ GitHub CI ผ่าน; deploy/migrate อัตโนมัติดู §7a
 - [ ] เพิ่ม absolute session lifetime และ per-session revocation สำหรับ copied cookie/normal logout ก่อน protected/high-value features
 - [ ] กำหนด rate limits, abuse/resource controls และทดสอบโหลดจริง; source review รอบนี้ไม่ได้ตรวจ deployment-level rate limiting หรือ benchmark capacity
 - [ ] เพิ่ม cleanup/retention ของ expired/closed intents แบบ bounded; TTL10นาทีไม่เท่ากับลบข้อมูลทุกแถวภายใน10นาที ปัจจุบันไม่มี global cleanup job
@@ -198,7 +198,7 @@ npm run test:accounts-browser
 
 - Docker PG fixture ของรอบก่อน **หยุดและลบแล้ว** ตาม `.qa/account-linking-local-test.json`; URLในนั้นเป็นhistoricalfictional ไม่ใช่ service ที่ยังรัน
 - `npm run build` ใน working treeอาจชน `.next` ของ private preview ให้ทำ isolated source-only stage ตาม skill
-- ใช้ `npm run db:migrate:accounts` แบบdry-runได้ แต่ **ห้าม `--apply` บน hosted DB ซ้ำโดยไม่มี scope/checksum/owner checks** ไม่มี auto-down migration
+- ใช้ `npm run db:migrate:accounts` แบบdry-runได้ (`-- --plan` = อ่าน ledger อย่างเดียว) แต่ **ห้าม `--apply` บน hosted DB เองจากเครื่อง** ให้ pipeline ใน §7a เป็นคนทำ ไม่มี auto-down migration
 
 Read-only verification:
 ```sh
@@ -211,6 +211,40 @@ SUPABASE_HOME=/Users/jakkarin69/.config/supabase-kubcode-personal/state \
   --profile /Users/jakkarin69/.config/supabase-kubcode-personal/profile.json -o json
 ```
 Project API อาจมี env metadata ให้กรองก่อนแสดง ห้ามพิมพ์ credential values หรือ user profile rows
+
+## 7a. CI/CD — GitHub Actions ทำ test → migrate → deploy
+
+Vercel ไม่ได้ต่อ Git integration และ**ห้ามเปิด** (ไม่งั้นจะมี deploy สองทางและลำดับ migrate→deploy หาย) GitHub Actions deploy ด้วย Vercel CLI `54.1.0` แบบ prebuilt
+
+| Workflow | เมื่อไหร่ | ทำอะไร |
+|---|---|---|
+| `checks.yml` | ถูกเรียกจากอีกสองตัว | `npm ci` → `npm test` → typecheck → build (`NEXT_PUBLIC_MEDIA_MODE=licensed-only`) และ job แยกรัน `test:accounts-db` กับ Postgres17 service container (loopback fixture) |
+| `preview.yml` | push ทุก branch ที่ไม่ใช่ `main` | checks → `vercel pull/build/deploy --prebuilt --target=preview` → ตรวจว่า target ไม่ใช่ production → comment URL ใน PR ที่เปิดอยู่ ไม่ migrate ไม่แตะ production |
+| `production.yml` | push `main` / `workflow_dispatch` บน main | checks → build production → **plan migration แบบ read-only** → gate → migrate (ถ้ามี pending) → deploy `--prod --skip-domain` → smoke deployment URL → `vercel promote` → smoke `kubcode.dev` (fail → promote ตัวก่อนหน้ากลับอัตโนมัติ) |
+
+- ลำดับรับประกันโดย step ใน job เดียว: build พังหรือ migrate พัง = ไม่ deploy; migration ไม่รันถ้า build ยังไม่ผ่าน
+- Concurrency `production` ครั้งละหนึ่ง run และไม่ cancel กลางทาง; migration idempotent (checksum ledger + `pg_advisory_xact_lock` + transaction เดียว)
+- Plan (`scripts/accounts-migrate.ts --plan`): `BEGIN READ ONLY` อ่าน `schema_migrations` → pending, checksum mismatch (แก้ไฟล์ที่ apply แล้ว = **หยุดทั้งหมด** ให้ทำ migration ใหม่แทน), versions ใน ledger ที่ checkout ไม่มี (warning)
+- **Destructive gate** (`lib/accounts/migration-gate.ts`): สแกนเฉพาะ pending หา `DROP`, `DELETE`, `TRUNCATE`, `RENAME`, `UPDATE`, `ALTER COLUMN … TYPE`, `DISABLE`/`NO FORCE ROW LEVEL SECURITY`, `OR REPLACE`, `SET SCHEMA` (ไม่นับ comment/literal, FK `ON DELETE`, `FOR UPDATE`, trigger events, GRANT/REVOKE) เจอแล้ว push run จะ **fail ก่อน migrate/deploy** และพิมพ์วลีอนุมัติ เช่น `approve 0003_x`
+  - อนุมัติ: เจ้าของ (`github.repository_owner`) กด Run workflow → Production บน `main` แล้วกรอก approval ตามวลีนั้นทุกตัวอักษร ไม่ใช่เจ้าของ/วลีไม่ตรง = ไม่รัน
+  - GitHub environment required reviewers ใช้ไม่ได้กับ private repo ของบัญชีส่วนตัว (ต้อง Enterprise) จึงใช้ `workflow_dispatch` แทน
+  - Additive migration (เช่น `0002_interactions` ใน branch knowledge-base ซึ่ง gate ตรวจแล้วว่า additive) รันอัตโนมัติเมื่อเข้า `main` — **อย่าลืม** grants ของ `kubcode_app` สำหรับตารางใหม่ (`db/runtime-role-grants.sql`) ไม่ได้อยู่ใน runner
+- DB TLS ใน CI: `db/certs/supabase-prod-ca.pem` (public CA จาก supabase/cli v2.114.0, provenance ใน `db/certs/README.md`) → `KUBCODE_DB_CA_CERT`; ไม่ปิด certificate verification
+
+GitHub settings (repo `JK369x/kubcode`):
+
+| ชื่อ | ชนิด | ใช้ทำอะไร |
+|---|---|---|
+| `MIGRATION_DATABASE_URL` | secret | Supabase Session pooler URI (user `postgres`, port 5432) ใช้แค่ step plan/migrate |
+| `VERCEL_TOKEN` | secret | scope `jakkarinlmc-3526s-projects` สำหรับ pull/build/deploy/promote |
+| `VERCEL_ORG_ID` | variable | `team_lBf8fFFeyFBzOYyKFMA7KadA` |
+| `VERCEL_PROJECT_ID` | variable | `prj_xgaKmMr2dvFXaw7GE0X6qmFd2fBA` |
+
+Runtime secrets (Google/LINE/NextAuth/`DATABASE_URL` ของ `kubcode_app`/CA/flag) **อยู่ใน Vercel production env ที่เดียว** ไม่ copy มา GitHub; prebuilt build ใน CI ใช้แค่ `NEXT_PUBLIC_MEDIA_MODE` ส่วนค่าอื่นอ่านตอน runtime ซึ่ง smoke ก่อน promote พิสูจน์ (deployment URL ต้องได้ `303 → https://kubcode.dev/account` ซึ่งเกิดเมื่อ auth env มีจริงเท่านั้น)
+
+Rollback:
+- Code: `vercel promote <deployment ก่อนหน้า>` (ID อยู่ใน run summary "Previous production deployment") หรือ revert commit แล้ว merge ให้ pipeline deploy ใหม่
+- Schema: **forward-fix** ด้วย migration ใหม่เท่านั้น ห้ามแก้ไฟล์ที่ apply แล้ว ห้าม down/drop เอง; rollback code ไม่ย้อน schema
 
 ## 8. Pitfalls / ไม่ควรทำซ้ำ
 
