@@ -7,6 +7,7 @@ import { CATEGORY_LABELS } from "@/lib/kb-labels";
 import { renderMdx } from "@/lib/mdx";
 import { breadcrumbJsonLd, pageMetadata, toolJsonLd } from "@/lib/seo";
 import { JsonLd } from "@/components/JsonLd";
+import { PageInteractions } from "@/components/PageInteractions";
 import { RelatedLinks } from "@/components/RelatedLinks";
 import { SourceCredits } from "@/components/SourceCredits";
 import { TagList } from "@/components/TagList";
@@ -75,6 +76,7 @@ export default async function ToolPage({ params }: Props) {
           }}
         />
         <SourceCredits page={t} />
+        <PageInteractions kind="tool" slug={t.slug} title={t.title} />
       </article>
     </main>
   );

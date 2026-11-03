@@ -11,6 +11,7 @@ import { related } from "@/lib/content-links";
 import { breadcrumbJsonLd, metadataFor } from "@/lib/seo";
 import { JsonLd } from "@/components/JsonLd";
 import { RelatedLinks } from "@/components/RelatedLinks";
+import { PageInteractions } from "@/components/PageInteractions";
 export function generateStaticParams() {
   return skills.map((s) => ({ slug: s.slug }));
 }
@@ -89,6 +90,7 @@ export default async function Detail({
             items={related(getContent(), { kind: "skill", slug: s.slug })}
             headings={{ tool: "เครื่องมือที่ใช้", article: "ใช้ในบทความ" }}
           />
+          <PageInteractions kind="skill" slug={s.slug} title={s.name} />
         </div>
       </div>
     </main>

@@ -1,0 +1,118 @@
+.box {
+  margin-top: 52px;
+  padding-top: 28px;
+  border-top: 1px solid var(--line);
+  min-height: 60px;
+}
+.box h2 {
+  font-size: 20px;
+  margin: 24px 0 8px;
+}
+.starRow {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+.star {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--surface);
+  color: var(--ink);
+  font: inherit;
+  cursor: pointer;
+}
+.star[aria-pressed="true"] {
+  border-color: var(--purple);
+  color: var(--purple);
+}
+.count {
+  color: var(--muted);
+  font-size: 14px;
+}
+.meta {
+  color: var(--muted);
+  font-size: 13px;
+}
+.meta a,
+.box p a {
+  color: var(--purple);
+  text-decoration: underline;
+}
+.form {
+  display: grid;
+  gap: 8px;
+  margin: 12px 0 24px;
+}
+.form label {
+  font-size: 14px;
+}
+.form textarea {
+  width: 100%;
+  font: inherit;
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 1px solid var(--line);
+  background: var(--surface);
+  color: var(--ink);
+  resize: vertical;
+}
+.formRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.formRow button {
+  margin-left: 8px;
+}
+.list,
+.replies {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: grid;
+  gap: 14px;
+}
+.replies {
+  margin: 12px 0 0 24px;
+  padding-left: 14px;
+  border-left: 2px solid var(--line);
+}
+.comment {
+  display: grid;
+  gap: 6px;
+}
+.hidden {
+  opacity: 0.6;
+}
+.body {
+  margin: 0;
+  line-height: 1.8;
+  overflow-wrap: anywhere;
+}
+.body a {
+  color: var(--purple);
+  text-decoration: underline;
+}
+.actions {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.actions button {
+  background: none;
+  border: 0;
+  padding: 0;
+  font: inherit;
+  font-size: 13px;
+  color: var(--muted);
+  cursor: pointer;
+}
+.actions button:hover {
+  color: var(--ink);
+}
