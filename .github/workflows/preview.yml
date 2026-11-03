@@ -56,12 +56,18 @@ jobs:
           NEXT_PUBLIC_MEDIA_MODE: licensed-only
         run: vercel build --target=preview
 
+      # Deploy the prebuilt output from outside the git checkout: Vercel Hobby
+      # BLOCKS deployments whose git commit author is not a team member, and
+      # local commits carry a machine-local author email.
       - name: Deploy preview
         id: deploy
+        timeout-minutes: 10
         env:
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
         run: |
-          url=$(vercel deploy --prebuilt --target=preview --token "$VERCEL_TOKEN")
+          stage="$RUNNER_TEMP/deploy"
+          mkdir -p "$stage" && cp -R .vercel "$stage/"
+          url=$(vercel deploy --prebuilt --target=preview --cwd "$stage" --token "$VERCEL_TOKEN")
           host=${url#https://}
           # An untargeted first deploy once became production: always verify.
           target=$(curl -fsS -H "Authorization: Bearer $VERCEL_TOKEN" \
