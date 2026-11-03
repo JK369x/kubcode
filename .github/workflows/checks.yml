@@ -1,0 +1,53 @@
+# Reusable quality gate for every branch: unit tests, types, production build
+# and the real-PostgreSQL accounts suite against a throwaway service container.
+name: Checks
+
+on:
+  workflow_call:
+
+permissions:
+  contents: read
+
+jobs:
+  checks:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+      - run: npm ci --ignore-scripts
+      - run: npm test
+      - run: npm run typecheck
+      # Source-only build: private preview binaries are intentionally not in Git.
+      - run: npm run build
+        env:
+          NEXT_PUBLIC_MEDIA_MODE: licensed-only
+
+  accounts-db:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_PASSWORD: fixture-only
+          POSTGRES_DB: kubcode_ci_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d kubcode_ci_test"
+          --health-interval 5s --health-timeout 5s --health-retries 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+      - run: npm ci --ignore-scripts
+      # Loopback fixture database only; never a hosted URL.
+      - run: npm run test:accounts-db
+        env:
+          KUBCODE_TEST_DATABASE_URL: postgres://postgres:fixture-only@127.0.0.1:5432/kubcode_ci_test

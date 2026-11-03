@@ -45,3 +45,5 @@ supabase/.temp/
 *.log
 npm-debug.log*
 .impeccable/questions/
+# Public (non-secret) Supabase root CA bundle used to verify DB TLS in CI
+!db/certs/supabase-prod-ca.pem
