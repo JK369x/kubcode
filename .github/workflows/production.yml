@@ -6,6 +6,8 @@
 # Destructive pending migrations stop push runs. The owner approves by running
 # this workflow manually on main with the exact phrase the blocked run printed
 # (GitHub environment reviewers are not available for this private repo plan).
+# That phrase is a safety interlock against accidents, NOT an authorization
+# boundary: anyone with push access could edit a workflow to use the secrets.
 name: Production
 
 on:
@@ -59,11 +61,11 @@ jobs:
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
         run: vercel pull --yes --environment=production --token "$VERCEL_TOKEN"
 
+      # Runs project code (next build): no token or DB URL in this step.
       - name: Build production (prebuilt, licensed-only media)
         env:
-          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
           NEXT_PUBLIC_MEDIA_MODE: licensed-only
-        run: vercel build --prod --token "$VERCEL_TOKEN"
+        run: vercel build --prod
 
       # Public CA bundle (db/certs) -> TLS with certificate + hostname checks.
       - name: Load database CA

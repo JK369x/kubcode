@@ -242,6 +242,13 @@ GitHub settings (repo `JK369x/kubcode`):
 
 Runtime secrets (Google/LINE/NextAuth/`DATABASE_URL` ของ `kubcode_app`/CA/flag) **อยู่ใน Vercel production env ที่เดียว** ไม่ copy มา GitHub; prebuilt build ใน CI ใช้แค่ `NEXT_PUBLIC_MEDIA_MODE` ส่วนค่าอื่นอ่านตอน runtime ซึ่ง smoke ก่อน promote พิสูจน์ (deployment URL ต้องได้ `303 → https://kubcode.dev/account` ซึ่งเกิดเมื่อ auth env มีจริงเท่านั้น)
 
+Trust boundary (ข้อจำกัดที่ต้องรู้):
+- Repo secrets อ่านได้จาก workflow ของ**ทุก branch** และ `VERCEL_TOKEN` มีสิทธิ์ทั้ง account (Vercel ไม่มี token แบบ preview-only) ใครที่ push branch ได้จึงแก้ workflow ให้เอา secret ไปใช้ได้ ตอนนี้มีแค่เจ้าของ `JK369x` ที่ push ได้ **ห้ามเพิ่ม collaborator** หรือ action ภายนอกที่ไม่ pin
+- Agent (devpit/Claude/Codex) push branch ด้วย credential ของเจ้าของ โค้ดที่ agent เขียนจึงรันใน CI ข้าง secret ได้ ให้ review ก่อน push ใน branch ที่ไม่ไว้ใจ
+- Approval phrase กัน destructive migration**แบบพลั้งเผลอ** ไม่ใช่ขอบเขตสิทธิ์
+- Step ที่รันโค้ดโปรเจกต์ (`npm ci --ignore-scripts`, `vercel build`) ไม่ได้รับ token/DB URL แต่ยังอยู่ใน job เดียวกับ step ที่ใช้ secret
+- ทางแก้ที่ดีกว่าเมื่อพร้อม: GitHub Pro ขึ้นไป → ย้าย `MIGRATION_DATABASE_URL`/`VERCEL_TOKEN` ไปเป็น environment secrets ของ environment `production` ที่จำกัด deployment branch เป็น `main` (เจ้าของต้องกรอกค่าใหม่เอง) หรือใช้ DB role แยกสิทธิ์เฉพาะ migration; rotate `VERCEL_TOKEN` เมื่อสงสัยว่ารั่ว
+
 Rollback:
 - Code: `vercel promote <deployment ก่อนหน้า>` (ID อยู่ใน run summary "Previous production deployment") หรือ revert commit แล้ว merge ให้ pipeline deploy ใหม่
 - Schema: **forward-fix** ด้วย migration ใหม่เท่านั้น ห้ามแก้ไฟล์ที่ apply แล้ว ห้าม down/drop เอง; rollback code ไม่ย้อน schema

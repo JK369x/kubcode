@@ -1,6 +1,11 @@
 # Every push to a non-main branch: checks, then a Vercel PREVIEW deployment
-# built in CI (prebuilt) and linked on the branch's open PR. Never migrates and
-# never touches production.
+# built in CI (prebuilt) and linked on the branch's open PR. Never migrates.
+#
+# Trust boundary: VERCEL_TOKEN is account-wide (Vercel has no preview-only
+# token) and repository secrets are readable by any branch's workflow, so
+# anyone who can push a branch can reach production credentials. Only the
+# owner has push access; keep it that way (see HANDOFF.md section 7a). The
+# token is never given to steps that run project code (npm ci, vercel build).
 name: Preview
 
 on:
@@ -45,11 +50,11 @@ jobs:
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
         run: vercel pull --yes --environment=preview --token "$VERCEL_TOKEN"
 
+      # Runs project code (next build): no token in this step.
       - name: Build (prebuilt, licensed-only media)
         env:
-          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
           NEXT_PUBLIC_MEDIA_MODE: licensed-only
-        run: vercel build --target=preview --token "$VERCEL_TOKEN"
+        run: vercel build --target=preview
 
       - name: Deploy preview
         id: deploy
