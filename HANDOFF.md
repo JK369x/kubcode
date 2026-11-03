@@ -220,7 +220,7 @@ Vercel ไม่ได้ต่อ Git integration และ**ห้ามเป
 |---|---|---|
 | `checks.yml` | ถูกเรียกจากอีกสองตัว | `npm ci` → `npm test` → typecheck → build (`NEXT_PUBLIC_MEDIA_MODE=licensed-only`) และ job แยกรัน `test:accounts-db` กับ Postgres17 service container (loopback fixture) |
 | `preview.yml` | push ทุก branch ที่ไม่ใช่ `main` | checks → `vercel pull/build/deploy --prebuilt --target=preview` → ตรวจว่า target ไม่ใช่ production → comment URL ใน PR ที่เปิดอยู่ ไม่ migrate ไม่แตะ production |
-| `production.yml` | push `main` / `workflow_dispatch` บน main | checks → build production → **plan migration แบบ read-only** → gate → migrate (ถ้ามี pending) → deploy `--prod --skip-domain` → smoke deployment URL → `vercel promote` → smoke `kubcode.dev` (fail → promote ตัวก่อนหน้ากลับอัตโนมัติ) |
+| `production.yml` | push `main` / `workflow_dispatch` บน main | checks → build production → **plan migration แบบ read-only** → gate → migrate (ถ้ามี pending) → deploy `--prod --skip-domain` → smoke deployment URL → promote ผ่าน REST API แล้วรอจน kubcode.dev ชี้ id ใหม่ → smoke `kubcode.dev` (`if: always()` หลัง deploy สำเร็จ: live = ตัวเก่า → fail ไม่ทำอะไร; live = ตัวใหม่แต่ smoke ไม่ผ่าน → promote ตัวเก่ากลับ; อื่น ๆ → fail ไม่ทำอะไร) |
 
 - ลำดับรับประกันโดย step ใน job เดียว: build พังหรือ migrate พัง = ไม่ deploy; migration ไม่รันถ้า build ยังไม่ผ่าน
 - Concurrency `production` ครั้งละหนึ่ง run และไม่ cancel กลางทาง; migration idempotent (checksum ledger + `pg_advisory_xact_lock` + transaction เดียว)
@@ -249,6 +249,8 @@ Runtime secrets (Google/LINE/NextAuth/`DATABASE_URL` ของ `kubcode_app`/CA/
 - Prebuilt output อ้างไฟล์ใน `node_modules` ของ root จึง copy แค่ `.vercel` ไม่พอ
 - Deployment Protection ของ project = `preview` เท่านั้น: preview URL redirect ไป Vercel SSO (ส่วนตัว) ส่วน production deployment URL เปิดสาธารณะ smoke ก่อน promote จึงทำงาน ถ้าเปลี่ยนให้คุ้ม production URL ด้วย smoke จะ fail แบบปลอดภัย (domain ไม่ย้าย) ต้องเพิ่ม Protection Bypass for Automation ก่อน
 
+- Run 41684018785 (2026-11-03): ผ่านถึง deploy + smoke ก่อน promote (`dpl_DzZRM2x1d8SVBQGtgjuczbG8g6HT`) แต่ `vercel promote` ใน CI ล้มด้วย "Deployment belongs to a different team" ทั้งที่ทุก deployment อยู่ team `team_lBf8…` เดียวกัน (CLI เลือก scope ผิดเมื่อไม่มี `--scope`) จึงย้ายไปใช้ `POST /v10/projects/{project}/promote/{id}?teamId=` ใน `scripts/ci-vercel-release.ts`; kubcode.dev ไม่ได้เปลี่ยน
+
 Trust boundary (ข้อจำกัดที่ต้องรู้):
 - Repo secrets อ่านได้จาก workflow ของ**ทุก branch** และ `VERCEL_TOKEN` มีสิทธิ์ทั้ง account (Vercel ไม่มี token แบบ preview-only) ใครที่ push branch ได้จึงแก้ workflow ให้เอา secret ไปใช้ได้ ตอนนี้มีแค่เจ้าของ `JK369x` ที่ push ได้ **ห้ามเพิ่ม collaborator** หรือ action ภายนอกที่ไม่ pin
 - Agent (devpit/Claude/Codex) push branch ด้วย credential ของเจ้าของ โค้ดที่ agent เขียนจึงรันใน CI ข้าง secret ได้ ให้ review ก่อน push ใน branch ที่ไม่ไว้ใจ
@@ -257,7 +259,7 @@ Trust boundary (ข้อจำกัดที่ต้องรู้):
 - ทางแก้ที่ดีกว่าเมื่อพร้อม: GitHub Pro ขึ้นไป → ย้าย `MIGRATION_DATABASE_URL`/`VERCEL_TOKEN` ไปเป็น environment secrets ของ environment `production` ที่จำกัด deployment branch เป็น `main` (เจ้าของต้องกรอกค่าใหม่เอง) หรือใช้ DB role แยกสิทธิ์เฉพาะ migration; rotate `VERCEL_TOKEN` เมื่อสงสัยว่ารั่ว
 
 Rollback:
-- Code: `vercel promote <deployment ก่อนหน้า>` (ID อยู่ใน run summary "Previous production deployment") หรือ revert commit แล้ว merge ให้ pipeline deploy ใหม่
+- Code: `vercel promote <deployment ก่อนหน้า> --scope jakkarinlmc-3526s-projects` (ID อยู่ใน run summary "Previous production deployment"; **ต้องมี `--scope`** ไม่งั้น CLI ขึ้น "Deployment belongs to a different team") หรือ revert commit แล้ว merge ให้ pipeline deploy ใหม่
 - Schema: **forward-fix** ด้วย migration ใหม่เท่านั้น ห้ามแก้ไฟล์ที่ apply แล้ว ห้าม down/drop เอง; rollback code ไม่ย้อน schema
 
 ## 8. Pitfalls / ไม่ควรทำซ้ำ
