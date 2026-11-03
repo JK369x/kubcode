@@ -17,6 +17,8 @@ import { createPool, pgErrorCode } from "../../lib/accounts/db";
 import {
   migrate,
   loadMigrations,
+  planMigrations,
+  readLedger,
   MigrationChecksumError,
   MigrationSecurityError,
   type Migration,
@@ -179,6 +181,19 @@ const proofOf = (s: SessionClaims, p: LoginProfile): LoginProfile => ({ ...p, pr
 
 // ---------------------------------------------------------------- migrations
 
+test("plan on a fresh database is read-only: no ledger, nothing created, every migration pending", async () => {
+  const rec = recording(pool);
+  const done = await readLedger(rec.proxy);
+  assert.equal(done.size, 0);
+  const flat = rec.sql.map((s) => s.replace(/\s+/g, " ").trim());
+  assert.match(flat[0], /^BEGIN READ ONLY\b/);
+  assert.equal(flat.at(-1), "ROLLBACK", "plan never commits");
+  assert.equal(flat.some((s) => /\b(CREATE|INSERT|UPDATE|DELETE|ALTER|DROP|GRANT|REVOKE)\b/i.test(s)), false, "no writes");
+  assert.equal((await raw.query("SELECT to_regnamespace('kubcode_accounts') AS n")).rows[0].n, null, "schema not created");
+  assert.deepEqual(planMigrations(loadMigrations(), done).pending.map((m) => m.version), ["0001_accounts"]);
+  assert.deepEqual(rec.releases, [undefined]);
+});
+
 test("runner: one bounded transaction with a transaction-scoped advisory lock (pooler-safe)", async () => {
   const rec = recording(pool);
   assert.deepEqual((await migrate(rec.proxy)).applied, ["0001_accounts"]);
@@ -203,6 +218,23 @@ test("migrations are idempotent and serialize under concurrent runners", async (
   // Re-running the raw SQL is harmless (IF NOT EXISTS everywhere).
   await pool.query(loadMigrations()[0].sql);
   assert.deepEqual((await migrate(pool)).applied, []);
+});
+
+test("plan after apply: ledger read under READ ONLY, nothing pending, drift detected without writing", async () => {
+  const done = await readLedger(pool);
+  assert.deepEqual([...done.keys()], ["0001_accounts"]);
+  assert.deepEqual(planMigrations(loadMigrations(), done).pending, []);
+  const tampered = loadMigrations().map((m) => ({ ...m, checksum: "0".repeat(64) }));
+  assert.deepEqual(planMigrations(tampered, done).checksumMismatch, ["0001_accounts"]);
+  // A write attempted through the same read-only transaction shape must fail.
+  const client = await pool.connect();
+  try {
+    await client.query("BEGIN READ ONLY");
+    await assert.rejects(client.query("CREATE TABLE kubcode_accounts.kc_plan_probe (id int)"), (e) => pgErrorCode(e) === "25006");
+  } finally {
+    await client.query("ROLLBACK");
+    client.release();
+  }
 });
 
 test("a failing pending migration rolls back every pending migration and discards the client", async () => {

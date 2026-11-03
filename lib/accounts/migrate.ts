@@ -49,6 +49,49 @@ export class MigrationSecurityError extends Error {
   }
 }
 
+export type MigrationPlan = {
+  pending: Migration[];
+  // Applied versions whose file no longer matches the recorded checksum.
+  checksumMismatch: string[];
+  // Ledger versions with no file in this checkout (applied from elsewhere).
+  unknownApplied: string[];
+};
+
+export function planMigrations(migrations: Migration[], ledger: ReadonlyMap<string, string>): MigrationPlan {
+  const known = new Set(migrations.map((m) => m.version));
+  return {
+    pending: migrations.filter((m) => !ledger.has(m.version)),
+    checksumMismatch: migrations.filter((m) => ledger.has(m.version) && ledger.get(m.version) !== m.checksum).map((m) => m.version),
+    unknownApplied: [...ledger.keys()].filter((v) => !known.has(v)).sort(),
+  };
+}
+
+// Read-only view of the ledger for planning (CI gate). Never creates the
+// schema or table, never takes the migration lock and always rolls back.
+export async function readLedger(pool: Pool): Promise<Map<string, string>> {
+  const client = await pool.connect();
+  try {
+    await client.query(`BEGIN READ ONLY; SET LOCAL statement_timeout = '${MIGRATION_STATEMENT_TIMEOUT}'`);
+    const { rows } = await client.query<{ present: boolean }>(
+      "SELECT to_regclass('kubcode_accounts.schema_migrations') IS NOT NULL AS present",
+    );
+    const done = new Map<string, string>();
+    if (rows[0].present) {
+      const ledger = await client.query<{ version: string; checksum: string }>(
+        "SELECT version, checksum FROM kubcode_accounts.schema_migrations ORDER BY version",
+      );
+      for (const r of ledger.rows) done.set(r.version, r.checksum);
+    }
+    await client.query("ROLLBACK");
+    client.release();
+    return done;
+  } catch (error) {
+    await client.query("ROLLBACK").catch(() => undefined);
+    client.release(true);
+    throw error;
+  }
+}
+
 const BOOTSTRAP = `
   CREATE SCHEMA IF NOT EXISTS kubcode_accounts;
   REVOKE ALL ON SCHEMA kubcode_accounts FROM PUBLIC;
