@@ -1,0 +1,195 @@
+// Handlers for /api/interactions/*. Route files are thin wrappers; deps are
+// injectable so every guard is testable without a database.
+//
+// Write order: feature availability → guardWrite (Origin, CSRF, media type,
+// size, streamed body) → body shape → page exists → signed session → store.
+import type { AuthEnv } from "../auth-policy";
+import { SESSION_COOKIE_NAME, providerReadiness, readAuthConfig } from "../auth-policy";
+import { readAccountsConfig } from "../accounts/config";
+import { logDbFailure } from "../accounts/db";
+import { accountErrorResponse, ACCOUNT_ERRORS, type AccountErrorCode } from "../accounts/errors";
+import { jsonNoStore, readCookie } from "../accounts/http";
+import { decodeAccountSession } from "../accounts/runtime";
+import { sessionClaims, type SessionClaims } from "../accounts/session";
+import { rawSkills } from "../catalog";
+import { getContent, slugProblem } from "../content";
+import { guardWrite } from "./http";
+import { getInteractionStore, type InteractionStore, type PageKey, type StoreErrorCode } from "./store";
+
+export type InteractionDeps = {
+  env?: AuthEnv;
+  storeFor?: (databaseUrl: string) => InteractionStore;
+  pageExists?: (page: PageKey) => boolean;
+};
+
+/** Comment text ≤2000 chars is ≤8000 UTF-8 bytes; JSON framing fits too. */
+export const MAX_WRITE_BYTES = 9 * 1024;
+
+const INTERACTION_ERRORS: Record<StoreErrorCode | "PAGE_NOT_FOUND", { status: number; message: string }> = {
+  NOT_SIGNED_IN: ACCOUNT_ERRORS.NOT_SIGNED_IN,
+  PAGE_NOT_FOUND: { status: 404, message: "ไม่พบหน้านี้" },
+  NOT_FOUND: { status: 404, message: "ไม่พบคอมเมนต์นี้ หรือถูกลบไปแล้ว" },
+  FORBIDDEN: { status: 403, message: "คุณไม่มีสิทธิ์ทำรายการนี้" },
+  REPLY_DEPTH: { status: 422, message: "ตอบกลับได้เพียงชั้นเดียว" },
+  COMMENT_EMPTY: { status: 422, message: "พิมพ์ข้อความก่อนส่ง" },
+  COMMENT_TOO_LONG: { status: 422, message: "คอมเมนต์ยาวได้ไม่เกิน 2,000 ตัวอักษร" },
+  COMMENT_TOO_SOON: { status: 429, message: "รออย่างน้อย 20 วินาทีก่อนคอมเมนต์ถัดไป" },
+  COMMENT_LINKS: { status: 422, message: "ใส่ลิงก์ได้ไม่เกิน 2 ลิงก์ และบัญชีใหม่ (ไม่ถึง 24 ชั่วโมง) ยังใส่ลิงก์ไม่ได้" },
+  COMMENT_DUPLICATE: { status: 409, message: "คุณเพิ่งส่งข้อความนี้ไปแล้ว" },
+  RATE_LIMITED: { status: 429, message: "ทำรายการถี่เกินไป ลองใหม่ภายหลัง" },
+  NAME_INVALID: { status: 422, message: "ชื่อยาวได้ไม่เกิน 40 ตัวอักษร และห้ามมีลิงก์" },
+};
+
+function errorResponse(code: StoreErrorCode | "PAGE_NOT_FOUND"): Response {
+  const e = INTERACTION_ERRORS[code] ?? ACCOUNT_ERRORS.ACCOUNTS_UNAVAILABLE;
+  return Response.json({ code, message: e.message }, { status: e.status, headers: { "Cache-Control": "no-store" } });
+}
+
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
+
+export function defaultPageExists(page: PageKey): boolean {
+  if (page.kind === "skill") return rawSkills.some((s) => s.slug === page.slug);
+  return getContent().tools.some((t) => t.slug === page.slug);
+}
+
+function pageFrom(kind: unknown, slug: unknown): PageKey | null {
+  if ((kind !== "tool" && kind !== "skill") || typeof slug !== "string" || slugProblem(slug)) return null;
+  return { kind, slug };
+}
+
+const onlyKeys = (body: Record<string, unknown>, keys: string[]) =>
+  Object.keys(body).every((k) => keys.includes(k)) && keys.every((k) => Object.hasOwn(body, k));
+
+type Ctx = { store: InteractionStore; session: SessionClaims | null; pageExists: (p: PageKey) => boolean };
+
+async function context(request: Request, deps: InteractionDeps): Promise<Ctx | Response> {
+  const env = deps.env ?? process.env;
+  const accounts = readAccountsConfig(env);
+  if (accounts.mode === "off") return accountErrorResponse("ACCOUNTS_DISABLED");
+  if (accounts.mode === "broken") return accountErrorResponse("ACCOUNTS_UNAVAILABLE");
+  const auth = readAuthConfig(env);
+  if (!auth.ok) return accountErrorResponse("ACCOUNTS_UNAVAILABLE");
+  const ready = providerReadiness(auth);
+  const token = await decodeAccountSession(readCookie(request, SESSION_COOKIE_NAME), auth.config.secret);
+  return {
+    store: (deps.storeFor ?? getInteractionStore)(accounts.databaseUrl),
+    session: token && ready[token.provider] ? sessionClaims(token) : null,
+    pageExists: deps.pageExists ?? defaultPageExists,
+  };
+}
+
+type Outcome = { ok: true } | { ok: false; code: StoreErrorCode };
+
+/** Shared write pipeline; `act` returns the JSON for a successful result. */
+async function write(
+  request: Request,
+  deps: InteractionDeps,
+  op: string,
+  act: (ctx: Ctx & { session: SessionClaims }, body: Record<string, unknown>) => Promise<Response | Outcome | (Outcome & Record<string, unknown>)>,
+  options: { body?: boolean } = {},
+): Promise<Response> {
+  // Availability first, without reading the session: nothing else is touched.
+  const env = deps.env ?? process.env;
+  const accounts = readAccountsConfig(env);
+  if (accounts.mode !== "on") return accountErrorResponse(accounts.mode === "off" ? "ACCOUNTS_DISABLED" : "ACCOUNTS_UNAVAILABLE");
+  const guarded = await guardWrite(request, MAX_WRITE_BYTES, options);
+  if (!guarded.ok) return accountErrorResponse(guarded.code as AccountErrorCode);
+  const ctx = await context(request, deps);
+  if (ctx instanceof Response) return ctx;
+  try {
+    const result = await act(ctx as Ctx & { session: SessionClaims }, guarded.body);
+    if (result instanceof Response) return result;
+    if (!result.ok) return errorResponse(result.code);
+    return jsonNoStore(result);
+  } catch (error) {
+    logDbFailure(op, error);
+    return accountErrorResponse("ACCOUNTS_UNAVAILABLE");
+  }
+}
+
+const badRequest = () => accountErrorResponse("BAD_REQUEST");
+const notSignedIn = () => errorResponse("NOT_SIGNED_IN");
+
+export async function handlePageState(request: Request, deps: InteractionDeps = {}): Promise<Response> {
+  const ctx = await context(request, deps);
+  if (ctx instanceof Response) return ctx;
+  const url = new URL(request.url);
+  const page = pageFrom(url.searchParams.get("kind"), url.searchParams.get("slug"));
+  if (!page) return badRequest();
+  if (!ctx.pageExists(page)) return errorResponse("PAGE_NOT_FOUND");
+  try {
+    return jsonNoStore(await ctx.store.pageState(page, ctx.session));
+  } catch (error) {
+    logDbFailure("PAGE_STATE", error);
+    return accountErrorResponse("ACCOUNTS_UNAVAILABLE");
+  }
+}
+
+export const handleStar = (request: Request, deps: InteractionDeps = {}) =>
+  write(request, deps, "STAR_TOGGLE", async (ctx, body) => {
+    if (!onlyKeys(body, ["kind", "slug"])) return badRequest();
+    const page = pageFrom(body.kind, body.slug);
+    if (!page) return badRequest();
+    if (!ctx.pageExists(page)) return errorResponse("PAGE_NOT_FOUND");
+    if (!ctx.session) return notSignedIn();
+    return ctx.store.toggleStar(ctx.session, page);
+  });
+
+export const handleComment = (request: Request, deps: InteractionDeps = {}) =>
+  write(request, deps, "COMMENT_ADD", async (ctx, body) => {
+    if (!onlyKeys(body, ["kind", "slug", "body", "parentId"])) return badRequest();
+    const page = pageFrom(body.kind, body.slug);
+    const parentId = body.parentId;
+    if (!page || typeof body.body !== "string") return badRequest();
+    if (parentId !== null && !(typeof parentId === "string" && UUID.test(parentId))) return badRequest();
+    if (!ctx.pageExists(page)) return errorResponse("PAGE_NOT_FOUND");
+    if (!ctx.session) return notSignedIn();
+    return ctx.store.addComment(ctx.session, page, body.body, parentId);
+  });
+
+function byId(op: string, keys: string[], run: (ctx: Ctx & { session: SessionClaims }, id: string, body: Record<string, unknown>) => Promise<Response | Outcome>, options: { body?: boolean } = {}) {
+  return (request: Request, id: string, deps: InteractionDeps = {}) =>
+    write(
+      request,
+      deps,
+      op,
+      async (ctx, body) => {
+        if (!UUID.test(id) || !onlyKeys(body, keys)) return badRequest();
+        if (!ctx.session) return notSignedIn();
+        return run(ctx, id, body);
+      },
+      options,
+    );
+}
+
+export const handleCommentEdit = byId("COMMENT_EDIT", ["body"], (ctx, id, body) =>
+  typeof body.body === "string" ? ctx.store.editComment(ctx.session, id, body.body) : Promise.resolve(badRequest()),
+);
+export const handleCommentDelete = byId("COMMENT_DELETE", [], (ctx, id) => ctx.store.deleteComment(ctx.session, id), {
+  body: false,
+});
+export const handleCommentHide = byId("COMMENT_HIDE", ["hidden"], (ctx, id, body) =>
+  typeof body.hidden === "boolean" ? ctx.store.setHidden(ctx.session, id, body.hidden) : Promise.resolve(badRequest()),
+);
+export const handleCommentReport = byId("COMMENT_REPORT", [], (ctx, id) => ctx.store.report(ctx.session, id));
+
+export const handlePublicName = (request: Request, deps: InteractionDeps = {}) =>
+  write(request, deps, "PUBLIC_NAME", async (ctx, body) => {
+    if (!onlyKeys(body, ["publicName"]) || typeof body.publicName !== "string") return badRequest();
+    if (!ctx.session) return notSignedIn();
+    return ctx.store.setPublicName(ctx.session, body.publicName);
+  });
+
+/** Signed-in read of the member's current public name (settings prefill). */
+export async function handlePublicNameRead(request: Request, deps: InteractionDeps = {}): Promise<Response> {
+  const ctx = await context(request, deps);
+  if (ctx instanceof Response) return ctx;
+  if (!ctx.session) return notSignedIn();
+  try {
+    const result = await ctx.store.profile(ctx.session);
+    return result.ok ? jsonNoStore(result) : errorResponse(result.code);
+  } catch (error) {
+    logDbFailure("PUBLIC_NAME_READ", error);
+    return accountErrorResponse("ACCOUNTS_UNAVAILABLE");
+  }
+}
