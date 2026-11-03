@@ -203,3 +203,17 @@ test("tools reject unknown categories, non-https or unknown link kinds, and a mi
   }
 });
 
+
+test("go short codes are short lower-case codes, unique across all pages", () => {
+  const ok = loadContent(tree({ "articles/good-article.mdx": article({ go: ["anim1"] }) })).articles[0];
+  assert.deepEqual(ok.go, ["anim1"]);
+
+  const problems = problemsOf(
+    tree({
+      "articles/good-article.mdx": article({ go: ["dup", "Not Ok"] }),
+      "tools/good-tool.mdx": tool({ go: ["dup"] }),
+    }),
+  );
+  assert.ok(problems.some((p) => /go.*Not Ok/.test(p)), problems.join("\n"));
+  assert.ok(problems.some((p) => /go.*dup/.test(p)), problems.join("\n"));
+});

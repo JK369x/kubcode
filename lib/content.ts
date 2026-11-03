@@ -20,6 +20,8 @@ type PageBase = {
   sources: Source[];
   sourceNote?: string;
   redirects: string[];
+  /** Short share codes: /go/<code> 301s to this page (for clip descriptions). */
+  go: string[];
   body: string;
 };
 
@@ -69,6 +71,7 @@ const DEFAULT_ROOT = path.join(process.cwd(), "content");
 export const LIMITS = { title: 60, description: 155, slugWords: 5 } as const;
 
 const SLUG = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
+const GO_CODE = /^[a-z0-9-]{2,16}$/;
 
 /** Stable URL slug rule shared by every content type (PRD: SEO slugs). */
 export function slugProblem(slug: unknown): string | null {
@@ -191,6 +194,20 @@ class FieldReader {
     return links;
   }
 
+  goCodes(): string[] {
+    const value = this.data.go ?? [];
+    if (!Array.isArray(value)) {
+      this.problem("go", "must be a list of short codes");
+      return [];
+    }
+    for (const code of value) {
+      if (typeof code !== "string" || !GO_CODE.test(code)) {
+        this.problem("go", `entry "${String(code)}" must be 2-16 chars of a-z, 0-9, -`);
+      }
+    }
+    return value.map(String);
+  }
+
   redirects(): string[] {
     const value = this.data.redirects ?? [];
     if (!Array.isArray(value)) {
@@ -285,6 +302,7 @@ function readPages<T extends Page>(
       sources: fm.sources(),
       sourceNote: fm.optionalText("sourceNote", LIMITS.description),
       redirects: fm.redirects(),
+      go: fm.goCodes(),
       body,
     };
     return { fm, page: build(fm, base) };
@@ -332,6 +350,15 @@ export function loadContent(root: string = DEFAULT_ROOT): Content {
       } else if (owner.has(key)) {
         fm.problem("redirects", `entry "${old}" is already claimed by ${owner.get(key)}`);
       } else owner.set(key, page.slug);
+    }
+  }
+
+  const goOwner = new Map<string, string>();
+  for (const { fm, page } of pages) {
+    for (const code of page.go) {
+      const claimed = goOwner.get(code);
+      if (claimed) fm.problem("go", `entry "${code}" is already used by ${claimed}`);
+      else goOwner.set(code, `${page.kind}:${page.slug}`);
     }
   }
 
