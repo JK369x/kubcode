@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import Link from "next/link";
 import { getContent, getTool, LINK_KINDS } from "@/lib/content";
 import { related } from "@/lib/content-links";
 import { CATEGORY_LABELS } from "@/lib/kb-labels";
@@ -8,9 +7,9 @@ import { renderMdx } from "@/lib/mdx";
 import { breadcrumbJsonLd, pageMetadata, toolJsonLd } from "@/lib/seo";
 import { JsonLd } from "@/components/JsonLd";
 import { PageInteractions } from "@/components/PageInteractions";
+import { ReadingPage } from "@/components/ReadingPage";
 import { RelatedLinks } from "@/components/RelatedLinks";
 import { SourceCredits } from "@/components/SourceCredits";
-import { TagList } from "@/components/TagList";
 
 export const dynamicParams = false;
 
@@ -31,25 +30,24 @@ export default async function ToolPage({ params }: Props) {
   const t = getTool((await params).slug);
   if (!t) notFound();
   const content = getContent();
-  const body = await renderMdx(t.body);
+  const { content: body, toc } = await renderMdx(t.body);
+  const crumbs = [
+    { name: "kubcode", href: "/" },
+    { name: "เครื่องมือ", href: "/tools" },
+  ];
   return (
-    <main id="main" className="reading">
-      <JsonLd data={toolJsonLd(t)} />
-      <JsonLd
-        data={breadcrumbJsonLd([
-          { name: "kubcode", path: "/" },
-          { name: "เครื่องมือ", path: "/tools" },
-          { name: t.title, path: `/tools/${t.slug}` },
-        ])}
-      />
-      <Link className="back" href="/tools">
-        กลับไปเครื่องมือ
-      </Link>
-      <article>
-        <p className="eyebrow">{CATEGORY_LABELS[t.category]}</p>
-        <h1>{t.title}</h1>
-        <p className="lead">{t.description}</p>
-        <TagList slugs={t.tags} tags={content.tags} />
+    <ReadingPage
+      kind="tool"
+      slug={t.slug}
+      crumbs={crumbs}
+      badge={CATEGORY_LABELS[t.category]}
+      updated={t.updated}
+      title={t.title}
+      lead={t.description}
+      tags={t.tags}
+      allTags={content.tags}
+      toc={toc}
+      intro={
         <dl className="tool-facts">
           <div>
             <dt>ไลเซนส์</dt>
@@ -66,18 +64,21 @@ export default async function ToolPage({ params }: Props) {
             </div>
           ))}
         </dl>
-        <div className="prose">{body}</div>
-        <RelatedLinks
-          items={related(content, t)}
-          headings={{
-            article: "ใช้ในบทความ",
-            skill: "ใช้กับ skill ของเรา",
-            tool: "ใช้คู่กับ",
-          }}
-        />
-        <SourceCredits page={t} />
-        <PageInteractions kind="tool" slug={t.slug} title={t.title} />
-      </article>
-    </main>
+      }
+      after={
+        <>
+          <JsonLd data={toolJsonLd(t)} />
+          <JsonLd data={breadcrumbJsonLd([...crumbs.map((c) => ({ name: c.name, path: c.href })), { name: t.title, path: `/tools/${t.slug}` }])} />
+          <RelatedLinks
+            items={related(content, t)}
+            headings={{ article: "ใช้ในบทความ", skill: "ใช้กับ skill ของเรา", tool: "ใช้คู่กับ" }}
+          />
+          <SourceCredits page={t} />
+          <PageInteractions kind="tool" slug={t.slug} title={t.name} />
+        </>
+      }
+    >
+      {body}
+    </ReadingPage>
   );
 }

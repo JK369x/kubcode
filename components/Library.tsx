@@ -1,5 +1,6 @@
 "use client";
 import { PUBLICATION_NOTICE } from "@/lib/publication";
+import { TitleTransition } from "@/components/TitleTransition";
 import { useRef, useState } from "react";
 import Link from "next/link";
 import {
@@ -196,7 +197,9 @@ export function Library({ articles }: { articles: ArticleTeaser[] }) {
               href={"/articles/" + article.slug}
             >
               <div>
-                <h3>{article.title}</h3>
+                <TitleTransition kind="article" slug={article.slug}>
+                  <h3>{article.title}</h3>
+                </TitleTransition>
                 <p>{article.description}</p>
               </div>
               <ArrowUpRight size={23} />

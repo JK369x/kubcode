@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { TitleTransition } from "@/components/TitleTransition";
 import Link from "next/link";
 import { ArrowUpRight } from "lucide-react";
 import { getContent, TOOL_CATEGORIES } from "@/lib/content";
@@ -33,9 +34,11 @@ export default function Tools() {
           {tools
             .filter((t) => t.category === c)
             .map((t) => (
-              <Link className="article-row" key={t.slug} href={`/tools/${t.slug}`}>
+              <Link className="article-row" key={t.slug} href={`/tools/${t.slug}`} transitionTypes={["nav-forward"]}>
                 <div>
-                  <h3>{t.title}</h3>
+                  <TitleTransition kind="tool" slug={t.slug}>
+                    <h3>{t.title}</h3>
+                  </TitleTransition>
                   <p>{t.description}</p>
                 </div>
                 <ArrowUpRight />

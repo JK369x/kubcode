@@ -1,14 +1,13 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import Link from "next/link";
 import { getArticle, getContent } from "@/lib/content";
 import { related } from "@/lib/content-links";
 import { renderMdx } from "@/lib/mdx";
 import { articleJsonLd, breadcrumbJsonLd, pageMetadata } from "@/lib/seo";
 import { JsonLd } from "@/components/JsonLd";
+import { ReadingPage } from "@/components/ReadingPage";
 import { RelatedLinks } from "@/components/RelatedLinks";
 import { SourceCredits } from "@/components/SourceCredits";
-import { TagList } from "@/components/TagList";
 
 export const dynamicParams = false;
 
@@ -27,35 +26,36 @@ export default async function Article({ params }: Props) {
   const a = getArticle((await params).slug);
   if (!a) notFound();
   const content = getContent();
-  const body = await renderMdx(a.body);
+  const { content: body, toc } = await renderMdx(a.body);
+  const crumbs = [
+    { name: "kubcode", href: "/" },
+    { name: "บทความ", href: "/articles" },
+  ];
   return (
-    <main id="main" className="reading">
-      <JsonLd data={articleJsonLd(a)} />
-      <JsonLd
-        data={breadcrumbJsonLd([
-          { name: "kubcode", path: "/" },
-          { name: "บทความ", path: "/articles" },
-          { name: a.title, path: `/articles/${a.slug}` },
-        ])}
-      />
-      <Link className="back" href="/articles">
-        กลับไปบทความ
-      </Link>
-      <article>
-        <h1>{a.title}</h1>
-        <p className="lead">{a.description}</p>
-        <TagList slugs={a.tags} tags={content.tags} />
-        <div className="prose">{body}</div>
-        <RelatedLinks
-          items={related(content, a)}
-          headings={{
-            tool: "เครื่องมือในบทความนี้",
-            skill: "skill ของเราที่เกี่ยวข้อง",
-            article: "อ่านต่อ",
-          }}
-        />
-        <SourceCredits page={a} />
-      </article>
-    </main>
+    <ReadingPage
+      kind="article"
+      slug={a.slug}
+      crumbs={crumbs}
+      badge="บทความ"
+      updated={a.updated}
+      title={a.title}
+      lead={a.description}
+      tags={a.tags}
+      allTags={content.tags}
+      toc={toc}
+      after={
+        <>
+          <JsonLd data={articleJsonLd(a)} />
+          <JsonLd data={breadcrumbJsonLd([...crumbs.map((c) => ({ name: c.name, path: c.href })), { name: a.title, path: `/articles/${a.slug}` }])} />
+          <RelatedLinks
+            items={related(content, a)}
+            headings={{ tool: "เครื่องมือในบทความนี้", skill: "skill ของเราที่เกี่ยวข้อง", article: "อ่านต่อ" }}
+          />
+          <SourceCredits page={a} />
+        </>
+      }
+    >
+      {body}
+    </ReadingPage>
   );
 }

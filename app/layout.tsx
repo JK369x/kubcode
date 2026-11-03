@@ -35,7 +35,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
         <a className="skip" href="#main">
           ข้ามไปเนื้อหา
         </a>
-        <header className="header">
+        <header className="header" style={{ viewTransitionName: "site-header" }}>
           <Link className="brand" href="/">
             kubcode
           </Link>
