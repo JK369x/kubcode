@@ -1,11 +1,11 @@
 # kubcode — handoff / งานคงเหลือ
 
-อัปเดต: 2026-11-03 (+07) · สำหรับเจ้าของโปรเจกต์และ agent ที่รับช่วงต่อ
+อัปเดต: 2026-11-04 (+07) · สำหรับเจ้าของโปรเจกต์และ agent ที่รับช่วงต่อ
 
-Fresh readback interval (UTC): `2026-11-03T14:45:36.327111+00:00` → `2026-11-03T14:45:43.500050+00:00`. หลักฐานตรวจปัจจุบัน: `.qa/handoff-readback-2026-11-03.json`
+Fresh readback ล่าสุด (UTC): `2026-11-03T17:48:02Z` (read-only aggregate + Vercel alias) · readback รอบ handoff เดิม: `.qa/handoff-readback-2026-11-03.json`
 
-> **สถานะ: deploy ระบบบัญชีกลางแล้ว ไม่ได้ติด Supabase login และไม่ต้องสร้าง DB/deploy ซ้ำ**
-> งานที่ยังไม่ปิดคือ owner acceptance ของ LINE/link/unlink/login/logout ด้วยบัญชีจริง ไม่ใช่งานเขียนระบบใหม่
+> **สถานะ: ระบบบัญชีกลาง + knowledge base/interactions (migration 0002) deploy แล้ว และทุก deploy/migration ทำผ่าน GitHub Actions (§7a) ห้าม deploy หรือ `--apply` เองจากเครื่อง**
+> งานที่ยังไม่ปิด: (1) P0 owner acceptance ของการ **เชื่อม LINE เข้าบัญชี Google** ด้วยลำดับที่ถูกต้อง (2) เปิดดาว/คอมเมนต์ตาม "เปิด interactions" ใน §3 ทั้งสองข้อไม่ใช่งานเขียนระบบใหม่
 > ไฟล์นี้มี operational metadata แต่ไม่มี secret; ตรวจความเหมาะสมก่อนนำไปเผยแพร่ใน public repository
 
 ## 1. สรุปสั้น / เริ่มอ่านตรงนี้
@@ -13,11 +13,10 @@ Fresh readback interval (UTC): `2026-11-03T14:45:36.327111+00:00` → `2026-11-0
 - เว็บ: `https://kubcode.dev` · เข้าสู่ระบบ: `https://kubcode.dev/account` · ตั้งค่าวิธีเข้าสู่ระบบ: `/account/settings`
 - Google + LINE ใช้ NextAuth; ฐานข้อมูลสมาชิกตัวตนใช้ **Supabase PostgreSQL ส่วนตัว ไม่ใช่ Supabase Auth**
 - มี internal user ID และเชื่อมสอง provider เข้าบัญชีเดียวกันได้โดยยืนยันทั้งสองฝั่ง ไม่มี auto-merge ด้วยอีเมล
-- Production ปัจจุบัน: `dpl_2M8P5FcZv2ymhY1RUccvj9mzWMzN` — ตรวจ canonical alias ล่าสุดแล้ว READY และตรงกับ release receipt
-- Immediate predecessor ของ rollout นี้คือ `dpl_6pXA1iUTDSjr3TV8446B5zDQYz78` (provider-only); `dpl_6ZZFPGMdTaMeU9gbjFBxrNBQVXpR` เป็น Google-only ที่เก่ากว่านั้น ไม่ใช่ immediate rollback target. การระบุIDไม่ใช่อนุมัติให้rollback
-- Fresh read-only DB aggregate ตอนทำ handoff: **users 1, Google identities 1, LINE identities 0, users ที่มีทั้งสองวิธี 0** ไม่ได้อ่านหรือบันทึก email/subject/profile ของผู้ใช้
-- Audit baseline ในรอบตรวจเดียวกัน: **1 events**; ใช้เทียบหลัง owner test โดยไม่อ่าน PII
-- ตัวเลขนี้เป็นหลักฐานว่ามี Google identity ถูกบันทึกแล้ว แต่ **ไม่ใช่ owner sign-off ของ Google logout หรือ LINE linking** และไม่ระบุว่าบัญชีนั้นเป็นของใคร
+- Production ปัจจุบัน: `dpl_45Q9ppKmdfVKM7yRyLXRH1kW7h1k` — deploy โดย `production.yml` run 41686923669 จาก `main` `1a0bfaf` (PR #2 knowledge base) อ่าน alias `kubcode.dev` กลับจาก Vercel API แล้ว READY target production; promote ผ่าน API และ live smoke `promoted_and_healthy`
+- Rollback target ล่าสุด: `dpl_5rBLWzRxMoPNrcs2BWu743fVPuGh` (CI build แรก, `af71916`, ก่อน knowledge base) · ก่อนนั้น `dpl_2M8P5FcZv2ymhY1RUccvj9mzWMzN` (deploy ด้วยมือครั้งสุดท้าย) · rollback code ไม่ย้อน schema 0002 (additive) การระบุIDไม่ใช่อนุมัติให้rollback
+- Fresh read-only DB aggregate (2026-11-03T17:48:02Z): **users 1, Google 1, LINE 0, users ที่มีทั้งสองวิธี 0, owners 0**, link intents 0, audit 3 (`user_created` ×2, `operator_duplicate_user_deleted` ×1), ledger `0001_accounts`, `0002_interactions` ไม่ได้อ่านหรือบันทึก email/subject/profile ของผู้ใช้
+- ตัวเลขนี้ **ไม่ใช่ owner sign-off ของ LINE linking**: ยังไม่มีผู้ใช้ที่มีทั้งสองวิธีและยังไม่มี link intent เลย (ดู P0)
 - Downloads, อนุมัติสมาชิก, admin, credits, generation และ MCP authorization **ยังไม่เปิด**
 - ห้ามอ่านสถานะ local-only/รอ login ในบันทึกเก่าแล้วเริ่ม provision ใหม่ ให้ใช้ current receipts ด้านล่าง
 
@@ -49,6 +48,12 @@ Fresh readback interval (UTC): `2026-11-03T14:45:36.327111+00:00` → `2026-11-0
 - OAuth checks, issuer/audience/signature, CSRF และ canonical redirect ยังอยู่ครบ; `/api/auth/_log` ปิด404
 - Privacy page ปรับตาม persistence จริง และ legacy `POST /api/account` ยัง503 โดยไม่อ้างผิดว่ายังไม่มี DB
 
+### Knowledge base / interactions (PR #2, migration 0002)
+
+- บทความ/หน้า tool ใหม่ live บน kubcode.dev แล้ว
+- `0002_interactions` (additive: ดาว, คอมเมนต์, report, `users.is_owner`, public comment name) **apply โดย CI** run 41686923669 (`PLAN pending=0002_interactions` → `OK applied=0002_interactions`); grants + RLS policy ของ `kubcode_app` สำหรับตารางใหม่อยู่ในไฟล์ 0002 เอง
+- ดาว/คอมเมนต์ **ยังปิด** จนกว่า `KUBCODE_INTERACTIONS_ENABLED` จะเป็น `"true"` ตรงตัว (ตอนนี้ยังไม่มี key นี้ใน Vercel production env) ระหว่างปิด API ตอบ 503 และไม่ query ตารางใหม่
+
 ## 3. งานคงเหลือ — เรียงลำดับ
 
 ### P0 — ปิด acceptance ของงาน auth รอบนี้ (กำลังรอเจ้าของ)
@@ -56,6 +61,8 @@ Fresh readback interval (UTC): `2026-11-03T14:45:36.327111+00:00` → `2026-11-0
 > **2026-11-03 สถานะยังไม่ผ่าน:** เจ้าของแจ้งว่าทดสอบ P0 ผ่านแล้ว แต่ read-only aggregate เวลา 14:59:47Z (production `dpl_2M8P5FcZv2ymhY1RUccvj9mzWMzN`, project `sgtyrndczwxijrubyyjw`) ยังเป็น users 1, Google 1, **LINE 0, users ที่มีทั้งสองวิธี 0**, audit 1 (`user_created`) และ **link intents 0 แถว** ตรงกับ baseline ทุกค่า แปลว่ายังไม่มี link flow ไปถึง production DB จึงยังไม่ติ๊ก ต้องถามเจ้าของว่าทดสอบที่ origin ไหนและหน้า settings แสดงอะไร หลักฐานอยู่ที่ `.qa/p0-owner-acceptance-check-2026-11-03.json`
 >
 > **Re-check 15:07:06Z หลังเจ้าของแจ้งว่าเชื่อม LINE แล้ว ยังไม่ผ่านเพราะเกิดบัญชีซ้ำ:** ผลคือ users **2**, Google 1, LINE 1, **users ที่มีทั้งสองวิธี 0**, audit 2 (`user_created` ×2) และ link intents 0 แถว แปลว่าเข้าด้วย LINE แยกต่างหากจนได้ internal user ใหม่ ไม่ได้กด “เชื่อม LINE” จากบัญชี Google ตรงกับคำเตือน **สำคัญ** ด้านล่าง ถ้าตอนนี้เชื่อม LINE เข้าบัญชี Google จะ conflict ตามที่ออกแบบไว้ **ห้ามย้าย identity หรือลบ user เอง** ต้องให้เจ้าของเลือกวิธี recovery/merge แบบมี audit เป็นงานแยก (P1 ข้อสุดท้าย) หลักฐานอยู่ที่ `.qa/p0-owner-acceptance-recheck-2026-11-03T1507Z.json`
+>
+> **ลบบัญชี LINE ที่ซ้ำแล้ว (เจ้าของรันเอง 16:25:30Z):** `.qa/ops/delete-duplicate-line-user.sh --apply` (transaction เดียว, guards ครบ, audit `operator_duplicate_user_deleted`) verdict `APPLIED_VERIFIED` receipt `.qa/duplicate-line-user-deletion-apply-20261103T162530Z.json` (snapshot ก่อนลบเก็บแยกที่ `.qa/duplicate-line-user-snapshot-2026-11-03.PRIVATE.json` ห้าม commit) ตอนนี้เหลือ users 1 / Google 1 / LINE 0 **P0 ยังรอเจ้าของทดสอบใหม่ตามลำดับด้านล่าง** (login Google → ตั้งค่าการเข้าสู่ระบบ → เชื่อม LINE) ผ่านเมื่อ aggregate แสดงผู้ใช้ที่มีทั้งสองวิธี = 1 และมี audit `identity_linked`
 
 ไม่ต้องเขียน auth ใหม่ก่อนทดสอบสิ่งนี้:
 
@@ -72,6 +79,20 @@ Fresh readback interval (UTC): `2026-11-03T14:45:36.327111+00:00` → `2026-11-0
 **สำคัญ:** อย่าออกจากระบบแล้ว login อีก provider แยกก่อนกดเชื่อม เพราะอาจสร้างอีก internal user หนึ่ง เมื่อ identity อยู่คนละ user ระบบตั้งใจจะ conflict ห้ามแก้ด้วยการย้าย identity/delete user โดยพลการ ให้ตรวจเจ้าของทั้งสองฝั่งและออกแบบ recovery/merge แบบมี audit เป็นงานแยก
 
 เมื่อมี error: ขอเฉพาะข้อความ error/ภาพที่ไม่เปิดเผยข้อมูล ไม่ขอ OAuth code, callback URL ที่มี code/state, token, cookie, client secret หรือ DB URL ในแชต
+
+### เปิด interactions (ดาว/คอมเมนต์) — รอเจ้าของ ทำตามลำดับ
+
+ทำหลัง P0 หรือคู่กันก็ได้ (owner flag ผูกกับ internal user ไม่ใช่ provider) แต่ให้ข้อ 1 เสร็จก่อนข้อ 2 เพื่อให้ซ่อนคอมเมนต์ได้ตั้งแต่นาทีแรก
+
+1. **ตั้ง owner flag** (`users.is_owner = true` ให้ user ที่ผูก Google เพียงคนเดียว) ด้วย script ที่เจ้าของรันเอง: `.qa/ops/set-owner-flag.sh` (git-ignored; `--agent no`, isolated Supabase profile, ตรวจ linked ref/org, transaction เดียวที่ตรวจซ้ำทุก guard: 0002 applied, target `d1ce43fa-…` active, มี Google identity เดียวและเป็นของ target, ยังไม่มี owner; ไม่แตะ session_version; audit `operator_owner_granted`)
+   ```sh
+   .qa/ops/set-owner-flag.sh --dry-run   # ต้องได้ DRY_RUN_OK owners=1 (rolled back) + verdict DRY_RUN_OK_ROLLED_BACK
+   .qa/ops/set-owner-flag.sh --apply     # ต้องได้ COMMITTED, AFTER owners 1, verdict APPLIED_VERIFIED
+   ```
+   ถ้า dry-run ไม่ได้ `DRY_RUN_OK_ROLLED_BACK` ห้าม apply; receipt ไปที่ `.qa/owner-flag-<mode>-<UTC>.json`; `is_owner` อ่านจาก DB ทุก request จึงไม่ต้อง login ใหม่
+2. **เปิด flag แล้ว redeploy**: เพิ่ม `KUBCODE_INTERACTIONS_ENABLED=true` ใน Vercel **production** env ของ project `kubcode` (isolated config `/Users/jakkarin69/.config/vercel-kubcode-personal`, scope `jakkarinlmc-3526s-projects`; เป็น flag ไม่ใช่ secret แต่ใช้แบบเดียวกับ `KUBCODE_ACCOUNTS_ENABLED`) แล้ว redeploy ผ่าน pipeline: GitHub → Actions → **Production** → Run workflow บน `main` โดยปล่อย approval ว่าง (env ใหม่มีผลกับ deployment ใหม่เท่านั้น)
+   - ตรวจหลัง deploy: ดาว/คอมเมนต์ไม่ตอบ 503 แล้ว, ผู้ใช้ที่ login แล้วให้ดาว/คอมเมนต์ได้, owner ซ่อนคอมเมนต์ได้
+   - ปิดฉุกเฉิน: ลบหรือเปลี่ยนค่า flag แล้ว redeploy แบบเดียวกัน (ข้อมูลในตารางยังอยู่)
 
 ### P1 — ก่อนเปิดให้คนทั่วไป/เพิ่มสิทธิ์สำคัญ
 
@@ -132,7 +153,8 @@ Fresh readback interval (UTC): `2026-11-03T14:45:36.327111+00:00` → `2026-11-0
 Existing unrelated Supabase project `AICLUP` ไม่ใช่เป้าหมายงานนี้ ห้าม query/migrate/reset มัน บริษัท Cloudcommerce และ default CLI contexts ไม่ใช่โครงสร้างสำหรับ kubcode; สิทธิ์ใช้ company Drive ของงาน animation ไม่ครอบคลุมโปรเจกต์นี้
 
 Production server env names (ค่าไม่อยู่ในไฟล์นี้):
-`GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `LINE_CLIENT_ID`, `LINE_CLIENT_SECRET`, `NEXTAUTH_URL`, `NEXTAUTH_SECRET`, `DATABASE_URL`, `KUBCODE_DB_CA_CERT`, `KUBCODE_ACCOUNTS_ENABLED=true`.
+`GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `LINE_CLIENT_ID`, `LINE_CLIENT_SECRET`, `NEXTAUTH_URL`, `NEXTAUTH_SECRET`, `DATABASE_URL`, `KUBCODE_DB_CA_CERT`, `KUBCODE_ACCOUNTS_ENABLED=true`; `NEXT_PUBLIC_MEDIA_MODE=licensed-only` (production+preview).
+ยังไม่ตั้ง: `KUBCODE_INTERACTIONS_ENABLED` (ดู "เปิด interactions" ใน §3).
 
 สามตัวใหม่ของ central accounts เป็น Sensitive Production variables อ่านกลับเฉพาะ key/type/target แล้ว ไม่ export ค่า ไม่ pull dotenv ไม่ใส่ secret ลง argv/history/file/แชต ไม่แก้ shared Google/LINE settings โดยไม่จำเป็น
 
@@ -230,7 +252,7 @@ Vercel ไม่ได้ต่อ Git integration และ**ห้ามเป
 - **Destructive gate** (`lib/accounts/migration-gate.ts`): สแกนเฉพาะ pending หา `DROP`, `DELETE`, `TRUNCATE`, `RENAME`, `UPDATE`, `ALTER COLUMN … TYPE`, `DISABLE`/`NO FORCE ROW LEVEL SECURITY`, `OR REPLACE`, `SET SCHEMA` (ไม่นับ comment/literal, FK `ON DELETE`, `FOR UPDATE`, trigger events, GRANT/REVOKE) เจอแล้ว push run จะ **fail ก่อน migrate/deploy** และพิมพ์วลีอนุมัติ เช่น `approve 0003_x`
   - อนุมัติ: เจ้าของ (`github.repository_owner`) กด Run workflow → Production บน `main` แล้วกรอก approval ตามวลีนั้นทุกตัวอักษร ไม่ใช่เจ้าของ/วลีไม่ตรง = ไม่รัน
   - GitHub environment required reviewers ใช้ไม่ได้กับ private repo ของบัญชีส่วนตัว (ต้อง Enterprise) จึงใช้ `workflow_dispatch` แทน
-  - Additive migration (เช่น `0002_interactions` ใน branch knowledge-base ซึ่ง gate ตรวจแล้วว่า additive) รันอัตโนมัติเมื่อเข้า `main` — **อย่าลืม** grants ของ `kubcode_app` สำหรับตารางใหม่ (`db/runtime-role-grants.sql`) ไม่ได้อยู่ใน runner
+  - Additive migration รันอัตโนมัติเมื่อเข้า `main`: `0002_interactions` ถูก apply แบบนี้จริงใน run 41686923669 (2026-11-03) ตารางใหม่ต้องมี grants/RLS policy ของ `kubcode_app` อยู่ในไฟล์ migration เอง (แบบ 0002) เพราะ `db/runtime-role-grants.sql` ไม่ได้ถูกรันโดย pipeline
 - DB TLS ใน CI: `db/certs/supabase-prod-ca.pem` (public CA จาก supabase/cli v2.114.0, provenance ใน `db/certs/README.md`) → `KUBCODE_DB_CA_CERT`; ไม่ปิด certificate verification
 
 GitHub settings (repo `JK369x/kubcode`):
@@ -280,6 +302,6 @@ Rollback:
 
 ## 9. ข้อความเริ่มต้นสำหรับ agent คนถัดไป
 
-> อ่าน HANDOFF.md, AGENTS.md และ current release receipts ก่อน ตรวจ live แบบread-onlyว่าdeployment/provider/central runtimeยังตรง แล้วเริ่ม P0 owner acceptance ไม่สร้างDBหรือloginSupabaseซ้ำโดยอัตโนมัติ ใช้ skills web-authentication, kubcode-deployment, cli-first-service-operations และให้Claudeบทบาทจริงตามขนาดงาน แยก fixture/init จาก actual external OAuth proof ไม่อ่านsecrets/privateoriginals หลัง P0ผ่านให้ถามเจ้าของว่าจะเลือกbacklogข้อไหนต่อ ไม่เริ่มMCP/approval/download/paidresourcesเอง
+> อ่าน HANDOFF.md, AGENTS.md และ current release receipts ก่อน ตรวจ live แบบread-onlyว่าdeployment/provider/central runtimeยังตรง แล้วติดตาม P0 owner acceptance (เจ้าของต้องเชื่อม LINE จากบัญชี Google) และขั้น "เปิด interactions" ที่เจ้าของรันเอง deploy/migration ผ่าน GitHub Actions เท่านั้น ไม่สร้างDBหรือloginSupabaseซ้ำโดยอัตโนมัติ ใช้ skills web-authentication, kubcode-deployment, cli-first-service-operations และให้Claudeบทบาทจริงตามขนาดงาน แยก fixture/init จาก actual external OAuth proof ไม่อ่านsecrets/privateoriginals หลัง P0ผ่านให้ถามเจ้าของว่าจะเลือกbacklogข้อไหนต่อ ไม่เริ่มMCP/approval/download/paidresourcesเอง
 
 บันทึกโครงการ: `/Users/jakkarin69/Documents/Obsidian Vault/10-Projects/personal-skill-web/personal-skill-web.md`
