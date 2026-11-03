@@ -1,8 +1,10 @@
 -- 0002_interactions: stars and comments on tool and skill pages, comment
--- reports, and a minimal owner flag. Same private schema and rules as 0001:
--- schema-qualified, idempotent, RLS on with no policies here (the server
--- role's policy lives in db/runtime-role-grants.sql), nothing for PUBLIC or
--- the Supabase API roles. Applied only by the explicit migration runner.
+-- reports, a minimal owner flag and the public comment name. Same private
+-- schema and rules as 0001: schema-qualified, idempotent, purely additive
+-- (no data rewrites), RLS on, nothing for PUBLIC or the Supabase API roles.
+-- Applied only by the explicit migration runner. Unlike 0001, this file also
+-- grants the runtime role kubcode_app exactly what the app needs, so one
+-- migration fully opens the new tables (no separate operator grants step).
 
 -- Owner: may hide comments. Set by an operator with SQL; no UI grants it.
 ALTER TABLE kubcode_accounts.users ADD COLUMN IF NOT EXISTS is_owner boolean NOT NULL DEFAULT false;
@@ -71,6 +73,37 @@ ALTER TABLE kubcode_accounts.page_stars ENABLE ROW LEVEL SECURITY;
 ALTER TABLE kubcode_accounts.star_toggles ENABLE ROW LEVEL SECURITY;
 ALTER TABLE kubcode_accounts.page_comments ENABLE ROW LEVEL SECURITY;
 ALTER TABLE kubcode_accounts.comment_reports ENABLE ROW LEVEL SECURITY;
+
+-- Runtime role: minimal privileges plus a server-only RLS policy per table.
+-- No DELETE on comments (deletes are soft), no UPDATE on stars, toggles or
+-- reports. users already carries its 0001 grants (is_owner is set only by
+-- operators). Skipped where the role does not exist (e.g. a fresh local DB).
+DO $$
+DECLARE
+  tab text;
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'kubcode_app') THEN
+    RAISE NOTICE 'kubcode_app role not found; runtime grants for 0002 skipped';
+    RETURN;
+  END IF;
+  GRANT USAGE ON SCHEMA kubcode_accounts TO kubcode_app;
+  GRANT SELECT, INSERT, DELETE ON kubcode_accounts.page_stars TO kubcode_app;
+  GRANT SELECT, INSERT ON kubcode_accounts.star_toggles TO kubcode_app;
+  GRANT SELECT, INSERT, UPDATE ON kubcode_accounts.page_comments TO kubcode_app;
+  GRANT SELECT, INSERT ON kubcode_accounts.comment_reports TO kubcode_app;
+  FOREACH tab IN ARRAY ARRAY['page_stars', 'star_toggles', 'page_comments', 'comment_reports'] LOOP
+    IF NOT EXISTS (
+      SELECT 1 FROM pg_policies
+       WHERE schemaname = 'kubcode_accounts' AND tablename = tab AND policyname = 'kubcode_server_access'
+    ) THEN
+      EXECUTE format(
+        'CREATE POLICY kubcode_server_access ON kubcode_accounts.%I FOR ALL TO kubcode_app USING (true) WITH CHECK (true)',
+        tab
+      );
+    END IF;
+  END LOOP;
+END
+$$;
 
 REVOKE ALL ON ALL TABLES IN SCHEMA kubcode_accounts FROM PUBLIC;
 REVOKE ALL ON ALL SEQUENCES IN SCHEMA kubcode_accounts FROM PUBLIC;

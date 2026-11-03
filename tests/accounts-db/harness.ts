@@ -30,7 +30,8 @@ export type ThrowawayDb = {
   cleanup: () => Promise<void>;
 };
 
-const GRANT_FILES = ["db/runtime-role-grants.sql", "db/runtime-role-grants-0002.sql"];
+// 0001's grants are an operator step; 0002 grants kubcode_app itself.
+const GRANT_FILES = ["db/runtime-role-grants.sql"];
 
 export async function throwawayDb(): Promise<ThrowawayDb> {
   const base = testDatabaseUrl();
@@ -55,11 +56,13 @@ export async function throwawayDb(): Promise<ThrowawayDb> {
     ALTER DEFAULT PRIVILEGES GRANT USAGE, CREATE ON SCHEMAS TO anon, authenticated;
     ALTER DEFAULT PRIVILEGES GRANT ALL ON TABLES TO anon, authenticated;
     ALTER DEFAULT PRIVILEGES GRANT ALL ON SEQUENCES TO anon, authenticated;`);
-  await migrate(pool);
+  // The runtime role exists before migrating, as in production, so the
+  // migrations' own grants are what the tests exercise.
   if (!(await admin.query("SELECT 1 FROM pg_roles WHERE rolname = 'kubcode_app'")).rowCount) {
     await admin.query("CREATE ROLE kubcode_app NOLOGIN");
     createdRoles.push("kubcode_app");
   }
+  await migrate(pool);
   for (const file of GRANT_FILES) await pool.query(readFileSync(file, "utf8"));
   const appPool = createPool(own.href, { max: 12, options: "-c role=kubcode_app" }, NO_ENV);
   return {

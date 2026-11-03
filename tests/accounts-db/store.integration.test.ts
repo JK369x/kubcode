@@ -268,7 +268,7 @@ test("checksum drift aborts inside the transaction before anything pending appli
 
 // ------------------------------------------------- private schema + Supabase
 
-test("account data lives only in kubcode_accounts: no public objects, RLS on, no policies", async () => {
+test("account data lives only in kubcode_accounts: no public objects, RLS on, policies only for the runtime role", async () => {
   const pub = await raw.query(
     `SELECT count(*) AS n FROM pg_class c JOIN pg_namespace n ON n.oid = c.relnamespace
       WHERE n.nspname = 'public' AND c.relkind IN ('r', 'p', 'v', 'm', 'S', 'f')`,
@@ -280,7 +280,16 @@ test("account data lives only in kubcode_accounts: no public objects, RLS on, no
   );
   assert.deepEqual(rls.rows.map((r) => r.relname), [...ACCOUNT_TABLES].sort());
   assert.ok(rls.rows.every((r) => r.relrowsecurity), "RLS enabled on every account table");
-  assert.equal(await count("SELECT count(*) AS n FROM pg_policies WHERE schemaname = 'kubcode_accounts'"), 0);
+  // 0001 tables have no policy here (their server policy is an operator step);
+  // 0002 grants its own tables to the runtime role only, never to API roles.
+  const policies = await raw.query<{ tablename: string; policyname: string; roles: string[] }>(
+    "SELECT tablename, policyname, roles::text[] AS roles FROM pg_policies WHERE schemaname = 'kubcode_accounts'",
+  );
+  for (const p of policies.rows) {
+    assert.ok(["page_stars", "star_toggles", "page_comments", "comment_reports"].includes(p.tablename), p.tablename);
+    assert.equal(p.policyname, "kubcode_server_access");
+    assert.deepEqual(p.roles, ["kubcode_app"]);
+  }
   // The runtime pool does not have the private schema on its search_path.
   assert.doesNotMatch((await pool.query("SHOW search_path")).rows[0].search_path, /kubcode_accounts/);
 });
