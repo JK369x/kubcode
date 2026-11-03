@@ -99,7 +99,7 @@ export function toolJsonLd(tool: Tool): JsonLd {
   return {
     "@context": "https://schema.org",
     "@type": "SoftwareApplication",
-    name: tool.title,
+    name: tool.name,
     description: tool.description,
     url: tool.links.website ?? tool.links.repo ?? absoluteUrl(hrefOf(tool)),
     applicationCategory: tool.category === "script" ? "DeveloperApplication" : "MultimediaApplication",

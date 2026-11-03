@@ -1,0 +1,43 @@
+---
+slug: remotion
+title: "Remotion — เขียนวิดีโอด้วย React"
+name: "Remotion"
+description: "Remotion สร้างวิดีโอจากโค้ด React ใช้ฟรีสำหรับบุคคลและบริษัทที่มีพนักงานไม่เกิน 3 คน องค์กรที่ใหญ่กว่าต้องซื้อ Company License"
+tags: [animation, renderer, licensing, video-pipeline]
+category: render
+refs:
+  - tool:what-if-animation
+  - tool:ffmpeg
+  - tool:tool-reel-system
+  - skill:freshstack-what-if
+links:
+  website: https://www.remotion.dev
+  repo: https://github.com/remotion-dev/remotion
+  docs: https://www.remotion.dev/docs
+license: "Remotion License (source-available) · ฟรีสำหรับบุคคลและบริษัทไม่เกิน 3 คน"
+updated: 2026-11-03
+go: [rm]
+sources:
+  - title: "Remotion license"
+    url: https://www.remotion.dev/license
+---
+## คืออะไร
+
+Remotion เป็นเฟรมเวิร์กที่ให้เขียนวิดีโอเป็น component ของ React แต่ละเฟรมคือภาพที่คำนวณจากเวลา แล้ว Remotion เรนเดอร์ออกมาเป็น MP4 เหมาะกับงานที่ AI เขียนฉากเป็นโค้ด เพราะแก้ซ้ำได้และผลลัพธ์คงที่
+
+## ใช้ทำอะไรในงานของเรา
+
+เป็นตัวเรนเดอร์ของ [What If animation](/tools/what-if-animation) และของ [Tool Reel System](/tools/tool-reel-system) ตัวอย่าง [What If Lab](/skills/freshstack-what-if) ของเราใช้ React SVG กับ Remotion 4 แล้วปรับเสียงรวมด้วย [FFmpeg](/tools/ffmpeg)
+
+## ไลเซนส์ — อ่านก่อนใช้เชิงพาณิชย์
+
+Remotion ไม่ใช่โอเพนซอร์สตามนิยาม OSI แต่เปิดซอร์สให้อ่านภายใต้สัญญาของตัวเอง
+
+- **ใช้ฟรี (รวมงานเชิงพาณิชย์):** บุคคล องค์กรไม่แสวงกำไร บริษัทที่มีพนักงานไม่เกิน 3 คน และการทดลองก่อนใช้เชิงพาณิชย์
+- **ต้องซื้อ Company License:** บริษัทที่ใหญ่กว่านั้น
+- **ห้าม:** ขายหรือนำ Remotion ที่ดัดแปลงไปให้สิทธิ์ต่อ
+- มีข้อเสนอสำหรับ Remotion 5 ที่จะนับผู้รับจ้างรวมในขนาดทีมด้วย แต่ยังไม่มีผล ณ วันที่อัปเดตหน้านี้
+
+## ก่อนเริ่ม
+
+ต้องมี Node.js การเรนเดอร์ครั้งแรกจะติดตั้ง dependency และ Chromium สำหรับเรนเดอร์ จึงใช้เวลาและพื้นที่ดิสก์พอสมควร

@@ -29,7 +29,8 @@ const article: Article = {
 const tool: Tool = {
   kind: "tool",
   slug: "remotion",
-  title: "Remotion",
+  title: "Remotion — เขียนวิดีโอด้วย React",
+  name: "Remotion",
   description: "เขียนวิดีโอด้วย React",
   tags: ["animation"],
   refs: [],

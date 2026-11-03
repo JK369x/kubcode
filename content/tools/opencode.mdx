@@ -1,0 +1,43 @@
+---
+slug: opencode
+title: "OpenCode — AI agent เขียนโค้ดแบบโอเพนซอร์ส"
+name: "OpenCode"
+description: "OpenCode คือผู้ช่วยเขียนโค้ดใน terminal แบบโอเพนซอร์ส (MIT) เลือกโมเดลได้หลายเจ้า และมีโมเดลฟรีชั่วคราวให้ลองโดยไม่ต้องใช้ API key"
+tags: [ai-agent, free-tier]
+category: script
+refs:
+  - tool:glm-5-3-flash
+  - tool:what-if-animation
+  - skill:freshstack-what-if
+links:
+  website: https://opencode.ai
+  repo: https://github.com/anomalyco/opencode
+  docs: https://opencode.ai/docs
+license: "MIT (โอเพนซอร์ส)"
+updated: 2026-11-03
+go: [oc]
+sources:
+  - title: "OpenCode docs — Providers"
+    url: https://opencode.ai/docs/providers/
+  - title: "OpenCode docs — Zen"
+    url: https://opencode.ai/docs/zen/
+---
+## คืออะไร
+
+OpenCode เป็น AI agent สำหรับเขียนโค้ดที่ทำงานใน terminal คล้าย Claude Code คืออ่านไฟล์ในโฟลเดอร์ รันคำสั่ง และแก้โค้ดตามที่สั่ง ตัวโปรแกรมเป็นโอเพนซอร์สภายใต้สัญญาอนุญาต MIT และพัฒนาอย่างต่อเนื่องบน GitHub (repo เดิม `sst/opencode` ย้ายมาอยู่ที่ `anomalyco/opencode` แล้ว)
+
+## ใช้ทำอะไรในงานคลิปของเรา
+
+เราใช้ OpenCode เป็น "ผู้เขียน" ที่เดินตาม skill เช่น [What If animation](/tools/what-if-animation) ตั้งแต่เขียนบทจนสั่งเรนเดอร์ ผู้เขียนเป็นคนละชั้นกับสไตล์ภาพและตัวเรนเดอร์ เปลี่ยนผู้เขียนได้โดยไม่ต้องเปลี่ยน skill
+
+## โมเดลที่เลือกได้
+
+- เชื่อมผู้ให้บริการโมเดลได้กว่า 75 เจ้า เช่น Anthropic, OpenAI, Google, DeepSeek, Z.AI และ OpenRouter
+- รันโมเดลในเครื่องผ่าน Ollama, LM Studio หรือ endpoint ที่เข้ากันได้กับ OpenAI
+- **OpenCode Zen** มีโมเดลที่เปิดฟรีชั่วคราว เช่น [GLM-5.3-Flash Free](/tools/glm-5-3-flash) ใช้ได้เฉพาะใน OpenCode
+
+## ก่อนเริ่ม
+
+- เปิด OpenCode จากในโฟลเดอร์งานเสมอ เพื่อให้มันเห็น skill และคำสั่งของโปรเจกต์
+- โมเดลฟรีแต่ละตัวมีนโยบายข้อมูลต่างกัน บางตัวไม่เก็บข้อมูล บางตัวอาจนำ prompt ไปปรับปรุงโมเดล อ่านหน้า Zen ก่อนส่งข้อมูลที่เป็นความลับ
+- ถ้าไม่ต้องการเห็นโมเดลฟรี ปิดได้ด้วยตัวแปร `OPENCODE_DISABLE_FREE_MODELS=1`

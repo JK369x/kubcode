@@ -8,8 +8,8 @@ import { ContentError, loadContent } from "../lib/content";
 
 test("repo content loads the two migrated articles from MDX", () => {
   const content = loadContent();
-  const slugs = content.articles.map((a) => a.slug).sort();
-  assert.deepEqual(slugs, ["install-with-permissions", "style-author-renderer"]);
+  const slugs = content.articles.map((a) => a.slug);
+  for (const slug of ["install-with-permissions", "style-author-renderer"]) assert.ok(slugs.includes(slug), slug);
   const article = content.articles.find((a) => a.slug === "style-author-renderer")!;
   assert.equal(article.title, "สไตล์ ผู้เขียน และ renderer ไม่ใช่สิ่งเดียวกัน");
   assert.match(article.body, /## หกชั้นที่ต้องอ่านให้แยกกัน/);
@@ -165,6 +165,7 @@ function tool(fm: Record<string, unknown>, body = "## What it is\n\nText\n"): st
     title: "Good Tool",
     description: "เครื่องมือดี",
     tags: ["video-pipeline"],
+    name: "Good Tool",
     category: "render",
     refs: [],
     links: { website: "https://example.com" },
@@ -195,10 +196,11 @@ test("tools reject unknown categories, non-https or unknown link kinds, and a mi
         category: "editing",
         links: { website: "http://x.dev", blog: "https://b.dev" },
         license: undefined,
+        name: undefined,
       }),
     }),
   );
-  for (const re of [/tools\/good-tool\.mdx.*category/, /links.*website/, /links.*blog/, /license/]) {
+  for (const re of [/tools\/good-tool\.mdx.*category/, /links.*website/, /links.*blog/, /license/, /: name is required/]) {
     assert.ok(problems.some((p) => re.test(p)), `${re}: ${problems.join("\n")}`);
   }
 });

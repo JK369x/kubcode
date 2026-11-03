@@ -15,7 +15,7 @@ function page(kind: "article" | "tool", slug: string, fm: Record<string, unknown
     tags: [],
     refs: [],
     updated: "2026-11-03",
-    ...(kind === "tool" ? { category: "render", license: "MIT", links: {} } : {}),
+    ...(kind === "tool" ? { name: slug, category: "render", license: "MIT", links: {} } : {}),
     ...fm,
   };
   return [`${kind}s/${slug}.mdx`, "---\n" + stringifyYaml(base) + "---\nBody\n"];

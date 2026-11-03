@@ -45,6 +45,8 @@ export type ToolLinks = Partial<Record<(typeof LINK_KINDS)[number], string>>;
 
 export type Tool = PageBase & {
   kind: "tool";
+  /** Product name as its makers write it, e.g. "Remotion" (JSON-LD name). */
+  name: string;
   category: ToolCategory;
   links: ToolLinks;
   /** Our short licence note, e.g. "MIT" or "free for teams ≤3". */
@@ -321,6 +323,7 @@ export function loadContent(root: string = DEFAULT_ROOT): Content {
   const tools = readPages(root, "tools", problems, (fm, base): Tool => ({
     kind: "tool",
     ...base,
+    name: fm.text("name", LIMITS.title),
     category: fm.oneOf("category", TOOL_CATEGORIES),
     links: fm.links(),
     license: fm.text("license", LIMITS.description),

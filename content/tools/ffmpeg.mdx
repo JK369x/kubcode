@@ -1,0 +1,44 @@
+---
+slug: ffmpeg
+title: "FFmpeg — มีดพับของงานเสียงและวิดีโอ"
+name: "FFmpeg"
+description: "FFmpeg แปลง ตัดต่อ และปรับเสียงวิดีโอจาก command line ไลเซนส์ตั้งต้นเป็น LGPL แต่บิลด์สำเร็จรูปจำนวนมากเป็น GPL อ่านก่อนแจกจ่ายไฟล์โปรแกรม"
+tags: [video-pipeline, licensing]
+category: package
+refs:
+  - tool:remotion
+  - tool:what-if-animation
+  - skill:captions-overlay
+  - skill:thai-jk-voice
+links:
+  website: https://ffmpeg.org
+  repo: https://github.com/FFmpeg/FFmpeg
+  docs: https://ffmpeg.org/documentation.html
+license: "LGPL 2.1+ ตั้งต้น · GPL เมื่อบิลด์พร้อมส่วน GPL"
+updated: 2026-11-03
+go: [ffmpeg]
+sources:
+  - title: "FFmpeg License and Legal Considerations"
+    url: https://ffmpeg.org/legal.html
+---
+## คืออะไร
+
+FFmpeg เป็นชุดเครื่องมือ command line สำหรับอ่าน แปลง ตัด ผสม และวัดไฟล์เสียงกับวิดีโอ แทบทุก pipeline ทำคลิปในเครื่องต้องใช้ ทั้งเรียกตรงและเรียกผ่านเครื่องมืออื่น ซอร์สหลักอยู่ที่ git.ffmpeg.org ส่วน GitHub เป็น mirror
+
+## ใช้ทำอะไรในงานของเรา
+
+- ปรับความดังรวมของคลิปให้ได้ระดับมาตรฐานของแพลตฟอร์ม (skill What If ตั้งไว้ที่ -14 LUFS)
+- ใช้ ffprobe อ่านความยาวและข้อมูลของไฟล์เสียงก่อนวางเวลา
+- รวมเสียงพากย์ เสียงประกอบ และภาพจาก [Remotion](/tools/remotion) เป็นไฟล์สุดท้าย
+- ใช้ร่วมกับ [Thai Voice](/skills/thai-jk-voice) และ [Captions Overlay](/skills/captions-overlay)
+
+## ไลเซนส์
+
+- ตั้งต้นเป็น LGPL 2.1 ขึ้นไป
+- ถ้าบิลด์พร้อมตัวเลือก GPL (เช่นมี libx264) ทั้งโปรแกรมจะเป็น GPL 2 ขึ้นไป
+- ถ้าบิลด์พร้อมส่วน nonfree จะแจกจ่ายไฟล์โปรแกรมนั้นต่อไม่ได้
+- การใช้ FFmpeg สร้างคลิปไม่ได้ทำให้คลิปของคุณติด GPL เงื่อนไขนี้เกี่ยวกับการแจกจ่ายตัวโปรแกรม ส่วนค่าสิทธิบัตรของ codec บางตัวเป็นเรื่องแยก ดูหน้ากฎหมายของ FFmpeg
+
+## ก่อนเริ่ม
+
+ติดตั้งผ่าน Homebrew, winget หรือตัวจัดการแพ็กเกจของ Linux และตรวจว่ามี ffprobe มาด้วย
