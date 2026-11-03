@@ -224,6 +224,8 @@ Vercel ไม่ได้ต่อ Git integration และ**ห้ามเป
 
 - ลำดับรับประกันโดย step ใน job เดียว: build พังหรือ migrate พัง = ไม่ deploy; migration ไม่รันถ้า build ยังไม่ผ่าน
 - Concurrency `production` ครั้งละหนึ่ง run และไม่ cancel กลางทาง; migration idempotent (checksum ledger + `pg_advisory_xact_lock` + transaction เดียว)
+- ก่อน plan มี `--check-url` ตรวจรูปแบบ `MIGRATION_DATABASE_URL` โดยไม่เชื่อมต่อและไม่พิมพ์ค่า: scheme postgres(ql), host `*.pooler.supabase.com` (ถ้าเป็น `db.<ref>.supabase.co` = Direct connection ซึ่งเป็น IPv6-only บน Free plan และ GitHub runner ต่อไม่ได้), port 5432, user `postgres.sgtyrndczwxijrubyyjw`
+- ถ้า plan/migrate ล้ม จะพิมพ์แค่ `FAILED phase=<config|dns|connect|tls|auth|query> code=<ENOTFOUND|ECONNREFUSED|SELF_SIGNED_CERT_IN_CHAIN|SQLSTATE_28P01|…>` ไม่มี host/user/ข้อความ error; run แรกหลัง merge PR #1 (41681816529) ล้มที่ plan ด้วย `FAILED` เปล่า ๆ ก่อนมี diagnostics นี้ ไม่มีอะไรถูก migrate/deploy
 - Plan (`scripts/accounts-migrate.ts --plan`): `BEGIN READ ONLY` อ่าน `schema_migrations` → pending, checksum mismatch (แก้ไฟล์ที่ apply แล้ว = **หยุดทั้งหมด** ให้ทำ migration ใหม่แทน), versions ใน ledger ที่ checkout ไม่มี (warning)
 - **Destructive gate** (`lib/accounts/migration-gate.ts`): สแกนเฉพาะ pending หา `DROP`, `DELETE`, `TRUNCATE`, `RENAME`, `UPDATE`, `ALTER COLUMN … TYPE`, `DISABLE`/`NO FORCE ROW LEVEL SECURITY`, `OR REPLACE`, `SET SCHEMA` (ไม่นับ comment/literal, FK `ON DELETE`, `FOR UPDATE`, trigger events, GRANT/REVOKE) เจอแล้ว push run จะ **fail ก่อน migrate/deploy** และพิมพ์วลีอนุมัติ เช่น `approve 0003_x`
   - อนุมัติ: เจ้าของ (`github.repository_owner`) กด Run workflow → Production บน `main` แล้วกรอก approval ตามวลีนั้นทุกตัวอักษร ไม่ใช่เจ้าของ/วลีไม่ตรง = ไม่รัน
