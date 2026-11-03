@@ -19,13 +19,15 @@
   "dependencies": {
     "@fontsource/anuphan": "^5.2.5",
     "@fontsource/archivo": "^5.2.5",
+    "@mdx-js/mdx": "3.1.1",
     "lucide-react": "^0.468.0",
     "next": "16.4.3",
     "next-auth": "4.24.15",
     "pg": "8.23.1",
     "react": "19.2.0",
     "react-dom": "19.2.0",
-    "shaders": "4.0.6"
+    "shaders": "4.0.6",
+    "yaml": "2.9.1"
   },
   "devDependencies": {
     "@playwright/test": "^1.56.0",
