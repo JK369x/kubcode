@@ -201,7 +201,7 @@ test("plan on a fresh database is read-only: no ledger, nothing created, every m
   assert.equal(flat.at(-1), "ROLLBACK", "plan never commits");
   assert.equal(flat.some((s) => /\b(CREATE|INSERT|UPDATE|DELETE|ALTER|DROP|GRANT|REVOKE)\b/i.test(s)), false, "no writes");
   assert.equal((await raw.query("SELECT to_regnamespace('kubcode_accounts') AS n")).rows[0].n, null, "schema not created");
-  assert.deepEqual(planMigrations(loadMigrations(), done).pending.map((m) => m.version), ["0001_accounts"]);
+  assert.deepEqual(planMigrations(loadMigrations(), done).pending.map((m) => m.version), ALL_VERSIONS);
   assert.deepEqual(rec.releases, [undefined]);
 });
 
@@ -233,10 +233,10 @@ test("migrations are idempotent and serialize under concurrent runners", async (
 
 test("plan after apply: ledger read under READ ONLY, nothing pending, drift detected without writing", async () => {
   const done = await readLedger(pool);
-  assert.deepEqual([...done.keys()], ["0001_accounts"]);
+  assert.deepEqual([...done.keys()], ALL_VERSIONS);
   assert.deepEqual(planMigrations(loadMigrations(), done).pending, []);
   const tampered = loadMigrations().map((m) => ({ ...m, checksum: "0".repeat(64) }));
-  assert.deepEqual(planMigrations(tampered, done).checksumMismatch, ["0001_accounts"]);
+  assert.deepEqual(planMigrations(tampered, done).checksumMismatch, ALL_VERSIONS);
   // A write attempted through the same read-only transaction shape must fail.
   const client = await pool.connect();
   try {
