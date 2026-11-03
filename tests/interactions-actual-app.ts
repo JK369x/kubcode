@@ -190,11 +190,32 @@ async function main() {
       channel: "chrome",
       args: [`--host-resolver-rules=MAP kubcode-ui.test 127.0.0.1:${port}`],
     });
+    // Enough threads for two pages, so pagination and the panel's own scroll
+    // are exercised (first page is 20 threads, newest first).
+    const seeder = (await db.pool.query("SELECT user_id FROM kubcode_accounts.user_identities WHERE subject = 'g-app-2'")).rows[0].user_id;
+    await db.pool.query(
+      `INSERT INTO kubcode_accounts.page_comments (user_id, page_kind, page_slug, body, body_hash, created_at)
+       SELECT $1, 'tool', 'remotion', 'ความเห็นตัวอย่างที่ ' || g, sha256(('seed ' || g)::bytea), now() - make_interval(mins => 200 - g)
+         FROM generate_series(1, 25) g`,
+      [seeder],
+    );
     try {
-      for (const viewport of [{ width: 1280, height: 900 }, { width: 390, height: 844 }]) {
-        const page = await browser.newPage({ viewport, colorScheme: viewport.width > 500 ? "dark" : "light" });
+      const runs = [
+        { width: 1280, height: 900, theme: "dark" },
+        { width: 1280, height: 900, theme: "light" },
+        { width: 390, height: 844, theme: "dark" },
+        { width: 390, height: 844, theme: "light" },
+      ] as const;
+      for (const run of runs) {
+        const desktop = run.width > 1000;
+        const page = await browser.newPage({ viewport: { width: run.width, height: run.height } });
+        await page.addInitScript((t) => {
+          try {
+            localStorage.setItem("jk-theme", t);
+          } catch {}
+        }, run.theme);
         const errors: string[] = [];
-        page.on("console", (m) => m.type() === "error" && errors.push(m.text()));
+        page.on("console", (m) => m.type() === "error" && !m.text().startsWith("Failed to load resource") && errors.push(m.text()));
         // Chrome drops cookie overrides on continue(), so the request is
         // replayed from Node with the edge headers and fulfilled as-is.
         await page.route("http://kubcode-ui.test/**", async (route) => {
@@ -213,33 +234,68 @@ async function main() {
           await route.fulfill({ response });
         });
         await page.goto("http://kubcode-ui.test/tools/remotion");
-        const star = page.getByRole("button", { name: /ให้ดาว/ });
-        await star.waitFor({ timeout: 15000 }).catch(async (e) => {
-          await page.screenshot({ path: ".qa/interactions-ui-failure.png", fullPage: true });
-          console.error("UI debug:", errors, (await page.locator("main").innerText()).slice(-600));
-          throw e;
-        });
+        const label = `${run.width}-${run.theme}`;
+
+        // Desktop uses the rail; mobile opens the bottom sheet.
+        const starScope = desktop ? page.locator(".page-rail") : page.locator("[class*=mobileBar]");
+        const star = starScope.getByRole("button", { name: /ให้ดาว/ });
+        await star.waitFor({ timeout: 15000 });
         await star.click();
-        await page.getByRole("button", { name: "ให้ดาวแล้ว" }).waitFor();
-        const text = `ทดสอบจากเบราว์เซอร์ ${viewport.width}`;
-        await page.getByLabel(/เขียนคอมเมนต์เกี่ยวกับ/).fill(text);
-        await page.getByRole("button", { name: "ส่ง", exact: true }).click();
-        await page.getByText(text).waitFor();
-        await page.getByText(/แสดงในชื่อ “App Member/).waitFor();
-        await page.screenshot({ path: `.qa/interactions-ui-${viewport.width}.png`, fullPage: true });
-        await page.getByRole("button", { name: "ลบ" }).first().click();
-        await page.getByText(text).waitFor({ state: "detached" });
-        await page.getByRole("button", { name: "ให้ดาวแล้ว" }).click();
-        await page.getByRole("button", { name: "ให้ดาว", exact: true }).waitFor();
-        assert.deepEqual(errors, [], `console errors at ${viewport.width}px`);
+        await starScope.getByRole("button", { name: "ให้ดาวแล้ว" }).waitFor();
+        let panel = page.locator(".page-rail");
+        if (!desktop) {
+          await page.getByRole("button", { name: /^คอมเมนต์/ }).click();
+          panel = page.getByRole("dialog");
+          await panel.waitFor();
+        }
+        const scroller = panel.locator("[data-comments-scroll]");
+        await scroller.getByText("ความเห็นตัวอย่างที่ 25").waitFor();
+        const threads = () => scroller.locator(":scope > ol > li").count();
+        assert.equal(await threads(), 20, `${label}: first page holds 20 threads`);
+        const order = await scroller.locator(":scope > ol > li").allInnerTexts();
+        const at = (n: number) => order.findIndex((t) => t.includes(`ความเห็นตัวอย่างที่ ${n}\n`) || t.endsWith(`ความเห็นตัวอย่างที่ ${n}`));
+        assert.ok(at(25) >= 0 && at(25) < at(24) && at(24) < at(23), `${label}: newest thread first`);
+
+        // The panel scrolls on its own; the page stays put.
+        const pageY = await page.evaluate(() => window.scrollY);
+        const moved = await scroller.evaluate((el) => {
+          el.scrollTop = el.scrollHeight;
+          return el.scrollTop;
+        });
+        assert.ok(moved > 0, `${label}: comment list scrolls inside its panel`);
+        assert.equal(await page.evaluate(() => window.scrollY), pageY, `${label}: page did not scroll with the panel`);
+        await scroller.getByRole("button", { name: "แสดงเพิ่ม" }).click();
+        await scroller.getByText("ความเห็นตัวอย่างที่ 1", { exact: true }).waitFor();
+        assert.ok((await threads()) > 20, `${label}: แสดงเพิ่ม loads older threads`);
+        await scroller.evaluate((el) => (el.scrollTop = 0));
+
+        const text = `ทดสอบจากเบราว์เซอร์ ${label}`;
+        await panel.getByLabel(/เขียนคอมเมนต์เกี่ยวกับ/).fill(text);
+        await panel.getByRole("button", { name: "ส่ง", exact: true }).click();
+        await scroller.getByText(text).waitFor();
+        await panel.getByText(/แสดงในชื่อ “App Member/).waitFor();
+        await page.waitForTimeout(400);
+        await page.screenshot({ path: `.qa/interactions-ui-${label}.png` });
+        await scroller.getByRole("button", { name: "ลบ" }).first().click();
+        await scroller.getByText(text).waitFor({ state: "detached" });
+        if (!desktop) {
+          await page.keyboard.press("Escape");
+          await panel.waitFor({ state: "hidden" });
+        }
+        await starScope.getByRole("button", { name: "ให้ดาวแล้ว" }).click();
+        await starScope.getByRole("button", { name: "ให้ดาว", exact: true }).waitFor();
+        assert.deepEqual(errors, [], `console errors at ${label}`);
         await page.close();
-        // Keep the 20 s comment interval out of the next viewport's way.
-        await db.pool.query("UPDATE kubcode_accounts.page_comments SET created_at = created_at - interval '1 minute'");
+        // Keep the 20 s comment interval out of the next run's way.
+        await db.pool.query(
+          `UPDATE kubcode_accounts.page_comments SET created_at = created_at - interval '1 minute'
+            WHERE user_id = (SELECT user_id FROM kubcode_accounts.user_identities WHERE subject = 'g-app-5')`,
+        );
       }
     } finally {
       await browser.close();
     }
-    step("browser UI: star, comment, delete, unstar at desktop (dark) and mobile (light)");
+    step("browser UI (desktop rail and mobile sheet, light + dark): star, 20-thread pages + แสดงเพิ่ม, panel scrolls without moving the page, comment, delete, unstar");
 
     writeFileSync(".qa/interactions-actual-app.json", JSON.stringify({ status: "passed", fictionalMembers: true, steps }, null, 2));
     console.log(`PASS interactions actual app (${steps.length} steps)\n- ${steps.join("\n- ")}`);

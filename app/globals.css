@@ -2023,20 +2023,31 @@ img.tool-mark {
 }
 .reading-grid {
   display: grid;
-  grid-template-columns: minmax(0, 720px);
+  grid-template-columns: minmax(0, 760px);
   gap: 64px;
+}
+.reading-col {
+  max-width: 720px;
   margin-top: 36px;
 }
 .reading-after {
   max-width: 720px;
 }
-.toc-col {
-  position: sticky;
-  top: 6rem;
-  align-self: start;
-  max-height: calc(100vh - 8rem);
+/* Right rail (wide screens): star, a fixed-height TOC that follows the
+   reader, then comments filling what is left of the viewport. */
+.page-rail {
+  display: none;
+  /* Never let the browser anchor page scroll to rail content: when the TOC
+     box scrolls itself, the page must not be "corrected". */
+  overflow-anchor: none;
+}
+.toc-scroll {
+  max-height: 19rem;
   overflow: auto;
   overscroll-behavior: contain;
+  padding: 10px 0;
+  /* Subtle fade where the list continues above or below. */
+  mask-image: linear-gradient(to bottom, transparent, #000 14px, #000 calc(100% - 14px), transparent);
 }
 .toc-label {
   display: inline-block;
@@ -2089,17 +2100,41 @@ img.tool-mark {
 .toc-mobile .toc {
   margin-top: 10px;
 }
-@media (min-width: 1100px) {
-  .reading-grid.has-toc {
-    grid-template-columns: minmax(0, 720px) 232px;
+@media (min-width: 1180px) {
+  .reading-page {
+    max-width: 1200px;
+  }
+  .reading-grid.has-rail {
+    grid-template-columns: minmax(0, 760px) 340px;
+    gap: 48px;
   }
   .toc-mobile {
     display: none;
   }
-}
-@media (max-width: 1099px) {
-  .toc-col {
-    display: none;
+  .page-rail {
+    position: sticky;
+    top: 6rem;
+    align-self: start;
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+    min-height: 0;
+  }
+  /* With comments, the rail is exactly the viewport below the header. */
+  .page-rail--full {
+    height: calc(100vh - 8rem);
+  }
+  .rail-toc {
+    flex: none;
+  }
+  .rail-toc .toc-label {
+    margin-bottom: 4px;
+  }
+  .detail-with-rail {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 340px;
+    gap: 48px;
+    align-items: start;
   }
 }
 .prose {

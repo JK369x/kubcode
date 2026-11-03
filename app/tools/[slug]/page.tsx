@@ -6,7 +6,6 @@ import { CATEGORY_LABELS } from "@/lib/kb-labels";
 import { renderMdx } from "@/lib/mdx";
 import { breadcrumbJsonLd, pageMetadata, toolJsonLd } from "@/lib/seo";
 import { JsonLd } from "@/components/JsonLd";
-import { PageInteractions } from "@/components/PageInteractions";
 import { ReadingPage } from "@/components/ReadingPage";
 import { RelatedLinks } from "@/components/RelatedLinks";
 import { SourceCredits } from "@/components/SourceCredits";
@@ -47,6 +46,7 @@ export default async function ToolPage({ params }: Props) {
       tags={t.tags}
       allTags={content.tags}
       toc={toc}
+      interactions={{ kind: "tool", slug: t.slug, title: t.name }}
       intro={
         <dl className="tool-facts">
           <div>
@@ -74,7 +74,6 @@ export default async function ToolPage({ params }: Props) {
             headings={{ article: "ใช้ในบทความ", skill: "ใช้กับ skill ของเรา", tool: "ใช้คู่กับ" }}
           />
           <SourceCredits page={t} />
-          <PageInteractions kind="tool" slug={t.slug} title={t.name} />
         </>
       }
     >

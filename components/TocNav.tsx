@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { TocItem } from "@/lib/mdx";
 
 const reducedMotion = () =>
@@ -10,8 +10,26 @@ const reducedMotion = () =>
  * (aria-current) using an IntersectionObserver; clicks scroll smoothly unless
  * the reader prefers reduced motion.
  */
-export function TocNav({ items, spy }: { items: TocItem[]; spy: boolean }) {
+export function TocNav({ items, spy, follow = false }: { items: TocItem[]; spy: boolean; follow?: boolean }) {
   const [active, setActive] = useState<string | null>(null);
+  const list = useRef<HTMLDivElement>(null);
+
+  // Keep the current entry visible by scrolling the TOC box itself. Only the
+  // box's scrollTop changes; the page never moves.
+  useEffect(() => {
+    const box = list.current;
+    if (!follow || !box || !active) return;
+    const item = box.querySelector<HTMLElement>('[aria-current="location"]');
+    if (!item) return;
+    const pad = 24;
+    const b = box.getBoundingClientRect();
+    const r = item.getBoundingClientRect();
+    let top = box.scrollTop;
+    if (r.top < b.top + pad) top -= b.top + pad - r.top;
+    else if (r.bottom > b.bottom - pad) top += r.bottom - (b.bottom - pad);
+    else return;
+    box.scrollTo({ top, behavior: reducedMotion() ? "auto" : "smooth" });
+  }, [active, follow]);
 
   useEffect(() => {
     if (!spy) return;
@@ -40,7 +58,7 @@ export function TocNav({ items, spy }: { items: TocItem[]; spy: boolean }) {
     return () => observer.disconnect();
   }, [items, spy]);
 
-  return (
+  const nav = (
     <ol className="toc">
       {items.map((item) => (
         <li key={item.id} className={item.depth === 3 ? "toc-sub" : undefined}>
@@ -52,7 +70,7 @@ export function TocNav({ items, spy }: { items: TocItem[]; spy: boolean }) {
               if (!target) return;
               e.preventDefault();
               target.scrollIntoView({ behavior: reducedMotion() ? "auto" : "smooth", block: "start" });
-              history.replaceState(null, "", `#${item.id}`);
+              history.replaceState(history.state, "", `#${item.id}`); // keep Next router state
               if (spy) setActive(item.id);
               target.focus({ preventScroll: true });
             }}
@@ -62,5 +80,12 @@ export function TocNav({ items, spy }: { items: TocItem[]; spy: boolean }) {
         </li>
       ))}
     </ol>
+  );
+  return follow ? (
+    <div className="toc-scroll" ref={list} data-toc-scroll>
+      {nav}
+    </div>
+  ) : (
+    nav
   );
 }

@@ -72,7 +72,7 @@ async function main() {
     {
       const { page, errors } = await open({ width: 1280, theme: "dark" });
       await page.goto(base + ARTICLE, { waitUntil: "networkidle" });
-      const toc = page.locator(".toc-col");
+      const toc = page.locator(".page-rail");
       await toc.waitFor();
       assert.equal(await page.locator(".toc-mobile").isVisible(), false);
       const entries = await toc.locator("a").allInnerTexts();
@@ -86,13 +86,51 @@ async function main() {
         const h = document.getElementById("ซับไทย");
         return h && Math.abs(h.getBoundingClientRect().top - 96) < 40;
       });
-      await page.waitForFunction(() => document.querySelector('.toc-col a[aria-current="location"]')?.textContent === "ซับไทย");
+      await page.waitForFunction(() => document.querySelector('.page-rail a[aria-current="location"]')?.textContent === "ซับไทย");
       checks.push("TOC click scrolls to the heading, updates the hash and marks it current");
 
       await page.evaluate(() => document.getElementById("ลำดับการตั้งค่า")!.scrollIntoView({ block: "start" }));
       await page.mouse.wheel(0, 10);
-      await page.waitForFunction(() => document.querySelector('.toc-col a[aria-current="location"]')?.textContent === "ลำดับการตั้งค่า");
+      await page.waitForFunction(() => document.querySelector('.page-rail a[aria-current="location"]')?.textContent === "ลำดับการตั้งค่า");
       checks.push("scroll-spy follows manual scrolling");
+
+      // The TOC box has a fixed height, scrolls itself to keep the current
+      // entry visible, and never moves the page while doing so.
+      const box = page.locator("[data-toc-scroll]");
+      const boxHeight = await box.evaluate((el) => el.getBoundingClientRect().height);
+      assert.ok(boxHeight <= 19 * 16 + 1, `toc box ${boxHeight}px`);
+      assert.ok(await box.evaluate((el) => el.scrollHeight > el.clientHeight), "this article's TOC overflows its box");
+      const ids = await page.evaluate(() => [...document.querySelectorAll(".prose h2, .prose h3")].map((h) => h.id));
+      // Earlier steps use smooth scrolling; start each measurement from rest.
+      const settle = () =>
+        page.evaluate(async () => {
+          let last = -1;
+          for (let still = 0; still < 6; ) {
+            await new Promise((r) => setTimeout(r, 50));
+            still = Math.round(scrollY) === last ? still + 1 : 0;
+            last = Math.round(scrollY);
+          }
+        });
+      for (const id of ids) {
+        await settle();
+        const y = await page.evaluate((hid) => {
+          const h = document.getElementById(hid)!;
+          const target = Math.round(window.scrollY + h.getBoundingClientRect().top - 110);
+          window.scrollTo({ top: target, behavior: "instant" as ScrollBehavior });
+          return Math.round(window.scrollY);
+        }, id);
+        await page.waitForFunction((hid) => document.querySelector('[data-toc-scroll] a[aria-current="location"]')?.getAttribute("href") === `#${hid}`, id);
+        await page.waitForTimeout(450); // let the TOC box finish its smooth scroll
+        const state = await page.evaluate(() => {
+          const b = document.querySelector("[data-toc-scroll]")!.getBoundingClientRect();
+          const a = document.querySelector('[data-toc-scroll] a[aria-current="location"]')!.getBoundingClientRect();
+          return { inView: a.top >= b.top - 1 && a.bottom <= b.bottom + 1, scrollY: Math.round(window.scrollY) };
+        });
+        assert.ok(state.inView, `active TOC entry for ${id} stays visible in its box`);
+        assert.equal(state.scrollY, y, `TOC auto-scroll for ${id} left the page where the reader put it (${y} → ${state.scrollY})`);
+      }
+      assert.ok(await box.evaluate((el) => el.scrollTop > 0), "the box scrolled to follow later sections");
+      checks.push("fixed-height TOC follows the reader (active entry always visible) without moving the page");
 
       const copy = page.locator(".code-block .code-copy").first();
       await copy.scrollIntoViewIfNeeded();
@@ -186,13 +224,49 @@ async function main() {
       await page.goto(base + "/tools", { waitUntil: "networkidle" });
       await page.getByRole("link", { name: /Remotion — เขียนวิดีโอด้วย React/ }).click();
       await page.waitForURL("**/tools/remotion");
-      await page.locator(".toc-col").waitFor();
+      await page.locator(".page-rail").waitFor();
+      await page.locator(".page-rail").getByText("ดาวและคอมเมนต์ยังไม่เปิดใช้งานบนเซิร์ฟเวอร์นี้").waitFor();
+      const railBottom = () => page.locator(".page-rail").evaluate((el) => el.getBoundingClientRect().bottom);
+      assert.ok((await railBottom()) <= 900, `rail fits the first screen (bottom ${await railBottom()})`);
+      await page.evaluate(() => window.scrollTo({ top: 1500, behavior: "instant" as ScrollBehavior }));
+      assert.ok((await railBottom()) <= 900, `rail fits the viewport while reading (bottom ${await railBottom()})`);
+      await page.evaluate(() => window.scrollTo({ top: 0, behavior: "instant" as ScrollBehavior }));
+      assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth), false);
       await page.waitForTimeout(900); // let the title morph finish
       await page.screenshot({ path: ".qa/reading-tool-1280-dark.png", fullPage: false });
       assert.deepEqual(errors.filter((e) => !/api\/interactions|503/.test(e)), []);
       await page.context().close();
     }
-    checks.push("tool pages use the same reading layout");
+    checks.push("tool pages use the same rail; with interactions off it says so in place and fits the viewport");
+
+    // Mobile tool page: floating comments button opens a modal bottom sheet.
+    {
+      const { page, errors } = await open({ width: 390, theme: "dark" });
+      await page.goto(base + "/tools/remotion", { waitUntil: "networkidle" });
+      assert.equal(await page.locator(".page-rail").isVisible(), false);
+      const fab = page.getByRole("button", { name: /^คอมเมนต์/ });
+      await fab.click();
+      const sheet = page.getByRole("dialog");
+      await sheet.waitFor();
+      assert.ok(await sheet.evaluate((d) => d.contains(document.activeElement)), "focus moves into the sheet");
+      await sheet.getByText("ดาวและคอมเมนต์ยังไม่เปิดใช้งานบนเซิร์ฟเวอร์นี้").waitFor();
+      await page.keyboard.press("Tab");
+      await page.keyboard.press("Tab");
+      assert.ok(await sheet.evaluate((d) => d.contains(document.activeElement)), "focus stays trapped in the sheet");
+      await page.screenshot({ path: ".qa/reading-390-dark-sheet.png" });
+      await page.keyboard.press("Escape");
+      await sheet.waitFor({ state: "hidden" });
+      assert.equal(await fab.evaluate((b) => b === document.activeElement), true, "focus returns to the button");
+      assert.equal(new URL(page.url()).pathname, "/tools/remotion", "closing pops only the sheet's history entry");
+      await fab.click();
+      await sheet.waitFor();
+      await page.goBack();
+      await sheet.waitFor({ state: "hidden" });
+      assert.equal(new URL(page.url()).pathname, "/tools/remotion", "browser back closes the sheet and stays on the page");
+      assert.deepEqual(errors, []);
+      await page.context().close();
+    }
+    checks.push("mobile: comments button opens a bottom sheet; focus trapped and restored; Esc and back close it");
 
     console.log(`PASS reading browser (${checks.length} checks)\n- ${checks.join("\n- ")}`);
   } finally {
