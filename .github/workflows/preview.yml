@@ -66,12 +66,16 @@ jobs:
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
         run: |
           stage="$RUNNER_TEMP/deploy"
-          mkdir -p "$stage" && cp -R .vercel "$stage/"
+          # Whole tree minus .git: prebuilt functions reference node_modules files.
+          mkdir -p "$stage" && rsync -a --exclude .git ./ "$stage/"
           url=$(vercel deploy --prebuilt --target=preview --cwd "$stage" --token "$VERCEL_TOKEN")
           host=${url#https://}
           # An untargeted first deploy once became production: always verify.
-          target=$(curl -fsS -H "Authorization: Bearer $VERCEL_TOKEN" \
-            "https://api.vercel.com/v13/deployments/${host}?teamId=${VERCEL_ORG_ID}" | jq -r '.target // "preview"')
+          info=$(curl -fsS -H "Authorization: Bearer $VERCEL_TOKEN" \
+            "https://api.vercel.com/v13/deployments/${host}?teamId=${VERCEL_ORG_ID}")
+          target=$(jq -r '.target // "preview"' <<<"$info")
+          state=$(jq -r '.readyState' <<<"$info")
+          [ "$state" = "READY" ] || { echo "::error::preview deployment is $state, not READY ($url)"; exit 1; }
           if [ "$target" = "production" ]; then
             echo "::error::preview deploy returned a PRODUCTION deployment ($url); investigate before merging"
             exit 1
