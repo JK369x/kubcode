@@ -1,0 +1,1028 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-11-02T09:57:53Z",
+  "title": "kubcode — living library / full-media revision",
+  "extensions": {
+    "colorMeta": {
+      "dark-bg": {
+        "role": "neutral",
+        "displayName": "Dark Bg"
+      },
+      "dark-surface": {
+        "role": "neutral",
+        "displayName": "Dark Surface"
+      },
+      "dark-surface-soft": {
+        "role": "neutral",
+        "displayName": "Dark Surface Soft"
+      },
+      "dark-ink": {
+        "role": "neutral",
+        "displayName": "Dark Ink"
+      },
+      "dark-muted": {
+        "role": "neutral",
+        "displayName": "Dark Muted"
+      },
+      "dark-line": {
+        "role": "neutral",
+        "displayName": "Dark Line"
+      },
+      "primary": {
+        "role": "primary",
+        "displayName": "Primary"
+      },
+      "dark-field": {
+        "role": "primary",
+        "displayName": "Dark Field"
+      },
+      "on-field": {
+        "role": "neutral",
+        "displayName": "On Field"
+      },
+      "dark-selected": {
+        "role": "neutral",
+        "displayName": "Dark Selected"
+      },
+      "dark-selected-ink": {
+        "role": "neutral",
+        "displayName": "Dark Selected Ink"
+      },
+      "dark-media": {
+        "role": "neutral",
+        "displayName": "Dark Media"
+      },
+      "light-bg": {
+        "role": "neutral",
+        "displayName": "Light Bg"
+      },
+      "light-surface": {
+        "role": "neutral",
+        "displayName": "Light Surface"
+      },
+      "light-surface-soft": {
+        "role": "neutral",
+        "displayName": "Light Surface Soft"
+      },
+      "light-ink": {
+        "role": "neutral",
+        "displayName": "Light Ink"
+      },
+      "light-muted": {
+        "role": "neutral",
+        "displayName": "Light Muted"
+      },
+      "light-line": {
+        "role": "neutral",
+        "displayName": "Light Line"
+      },
+      "light-purple": {
+        "role": "primary",
+        "displayName": "Light Purple"
+      },
+      "light-field": {
+        "role": "primary",
+        "displayName": "Light Field"
+      },
+      "light-selected": {
+        "role": "neutral",
+        "displayName": "Light Selected"
+      },
+      "light-selected-ink": {
+        "role": "neutral",
+        "displayName": "Light Selected Ink"
+      },
+      "light-media": {
+        "role": "neutral",
+        "displayName": "Light Media"
+      }
+    },
+    "typographyMeta": {
+      "body": {
+        "displayName": "Body"
+      },
+      "headline": {
+        "displayName": "Headline"
+      },
+      "brand": {
+        "displayName": "Brand"
+      },
+      "feature-title": {
+        "displayName": "Feature Title"
+      },
+      "card-title": {
+        "displayName": "Card Title"
+      },
+      "tool-label": {
+        "displayName": "Tool Label"
+      },
+      "variant-label": {
+        "displayName": "Variant Label"
+      },
+      "action": {
+        "displayName": "Action"
+      },
+      "reading-headline": {
+        "displayName": "Reading Headline"
+      },
+      "reading-body": {
+        "displayName": "Reading Body"
+      }
+    },
+    "shadows": [
+      {
+        "name": "overlapping real hero artwork",
+        "source": "components/KineticHero.module.css",
+        "treatment": "bounded offset/soft blur, no ornamental zero-offset glow"
+      }
+    ],
+    "motion": [
+      {
+        "name": "hero assembly",
+        "durationMaxMs": 785,
+        "source": "components/KineticHero.module.css"
+      },
+      {
+        "name": "artwork drift/parallax",
+        "gates": [
+          "pause",
+          "reduced motion",
+          "offscreen",
+          "document visibility"
+        ],
+        "source": "components/KineticHero.tsx"
+      }
+    ],
+    "breakpoints": [
+      {
+        "name": "compact-desktop",
+        "value": "1150px",
+        "query": "(max-width: 1150px)"
+      },
+      {
+        "name": "tablet",
+        "value": "850px",
+        "query": "(max-width: 850px)"
+      },
+      {
+        "name": "mobile",
+        "value": "560px",
+        "query": "(max-width: 560px)"
+      }
+    ],
+    "focus": {
+      "value": "3px solid var(--purple)",
+      "offset": "4px",
+      "targets": [
+        "button",
+        "a",
+        "input",
+        "summary",
+        "[tabindex=\"-1\"]"
+      ]
+    },
+    "themes": {
+      "source": "app/globals.css",
+      "selectors": {
+        "dark": ":root",
+        "light": ":root[data-theme=\"light\"]"
+      },
+      "default": "dark",
+      "persistenceKey": "jk-theme",
+      "tokenMapping": {
+        "primary": "--purple (dark)",
+        "light-purple": "--purple (light)",
+        "on-field": "--on-field (inherited in both themes)",
+        "remainingThemeTokens": "dark-/light- prefix removed, then --suffix"
+      },
+      "specimenContract": "Inherit the exact source semantic custom properties and local Anuphan/Archivo fonts. Dark fallbacks keep snippets usable when no properties are supplied. No global stylesheet/reset is required."
+    },
+    "evidence": {
+      "revision": "2026-11-02 full-media correction",
+      "sourceOnlyCI": ".qa/source-only-ci-result.json",
+      "renderedRoutes": ".qa/project-visual-audit/report.json",
+      "nativePlayback": ".qa/project-visual-audit/native-playback.json",
+      "independentReview": ".qa/final-media-review-v2.md",
+      "legacySpecimensArchive": ".qa/design-before-media-correction.json",
+      "unchangedPrimitiveSpecimens": 7,
+      "newFamiliesSpecimenStatus": "source/token documented; no new standalone HTML export claimed",
+      "scope": "local preview; no hosted-CI, deployment, ready downloads, rights clearance or user creative approval claim"
+    },
+    "documentTokens": {
+      "$schema": "https://www.designtokens.org/schemas/2025.10/format.json",
+      "$description": "Living library: kinetic work stage, full-cover media cards, neutral unavailable downloads, purple dark/light navigation.",
+      "color": {
+        "$type": "color",
+        "dark-bg": {
+          "$value": {
+            "colorSpace": "srgb",
+            "components": [
+              0.063,
+              0.055,
+              0.082
+            ],
+            "hex": "#100e15"
+          }
+        },
+        "dark-surface": {
+          "$value": {
+            "colorSpace": "srgb",
+            "components": [
+              0.106,
+              0.09,
+              0.133
+            ],
+            "hex": "#1b1722"
+          }
+        },
+        "dark-surface-soft": {
+          "$value": {
+            "colorSpace": "srgb",
+            "components": [
+              0.137,
+              0.114,
+              0.176
+            ],
+            "hex": "#231d2d"
+          }
+        },
+        "dark-ink": {
+          "$value": {
+            "colorSpace": "srgb",
+            "components": [
+              0.961,
+              0.945,
+              0.984
+            ],
+            "hex": "#f5f1fb"
+          }
+        },
+        "dark-muted": {
+          "$value": {
+            "colorSpace": "srgb",
+            "components": [
+              0.722,
+              0.678,
+              0.792
+            ],
+            "hex": "#b8adca"
+          }
+        },
+        "dark-line": {
+          "$value": {
+            "colorSpace": "srgb",
+            "components": [
+              0.22,
+              0.188,
+              0.247
+            ],
+            "hex": "#38303f"
+          }
+        },
+        "primary": {
+          "$value": {
+            "colorSpace": "srgb",
+            "components": [
+              0.733,
+              0.596,
+              1
+            ],
+            "hex": "#bb98ff"
+          }
+        },
+        "dark-field": {
+          "$value": {
+            "colorSpace": "srgb",
+            "components": [
+              0.424,
+              0.22,
+              0.714
+            ],
+            "hex": "#6c38b6"
+          }
+        },
+        "on-field": {
+          "$value": {
+            "colorSpace": "srgb",
+            "components": [
+              1,
+              1,
+              1
+            ],
+            "hex": "#ffffff"
+          }
+        },
+        "dark-selected": {
+          "$value": {
+            "colorSpace": "srgb",
+            "components": [
+              0.82,
+              0.725,
+              1
+            ],
+            "hex": "#d1b9ff"
+          }
+        },
+        "dark-selected-ink": {
+          "$value": {
+            "colorSpace": "srgb",
+            "components": [
+              0.161,
+              0.086,
+              0.251
+            ],
+            "hex": "#291640"
+          }
+        },
+        "dark-media": {
+          "$value": {
+            "colorSpace": "srgb",
+            "components": [
+              0.039,
+              0.035,
+              0.055
+            ],
+            "hex": "#0a090e"
+          }
+        },
+        "light-bg": {
+          "$value": {
+            "colorSpace": "srgb",
+            "components": [
+              0.98,
+              0.973,
+              0.992
+            ],
+            "hex": "#faf8fd"
+          }
+        },
+        "light-surface": {
+          "$value": {
+            "colorSpace": "srgb",
+            "components": [
+              1,
+              1,
+              1
+            ],
+            "hex": "#ffffff"
+          }
+        },
+        "light-surface-soft": {
+          "$value": {
+            "colorSpace": "srgb",
+            "components": [
+              0.937,
+              0.914,
+              0.973
+            ],
+            "hex": "#efe9f8"
+          }
+        },
+        "light-ink": {
+          "$value": {
+            "colorSpace": "srgb",
+            "components": [
+              0.153,
+              0.11,
+              0.204
+            ],
+            "hex": "#271c34"
+          }
+        },
+        "light-muted": {
+          "$value": {
+            "colorSpace": "srgb",
+            "components": [
+              0.424,
+              0.373,
+              0.49
+            ],
+            "hex": "#6c5f7d"
+          }
+        },
+        "light-line": {
+          "$value": {
+            "colorSpace": "srgb",
+            "components": [
+              0.878,
+              0.851,
+              0.914
+            ],
+            "hex": "#e0d9e9"
+          }
+        },
+        "light-purple": {
+          "$value": {
+            "colorSpace": "srgb",
+            "components": [
+              0.443,
+              0.212,
+              0.725
+            ],
+            "hex": "#7136b9"
+          }
+        },
+        "light-field": {
+          "$value": {
+            "colorSpace": "srgb",
+            "components": [
+              0.443,
+              0.212,
+              0.725
+            ],
+            "hex": "#7136b9"
+          }
+        },
+        "light-selected": {
+          "$value": {
+            "colorSpace": "srgb",
+            "components": [
+              0.914,
+              0.859,
+              1
+            ],
+            "hex": "#e9dbff"
+          }
+        },
+        "light-selected-ink": {
+          "$value": {
+            "colorSpace": "srgb",
+            "components": [
+              0.231,
+              0.114,
+              0.376
+            ],
+            "hex": "#3b1d60"
+          }
+        },
+        "light-media": {
+          "$value": {
+            "colorSpace": "srgb",
+            "components": [
+              0.094,
+              0.075,
+              0.122
+            ],
+            "hex": "#18131f"
+          }
+        },
+        "hero-dark": {
+          "$value": {
+            "colorSpace": "srgb",
+            "components": [
+              0.173,
+              0.082,
+              0.286
+            ],
+            "hex": "#2c1549"
+          }
+        },
+        "hero-dark-ink": {
+          "$value": {
+            "colorSpace": "srgb",
+            "components": [
+              0.961,
+              0.945,
+              0.984
+            ],
+            "hex": "#f5f1fb"
+          }
+        },
+        "hero-dark-muted": {
+          "$value": {
+            "colorSpace": "srgb",
+            "components": [
+              0.839,
+              0.776,
+              0.914
+            ],
+            "hex": "#d6c6e9"
+          }
+        },
+        "hero-light": {
+          "$value": {
+            "colorSpace": "srgb",
+            "components": [
+              0.922,
+              0.878,
+              0.98
+            ],
+            "hex": "#ebe0fa"
+          }
+        },
+        "hero-light-ink": {
+          "$value": {
+            "colorSpace": "srgb",
+            "components": [
+              0.165,
+              0.071,
+              0.255
+            ],
+            "hex": "#2a1241"
+          }
+        },
+        "hero-light-muted": {
+          "$value": {
+            "colorSpace": "srgb",
+            "components": [
+              0.349,
+              0.255,
+              0.424
+            ],
+            "hex": "#59416c"
+          }
+        },
+        "card-media-bg": {
+          "$value": {
+            "colorSpace": "srgb",
+            "components": [
+              0.047,
+              0.043,
+              0.063
+            ],
+            "hex": "#0c0b10"
+          }
+        },
+        "card-media-ink": {
+          "$value": {
+            "colorSpace": "srgb",
+            "components": [
+              1,
+              1,
+              1
+            ],
+            "hex": "#ffffff"
+          }
+        },
+        "media-action-bg": {
+          "$value": {
+            "colorSpace": "srgb",
+            "components": [
+              0.141,
+              0.137,
+              0.153
+            ],
+            "hex": "#242327"
+          }
+        },
+        "media-action-ink": {
+          "$value": {
+            "colorSpace": "srgb",
+            "components": [
+              0.843,
+              0.827,
+              0.867
+            ],
+            "hex": "#d7d3dd"
+          }
+        },
+        "media-action-state": {
+          "$value": {
+            "colorSpace": "srgb",
+            "components": [
+              0.741,
+              0.71,
+              0.784
+            ],
+            "hex": "#bdb5c8"
+          }
+        },
+        "media-action-light-bg": {
+          "$value": {
+            "colorSpace": "srgb",
+            "components": [
+              0.925,
+              0.922,
+              0.941
+            ],
+            "hex": "#ecebf0"
+          }
+        },
+        "media-action-light-ink": {
+          "$value": {
+            "colorSpace": "srgb",
+            "components": [
+              0.361,
+              0.333,
+              0.4
+            ],
+            "hex": "#5c5566"
+          }
+        }
+      },
+      "spacing": {
+        "$type": "dimension",
+        "gap-xs": {
+          "$value": {
+            "value": 6,
+            "unit": "px"
+          }
+        },
+        "gap-sm": {
+          "$value": {
+            "value": 8,
+            "unit": "px"
+          }
+        },
+        "gap-md": {
+          "$value": {
+            "value": 12,
+            "unit": "px"
+          }
+        },
+        "inset-sm": {
+          "$value": {
+            "value": 18,
+            "unit": "px"
+          }
+        },
+        "inset-md": {
+          "$value": {
+            "value": 20,
+            "unit": "px"
+          }
+        },
+        "gap-lg": {
+          "$value": {
+            "value": 24,
+            "unit": "px"
+          }
+        },
+        "section-sm": {
+          "$value": {
+            "value": 30,
+            "unit": "px"
+          }
+        },
+        "section-md": {
+          "$value": {
+            "value": 32,
+            "unit": "px"
+          }
+        },
+        "detail-gap": {
+          "$value": {
+            "value": 55,
+            "unit": "px"
+          }
+        },
+        "page-inset": {
+          "$value": {
+            "value": 4.5,
+            "unit": "%"
+          }
+        },
+        "mobile-inset": {
+          "$value": {
+            "value": 5,
+            "unit": "%"
+          }
+        }
+      },
+      "rounded": {
+        "$type": "dimension",
+        "surface": {
+          "$value": {
+            "value": 22,
+            "unit": "px"
+          }
+        },
+        "hero-stage": {
+          "$value": {
+            "value": 24,
+            "unit": "px"
+          }
+        },
+        "media-action": {
+          "$value": {
+            "value": 12,
+            "unit": "px"
+          }
+        },
+        "compact-surface": {
+          "$value": {
+            "value": 19,
+            "unit": "px"
+          }
+        },
+        "compact-stage": {
+          "$value": {
+            "value": 14,
+            "unit": "px"
+          }
+        },
+        "control": {
+          "$value": {
+            "value": 12,
+            "unit": "px"
+          }
+        },
+        "pill": {
+          "$value": {
+            "value": 999,
+            "unit": "px"
+          }
+        }
+      },
+      "typography": {
+        "body": {
+          "$type": "typography",
+          "$value": {
+            "fontFamily": "Anuphan, sans-serif",
+            "fontSize": {
+              "value": 15,
+              "unit": "px"
+            },
+            "fontWeight": 400
+          }
+        },
+        "hero-display": {
+          "$type": "typography",
+          "$value": {
+            "fontFamily": "Anuphan, sans-serif",
+            "fontSize": {
+              "value": 80,
+              "unit": "px"
+            },
+            "fontWeight": 600,
+            "letterSpacing": {
+              "value": -0.03,
+              "unit": "em"
+            }
+          }
+        },
+        "headline": {
+          "$type": "typography",
+          "$value": {
+            "fontFamily": "Anuphan, sans-serif",
+            "fontSize": {
+              "value": 34,
+              "unit": "px"
+            },
+            "fontWeight": 500,
+            "letterSpacing": {
+              "value": -0.025,
+              "unit": "em"
+            }
+          }
+        },
+        "brand": {
+          "$type": "typography",
+          "$value": {
+            "fontFamily": "Archivo, sans-serif",
+            "fontSize": {
+              "value": 29,
+              "unit": "px"
+            },
+            "fontWeight": 600,
+            "letterSpacing": {
+              "value": -0.04,
+              "unit": "em"
+            }
+          }
+        },
+        "feature-title": {
+          "$type": "typography",
+          "$value": {
+            "fontFamily": "Archivo, Anuphan, sans-serif",
+            "fontSize": {
+              "value": 30,
+              "unit": "px"
+            },
+            "fontWeight": 500,
+            "letterSpacing": {
+              "value": -0.035,
+              "unit": "em"
+            }
+          }
+        },
+        "card-title": {
+          "$type": "typography",
+          "$value": {
+            "fontFamily": "Archivo, Anuphan, sans-serif",
+            "fontSize": {
+              "value": 17,
+              "unit": "px"
+            },
+            "fontWeight": 500,
+            "letterSpacing": {
+              "value": -0.02,
+              "unit": "em"
+            }
+          }
+        },
+        "tool-label": {
+          "$type": "typography",
+          "$value": {
+            "fontFamily": "Anuphan, sans-serif",
+            "fontSize": {
+              "value": 12,
+              "unit": "px"
+            }
+          }
+        },
+        "variant-label": {
+          "$type": "typography",
+          "$value": {
+            "fontFamily": "Archivo, sans-serif",
+            "fontSize": {
+              "value": 12,
+              "unit": "px"
+            },
+            "fontWeight": 500
+          }
+        },
+        "action": {
+          "$type": "typography",
+          "$value": {
+            "fontFamily": "Anuphan, sans-serif",
+            "fontSize": {
+              "value": 15,
+              "unit": "px"
+            },
+            "fontWeight": 500
+          }
+        },
+        "reading-headline": {
+          "$type": "typography",
+          "$value": {
+            "fontFamily": "Anuphan, sans-serif",
+            "fontSize": {
+              "value": 48,
+              "unit": "px"
+            },
+            "fontWeight": 500,
+            "letterSpacing": {
+              "value": -0.025,
+              "unit": "em"
+            }
+          }
+        },
+        "reading-body": {
+          "$type": "typography",
+          "$value": {
+            "fontFamily": "Anuphan, sans-serif",
+            "fontSize": {
+              "value": 17,
+              "unit": "px"
+            }
+          }
+        }
+      }
+    },
+    "fluidTypographyCSS": {
+      "hero-display": "clamp(42px, 6vw, 80px)",
+      "headline": "clamp(27px, 2.35vw, 34px)",
+      "feature-title": "clamp(24px, 2.1vw, 30px)",
+      "reading-headline": "clamp(32px, 4vw, 48px)"
+    },
+    "previousSnapshotEvidence": {
+      "kind": "source-extraction",
+      "sources": [
+        "app/globals.css",
+        "app/layout.tsx",
+        "components/Library.tsx",
+        "components/Preview.tsx",
+        "components/ThemeToggle.tsx",
+        "components/ToolChips.tsx",
+        "components/ToolMark.tsx",
+        "components/CardDownloadAction.tsx",
+        "components/CardDownloadAction.module.css",
+        "components/AccountForm.tsx",
+        "components/DownloadAction.tsx",
+        "lib/catalog.ts",
+        "lib/styles.json",
+        "lib/articles.ts",
+        ".qa/tool-icons-provenance.json",
+        "public/tool-icons/claudecode.svg",
+        "public/tool-icons/codex.svg",
+        "public/tool-icons/ffmpeg.svg",
+        "PRODUCT.md",
+        ".impeccable/surfaces/app-page-tsx.md"
+      ],
+      "sourceSha256": {
+        "app/globals.css": "cf7c69a892d02b953a40c5a29bc1bd931b5fac2174fead93a44cbf3adc6c1675",
+        "app/layout.tsx": "53482e835f7e6bcfbe3dc65f3301589da73e4dbc467db1c9f2b8218673942bdf",
+        "components/Library.tsx": "2cb9b89ad0c9d2c4ebf72f54706581ef8f7bd3b0f2a9007f0d5637cacd39e42f",
+        "components/Preview.tsx": "ffbccf207a76fbf57d7f10cdc7a3eb2bfee5cc1a9e8c7c55a508fdd82209f17b",
+        "components/ThemeToggle.tsx": "8475ad09d2e7242cffec666deccbfcb24b4d94529f3053ba4daa0851d4c0d131",
+        "components/ToolChips.tsx": "99afb3ad7f9f3f412dd237dd8d4973dfc34b04f9e1864ea81a0e89ad1492585b",
+        "components/ToolMark.tsx": "b2540d972a1bb438f8417c2003ecae48ecddbd3c78259a37723c38ce682ca8c1",
+        "components/CardDownloadAction.tsx": "2c7b90e47d1a89f1a6ae39fd1f463d1706dcf39671b6b7a3c062504ce17e78b3",
+        "components/CardDownloadAction.module.css": "99d2ad8b7bf5269f9be680544c281e0fa2da36f5b704208b028a803077267463",
+        "components/AccountForm.tsx": "6e69521900caf6bb7df7c6b30b0308ff78733edac844fddaf8e5d2c4a25782e6",
+        "components/DownloadAction.tsx": "e0c885dad89d2a34c5afd21758dde914418ea5d4b127fb8fa7f7ecf9bf3d3fd2",
+        "lib/catalog.ts": "0b9af7c34b31e0646024339035383bf6627c596a61792b18c353c39707fdcb4b",
+        "lib/styles.json": "c3c50f589f76bbed2170674d59a8fc5fe64bb095370e7d33cbe6834fc7f7614a",
+        "lib/articles.ts": "5e1893a25f522fbff09f15d3ca9808432eb3c8e3e951df1f18c5cd940a8ed3c7",
+        ".qa/tool-icons-provenance.json": "5ad4a1a1ce8825be30d7cba0d1abbb3667b2af03f76bcdbda09454dfb9b33f96",
+        "public/tool-icons/claudecode.svg": "670b3d8d749d0815ad8f7e62a59d51cb5e2053cb19403f3541a8aed7036a877f",
+        "public/tool-icons/codex.svg": "4a2f43ce46b5b6e3722c95088f88d26ef91e6a8c2e598e70642a1c54367386e4",
+        "public/tool-icons/ffmpeg.svg": "076e200007de7d3f03ddc970e63a23f7cb46a772d1f4e7c670ceb22a9d46ed35",
+        "PRODUCT.md": "d335ecd79f82f1cb45a06ae5dcb4b27c56ef5b42d39ad875670972fb8d976681",
+        ".impeccable/surfaces/app-page-tsx.md": "a60afc1f9402adab267107a3a71874d4530a1c87df9f23be7e69968ff68158f9"
+      },
+      "scope": "Documentation and isolated specimens only; no full-app QA, user creative acceptance, rights grant, or production auth claim.",
+      "shaderMounted": false,
+      "iconPolicy": "Two never-mixed sources. Branded: unmodified upstream logo files in public/tool-icons/ with commit, URL and sha256 pinned in .qa/tool-icons-provenance.json; full-color files keep their original colors, legitimately monochrome files (OpenCode, Three.js) are inverted per theme, mask geometry (FFmpeg, GSAP) is filled with the project color in CSS. Functional: hand-drawn colored symbols only for names without a sourced logo (Canvas 2D, Editable SVG, voice synthesis, captions, Remotion after an upstream 404, HyperFrames, local study); the unknown fallback is generic and not official. Marks are decorative beside visible names and assert no endorsement, trademark rights, compatibility, or installation.",
+      "downloadPolicy": "Catalog CardDownloadAction (CSS module) is always disabled with visible unavailable text and links to the real detail #download anchor; detail-page DownloadAction is the existing status-check region. No auth, eligibility, or file delivery is implemented or implied.",
+      "tonalRampPolicy": "No source ramp exists. No synthesized ramp or duplicated color primitives added to silence detector advice.",
+      "snippetPolicy": "Scoped ds- HTML/CSS translations of source families (globals.css plus the CardDownloadAction CSS module mapped to ds-card-download-*). Inline SVG only: exact ToolMark symbol geometry and exact pinned local logo geometry with root style/size/title removed; no <img>, mask URL, external request or dependency. Component-scoped border-box, inherited semantic properties; document-root theme selectors are omitted. No React/Tailwind/global stylesheet. Static state examples except native search editing, focus/hover and details disclosure. Card is the truthful Thai Voice no-media branch.",
+      "knownLimitations": [
+        "Primary and feature-link hover pair --purple with --action-hover-ink; the recorded computed-style check measured about 7.05:1 dark and 7.17:1 light for that action pair only (recorded before the latest review CSS fixes, which did not change those colors). This is not whole-app contrast certification.",
+        "Isolated specimens do not establish application behavior, real-media playback, intrinsic media sizing, theme persistence, download availability, or full accessibility."
+      ],
+      "verificationRecords": [
+        ".qa/redesign-documentation-verify.py",
+        ".qa/redesign-documentation-specimens.mjs",
+        ".qa/redesign-documentation-results.json",
+        "tests/cta-contrast.mjs",
+        ".qa/cta-contrast-results.json"
+      ]
+    }
+  },
+  "components": [
+    {
+      "name": "Secondary connection check",
+      "kind": "button",
+      "refersTo": "button-secondary",
+      "description": "Bordered account check appearance, without API behavior.",
+      "html": "<div class=\"ds-demo\" lang=\"th\"><div class=\"ds-account-form\"><button type=\"button\">ตรวจสถานะการเชื่อมต่อ</button></div></div>",
+      "css": ".ds-demo { box-sizing: border-box; background: var(--bg, #100e15); color: var(--ink, #f5f1fb); font: 15px/1.7 Anuphan, sans-serif; }\n.ds-demo :where(button, input, a, header, nav, article, section, div, label, details, summary, span) { box-sizing: border-box; }\n.ds-demo :where(button, input) { font: inherit; }\n.ds-demo button { cursor: pointer; color: inherit; border: 1px solid var(--line, #38303f); background: transparent; }\n.ds-demo button:disabled { cursor: not-allowed; opacity: .6; }\n.ds-demo button:hover:not(:disabled) { border-color: var(--purple, #bb98ff); }\n.ds-demo :where(button,a,input,summary):focus-visible { outline: 3px solid var(--purple, #bb98ff); outline-offset: 4px; }\n.ds-demo a { color: inherit; text-underline-offset: 5px; }\n.ds-demo :where(button,a,input,summary) { touch-action: manipulation; -webkit-tap-highlight-color: transparent; }\n.ds-demo input { color: var(--ink, #f5f1fb); min-width: 0; caret-color: var(--purple, #bb98ff); }\n.ds-demo input::placeholder { color: var(--muted, #b8adca); opacity: 1; }\n.ds-demo :where(h2,h3,p) { margin: 0; }\n.ds-demo :where(h2,h3) { text-wrap: balance; font-weight: 500; }\n.ds-demo h2 { line-height: 1.4; letter-spacing: -.02em; }\n.ds-demo p { overflow-wrap: anywhere; }\n.ds-demo svg { flex-shrink: 0; stroke-width: 1.7; vertical-align: middle; }\n.ds-demo .ds-account-form { max-width: 440px;\n  display: grid;\n  gap: 13px; }\n.ds-demo .ds-account-form input { padding: 13px;\n  border: 1px solid var(--line, #38303f);\n  border-radius: 12px;\n  background: var(--surface, #1b1722); }\n.ds-demo .ds-account-form p { color: var(--muted, #b8adca);\n  font-size: 12px; }\n.ds-demo .ds-account-form button:not(.ds-primary) { border-radius: 12px; padding: 12px; }"
+    },
+    {
+      "name": "Pill search",
+      "kind": "input",
+      "refersTo": "search",
+      "description": "Actual search family with standalone width bound; native editable input, no filter runtime.",
+      "html": "<div class=\"ds-demo\" lang=\"th\"><label class=\"ds-search\"><svg xmlns=\"http://www.w3.org/2000/svg\" width=\"19\" height=\"19\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.7\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\" focusable=\"false\"><circle cx=\"11\" cy=\"11\" r=\"8\"/><path d=\"m21 21-4.3-4.3\"/></svg><span class=\"ds-sr-only\">ค้นหาทักษะหรือเครื่องมือ</span><input placeholder=\"ค้นหา skill / เครื่องมือ\"/></label></div>",
+      "css": ".ds-demo { box-sizing: border-box; background: var(--bg, #100e15); color: var(--ink, #f5f1fb); font: 15px/1.7 Anuphan, sans-serif; }\n.ds-demo :where(button, input, a, header, nav, article, section, div, label, details, summary, span) { box-sizing: border-box; }\n.ds-demo :where(button, input) { font: inherit; }\n.ds-demo button { cursor: pointer; color: inherit; border: 1px solid var(--line, #38303f); background: transparent; }\n.ds-demo button:disabled { cursor: not-allowed; opacity: .6; }\n.ds-demo button:hover:not(:disabled) { border-color: var(--purple, #bb98ff); }\n.ds-demo :where(button,a,input,summary):focus-visible { outline: 3px solid var(--purple, #bb98ff); outline-offset: 4px; }\n.ds-demo a { color: inherit; text-underline-offset: 5px; }\n.ds-demo :where(button,a,input,summary) { touch-action: manipulation; -webkit-tap-highlight-color: transparent; }\n.ds-demo input { color: var(--ink, #f5f1fb); min-width: 0; caret-color: var(--purple, #bb98ff); }\n.ds-demo input::placeholder { color: var(--muted, #b8adca); opacity: 1; }\n.ds-demo :where(h2,h3,p) { margin: 0; }\n.ds-demo :where(h2,h3) { text-wrap: balance; font-weight: 500; }\n.ds-demo h2 { line-height: 1.4; letter-spacing: -.02em; }\n.ds-demo p { overflow-wrap: anywhere; }\n.ds-demo svg { flex-shrink: 0; stroke-width: 1.7; vertical-align: middle; }\n.ds-demo .ds-search { border: 1px solid var(--line, #38303f);\n  display: flex;\n  align-items: center;\n  gap: 12px;\n  background: var(--surface, #1b1722);\n  border-radius: 999px;\n  padding: 11px 17px;\n  width: 300px;\n  color: var(--muted, #b8adca); }\n.ds-demo .ds-search:focus-within { border-color: var(--purple, #bb98ff); }\n.ds-demo .ds-search input { width: 100%;\n  background: transparent;\n  border: 0;\n  font-size: 13px; }\n.ds-demo .ds-sr-only { position: absolute;\n  width: 1px;\n  height: 1px;\n  padding: 0;\n  margin: -1px;\n  overflow: hidden;\n  clip: rect(0, 0, 0, 0);\n  white-space: nowrap;\n  border: 0; }\n@media (max-width: 850px) { .ds-demo .ds-search { width: 240px; } }\n.ds-search { max-width: 100%; }"
+    },
+    {
+      "name": "Shared navigation",
+      "kind": "nav",
+      "refersTo": "header-navigation",
+      "description": "Brand and actual links; theme-switch behavior is documented in DESIGN.md, omitted here.",
+      "html": "<div class=\"ds-demo\" lang=\"th\"><header class=\"ds-header\"><a class=\"ds-brand\" href=\"/\">kubcode</a><nav aria-label=\"หลัก\"><a href=\"/\">คลังทักษะ</a><a href=\"/articles\">บทความ</a><a class=\"ds-account-link\" href=\"/account\">พื้นที่สมาชิก<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.7\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\" focusable=\"false\"><path d=\"M7 7h10v10M7 17 17 7\"/></svg></a></nav></header></div>",
+      "css": ".ds-demo { box-sizing: border-box; background: var(--bg, #100e15); color: var(--ink, #f5f1fb); font: 15px/1.7 Anuphan, sans-serif; }\n.ds-demo :where(button, input, a, header, nav, article, section, div, label, details, summary, span) { box-sizing: border-box; }\n.ds-demo :where(button, input) { font: inherit; }\n.ds-demo button { cursor: pointer; color: inherit; border: 1px solid var(--line, #38303f); background: transparent; }\n.ds-demo button:disabled { cursor: not-allowed; opacity: .6; }\n.ds-demo button:hover:not(:disabled) { border-color: var(--purple, #bb98ff); }\n.ds-demo :where(button,a,input,summary):focus-visible { outline: 3px solid var(--purple, #bb98ff); outline-offset: 4px; }\n.ds-demo a { color: inherit; text-underline-offset: 5px; }\n.ds-demo :where(button,a,input,summary) { touch-action: manipulation; -webkit-tap-highlight-color: transparent; }\n.ds-demo input { color: var(--ink, #f5f1fb); min-width: 0; caret-color: var(--purple, #bb98ff); }\n.ds-demo input::placeholder { color: var(--muted, #b8adca); opacity: 1; }\n.ds-demo :where(h2,h3,p) { margin: 0; }\n.ds-demo :where(h2,h3) { text-wrap: balance; font-weight: 500; }\n.ds-demo h2 { line-height: 1.4; letter-spacing: -.02em; }\n.ds-demo p { overflow-wrap: anywhere; }\n.ds-demo svg { flex-shrink: 0; stroke-width: 1.7; vertical-align: middle; }\n.ds-demo header.ds-header { max-width: 1440px;\n  margin: 0 auto;\n  height: 82px;\n  padding: 0 4.5%;\n  display: flex;\n  align-items: center;\n  justify-content: space-between;\n  gap: 24px; }\n.ds-demo .ds-brand { font:\n    600 29px/1 Archivo,\n    sans-serif;\n  letter-spacing: -0.04em;\n  text-decoration: none; }\n.ds-demo .ds-brand::after { content: \".\";\n  color: var(--purple, #bb98ff); }\n.ds-demo .ds-header nav { display: flex;\n  align-items: center;\n  gap: 28px;\n  font-size: 14px; }\n.ds-demo .ds-header nav > a { text-decoration: none;\n  min-height: 44px;\n  display: inline-flex;\n  align-items: center; }\n.ds-demo .ds-header nav > a:hover { color: var(--purple, #bb98ff); }\n.ds-demo .ds-account-link { gap: 8px; }\n@media (max-width: 850px) { .ds-demo .ds-header nav { gap: 18px;\n    font-size: 12px; } }\n@media (max-width: 560px) { .ds-demo header.ds-header { height: auto;\n    min-height: 105px;\n    padding: 20px 5% 12px;\n    gap: 15px;\n    flex-wrap: wrap; } }\n@media (max-width: 560px) { .ds-demo .ds-brand { font-size: 27px; } }\n@media (max-width: 560px) { .ds-demo .ds-header nav { width: 100%;\n    gap: 10px;\n    justify-content: space-between; } }\n@media (max-width: 560px) { .ds-demo .ds-header nav > a { min-height: 44px;\n    font-size: 12px; } }\n@media (max-width: 560px) { .ds-demo .ds-account-link { gap: 5px; } }"
+    },
+    {
+      "name": "Category chips",
+      "kind": "chip",
+      "refersTo": "category-selected",
+      "description": "Pressed/unpressed category states from source; no fabricated counts or filtering behavior.",
+      "html": "<div class=\"ds-demo\" lang=\"th\"><nav class=\"ds-categories\" aria-label=\"หมวดทักษะ\"><button type=\"button\" aria-pressed=\"true\">ทั้งหมด</button><button type=\"button\" aria-pressed=\"false\">เสียง</button></nav></div>",
+      "css": ".ds-demo { box-sizing: border-box; background: var(--bg, #100e15); color: var(--ink, #f5f1fb); font: 15px/1.7 Anuphan, sans-serif; }\n.ds-demo :where(button, input, a, header, nav, article, section, div, label, details, summary, span) { box-sizing: border-box; }\n.ds-demo :where(button, input) { font: inherit; }\n.ds-demo button { cursor: pointer; color: inherit; border: 1px solid var(--line, #38303f); background: transparent; }\n.ds-demo button:disabled { cursor: not-allowed; opacity: .6; }\n.ds-demo button:hover:not(:disabled) { border-color: var(--purple, #bb98ff); }\n.ds-demo :where(button,a,input,summary):focus-visible { outline: 3px solid var(--purple, #bb98ff); outline-offset: 4px; }\n.ds-demo a { color: inherit; text-underline-offset: 5px; }\n.ds-demo :where(button,a,input,summary) { touch-action: manipulation; -webkit-tap-highlight-color: transparent; }\n.ds-demo input { color: var(--ink, #f5f1fb); min-width: 0; caret-color: var(--purple, #bb98ff); }\n.ds-demo input::placeholder { color: var(--muted, #b8adca); opacity: 1; }\n.ds-demo :where(h2,h3,p) { margin: 0; }\n.ds-demo :where(h2,h3) { text-wrap: balance; font-weight: 500; }\n.ds-demo h2 { line-height: 1.4; letter-spacing: -.02em; }\n.ds-demo p { overflow-wrap: anywhere; }\n.ds-demo svg { flex-shrink: 0; stroke-width: 1.7; vertical-align: middle; }\n.ds-demo .ds-categories { display: flex;\n  flex-wrap: wrap;\n  gap: 8px; }\n.ds-demo .ds-categories button { display: inline-flex;\n  align-items: center;\n  gap: 12px;\n  border-radius: 999px;\n  min-height: 42px;\n  padding: 8px 16px;\n  font-size: 12px; }\n.ds-demo .ds-categories button span { font:\n    11px Archivo,\n    sans-serif;\n  color: var(--muted, #b8adca); }\n.ds-demo .ds-categories button[aria-pressed=\"true\"] { border-color: var(--selected, #d1b9ff);\n  color: var(--selected-ink, #291640);\n  background: var(--selected, #d1b9ff); }\n.ds-demo .ds-categories button[aria-pressed=\"true\"] span { color: inherit; }\n@media (max-width: 850px) { .ds-demo .ds-categories { gap: 7px; } }\n@media (max-width: 850px) { .ds-demo .ds-categories button { padding: 8px 12px; } }\n@media (max-width: 560px) { .ds-demo .ds-categories button { min-height: 44px;\n    font-size: 11px;\n    gap: 8px; } }"
+    },
+    {
+      "name": "Runtime tool chips",
+      "kind": "chip",
+      "refersTo": "tool-chip",
+      "description": "Canvas 2D and FFmpeg are actual first-example renderer labels. Canvas 2D is a colored functional symbol (no sourced logo); FFmpeg inlines the pinned upstream geometry filled with its CSS brand green. Decorative 18px marks; no endorsement or installation claim.",
+      "html": "<div class=\"ds-demo\" lang=\"th\"><div class=\"ds-tool-chips\" role=\"group\" aria-label=\"เครื่องมือที่ต้องใช้\" data-tool-group=\"runtime\"><span class=\"ds-tool-chip\" data-tool=\"canvas2d\" data-tool-kind=\"runtime\"><svg xmlns=\"http://www.w3.org/2000/svg\" class=\"ds-tool-mark\" data-tool-mark=\"canvas2d\" data-mark-source=\"symbol\" width=\"18\" height=\"18\" viewBox=\"0 0 16 16\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\" focusable=\"false\"><rect x=\"2\" y=\"2.5\" width=\"12\" height=\"11\" rx=\"2\"/><path d=\"M4.5 10.5c1.4-3 2.9-3.2 4-1.6 1 1.4 2.3.9 3-1.9\"/></svg><span class=\"ds-tool-name\">Canvas 2D</span></span><span class=\"ds-tool-chip\" data-tool=\"ffmpeg\" data-tool-kind=\"runtime\"><svg xmlns=\"http://www.w3.org/2000/svg\" class=\"ds-tool-mark\" data-tool-mark=\"ffmpeg\" data-mark-source=\"brand\" data-tone=\"color\" width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"currentColor\" stroke=\"none\" aria-hidden=\"true\" focusable=\"false\"><path d=\"M21.72 17.91V6.5l-.53-.49L9.05 18.52l-1.29-.06L24 1.53l-.33-.95-11.93 1-5.75 6.6v-.23l4.7-5.39-1.38-.77-9.11.77v2.85l1.91.46v.01l.19-.01-.56.66v10.6c.609-.126 1.22-.241 1.83-.36L14.12 5.22l.83-.04L0 21.44l9.67.82 1.35-.77 6.82-6.74v2.15l-5.72 5.57 11.26.95.35-.94v-3.16l-3.29-.18c.434-.403.858-.816 1.28-1.23z\"/></svg><span class=\"ds-tool-name\">FFmpeg</span></span></div></div>",
+      "css": ".ds-demo { box-sizing: border-box; background: var(--bg, #100e15); color: var(--ink, #f5f1fb); font: 15px/1.7 Anuphan, sans-serif; }\n.ds-demo :where(button, input, a, header, nav, article, section, div, label, details, summary, span) { box-sizing: border-box; }\n.ds-demo :where(button, input) { font: inherit; }\n.ds-demo button { cursor: pointer; color: inherit; border: 1px solid var(--line, #38303f); background: transparent; }\n.ds-demo button:disabled { cursor: not-allowed; opacity: .6; }\n.ds-demo button:hover:not(:disabled) { border-color: var(--purple, #bb98ff); }\n.ds-demo :where(button,a,input,summary):focus-visible { outline: 3px solid var(--purple, #bb98ff); outline-offset: 4px; }\n.ds-demo a { color: inherit; text-underline-offset: 5px; }\n.ds-demo :where(button,a,input,summary) { touch-action: manipulation; -webkit-tap-highlight-color: transparent; }\n.ds-demo input { color: var(--ink, #f5f1fb); min-width: 0; caret-color: var(--purple, #bb98ff); }\n.ds-demo input::placeholder { color: var(--muted, #b8adca); opacity: 1; }\n.ds-demo :where(h2,h3,p) { margin: 0; }\n.ds-demo :where(h2,h3) { text-wrap: balance; font-weight: 500; }\n.ds-demo h2 { line-height: 1.4; letter-spacing: -.02em; }\n.ds-demo p { overflow-wrap: anywhere; }\n.ds-demo svg { flex-shrink: 0; stroke-width: 1.7; vertical-align: middle; }\n.ds-demo .ds-tool-chips { display: flex;\n  flex-wrap: wrap;\n  gap: 6px; }\n.ds-demo .ds-tool-chip { display: inline-flex;\n  align-items: center;\n  gap: 6px;\n  border: 1px solid var(--line, #38303f);\n  border-radius: 999px;\n  padding: 4px 9px;\n  font-size: 10px;\n  line-height: 1.5;\n  white-space: nowrap; }\n.ds-demo .ds-tool-chip svg { color: var(--purple, #bb98ff); }\n@media (max-width: 560px) { .ds-demo .ds-tool-chip { font-size: 11px; } }\n.ds-demo .ds-tool-chip { gap: 7px;\n  min-height: 30px;\n  padding: 4px 11px 4px 6px;\n  font-size: 12px;\n  line-height: 1.35;\n  background: var(--surface, #1b1722); }\n.ds-demo .ds-tool-mark { flex: none;\n  display: inline-block;\n  vertical-align: middle; }\n.ds-demo img.ds-tool-mark { object-fit: contain; }\n.ds-demo .ds-tool-mark[data-tone=\"mono\"] { filter: invert(0.93); }\n.ds-demo .ds-tool-mark[data-mark-source=\"brand\"]:not(img) { display: inline-grid;\n  place-items: center; }\n.ds-demo .ds-tool-mark[data-tool-mark=\"ffmpeg\"] { color: #007808; }\n.ds-demo .ds-tool-mark[data-tool-mark=\"gsap\"] { color: #0ae448;\n  padding: 0 1.5px;\n  border-radius: 5px;\n  background: #0e100f; }\n.ds-demo .ds-tool-mark[data-tool-mark=\"canvas2d\"] { color: #1a9e8f; }\n.ds-demo .ds-tool-mark[data-tool-mark=\"editable-svg\"] { color: #c9449b; }\n.ds-demo .ds-tool-mark[data-tool-mark=\"voice-synthesis\"] { color: #b97f10; }\n.ds-demo .ds-tool-mark[data-tool-mark=\"captions\"] { color: #3b82f6; }\n.ds-demo .ds-tool-mark[data-tool-mark=\"remotion\"] { color: #6366f1; }\n.ds-demo .ds-tool-mark[data-tool-mark=\"hyperframes\"] { color: #9b5de5; }\n.ds-demo .ds-tool-mark[data-tool-mark=\"local-study\"] { color: #d1556b; }\n.ds-demo .ds-tool-mark[data-tool-mark=\"unknown\"] { color: var(--muted, #b8adca); }"
+    },
+    {
+      "name": "Real author selector",
+      "kind": "button",
+      "refersTo": "variant",
+      "description": "Actual Claude/Codex labels beside the pinned original-color Claude Code and Codex logo geometry (decorative 18px), 44px tabs with source pressed states; no author-switch runtime.",
+      "html": "<div class=\"ds-demo\" lang=\"th\"><div class=\"ds-variants\" role=\"group\" aria-label=\"เลือกผู้เขียนตัวอย่าง\"><button type=\"button\" aria-pressed=\"true\"><svg xmlns=\"http://www.w3.org/2000/svg\" class=\"ds-tool-mark\" data-tool-mark=\"claude-code\" data-mark-source=\"brand\" data-tone=\"color\" width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" stroke=\"none\" aria-hidden=\"true\" focusable=\"false\"><path clip-rule=\"evenodd\" d=\"M20.998 10.949H24v3.102h-3v3.028h-1.487V20H18v-2.921h-1.487V20H15v-2.921H9V20H7.488v-2.921H6V20H4.487v-2.921H3V14.05H0V10.95h3V5h17.998v5.949zM6 10.949h1.488V8.102H6v2.847zm10.51 0H18V8.102h-1.49v2.847z\" fill=\"#D97757\" fill-rule=\"evenodd\"></path></svg><span>Claude</span></button><button type=\"button\" aria-pressed=\"false\"><svg xmlns=\"http://www.w3.org/2000/svg\" class=\"ds-tool-mark\" data-tool-mark=\"codex-cli\" data-mark-source=\"brand\" data-tone=\"color\" width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" stroke=\"none\" aria-hidden=\"true\" focusable=\"false\"><path d=\"M19.503 0H4.496A4.496 4.496 0 000 4.496v15.007A4.496 4.496 0 004.496 24h15.007A4.496 4.496 0 0024 19.503V4.496A4.496 4.496 0 0019.503 0z\" fill=\"#fff\"></path><path d=\"M9.064 3.344a4.578 4.578 0 012.285-.312c1 .115 1.891.54 2.673 1.275.01.01.024.017.037.021a.09.09 0 00.043 0 4.55 4.55 0 013.046.275l.047.022.116.057a4.581 4.581 0 012.188 2.399c.209.51.313 1.041.315 1.595a4.24 4.24 0 01-.134 1.223.123.123 0 00.03.115c.594.607.988 1.33 1.183 2.17.289 1.425-.007 2.71-.887 3.854l-.136.166a4.548 4.548 0 01-2.201 1.388.123.123 0 00-.081.076c-.191.551-.383 1.023-.74 1.494-.9 1.187-2.222 1.846-3.711 1.838-1.187-.006-2.239-.44-3.157-1.302a.107.107 0 00-.105-.024c-.388.125-.78.143-1.204.138a4.441 4.441 0 01-1.945-.466 4.544 4.544 0 01-1.61-1.335c-.152-.202-.303-.392-.414-.617a5.81 5.81 0 01-.37-.961 4.582 4.582 0 01-.014-2.298.124.124 0 00.006-.056.085.085 0 00-.027-.048 4.467 4.467 0 01-1.034-1.651 3.896 3.896 0 01-.251-1.192 5.189 5.189 0 01.141-1.6c.337-1.112.982-1.985 1.933-2.618.212-.141.413-.251.601-.33.215-.089.43-.164.646-.227a.098.098 0 00.065-.066 4.51 4.51 0 01.829-1.615 4.535 4.535 0 011.837-1.388zm3.482 10.565a.637.637 0 000 1.272h3.636a.637.637 0 100-1.272h-3.636zM8.462 9.23a.637.637 0 00-1.106.631l1.272 2.224-1.266 2.136a.636.636 0 101.095.649l1.454-2.455a.636.636 0 00.005-.64L8.462 9.23z\" fill=\"url(#lobe-icons-codex-_R_0_)\"></path><defs><linearGradient gradientUnits=\"userSpaceOnUse\" id=\"lobe-icons-codex-_R_0_\" x1=\"12\" x2=\"12\" y1=\"3\" y2=\"21\"><stop stop-color=\"#B1A7FF\"></stop><stop offset=\".5\" stop-color=\"#7A9DFF\"></stop><stop offset=\"1\" stop-color=\"#3941FF\"></stop></linearGradient></defs></svg><span>Codex</span></button></div></div>",
+      "css": ".ds-demo { box-sizing: border-box; background: var(--bg, #100e15); color: var(--ink, #f5f1fb); font: 15px/1.7 Anuphan, sans-serif; }\n.ds-demo :where(button, input, a, header, nav, article, section, div, label, details, summary, span) { box-sizing: border-box; }\n.ds-demo :where(button, input) { font: inherit; }\n.ds-demo button { cursor: pointer; color: inherit; border: 1px solid var(--line, #38303f); background: transparent; }\n.ds-demo button:disabled { cursor: not-allowed; opacity: .6; }\n.ds-demo button:hover:not(:disabled) { border-color: var(--purple, #bb98ff); }\n.ds-demo :where(button,a,input,summary):focus-visible { outline: 3px solid var(--purple, #bb98ff); outline-offset: 4px; }\n.ds-demo a { color: inherit; text-underline-offset: 5px; }\n.ds-demo :where(button,a,input,summary) { touch-action: manipulation; -webkit-tap-highlight-color: transparent; }\n.ds-demo input { color: var(--ink, #f5f1fb); min-width: 0; caret-color: var(--purple, #bb98ff); }\n.ds-demo input::placeholder { color: var(--muted, #b8adca); opacity: 1; }\n.ds-demo :where(h2,h3,p) { margin: 0; }\n.ds-demo :where(h2,h3) { text-wrap: balance; font-weight: 500; }\n.ds-demo h2 { line-height: 1.4; letter-spacing: -.02em; }\n.ds-demo p { overflow-wrap: anywhere; }\n.ds-demo svg { flex-shrink: 0; stroke-width: 1.7; vertical-align: middle; }\n.ds-demo .ds-variants { display: flex;\n  align-items: center;\n  gap: 5px;\n  margin: 10px 0 0; }\n.ds-demo .ds-variants button { border-radius: 999px;\n  min-height: 38px;\n  padding: 7px 19px;\n  font:\n    500 12px/1.5 Archivo,\n    sans-serif; }\n.ds-demo .ds-variants button[aria-pressed=\"true\"] { background: var(--selected, #d1b9ff);\n  color: var(--selected-ink, #291640);\n  border-color: var(--selected, #d1b9ff); }\n@media (max-width: 560px) { .ds-demo .ds-variants button { min-height: 44px;\n    flex: 1; } }\n.ds-demo .ds-tool-mark { flex: none;\n  display: inline-block;\n  vertical-align: middle; }\n.ds-demo img.ds-tool-mark { object-fit: contain; }\n.ds-demo .ds-tool-mark[data-tone=\"mono\"] { filter: invert(0.93); }\n.ds-demo .ds-tool-mark[data-mark-source=\"brand\"]:not(img) { display: inline-grid;\n  place-items: center; }\n.ds-demo .ds-tool-mark[data-tool-mark=\"ffmpeg\"] { color: #007808; }\n.ds-demo .ds-tool-mark[data-tool-mark=\"gsap\"] { color: #0ae448;\n  padding: 0 1.5px;\n  border-radius: 5px;\n  background: #0e100f; }\n.ds-demo .ds-tool-mark[data-tool-mark=\"canvas2d\"] { color: #1a9e8f; }\n.ds-demo .ds-tool-mark[data-tool-mark=\"editable-svg\"] { color: #c9449b; }\n.ds-demo .ds-tool-mark[data-tool-mark=\"voice-synthesis\"] { color: #b97f10; }\n.ds-demo .ds-tool-mark[data-tool-mark=\"captions\"] { color: #3b82f6; }\n.ds-demo .ds-tool-mark[data-tool-mark=\"remotion\"] { color: #6366f1; }\n.ds-demo .ds-tool-mark[data-tool-mark=\"hyperframes\"] { color: #9b5de5; }\n.ds-demo .ds-tool-mark[data-tool-mark=\"local-study\"] { color: #d1556b; }\n.ds-demo .ds-tool-mark[data-tool-mark=\"unknown\"] { color: var(--muted, #b8adca); }\n.ds-demo .ds-variants button { display: inline-flex;\n  align-items: center;\n  justify-content: center;\n  gap: 8px;\n  min-height: 44px;\n  padding: 6px 14px 6px 10px;\n  border-radius: 999px; }\n.ds-demo .ds-variants button[aria-pressed=\"true\"] { background: var(--surface-soft, #231d2d);\n  color: var(--ink, #f5f1fb);\n  border-color: var(--purple, #bb98ff);\n  font-weight: 600; }\n.ds-demo .ds-variants button:focus-visible { outline-offset: 2px; }"
+    },
+    {
+      "name": "Compact style register",
+      "kind": "custom",
+      "refersTo": "style-register",
+      "description": "Native disclosure and actual caution copy; no copied counts or invented style records.",
+      "html": "<div class=\"ds-demo\" lang=\"th\"><details class=\"ds-style-register\"><summary>ทะเบียนแนวภาพ<span>ดูสถานะและเวอร์ชัน</span></summary><p>สถานะการเลือกภาพไม่ใช่ความพร้อมแจกจ่าย</p></details></div>",
+      "css": ".ds-demo { box-sizing: border-box; background: var(--bg, #100e15); color: var(--ink, #f5f1fb); font: 15px/1.7 Anuphan, sans-serif; }\n.ds-demo :where(button, input, a, header, nav, article, section, div, label, details, summary, span) { box-sizing: border-box; }\n.ds-demo :where(button, input) { font: inherit; }\n.ds-demo button { cursor: pointer; color: inherit; border: 1px solid var(--line, #38303f); background: transparent; }\n.ds-demo button:disabled { cursor: not-allowed; opacity: .6; }\n.ds-demo button:hover:not(:disabled) { border-color: var(--purple, #bb98ff); }\n.ds-demo :where(button,a,input,summary):focus-visible { outline: 3px solid var(--purple, #bb98ff); outline-offset: 4px; }\n.ds-demo a { color: inherit; text-underline-offset: 5px; }\n.ds-demo :where(button,a,input,summary) { touch-action: manipulation; -webkit-tap-highlight-color: transparent; }\n.ds-demo input { color: var(--ink, #f5f1fb); min-width: 0; caret-color: var(--purple, #bb98ff); }\n.ds-demo input::placeholder { color: var(--muted, #b8adca); opacity: 1; }\n.ds-demo :where(h2,h3,p) { margin: 0; }\n.ds-demo :where(h2,h3) { text-wrap: balance; font-weight: 500; }\n.ds-demo h2 { line-height: 1.4; letter-spacing: -.02em; }\n.ds-demo p { overflow-wrap: anywhere; }\n.ds-demo svg { flex-shrink: 0; stroke-width: 1.7; vertical-align: middle; }\n.ds-demo .ds-style-register { margin: 34px 0 50px;\n  color: var(--muted, #b8adca); }\n.ds-demo .ds-style-register summary { cursor: pointer;\n  min-height: 44px;\n  padding: 8px 0;\n  color: var(--ink, #f5f1fb);\n  font-size: 16px; }\n.ds-demo .ds-style-register summary span { font-size: 12px;\n  margin-left: 16px;\n  color: var(--muted, #b8adca); }\n.ds-demo .ds-style-register > p { font-size: 12px;\n  padding: 12px 0; }\n.ds-demo .ds-register-row { display: flex;\n  align-items: start;\n  justify-content: space-between;\n  gap: 20px;\n  padding: 13px 0;\n  border-bottom: 1px solid var(--line, #38303f);\n  font-size: 12px; }\n.ds-demo .ds-register-row span + span { text-align: right; }\n@media (max-width: 560px) { .ds-demo .ds-style-register { margin: 24px 0 35px; } }\n@media (max-width: 560px) { .ds-demo .ds-style-register summary span { display: block;\n    margin: 5px 0 0 19px; } }\n@media (max-width: 560px) { .ds-demo .ds-register-row { font-size: 11px; } }"
+    }
+  ],
+  "narrative": {
+    "northStar": "Living library / kinetic work stage",
+    "overview": "Thai-first purple dark/light library; real full-cover media leads. Local preview only, not a membership/download service.",
+    "keyCharacteristics": [
+      "Full-width real-work hero; no preselected or auto-open solitary player.",
+      "Full-cover portrait cards with compact bottom title/action.",
+      "One honest disabled neutral primitive, context-adapted on light detail pages.",
+      "Original-color sourced marks; native playback preserves full framing."
+    ],
+    "rules": [
+      "Preserve source media, paths and attribution; local derivatives are documented.",
+      "Await real decoding and natural dimensions before capture.",
+      "Source-only CI and local media/browser gates are separate.",
+      "Seven unchanged primitive specimens below remain; obsolete availability/card/download specimens are archived.",
+      "New hero/media/download families are source/token documented, not falsely represented by historical HTML exports."
+    ],
+    "dos": [
+      "Inspect real desktop/tablet/mobile pixels in both themes.",
+      "Keep honest unavailable, no-media, focus and reduced-motion states."
+    ],
+    "donts": [
+      "No fake login/download/media/distribution rights.",
+      "No purple matte thumbnails, giant facts body or purple dashed panels.",
+      "No copied competitor media, prices or counts."
+    ]
+  }
+}
