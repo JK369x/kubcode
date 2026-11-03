@@ -242,6 +242,11 @@ GitHub settings (repo `JK369x/kubcode`):
 
 Runtime secrets (Google/LINE/NextAuth/`DATABASE_URL` ของ `kubcode_app`/CA/flag) **อยู่ใน Vercel production env ที่เดียว** ไม่ copy มา GitHub; prebuilt build ใน CI ใช้แค่ `NEXT_PUBLIC_MEDIA_MODE` ส่วนค่าอื่นอ่านตอน runtime ซึ่ง smoke ก่อน promote พิสูจน์ (deployment URL ต้องได้ `303 → https://kubcode.dev/account` ซึ่งเกิดเมื่อ auth env มีจริงเท่านั้น)
 
+ข้อสังเกตจากการรันจริง (2026-11-03):
+- Vercel Hobby **BLOCK** deployment ถ้า CLI แนบ git metadata ที่ commit author ไม่ใช่สมาชิก team (commit ในเครื่องมี email `@JAKKARINs-MacBook-Air.local`) ทำให้ CLI ค้างที่ "Building…" จน timeout จึง deploy จาก `$RUNNER_TEMP/deploy` (rsync ทั้ง tree ยกเว้น `.git`) ห้ามเปลี่ยนกลับไป deploy จาก checkout ตรง ๆ; preview ที่ BLOCK ค้างอยู่หนึ่งตัวคือ `dpl_8qVuU5EnwEs8rCB4Ky7oUbD59XG4` (ไม่มีผลกับ production)
+- Prebuilt output อ้างไฟล์ใน `node_modules` ของ root จึง copy แค่ `.vercel` ไม่พอ
+- Deployment Protection ของ project = `preview` เท่านั้น: preview URL redirect ไป Vercel SSO (ส่วนตัว) ส่วน production deployment URL เปิดสาธารณะ smoke ก่อน promote จึงทำงาน ถ้าเปลี่ยนให้คุ้ม production URL ด้วย smoke จะ fail แบบปลอดภัย (domain ไม่ย้าย) ต้องเพิ่ม Protection Bypass for Automation ก่อน
+
 Trust boundary (ข้อจำกัดที่ต้องรู้):
 - Repo secrets อ่านได้จาก workflow ของ**ทุก branch** และ `VERCEL_TOKEN` มีสิทธิ์ทั้ง account (Vercel ไม่มี token แบบ preview-only) ใครที่ push branch ได้จึงแก้ workflow ให้เอา secret ไปใช้ได้ ตอนนี้มีแค่เจ้าของ `JK369x` ที่ push ได้ **ห้ามเพิ่ม collaborator** หรือ action ภายนอกที่ไม่ pin
 - Agent (devpit/Claude/Codex) push branch ด้วย credential ของเจ้าของ โค้ดที่ agent เขียนจึงรันใน CI ข้าง secret ได้ ให้ review ก่อน push ใน branch ที่ไม่ไว้ใจ
