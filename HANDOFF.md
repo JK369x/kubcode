@@ -54,6 +54,8 @@ Fresh readback interval (UTC): `2026-11-03T14:45:36.327111+00:00` → `2026-11-0
 ### P0 — ปิด acceptance ของงาน auth รอบนี้ (กำลังรอเจ้าของ)
 
 > **2026-11-03 สถานะยังไม่ผ่าน:** เจ้าของแจ้งว่าทดสอบ P0 ผ่านแล้ว แต่ read-only aggregate เวลา 14:59:47Z (production `dpl_2M8P5FcZv2ymhY1RUccvj9mzWMzN`, project `sgtyrndczwxijrubyyjw`) ยังเป็น users 1, Google 1, **LINE 0, users ที่มีทั้งสองวิธี 0**, audit 1 (`user_created`) และ **link intents 0 แถว** ตรงกับ baseline ทุกค่า แปลว่ายังไม่มี link flow ไปถึง production DB จึงยังไม่ติ๊ก ต้องถามเจ้าของว่าทดสอบที่ origin ไหนและหน้า settings แสดงอะไร หลักฐานอยู่ที่ `.qa/p0-owner-acceptance-check-2026-11-03.json`
+>
+> **Re-check 15:07:06Z หลังเจ้าของแจ้งว่าเชื่อม LINE แล้ว ยังไม่ผ่านเพราะเกิดบัญชีซ้ำ:** ผลคือ users **2**, Google 1, LINE 1, **users ที่มีทั้งสองวิธี 0**, audit 2 (`user_created` ×2) และ link intents 0 แถว แปลว่าเข้าด้วย LINE แยกต่างหากจนได้ internal user ใหม่ ไม่ได้กด “เชื่อม LINE” จากบัญชี Google ตรงกับคำเตือน **สำคัญ** ด้านล่าง ถ้าตอนนี้เชื่อม LINE เข้าบัญชี Google จะ conflict ตามที่ออกแบบไว้ **ห้ามย้าย identity หรือลบ user เอง** ต้องให้เจ้าของเลือกวิธี recovery/merge แบบมี audit เป็นงานแยก (P1 ข้อสุดท้าย) หลักฐานอยู่ที่ `.qa/p0-owner-acceptance-recheck-2026-11-03T1507Z.json`
 
 ไม่ต้องเขียน auth ใหม่ก่อนทดสอบสิ่งนี้:
 
