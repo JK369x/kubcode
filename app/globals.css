@@ -831,6 +831,93 @@ footer small {
   line-height: 2;
   max-width: 72ch;
 }
+.eyebrow {
+  margin: 28px 0 -16px;
+  font-size: 13px;
+  color: var(--purple);
+}
+.tag-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  list-style: none;
+  padding: 0;
+  margin: 18px 0 0;
+}
+.tag-list a {
+  display: inline-block;
+  padding: 4px 12px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  font-size: 13px;
+  color: var(--muted);
+}
+.tag-list a:hover {
+  color: var(--ink);
+  border-color: var(--purple);
+}
+.tool-facts {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 12px;
+  margin: 28px 0 0;
+}
+.tool-facts div {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 12px 16px;
+}
+.tool-facts dt {
+  font-size: 12px;
+  color: var(--muted);
+}
+.tool-facts dd {
+  margin: 4px 0 0;
+  overflow-wrap: anywhere;
+}
+.tool-facts a {
+  color: var(--purple);
+  text-decoration: underline;
+}
+.tool-group {
+  margin-top: 36px;
+}
+.tool-group > h2 {
+  font-size: 15px;
+  color: var(--muted);
+  margin-bottom: 8px;
+}
+.related {
+  margin-top: 52px;
+  display: grid;
+  gap: 28px;
+}
+.related h2 {
+  font-size: 20px;
+  margin-bottom: 10px;
+}
+.related ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: grid;
+  gap: 10px;
+}
+.related li {
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 12px 16px;
+}
+.related li a {
+  color: var(--purple);
+  font-weight: 600;
+}
+.related li p {
+  margin: 4px 0 0;
+  color: var(--muted);
+  font-size: 14px;
+}
 .back {
   font-size: 13px;
   color: var(--purple);

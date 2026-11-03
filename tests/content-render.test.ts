@@ -4,8 +4,9 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { loadContent } from "../lib/content";
 import { renderMdx } from "../lib/mdx";
 
-test("every repo article body compiles and renders its headings", async () => {
-  for (const article of loadContent().articles) {
+test("every repo article and tool body compiles and renders its headings", async () => {
+  const { articles, tools } = loadContent();
+  for (const article of [...articles, ...tools]) {
     const html = renderToStaticMarkup(await renderMdx(article.body));
     const headings = [...article.body.matchAll(/^## (.+)$/gm)].map((m) => m[1]);
     assert.ok(headings.length > 0, article.slug);

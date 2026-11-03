@@ -5,8 +5,28 @@ import { notFound } from "next/navigation";
 import { Preview } from "@/components/Preview";
 import { DownloadAction } from "@/components/DownloadAction";
 import Link from "next/link";
+import type { Metadata } from "next";
+import { getContent } from "@/lib/content";
+import { related } from "@/lib/content-links";
+import { breadcrumbJsonLd, metadataFor } from "@/lib/seo";
+import { JsonLd } from "@/components/JsonLd";
+import { RelatedLinks } from "@/components/RelatedLinks";
 export function generateStaticParams() {
   return skills.map((s) => ({ slug: s.slug }));
+}
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ slug: string }>;
+}): Promise<Metadata> {
+  const { slug } = await params;
+  const s = skills.find((s) => s.slug === slug);
+  if (!s) return {};
+  return metadataFor({
+    title: `${s.name} — skill ของ kubcode`,
+    description: s.description,
+    path: `/skills/${s.slug}`,
+  });
 }
 export default async function Detail({
   params,
@@ -18,6 +38,12 @@ export default async function Detail({
   if (!s) notFound();
   return (
     <main id="main" className="detail-page">
+      <JsonLd
+        data={breadcrumbJsonLd([
+          { name: "kubcode", path: "/" },
+          { name: s.name, path: `/skills/${s.slug}` },
+        ])}
+      />
       <Link className="back" href="/">
         กลับไปคลังทักษะ
       </Link>
@@ -59,6 +85,10 @@ export default async function Detail({
           <Link href="/articles/install-with-permissions">
             อ่านรายการตรวจสอบก่อนติดตั้ง
           </Link>
+          <RelatedLinks
+            items={related(getContent(), { kind: "skill", slug: s.slug })}
+            headings={{ tool: "เครื่องมือที่ใช้", article: "ใช้ในบทความ" }}
+          />
         </div>
       </div>
     </main>

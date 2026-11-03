@@ -8,7 +8,9 @@ import "@fontsource/anuphan/600.css";
 import "@fontsource/archivo/500.css";
 import "@fontsource/archivo/600.css";
 import "./globals.css";
+import { CANONICAL_ORIGIN } from "@/lib/auth-policy";
 export const metadata: Metadata = {
+  metadataBase: new URL(CANONICAL_ORIGIN),
   title: "kubcode — คลังทักษะและงานทดลอง",
   description:
     "ดูตัวอย่างจริง เข้าใจเครื่องมือ และอ่านก่อนใช้งาน คลังส่วนตัวต้นแบบในเครื่อง",
@@ -41,6 +43,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
             <ThemeToggle />
             <Link href="/">คลังทักษะ</Link>
             <Link href="/articles">บทความ</Link>
+            <Link href="/tools">เครื่องมือ</Link>
             <Link className="account-link" href="/account">
               พื้นที่สมาชิก <ArrowUpRight size={16} />
             </Link>
