@@ -1,0 +1,23 @@
+name: Local application checks
+on:
+  push:
+  pull_request:
+permissions:
+  contents: read
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci --ignore-scripts
+      # Source-only checks: private preview binaries are intentionally not in Git.
+      # The owner separately runs npm run test:local-media and the browser suite.
+      - run: npm test
+      - run: npm run build
+      - run: npm run typecheck
+# Prepared locally; no GitHub run has been observed.
+# Browser/media checks require legally supplied local previews and installed Chrome.
