@@ -111,6 +111,7 @@ const badRequest = () => accountErrorResponse("BAD_REQUEST");
 const notSignedIn = () => errorResponse("NOT_SIGNED_IN");
 
 export async function handlePageState(request: Request, deps: InteractionDeps = {}): Promise<Response> {
+  if (readAccountsConfig(deps.env ?? process.env).mode === "off") return jsonNoStore({ available: false });
   const ctx = await context(request, deps);
   if (ctx instanceof Response) return ctx;
   const url = new URL(request.url);

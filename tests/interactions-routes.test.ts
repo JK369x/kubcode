@@ -72,7 +72,12 @@ async function expectError(res: Response, status: number, code: string) {
 
 test("with accounts off, reads and writes say so and never touch the database", async () => {
   const read = new Request("https://kubcode.dev/api/interactions?kind=tool&slug=remotion", { headers: { host: "kubcode.dev" } });
-  await expectError(await handlePageState(read, { ...deps(untouchable, AUTH_ENV) }), 503, "ACCOUNTS_DISABLED");
+  // "Off" is a normal state (e.g. previews): the read says so without an error status.
+  const off = await handlePageState(read, { ...deps(untouchable, AUTH_ENV) });
+  assert.equal(off.status, 200);
+  assert.deepEqual(await off.json(), { available: false });
+  const broken = await handlePageState(read, deps(untouchable, { ...AUTH_ENV, KUBCODE_ACCOUNTS_ENABLED: "true" }));
+  await expectError(broken, 503, "ACCOUNTS_UNAVAILABLE");
   await expectError(await handleStar(await write("/api/interactions/star", { kind: "tool", slug: "remotion" }), deps(untouchable, AUTH_ENV)), 503, "ACCOUNTS_DISABLED");
 });
 

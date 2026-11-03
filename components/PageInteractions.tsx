@@ -32,8 +32,12 @@ export function PageInteractions({ kind, slug, title }: Props) {
         cache: "no-store",
       });
       const body = await res.json();
-      if (!res.ok) {
+      if (body.available === false) {
         setLoad({ state: "closed", message: "ดาวและคอมเมนต์ยังไม่เปิดใช้งานบนเซิร์ฟเวอร์นี้" });
+        return;
+      }
+      if (!res.ok) {
+        setLoad({ state: "closed", message: "ดาวและคอมเมนต์ใช้งานไม่ได้ชั่วคราว ลองใหม่ภายหลัง" });
         return;
       }
       setLoad({ state: "ready", data: body as PageState });

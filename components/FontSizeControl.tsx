@@ -33,7 +33,7 @@ export function FontSizeControl() {
 
   return (
     <div className="font-size" role="group" aria-label="ขนาดตัวอักษรของบทความ">
-      <button type="button" onClick={() => change(step - 1)} disabled={step === 0} aria-label="ลดขนาดตัวอักษร">
+      <button type="button" onClick={() => change(step - 1)} disabled={step === 0} aria-label="A− ลดขนาดตัวอักษร">
         A−
       </button>
       <span aria-live="polite">{Math.round(STEPS[step] * 100)}%</span>
@@ -41,7 +41,7 @@ export function FontSizeControl() {
         type="button"
         onClick={() => change(step + 1)}
         disabled={step === STEPS.length - 1}
-        aria-label="เพิ่มขนาดตัวอักษร"
+        aria-label="A+ เพิ่มขนาดตัวอักษร"
       >
         A+
       </button>
