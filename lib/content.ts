@@ -9,7 +9,8 @@ export const REF_KINDS = ["article", "tool", "skill"] as const;
 export type RefKind = (typeof REF_KINDS)[number];
 export type Ref = { kind: RefKind; slug: string };
 
-export type Article = {
+/** Fields shared by every MDX page type. */
+type PageBase = {
   slug: string;
   title: string;
   description: string;
@@ -22,10 +23,38 @@ export type Article = {
   body: string;
 };
 
+export type Article = PageBase & { kind: "article" };
+
+/** The eight production stages a tool can belong to (PRD). */
+export const TOOL_CATEGORIES = [
+  "script",
+  "image",
+  "voice",
+  "music",
+  "render",
+  "captions",
+  "package",
+  "publish",
+] as const;
+export type ToolCategory = (typeof TOOL_CATEGORIES)[number];
+
+export const LINK_KINDS = ["repo", "website", "docs"] as const;
+export type ToolLinks = Partial<Record<(typeof LINK_KINDS)[number], string>>;
+
+export type Tool = PageBase & {
+  kind: "tool";
+  category: ToolCategory;
+  links: ToolLinks;
+  /** Our short licence note, e.g. "MIT" or "free for teams ≤3". */
+  license: string;
+};
+
+export type Page = Article | Tool;
+
 /** Upstream credit; url is optional for private sources we cannot link. */
 export type Source = { title: string; url?: string };
 
-export type Content = { tags: Tag[]; articles: Article[] };
+export type Content = { tags: Tag[]; articles: Article[]; tools: Tool[] };
 
 /** Thrown when content files break the schema; lists every problem found. */
 export class ContentError extends Error {
@@ -141,6 +170,27 @@ class FieldReader {
     });
   }
 
+  oneOf<T extends string>(field: string, allowed: readonly T[]): T {
+    const value = this.data[field];
+    if (!allowed.includes(value as T)) {
+      this.problem(field, `must be one of ${allowed.join(", ")} (got "${String(value)}")`);
+    }
+    return value as T;
+  }
+
+  links(): ToolLinks {
+    const value = asRecord(this.data.links);
+    const links: ToolLinks = {};
+    for (const [kind, url] of Object.entries(value)) {
+      if (!LINK_KINDS.includes(kind as (typeof LINK_KINDS)[number])) {
+        this.problem("links", `has unknown kind "${kind}" (use ${LINK_KINDS.join(", ")})`);
+      } else if (!isHttpsUrl(url)) {
+        this.problem("links", `${kind} must be an https URL`);
+      } else links[kind as keyof ToolLinks] = url;
+    }
+    return links;
+  }
+
   redirects(): string[] {
     const value = this.data.redirects ?? [];
     if (!Array.isArray(value)) {
@@ -212,18 +262,20 @@ function readRefs(fm: FieldReader, value: unknown): Ref[] {
   return refs;
 }
 
-export function loadContent(root: string = DEFAULT_ROOT): Content {
-  const problems: string[] = [];
-  const tags = loadTags(root, problems);
-  const tagSlugs = new Set(tags.map((t) => t.slug));
-
-  const parsed = mdxFiles(path.join(root, "articles")).map((file) => {
+function readPages<T extends Page>(
+  root: string,
+  dir: "articles" | "tools",
+  problems: string[],
+  build: (fm: FieldReader, base: PageBase) => T,
+  tagSlugs: ReadonlySet<string>,
+): Array<{ fm: FieldReader; page: T }> {
+  return mdxFiles(path.join(root, dir)).map((file) => {
     const { data, body } = splitFrontmatter(
-      readFileSync(path.join(root, "articles", file), "utf8"),
+      readFileSync(path.join(root, dir, file), "utf8"),
     );
     const record = asRecord(data);
-    const fm = new FieldReader(`articles/${file}`, record, problems);
-    const article: Article = {
+    const fm = new FieldReader(`${dir}/${file}`, record, problems);
+    const base: PageBase = {
       slug: fm.slug(path.basename(file, ".mdx")),
       title: fm.text("title", LIMITS.title),
       description: fm.text("description", LIMITS.description),
@@ -235,16 +287,35 @@ export function loadContent(root: string = DEFAULT_ROOT): Content {
       redirects: fm.redirects(),
       body,
     };
-    return { fm, article };
+    return { fm, page: build(fm, base) };
   });
+}
+
+export function loadContent(root: string = DEFAULT_ROOT): Content {
+  const problems: string[] = [];
+  const tags = loadTags(root, problems);
+  const tagSlugs = new Set(tags.map((t) => t.slug));
+
+  const articles = readPages(root, "articles", problems, (_fm, base): Article => ({
+    kind: "article",
+    ...base,
+  }), tagSlugs);
+  const tools = readPages(root, "tools", problems, (fm, base): Tool => ({
+    kind: "tool",
+    ...base,
+    category: fm.oneOf("category", TOOL_CATEGORIES),
+    links: fm.links(),
+    license: fm.text("license", LIMITS.description),
+  }), tagSlugs);
+  const pages = [...articles, ...tools];
 
   const known: Record<RefKind, Set<string>> = {
-    article: new Set(parsed.map((p) => p.article.slug)),
-    tool: new Set(mdxFiles(path.join(root, "tools")).map((f) => path.basename(f, ".mdx"))),
+    article: new Set(articles.map((p) => p.page.slug)),
+    tool: new Set(tools.map((p) => p.page.slug)),
     skill: new Set(rawSkills.map((s) => s.slug)),
   };
-  for (const { fm, article } of parsed) {
-    for (const ref of article.refs) {
+  for (const { fm, page } of pages) {
+    for (const ref of page.refs) {
       if (!known[ref.kind].has(ref.slug)) {
         fm.problem("refs", `has unknown entry "${ref.kind}:${ref.slug}"`);
       }
@@ -253,18 +324,23 @@ export function loadContent(root: string = DEFAULT_ROOT): Content {
 
   // A redirect must never shadow a live page or point two ways.
   const owner = new Map<string, string>();
-  for (const { fm, article } of parsed) {
-    for (const old of article.redirects) {
-      if (known.article.has(old)) {
-        fm.problem("redirects", `entry "${old}" is a live article slug`);
-      } else if (owner.has(old)) {
-        fm.problem("redirects", `entry "${old}" is already claimed by ${owner.get(old)}`);
-      } else owner.set(old, article.slug);
+  for (const { fm, page } of pages) {
+    for (const old of page.redirects) {
+      const key = `${page.kind}:${old}`;
+      if (known[page.kind].has(old)) {
+        fm.problem("redirects", `entry "${old}" is a live ${page.kind} slug`);
+      } else if (owner.has(key)) {
+        fm.problem("redirects", `entry "${old}" is already claimed by ${owner.get(key)}`);
+      } else owner.set(key, page.slug);
     }
   }
 
   if (problems.length > 0) throw new ContentError(problems);
-  return { tags, articles: parsed.map((p) => p.article) };
+  return {
+    tags,
+    articles: articles.map((p) => p.page),
+    tools: tools.map((p) => p.page),
+  };
 }
 
 let cached: Content | undefined;
@@ -278,4 +354,8 @@ export function getContent(): Content {
 
 export function getArticle(slug: string): Article | undefined {
   return getContent().articles.find((a) => a.slug === slug);
+}
+
+export function getTool(slug: string): Tool | undefined {
+  return getContent().tools.find((t) => t.slug === slug);
 }

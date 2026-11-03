@@ -158,3 +158,48 @@ test("redirects keep old slugs but may not collide with live slugs or each other
   assert.ok(problems.some((p) => /redirects.*Bad Slug/.test(p)), problems.join("\n"));
   assert.ok(problems.some((p) => /redirects.*shared-old/.test(p)), problems.join("\n"));
 });
+
+function tool(fm: Record<string, unknown>, body = "## What it is\n\nText\n"): string {
+  const base = {
+    slug: "good-tool",
+    title: "Good Tool",
+    description: "เครื่องมือดี",
+    tags: ["video-pipeline"],
+    category: "render",
+    refs: [],
+    links: { website: "https://example.com" },
+    license: "MIT",
+    updated: "2026-11-03",
+    sources: [],
+    ...fm,
+  };
+  return "---\n" + stringifyYaml(base) + "---\n" + body;
+}
+
+test("tools load with category, https links and a license note", () => {
+  const root = tree({
+    "tools/good-tool.mdx": tool({ links: { repo: "https://github.com/x/y", docs: "https://docs.x.dev" } }),
+    "articles/good-article.mdx": article({ refs: ["tool:good-tool"] }),
+  });
+  const [t] = loadContent(root).tools;
+  assert.equal(t.slug, "good-tool");
+  assert.equal(t.category, "render");
+  assert.deepEqual(t.links, { repo: "https://github.com/x/y", docs: "https://docs.x.dev" });
+  assert.equal(t.license, "MIT");
+});
+
+test("tools reject unknown categories, non-https or unknown link kinds, and a missing license", () => {
+  const problems = problemsOf(
+    tree({
+      "tools/good-tool.mdx": tool({
+        category: "editing",
+        links: { website: "http://x.dev", blog: "https://b.dev" },
+        license: undefined,
+      }),
+    }),
+  );
+  for (const re of [/tools\/good-tool\.mdx.*category/, /links.*website/, /links.*blog/, /license/]) {
+    assert.ok(problems.some((p) => re.test(p)), `${re}: ${problems.join("\n")}`);
+  }
+});
+
