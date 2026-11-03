@@ -67,22 +67,24 @@ jobs:
           NEXT_PUBLIC_MEDIA_MODE: licensed-only
         run: vercel build --prod
 
-      # Public CA bundle (db/certs) -> TLS with certificate + hostname checks.
-      - name: Load database CA
-        run: |
-          {
-            echo "KUBCODE_DB_CA_CERT<<__KUBCODE_CA__"
-            cat db/certs/supabase-prod-ca.pem
-            echo "__KUBCODE_CA__"
-          } >> "$GITHUB_ENV"
+      # Shape only (Session pooler host, port 5432, postgres.<ref> user); no
+      # connection and no part of the secret is printed.
+      - name: Check migration secret shape
+        env:
+          DATABASE_URL: ${{ secrets.MIGRATION_DATABASE_URL }}
+          MIGRATION_EXPECT_PROJECT_REF: sgtyrndczwxijrubyyjw
+        run: npx tsx scripts/accounts-migrate.ts --check-url
 
+      # The public CA bundle (db/certs) is passed inline to the DB steps only, so
+      # it is not echoed into every later step's environment listing.
       - name: Plan migrations (read-only)
         env:
           DATABASE_URL: ${{ secrets.MIGRATION_DATABASE_URL }}
           NODE_ENV: production
         run: |
           set +e
-          npx tsx scripts/accounts-migrate.ts --plan > "$RUNNER_TEMP/plan.txt"
+          KUBCODE_DB_CA_CERT="$(cat db/certs/supabase-prod-ca.pem)" \
+            npx tsx scripts/accounts-migrate.ts --plan > "$RUNNER_TEMP/plan.txt"
           rc=$?
           set -e
           cat "$RUNNER_TEMP/plan.txt"
@@ -103,7 +105,7 @@ jobs:
         env:
           DATABASE_URL: ${{ secrets.MIGRATION_DATABASE_URL }}
           NODE_ENV: production
-        run: npx tsx scripts/accounts-migrate.ts --apply
+        run: KUBCODE_DB_CA_CERT="$(cat db/certs/supabase-prod-ca.pem)" npx tsx scripts/accounts-migrate.ts --apply
 
       - name: Record current production deployment
         id: previous
