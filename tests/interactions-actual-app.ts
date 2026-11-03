@@ -93,6 +93,7 @@ async function main() {
         ...FIXTURE,
         NODE_ENV: "production",
         KUBCODE_ACCOUNTS_ENABLED: "true",
+        KUBCODE_INTERACTIONS_ENABLED: "true",
         DATABASE_URL: appUrl,
         KUBCODE_DB_ALLOW_PLAINTEXT_LOOPBACK: "true",
         NEXT_PUBLIC_MEDIA_MODE: "licensed-only",

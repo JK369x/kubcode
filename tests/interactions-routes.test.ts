@@ -22,8 +22,14 @@ const AUTH_ENV = Object.freeze({
   LINE_CLIENT_ID: "2000000001",
   LINE_CLIENT_SECRET: "FIXTURE-ONLY-line-channel-secret-01",
 });
+const ACCOUNTS_ONLY_ENV = Object.freeze({
+  ...AUTH_ENV,
+  KUBCODE_ACCOUNTS_ENABLED: "true",
+  DATABASE_URL: "postgres://fixture:fixture@127.0.0.1:5432/kubcode_fixture_test",
+});
 const ON_ENV = Object.freeze({
   ...AUTH_ENV,
+  KUBCODE_INTERACTIONS_ENABLED: "true",
   KUBCODE_ACCOUNTS_ENABLED: "true",
   DATABASE_URL: "postgres://fixture:fixture@127.0.0.1:5432/kubcode_fixture_test",
 });
@@ -76,7 +82,7 @@ test("with accounts off, reads and writes say so and never touch the database", 
   const off = await handlePageState(read, { ...deps(untouchable, AUTH_ENV) });
   assert.equal(off.status, 200);
   assert.deepEqual(await off.json(), { available: false });
-  const broken = await handlePageState(read, deps(untouchable, { ...AUTH_ENV, KUBCODE_ACCOUNTS_ENABLED: "true" }));
+  const broken = await handlePageState(read, deps(untouchable, { ...AUTH_ENV, KUBCODE_INTERACTIONS_ENABLED: "true", KUBCODE_ACCOUNTS_ENABLED: "true" }));
   await expectError(broken, 503, "ACCOUNTS_UNAVAILABLE");
   await expectError(await handleStar(await write("/api/interactions/star", { kind: "tool", slug: "remotion" }), deps(untouchable, AUTH_ENV)), 503, "ACCOUNTS_DISABLED");
 });
@@ -178,5 +184,16 @@ test("the public name route validates and saves through the store", async () => 
     await handlePublicName(await write("/api/interactions/profile", { publicName: 3 }), deps(untouchable)),
     400,
     "BAD_REQUEST",
+  );
+});
+
+test("accounts on but interactions not enabled (0002 not applied yet): reads say unavailable, writes refuse, no database", async () => {
+  const read = new Request("https://kubcode.dev/api/interactions?kind=tool&slug=remotion", { headers: { host: "kubcode.dev" } });
+  const off = await handlePageState(read, deps(untouchable, ACCOUNTS_ONLY_ENV));
+  assert.deepEqual([off.status, await off.json()], [200, { available: false }]);
+  await expectError(
+    await handleStar(await write("/api/interactions/star", { kind: "tool", slug: "remotion" }), deps(untouchable, ACCOUNTS_ONLY_ENV)),
+    503,
+    "INTERACTIONS_DISABLED",
   );
 });

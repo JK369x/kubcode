@@ -3,6 +3,7 @@ import { cookies, headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { AccountSettings } from "@/components/AccountSettings";
 import { PublicNameForm } from "@/components/PublicNameForm";
+import { interactionsEnabled } from "@/lib/interactions/routes";
 import { settingsNotice } from "@/lib/accounts/notices";
 import { canonicalHostRedirect, readAuthConfig } from "@/lib/auth-policy";
 import { getSettingsView } from "@/lib/accounts/view";
@@ -42,7 +43,7 @@ export default async function AccountSettingsPage({ searchParams }: Props) {
           <Link href="/account">กลับไปหน้าพื้นที่สมาชิก</Link>
         </p>
       </div>
-      {view.state === "ready" && <PublicNameForm />}
+      {view.state === "ready" && interactionsEnabled(env) && <PublicNameForm />}
       <section className="membership">
         <h2>การเชื่อมทำงานอย่างไร</h2>
         <dl>

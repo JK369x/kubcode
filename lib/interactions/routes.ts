@@ -16,6 +16,14 @@ import { getContent, slugProblem } from "../content";
 import { guardWrite } from "./http";
 import { getInteractionStore, type InteractionStore, type PageKey, type StoreErrorCode } from "./store";
 
+/**
+ * Stars and comments stay off until this is exactly "true", independent of
+ * central accounts: deploy first, apply migration 0002 + its grants, then
+ * enable. Until then reads say unavailable and nothing queries the new tables.
+ */
+export const INTERACTIONS_FLAG = "KUBCODE_INTERACTIONS_ENABLED";
+export const interactionsEnabled = (env: AuthEnv) => env[INTERACTIONS_FLAG] === "true";
+
 export type InteractionDeps = {
   env?: AuthEnv;
   storeFor?: (databaseUrl: string) => InteractionStore;
@@ -25,7 +33,8 @@ export type InteractionDeps = {
 /** Comment text ≤2000 chars is ≤8000 UTF-8 bytes; JSON framing fits too. */
 export const MAX_WRITE_BYTES = 9 * 1024;
 
-const INTERACTION_ERRORS: Record<StoreErrorCode | "PAGE_NOT_FOUND", { status: number; message: string }> = {
+const INTERACTION_ERRORS: Record<StoreErrorCode | "PAGE_NOT_FOUND" | "INTERACTIONS_DISABLED", { status: number; message: string }> = {
+  INTERACTIONS_DISABLED: { status: 503, message: "ดาวและคอมเมนต์ยังไม่เปิดใช้งานบนเซิร์ฟเวอร์นี้" },
   NOT_SIGNED_IN: ACCOUNT_ERRORS.NOT_SIGNED_IN,
   PAGE_NOT_FOUND: { status: 404, message: "ไม่พบหน้านี้" },
   NOT_FOUND: { status: 404, message: "ไม่พบคอมเมนต์นี้ หรือถูกลบไปแล้ว" },
@@ -40,7 +49,7 @@ const INTERACTION_ERRORS: Record<StoreErrorCode | "PAGE_NOT_FOUND", { status: nu
   NAME_INVALID: { status: 422, message: "ชื่อยาวได้ไม่เกิน 40 ตัวอักษร และห้ามมีลิงก์" },
 };
 
-function errorResponse(code: StoreErrorCode | "PAGE_NOT_FOUND"): Response {
+function errorResponse(code: StoreErrorCode | "PAGE_NOT_FOUND" | "INTERACTIONS_DISABLED"): Response {
   const e = INTERACTION_ERRORS[code] ?? ACCOUNT_ERRORS.ACCOUNTS_UNAVAILABLE;
   return Response.json({ code, message: e.message }, { status: e.status, headers: { "Cache-Control": "no-store" } });
 }
@@ -67,6 +76,7 @@ async function context(request: Request, deps: InteractionDeps): Promise<Ctx | R
   const accounts = readAccountsConfig(env);
   if (accounts.mode === "off") return accountErrorResponse("ACCOUNTS_DISABLED");
   if (accounts.mode === "broken") return accountErrorResponse("ACCOUNTS_UNAVAILABLE");
+  if (!interactionsEnabled(env)) return errorResponse("INTERACTIONS_DISABLED");
   const auth = readAuthConfig(env);
   if (!auth.ok) return accountErrorResponse("ACCOUNTS_UNAVAILABLE");
   const ready = providerReadiness(auth);
@@ -92,6 +102,7 @@ async function write(
   const env = deps.env ?? process.env;
   const accounts = readAccountsConfig(env);
   if (accounts.mode !== "on") return accountErrorResponse(accounts.mode === "off" ? "ACCOUNTS_DISABLED" : "ACCOUNTS_UNAVAILABLE");
+  if (!interactionsEnabled(env)) return errorResponse("INTERACTIONS_DISABLED");
   const guarded = await guardWrite(request, MAX_WRITE_BYTES, options);
   if (!guarded.ok) return accountErrorResponse(guarded.code as AccountErrorCode);
   const ctx = await context(request, deps);
@@ -111,7 +122,8 @@ const badRequest = () => accountErrorResponse("BAD_REQUEST");
 const notSignedIn = () => errorResponse("NOT_SIGNED_IN");
 
 export async function handlePageState(request: Request, deps: InteractionDeps = {}): Promise<Response> {
-  if (readAccountsConfig(deps.env ?? process.env).mode === "off") return jsonNoStore({ available: false });
+  const env = deps.env ?? process.env;
+  if (readAccountsConfig(env).mode === "off" || !interactionsEnabled(env)) return jsonNoStore({ available: false });
   const ctx = await context(request, deps);
   if (ctx instanceof Response) return ctx;
   const url = new URL(request.url);
