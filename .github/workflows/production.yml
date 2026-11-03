@@ -1,0 +1,175 @@
+# main only: checks -> build -> read-only migration plan + destructive gate ->
+# migrate (only if pending) -> production deploy (not yet on the domain) ->
+# smoke -> promote to kubcode.dev -> smoke (auto re-promote previous on fail).
+# Any failing step stops everything after it: no migration, no deploy.
+#
+# Destructive pending migrations stop push runs. The owner approves by running
+# this workflow manually on main with the exact phrase the blocked run printed
+# (GitHub environment reviewers are not available for this private repo plan).
+# That phrase is a safety interlock against accidents, NOT an authorization
+# boundary: anyone with push access could edit a workflow to use the secrets.
+name: Production
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+    inputs:
+      approval:
+        description: 'Only for destructive migrations: the exact phrase from the blocked run, e.g. "approve 0003_x"'
+        required: false
+        default: ""
+
+permissions:
+  contents: read
+
+# One production run at a time; never cancel a run mid-migration or mid-deploy.
+concurrency:
+  group: production
+  cancel-in-progress: false
+
+env:
+  VERCEL_CLI_VERSION: "54.1.0"
+  VERCEL_ORG_ID: ${{ vars.VERCEL_ORG_ID }}
+  VERCEL_PROJECT_ID: ${{ vars.VERCEL_PROJECT_ID }}
+  CANONICAL_ORIGIN: https://kubcode.dev
+
+jobs:
+  checks:
+    if: github.ref == 'refs/heads/main'
+    uses: ./.github/workflows/checks.yml
+
+  release:
+    needs: checks
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+      - run: npm ci --ignore-scripts
+      - run: npm install --global "vercel@${VERCEL_CLI_VERSION}"
+
+      # Build before touching the database so a broken build never leaves a
+      # migrated schema without a matching deploy.
+      - name: Pull production project settings
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+        run: vercel pull --yes --environment=production --token "$VERCEL_TOKEN"
+
+      # Runs project code (next build): no token or DB URL in this step.
+      - name: Build production (prebuilt, licensed-only media)
+        env:
+          NEXT_PUBLIC_MEDIA_MODE: licensed-only
+        run: vercel build --prod
+
+      # Public CA bundle (db/certs) -> TLS with certificate + hostname checks.
+      - name: Load database CA
+        run: |
+          {
+            echo "KUBCODE_DB_CA_CERT<<__KUBCODE_CA__"
+            cat db/certs/supabase-prod-ca.pem
+            echo "__KUBCODE_CA__"
+          } >> "$GITHUB_ENV"
+
+      - name: Plan migrations (read-only)
+        env:
+          DATABASE_URL: ${{ secrets.MIGRATION_DATABASE_URL }}
+          NODE_ENV: production
+        run: |
+          set +e
+          npx tsx scripts/accounts-migrate.ts --plan > "$RUNNER_TEMP/plan.txt"
+          rc=$?
+          set -e
+          cat "$RUNNER_TEMP/plan.txt"
+          # 0 = ok, 3 = checksum drift (reported by the gate); anything else is a failure.
+          if [ "$rc" -ne 0 ] && [ "$rc" -ne 3 ]; then
+            echo "::error::migration plan failed (exit $rc)"
+            exit 1
+          fi
+
+      - name: Migration gate
+        id: gate
+        env:
+          MIGRATION_APPROVAL: ${{ inputs.approval }}
+        run: npx tsx scripts/ci-migration-gate.ts "$RUNNER_TEMP/plan.txt"
+
+      - name: Migrate production database
+        if: steps.gate.outputs.migrate == 'true'
+        env:
+          DATABASE_URL: ${{ secrets.MIGRATION_DATABASE_URL }}
+          NODE_ENV: production
+        run: npx tsx scripts/accounts-migrate.ts --apply
+
+      - name: Record current production deployment
+        id: previous
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+        run: |
+          id=$(curl -fsS -H "Authorization: Bearer $VERCEL_TOKEN" \
+            "https://api.vercel.com/v13/deployments/kubcode.dev?teamId=${VERCEL_ORG_ID}" | jq -r '.id')
+          echo "id=$id" >> "$GITHUB_OUTPUT"
+          echo "Previous production deployment: $id" >> "$GITHUB_STEP_SUMMARY"
+
+      # Deploy the prebuilt output from outside the git checkout: Vercel Hobby
+      # BLOCKS deployments whose git commit author is not a team member.
+      - name: Deploy production (not yet on the domain)
+        id: deploy
+        if: steps.gate.outputs.deploy == 'true'
+        timeout-minutes: 10
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+        run: |
+          stage="$RUNNER_TEMP/deploy"
+          # Whole tree minus .git: prebuilt functions reference node_modules files.
+          mkdir -p "$stage" && rsync -a --exclude .git ./ "$stage/"
+          url=$(vercel deploy --prebuilt --prod --skip-domain --cwd "$stage" --token "$VERCEL_TOKEN")
+          host=${url#https://}
+          info=$(curl -fsS -H "Authorization: Bearer $VERCEL_TOKEN" \
+            "https://api.vercel.com/v13/deployments/${host}?teamId=${VERCEL_ORG_ID}")
+          [ "$(jq -r '.target' <<<"$info")" = "production" ] || { echo "::error::deploy target is not production"; exit 1; }
+          [ "$(jq -r '.readyState' <<<"$info")" = "READY" ] || { echo "::error::deployment not READY"; exit 1; }
+          echo "url=$url" >> "$GITHUB_OUTPUT"
+          echo "id=$(jq -r '.id' <<<"$info")" >> "$GITHUB_OUTPUT"
+
+      # Runtime env (Vercel production secrets) must reach the prebuilt
+      # functions: the auth route only redirects to the canonical host when
+      # Google/LINE/NextAuth settings are present at runtime.
+      - name: Smoke test the new deployment URL
+        env:
+          URL: ${{ steps.deploy.outputs.url }}
+        run: |
+          code=$(curl -sS -o /dev/null -w '%{http_code}' --retry 3 "$URL/")
+          [ "$code" = "200" ] || { echo "::error::GET / returned $code"; exit 1; }
+          loc=$(curl -sS -o /dev/null -w '%{http_code} %{redirect_url}' "$URL/api/auth/providers")
+          [ "$loc" = "303 ${CANONICAL_ORIGIN}/account" ] || { echo "::error::auth runtime env check failed: $loc"; exit 1; }
+
+      - name: Promote to kubcode.dev
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          URL: ${{ steps.deploy.outputs.url }}
+        run: vercel promote "$URL" --yes --timeout 5m --token "$VERCEL_TOKEN"
+
+      - name: Smoke test kubcode.dev (re-promote previous on failure)
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          NEW_ID: ${{ steps.deploy.outputs.id }}
+          PREVIOUS_ID: ${{ steps.previous.outputs.id }}
+        run: |
+          fail() {
+            echo "::error::$1; re-promoting previous deployment $PREVIOUS_ID"
+            vercel promote "$PREVIOUS_ID" --yes --timeout 5m --token "$VERCEL_TOKEN" || echo "::error::re-promote failed: roll back manually"
+            exit 1
+          }
+          live=$(curl -fsS -H "Authorization: Bearer $VERCEL_TOKEN" \
+            "https://api.vercel.com/v13/deployments/kubcode.dev?teamId=${VERCEL_ORG_ID}" | jq -r '.id')
+          [ "$live" = "$NEW_ID" ] || fail "kubcode.dev serves $live, expected $NEW_ID"
+          providers=$(curl -fsS --retry 3 "${CANONICAL_ORIGIN}/api/auth/providers" | jq -c 'keys') || fail "providers endpoint failed"
+          [ "$providers" = '["google","line"]' ] || fail "unexpected providers $providers"
+          code=$(curl -sS -o /dev/null -w '%{http_code}' "${CANONICAL_ORIGIN}/account")
+          [ "$code" = "200" ] || fail "/account returned $code"
+          echo "Production: $NEW_ID live on kubcode.dev (previous $PREVIOUS_ID)" >> "$GITHUB_STEP_SUMMARY"
