@@ -1,7 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { skills, styles } from "../lib/catalog";
-import { articles } from "../lib/articles";
+import { loadContent } from "../lib/content";
 
 const catalogNames: Record<string, string> = {
   "growkaz-stickman": "Stickman Cinema",
@@ -138,7 +138,7 @@ test("style metadata tags keep model/author identities", () => {
 });
 
 test("article prose uses the new display names", () => {
-  const prose = JSON.stringify(articles);
+  const prose = JSON.stringify(loadContent().articles);
   for (const name of [
     "Stickman Cinema",
     "Survival Stories",

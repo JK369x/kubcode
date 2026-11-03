@@ -1,0 +1,18 @@
+# Every tag used in content/ is defined here once (lower-kebab slug).
+# th/en are display labels; description shows on the tag page.
+video-pipeline:
+  th: ขั้นตอนทำวิดีโอ
+  en: Video pipeline
+  description: แต่ละชั้นของงานวิดีโอ ตั้งแต่บท สไตล์ ผู้เขียน renderer เสียง และซับ
+renderer:
+  th: ตัว render
+  en: Renderer
+  description: เครื่องมือที่สร้างภาพและ export วิดีโอ เช่น Remotion, HyperFrames หรือ Canvas
+setup:
+  th: ติดตั้งและเตรียมเครื่อง
+  en: Setup
+  description: สิ่งที่เครื่องต้องมีก่อนเริ่ม และวิธีทดสอบเล็ก ๆ ก่อนใช้งานจริง
+licensing:
+  th: สิทธิ์และไลเซนส์
+  en: Licensing
+  description: สิทธิ์ใช้งานและแจกจ่ายของโค้ด ภาพ เสียง ฟอนต์ และบริการภายนอก

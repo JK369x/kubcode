@@ -1,17 +1,33 @@
-import { articles } from "@/lib/articles";
+import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import Link from "next/link";
+import { getArticle, getContent } from "@/lib/content";
+import { renderMdx } from "@/lib/mdx";
+
+export const dynamicParams = false;
+
 export function generateStaticParams() {
-  return articles.map((a) => ({ slug: a.slug }));
+  return getContent().articles.map((a) => ({ slug: a.slug }));
 }
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ slug: string }>;
+}): Promise<Metadata> {
+  const a = getArticle((await params).slug);
+  if (!a) return {};
+  return { title: a.title, description: a.description };
+}
+
 export default async function Article({
   params,
 }: {
   params: Promise<{ slug: string }>;
 }) {
-  const { slug } = await params;
-  const a = articles.find((a) => a.slug === slug);
+  const a = getArticle((await params).slug);
   if (!a) notFound();
+  const body = await renderMdx(a.body);
   return (
     <main id="main" className="reading">
       <Link className="back" href="/articles">
@@ -19,18 +35,30 @@ export default async function Article({
       </Link>
       <article>
         <h1>{a.title}</h1>
-        <p className="lead">{a.summary}</p>
-        {a.sections.map((s) => (
-          <section key={s.heading}>
-            <h2>{s.heading}</h2>
-            <p>{s.body}</p>
-          </section>
-        ))}
-        <p className="source-note">
-          ที่มา: คู่มือ STRUCTURE.md และ shared voice README ของคลังส่วนตัว ·
-          เรียบเรียงเพื่อใช้ในต้นแบบนี้ · ไม่มีการทดสอบ renderer
-          ใหม่จากบทความนี้
-        </p>
+        <p className="lead">{a.description}</p>
+        <div className="prose">{body}</div>
+        <footer className="source-note">
+          {a.sources.length > 0 && (
+            <>
+              ที่มา:{" "}
+              {a.sources.map((s, i) => (
+                <span key={s.title}>
+                  {i > 0 && " · "}
+                  {s.url ? (
+                    <a href={s.url} rel="noopener noreferrer" target="_blank">
+                      {s.title}
+                    </a>
+                  ) : (
+                    s.title
+                  )}
+                </span>
+              ))}
+            </>
+          )}
+          {a.sourceNote && <> · {a.sourceNote}</>}
+          <br />
+          อัปเดต <time dateTime={a.updated}>{a.updated}</time>
+        </footer>
       </article>
     </main>
   );

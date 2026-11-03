@@ -1,7 +1,8 @@
 import Link from "next/link";
 import { ArrowUpRight } from "lucide-react";
-import { articles } from "@/lib/articles";
+import { getContent } from "@/lib/content";
 export default function Articles() {
+  const { articles } = getContent();
   return (
     <main id="main" className="reading-index">
       <h1>อ่านก่อนลงมือ</h1>
@@ -12,13 +13,13 @@ export default function Articles() {
         <Link className="article-row" key={a.slug} href={"/articles/" + a.slug}>
           <div>
             <h2>{a.title}</h2>
-            <p>{a.summary}</p>
+            <p>{a.description}</p>
           </div>
           <ArrowUpRight />
         </Link>
       ))}
       <p className="source-note">
-        บทความเรียบเรียงใหม่จากคู่มือโครงสร้างคลังวิดีโอส่วนตัว
+        เขียนด้วยคำของเราเอง และให้เครดิตต้นทางท้ายทุกบทความ
         ไม่ใช่การรับรองชุดเครื่องมือภายนอก
       </p>
     </main>

@@ -3,7 +3,7 @@ import fs from 'node:fs';
 import assert from 'node:assert/strict';
 const dir='.qa/project-visual-audit';fs.mkdirSync(dir,{recursive:true});
 const slugs=file=>[...fs.readFileSync(file,'utf8').matchAll(/slug:\s*"([^"]+)"/g)].map(m=>m[1]);
-const routes=['/','/articles','/account',...slugs('lib/catalog.ts').map(s=>'/skills/'+s),...slugs('lib/articles.ts').map(s=>'/articles/'+s)];
+const routes=['/','/articles','/account',...slugs('lib/catalog.ts').map(s=>'/skills/'+s),...fs.readdirSync('content/articles').filter(f=>f.endsWith('.mdx')).map(f=>'/articles/'+f.slice(0,-4))];
 assert.equal(new Set(routes).size,routes.length);
 const report={routes,routeStates:[],catalog:[],errors:[],status:'running'};
 const browser=await chromium.launch({headless:true,channel:'chrome'});

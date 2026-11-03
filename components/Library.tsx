@@ -16,9 +16,11 @@ import { MediaSkillCard } from "./MediaSkillCard";
 import { statusLabel } from "@/lib/status-labels";
 import { KineticHero } from "./KineticHero";
 import heroStyles from "./KineticHero.module.css";
-import { articles } from "@/lib/articles";
 
-export function Library() {
+/** Article teaser data passed from the server page (content loads from disk). */
+export type ArticleTeaser = { slug: string; title: string; description: string };
+
+export function Library({ articles }: { articles: ArticleTeaser[] }) {
   const [query, setQuery] = useState("");
   const [category, setCategory] = useState("all");
   const [selected, setSelected] = useState<string | null>(null);
@@ -195,7 +197,7 @@ export function Library() {
             >
               <div>
                 <h3>{article.title}</h3>
-                <p>{article.summary}</p>
+                <p>{article.description}</p>
               </div>
               <ArrowUpRight size={23} />
             </Link>
