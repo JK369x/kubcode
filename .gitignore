@@ -1,4 +1,6 @@
 .DS_Store
+.qa/
+public/previews/
 node_modules/
 .next/
 out/
@@ -12,3 +14,34 @@ test-results/
 next-env.d.ts
 .impeccable/review/
 .impeccable/mocks/
+
+# Local deploy/CLI state (project links, tokens)
+.vercel/
+supabase/.temp/
+
+# Credentials and key material
+*.pem
+*.key
+*.p12
+*.pfx
+*.crt
+.env.keys
+
+# Archives and large/private media (previews and originals stay local;
+# force-add a licensed asset deliberately if one is ever approved)
+*.zip
+*.tar
+*.tar.gz
+*.tgz
+*.mp4
+*.mov
+*.webm
+*.mkv
+*.wav
+*.mp3
+*.psd
+
+# Logs and local tool state
+*.log
+npm-debug.log*
+.impeccable/questions/
