@@ -47,3 +47,5 @@ npm-debug.log*
 .impeccable/questions/
 # Public (non-secret) Supabase root CA bundle used to verify DB TLS in CI
 !db/certs/supabase-prod-ca.pem
+# TEST ONLY RSA keys for the envelope vectors (never used outside tests).
+!tests/fixtures/envelope/test-only-*.pem
