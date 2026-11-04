@@ -64,7 +64,12 @@ async function main() {
       // fail are caught by the response listener below instead.
       page.on("console", (m) => m.type() === "error" && !m.text().startsWith("Failed to load resource") && errors.push(m.text()));
       page.on("pageerror", (e) => errors.push(String(e)));
-      page.on("response", (r) => r.status() >= 400 && errors.push(`${r.status()} ${new URL(r.url()).pathname}`));
+      // This server runs without sign-in configured, so the header's session
+      // check answers 503 AUTH_NOT_CONFIGURED by design; anything else counts.
+      page.on("response", (r) => {
+        const path = new URL(r.url()).pathname;
+        if (r.status() >= 400 && !(r.status() === 503 && path === "/api/auth/session")) errors.push(`${r.status()} ${path}`);
+      });
       return { page, errors };
     }
 

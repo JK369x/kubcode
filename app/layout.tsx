@@ -1,7 +1,7 @@
 import { ThemeToggle } from "@/components/ThemeToggle";
+import { AccountMenu } from "@/components/AccountMenu";
 import type { Metadata } from "next";
 import Link from "next/link";
-import { ArrowUpRight } from "lucide-react";
 import "@fontsource/anuphan/400.css";
 import "@fontsource/anuphan/500.css";
 import "@fontsource/anuphan/600.css";
@@ -44,9 +44,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
             <Link href="/">คลังทักษะ</Link>
             <Link href="/articles">บทความ</Link>
             <Link href="/tools">เครื่องมือ</Link>
-            <Link className="account-link" href="/account">
-              พื้นที่สมาชิก <ArrowUpRight size={16} />
-            </Link>
+            <AccountMenu />
           </nav>
         </header>
         {children}

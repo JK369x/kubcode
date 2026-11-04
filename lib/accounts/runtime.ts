@@ -15,7 +15,7 @@ export type RequestContext = {
   // Claims of the current, signature-verified session JWT (not yet DB-checked).
   session: SessionClaims | null;
   // Set by the signIn callback for an ordinary login; read by the jwt callback.
-  login: (LoginProfile & { userId: string; sessionVersion: number }) | null;
+  login: (LoginProfile & { userId: string; sessionVersion: number; picture?: string | null }) | null;
   clearLinkCookie: boolean;
 };
 

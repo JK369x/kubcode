@@ -224,7 +224,8 @@ export type MinimalToken = {
   name?: string | null;
   email?: string;
 };
-export type PublicUser = { provider: AuthProviderId; name: string | null; email: string | null };
+/** image: allowlisted provider picture (central-account sessions only). */
+export type PublicUser = { provider: AuthProviderId; name: string | null; email: string | null; image?: string | null };
 export type PublicSession = { user?: PublicUser; expires: string };
 
 const nameOrNull = (v: unknown): string | null => (nonEmpty(v) ? v : null);

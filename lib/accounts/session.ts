@@ -3,6 +3,7 @@
 // Google email ever reach the browser. Tokens without this exact shape (for
 // example pre-accounts stateless tokens) are treated as signed out.
 import type { AuthProviderId, PublicSession } from "../auth-policy";
+import { safeAvatarUrl } from "../avatar";
 import { isOpaqueToken, newOpaqueToken } from "./crypto";
 
 export const ACCOUNT_TOKEN_KIND = 1;
@@ -18,6 +19,8 @@ export type AccountToken = {
   sub: string;
   name: string | null;
   email?: string;
+  /** Allowlisted provider picture for this sign-in; never stored in the DB. */
+  picture?: string;
 };
 
 // The private session claims the database checks on every read.
@@ -37,6 +40,7 @@ export function accountToken(input: {
   subject: string;
   name: string | null;
   email: string | null;
+  picture?: string | null;
 }): AccountToken {
   const token: AccountToken = {
     kc: ACCOUNT_TOKEN_KIND,
@@ -48,12 +52,14 @@ export function accountToken(input: {
     name: input.name,
   };
   if (input.provider === "google" && input.email) token.email = input.email;
+  const picture = safeAvatarUrl(input.picture);
+  if (picture) token.picture = picture;
   return token;
 }
 
 export function parseAccountToken(value: unknown): AccountToken | null {
   if (!isObj(value) || value.kc !== ACCOUNT_TOKEN_KIND) return null;
-  const { uid, sid, sv, provider, sub, name, email } = value;
+  const { uid, sid, sv, provider, sub, name, email, picture } = value;
   if (!isUuid(uid) || !isOpaqueToken(sid)) return null;
   if (typeof sv !== "number" || !Number.isSafeInteger(sv) || sv < 1) return null;
   if (provider !== "google" && provider !== "line") return null;
@@ -64,6 +70,9 @@ export function parseAccountToken(value: unknown): AccountToken | null {
     if (!nonEmpty(email)) return null;
     out.email = email;
   } else if (email !== undefined) return null;
+  // A picture that fails the allowlist is dropped; the session stays valid.
+  const safePicture = safeAvatarUrl(picture);
+  if (safePicture) out.picture = safePicture;
   return out;
 }
 
@@ -75,7 +84,12 @@ export function publicSessionFromAccountToken(value: unknown, expires: string): 
   const t = parseAccountToken(value);
   if (!t) return { expires };
   return {
-    user: { provider: t.provider, name: t.name, email: t.provider === "google" ? t.email! : null },
+    user: {
+      provider: t.provider,
+      name: t.name,
+      email: t.provider === "google" ? t.email! : null,
+      image: t.picture ?? null,
+    },
     expires,
   };
 }

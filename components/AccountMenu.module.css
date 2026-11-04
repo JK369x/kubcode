@@ -1,0 +1,121 @@
+.root {
+  display: inline-flex;
+  align-items: center;
+}
+.placeholder {
+  display: inline-block;
+  width: 32px;
+  height: 32px;
+}
+.signIn {
+  display: inline-flex;
+  align-items: center;
+  min-height: 36px;
+  padding: 0 16px;
+  border-radius: 999px;
+  background: var(--selected);
+  color: var(--selected-ink);
+  font-size: 13px;
+  font-weight: 500;
+  text-decoration: none;
+  white-space: nowrap;
+}
+.signIn:hover {
+  background: var(--purple);
+  color: var(--action-hover-ink);
+}
+.wrap {
+  position: relative;
+  display: inline-flex;
+}
+/* 32px avatar inside a 44px touch target. */
+.avatar {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  cursor: pointer;
+}
+.avatar img,
+.avatar span {
+  width: 32px;
+  height: 32px;
+  border-radius: 999px;
+  box-shadow: 0 0 0 2px transparent;
+  transition: box-shadow 0.15s;
+}
+.avatar img {
+  object-fit: cover;
+  background: var(--surface-soft);
+}
+.avatar span {
+  display: grid;
+  place-items: center;
+  background: var(--field);
+  color: var(--on-field);
+  font: 600 15px/1 Anuphan, Archivo, sans-serif;
+}
+.avatar:hover img,
+.avatar:hover span,
+.avatar[aria-expanded="true"] img,
+.avatar[aria-expanded="true"] span,
+.avatar:focus-visible img,
+.avatar:focus-visible span {
+  box-shadow: 0 0 0 2px var(--bg), 0 0 0 4px var(--purple);
+}
+.avatar:focus-visible {
+  outline: none;
+}
+.panel {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  z-index: 60;
+  min-width: 200px;
+  max-width: min(280px, calc(100vw - 32px));
+  padding: 8px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: var(--surface);
+  box-shadow: 0 12px 32px rgb(0 0 0 / 0.25);
+}
+.name {
+  margin: 4px 8px 8px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--line);
+  font-weight: 600;
+  font-size: 14px;
+  overflow-wrap: anywhere;
+}
+.panel ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.panel a,
+.panel button {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  min-height: 40px;
+  padding: 0 8px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--ink);
+  font: inherit;
+  font-size: 14px;
+  text-align: left;
+  text-decoration: none;
+  cursor: pointer;
+}
+.panel a:hover,
+.panel button:hover,
+.panel a:focus-visible,
+.panel button:focus-visible {
+  background: var(--surface-soft);
+}

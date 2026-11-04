@@ -104,9 +104,30 @@ test("accounts: public session exposes provider, name and Google email only, nev
   const { accountToken, publicSessionFromAccountToken } = session();
   const t = accountToken({ userId: UID2, sessionVersion: 9, provider: "google", subject: "g-secret-sub", name: "N", email: "g@example.test" });
   const s = publicSessionFromAccountToken(t, "2026-11-04T00:00:00.000Z");
-  assert.deepEqual(s, { user: { provider: "google", name: "N", email: "g@example.test" }, expires: "2026-11-04T00:00:00.000Z" });
+  assert.deepEqual(s, { user: { provider: "google", name: "N", email: "g@example.test", image: null }, expires: "2026-11-04T00:00:00.000Z" });
   assert.doesNotMatch(JSON.stringify(s), new RegExp(`g-secret-sub|${UID2}|${t.sid}|"sv"|"uid"|"sid"`));
   assert.deepEqual(publicSessionFromAccountToken({ provider: "google", sub: "x", email: "x@example.test" }, "e"), { expires: "e" });
+});
+
+test("accounts: the session keeps an allowlisted provider picture; anything else is dropped without signing out", () => {
+  const { accountToken, parseAccountToken, publicSessionFromAccountToken } = session();
+  const PIC = "https://lh3.googleusercontent.com/a/ACg8oc-fixture=s96-c";
+  const t = accountToken({ userId: UID, sessionVersion: 1, provider: "google", subject: "g-1", name: "N", email: "g@example.test", picture: PIC });
+  assert.equal(t.picture, PIC);
+  assert.equal(parseAccountToken(t)?.picture, PIC);
+  assert.equal(publicSessionFromAccountToken(t, "e").user?.image, PIC);
+
+  const line = accountToken({ userId: UID, sessionVersion: 1, provider: "line", subject: "U1", name: "L", email: null, picture: "https://profile.line-scdn.net/0hFixture" });
+  assert.equal(publicSessionFromAccountToken(line, "e").user?.image, "https://profile.line-scdn.net/0hFixture");
+
+  for (const bad of ["https://evil.example/a.png", "http://lh3.googleusercontent.com/a", "javascript:alert(1)", 5]) {
+    const smuggled = parseAccountToken({ ...t, picture: bad });
+    assert.ok(smuggled, "token still valid");
+    assert.equal(smuggled?.picture, undefined, String(bad));
+    assert.equal(publicSessionFromAccountToken({ ...t, picture: bad }, "e").user?.image, null);
+  }
+  const none = accountToken({ userId: UID, sessionVersion: 1, provider: "google", subject: "g-1", name: "N", email: "g@example.test", picture: "https://evil.example/x" });
+  assert.equal(none.picture, undefined);
 });
 
 // ----------------------------------------------------- crypto and cookies
@@ -466,6 +487,24 @@ test("accounts: an old stateless JWT is signed out in mode on without touching t
     assert.deepEqual(await options.callbacks!.jwt!({ token: legacy } as never), {}, JSON.stringify(legacy));
 });
 
+test("accounts: sign-in keeps the provider picture in the session only, never in the database call", async () => {
+  const PIC = "https://profile.line-scdn.net/0hFixturePicture";
+  const seen: unknown[] = [];
+  const store = { resolveLogin: async (p: unknown) => (seen.push(p), { status: "ok", userId: UID, sessionVersion: 1 }) };
+  for (const [picture, expected] of [
+    [PIC, PIC],
+    ["https://evil.example/p.png", undefined],
+  ] as const) {
+    seen.length = 0;
+    const { options } = onOptions(store);
+    const profile = { ...lineProfile, picture };
+    assert.equal(await options.callbacks!.signIn!({ account: lineAccount, profile, user: {} } as never), true);
+    assert.equal(JSON.stringify(seen).includes("picture"), false, "the store never receives the picture");
+    const token = (await options.callbacks!.jwt!({ token: {}, account: lineAccount, profile } as never)) as { picture?: string };
+    assert.equal(token.picture, expected, picture);
+  }
+});
+
 test("accounts: session reads re-check the database and fail closed on revocation or outage", async () => {
   const token = session().accountToken({ userId: UID, sessionVersion: 2, provider: "line", subject: "Ufixture", name: "N", email: null });
   const seen: unknown[] = [];
@@ -492,7 +531,7 @@ test("accounts: session reads re-check the database and fail closed on revocatio
 test("accounts: public session in mode on never exposes internal id, binding or subject", async () => {
   const token = session().accountToken({ userId: UID, sessionVersion: 2, provider: "google", subject: "g-secret", name: "N", email: "g@example.test" });
   const s = await onOptions(untouchable).options.callbacks!.session!({ session: { expires: "e" }, token } as never);
-  assert.deepEqual(s, { user: { provider: "google", name: "N", email: "g@example.test" }, expires: "e" });
+  assert.deepEqual(s, { user: { provider: "google", name: "N", email: "g@example.test", image: null }, expires: "e" });
 });
 
 test("accounts: database outage during sign-in fails closed with a fixed error and no session", async () => {
