@@ -37,3 +37,5 @@ STYLE: friendly hand-drawn cartoon, flat colour with slightly uneven dark-brown 
 3. Copy `public/covers/<slug>/` into your branch, add the frontmatter above, remove the Codex worktree, then run `npm test`.
 
 Keep `cover.json` next to the images: it is the provenance record.
+
+**Replacing a cover:** give the new files new names (e.g. `cover-v2.jpg`, `og-v2.jpg`) and update the frontmatter. The image optimiser, CDN and browsers cache by URL, so an image replaced under the same name can keep showing the old one.
