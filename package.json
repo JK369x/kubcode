@@ -16,13 +16,15 @@
     "test:accounts-browser": "tsx tests/accounts-settings-browser.ts",
     "test:browser": "node tests/project-visual-audit-browser.mjs && node tests/kinetic-hero-browser.mjs after && node tests/native-media-browser.mjs && node tests/shared-download-browser.mjs",
     "test:interactions-app": "tsx tests/interactions-actual-app.ts",
-    "test:reading-browser": "tsx tests/reading-browser.ts"
+    "test:reading-browser": "tsx tests/reading-browser.ts",
+    "cover": "tsx scripts/cover-brief.ts"
   },
   "dependencies": {
     "@fontsource/anuphan": "^5.2.5",
     "@fontsource/archivo": "^5.2.5",
     "@mdx-js/mdx": "3.1.1",
     "@shikijs/rehype": "4.5.0",
+    "image-size": "2.0.4",
     "lucide-react": "^0.468.0",
     "next": "16.4.3",
     "next-auth": "4.24.15",

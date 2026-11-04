@@ -25,6 +25,10 @@ const article: Article = {
   redirects: ["free-ai-animation"],
   go: ["anim"],
   body: "",
+  category: "how-to",
+  cover: { src: "/covers/free-ai-animation-opencode/cover.jpg", og: "/covers/free-ai-animation-opencode/og.jpg", alt: "ภาพปก", source: "generated", width: 1600, height: 900 },
+  featured: false,
+  readingMinutes: 5,
 };
 const tool: Tool = {
   kind: "tool",
@@ -43,7 +47,7 @@ const tool: Tool = {
   links: { repo: "https://github.com/remotion-dev/remotion", website: "https://www.remotion.dev" },
   license: "ฟรีสำหรับทีม ≤3 คน",
 };
-const content: Content = { tags: [], articles: [article], tools: [tool] };
+const content: Content = { tags: [], categories: [], articles: [article], tools: [tool] };
 
 test("renamed slugs and /go codes become permanent 301 redirects to the canonical path", () => {
   assert.deepEqual(contentRedirects(content), [
@@ -118,6 +122,7 @@ test("sitemap lists home, indexes, every article, tool and skill, and only tags 
       { slug: "animation", th: "แอนิเมชัน", en: "Animation", description: "d" },
       { slug: "rare", th: "น้อย", en: "Rare", description: "d" },
     ],
+    categories: [],
     articles: [article],
     tools: [tool, { ...tool, slug: "ffmpeg", tags: ["animation", "rare"] }],
   };

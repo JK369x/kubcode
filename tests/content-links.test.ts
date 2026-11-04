@@ -5,6 +5,7 @@ import { tmpdir } from "node:os";
 import path from "node:path";
 import { stringify as stringifyYaml } from "yaml";
 import { loadContent } from "../lib/content";
+import { fakePng } from "./fixtures/images";
 import { hrefOf, pagesForTag, related } from "../lib/content-links";
 
 function page(kind: "article" | "tool", slug: string, fm: Record<string, unknown> = {}): [string, string] {
@@ -15,15 +16,22 @@ function page(kind: "article" | "tool", slug: string, fm: Record<string, unknown
     tags: [],
     refs: [],
     updated: "2026-11-03",
-    ...(kind === "tool" ? { name: slug, category: "render", license: "MIT", links: {} } : {}),
+    ...(kind === "tool"
+      ? { name: slug, category: "render", license: "MIT", links: {} }
+      : { category: "basics", cover: { src: "/covers/t/cover.png", og: "/covers/t/og.png", alt: "a", source: "generated" } }),
     ...fm,
   };
   return [`${kind}s/${slug}.mdx`, "---\n" + stringifyYaml(base) + "---\nBody\n"];
 }
 
 function load(...files: Array<[string, string]>) {
-  const root = mkdtempSync(path.join(tmpdir(), "kb-links-"));
+  const base = mkdtempSync(path.join(tmpdir(), "kb-links-"));
+  const root = path.join(base, "content");
+  mkdirSync(path.join(base, "public", "covers", "t"), { recursive: true });
+  writeFileSync(path.join(base, "public", "covers", "t", "cover.png"), fakePng(1600, 900));
+  writeFileSync(path.join(base, "public", "covers", "t", "og.png"), fakePng(1200, 630));
   const all = [
+    ["categories.yaml", "basics:\n  th: พื้นฐาน\n  description: d\n"],
     ["tags.yaml", "animation:\n  th: แอนิเมชัน\n  en: Animation\n  description: d\nvoice:\n  th: เสียง\n  en: Voice\n  description: d\n"],
     ...files,
   ];

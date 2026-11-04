@@ -5,6 +5,7 @@ import { tmpdir } from "node:os";
 import path from "node:path";
 import { stringify as stringifyYaml } from "yaml";
 import { ContentError, loadContent } from "../lib/content";
+import { fakePng } from "./fixtures/images";
 
 test("repo content loads the two migrated articles from MDX", () => {
   const content = loadContent();
@@ -15,16 +16,31 @@ test("repo content loads the two migrated articles from MDX", () => {
   assert.match(article.body, /## หกชั้นที่ต้องอ่านให้แยกกัน/);
 });
 
-function tree(files: Record<string, string>): string {
-  const root = mkdtempSync(path.join(tmpdir(), "kb-content-"));
+const CATEGORIES =
+  "how-to:\n  th: สอนทำคลิป\n  description: d\nbasics:\n  th: พื้นฐานและสิทธิ์\n  description: d\n";
+
+/** Content files under <tmp>/content and images under <tmp>/public, like the repo. */
+function tree(files: Record<string, string>, images: Record<string, Buffer> = {}): string {
+  const base = mkdtempSync(path.join(tmpdir(), "kb-content-"));
+  const root = path.join(base, "content");
   const all: Record<string, string> = {
     "tags.yaml": "video-pipeline:\n  th: ไปป์ไลน์วิดีโอ\n  en: Video pipeline\n  description: How clips are made\n",
+    "categories.yaml": CATEGORIES,
     "tools/.keep": "",
     ...files,
   };
   for (const [rel, text] of Object.entries(all)) {
     mkdirSync(path.dirname(path.join(root, rel)), { recursive: true });
     writeFileSync(path.join(root, rel), text);
+  }
+  const pics: Record<string, Buffer> = {
+    "covers/good/cover.png": fakePng(1600, 900),
+    "covers/good/og.png": fakePng(1200, 630),
+    ...images,
+  };
+  for (const [rel, data] of Object.entries(pics)) {
+    mkdirSync(path.dirname(path.join(base, "public", rel)), { recursive: true });
+    writeFileSync(path.join(base, "public", rel), data);
   }
   return root;
 }
@@ -38,6 +54,8 @@ function article(fm: Record<string, unknown>, body = "## Heading\n\nText\n"): st
     refs: [],
     updated: "2026-11-03",
     sources: [],
+    category: "how-to",
+    cover: { src: "/covers/good/cover.png", og: "/covers/good/og.png", alt: "ภาพประกอบ", source: "generated" },
     ...fm,
   };
   return "---\n" + stringifyYaml(base) + "---\n" + body;
@@ -218,4 +236,55 @@ test("go short codes are short lower-case codes, unique across all pages", () =>
   );
   assert.ok(problems.some((p) => /go.*Not Ok/.test(p)), problems.join("\n"));
   assert.ok(problems.some((p) => /go.*dup/.test(p)), problems.join("\n"));
+});
+
+test("articles need a category defined once in categories.yaml", () => {
+  const missing = problemsOf(tree({ "articles/good-article.mdx": article({ category: undefined }) }));
+  assert.ok(missing.some((p) => /good-article\.mdx: category/.test(p)), missing.join("\n"));
+  const unknown = problemsOf(tree({ "articles/good-article.mdx": article({ category: "news" }) }));
+  assert.ok(unknown.some((p) => /category.*news/.test(p)), unknown.join("\n"));
+  const ok = loadContent(tree({ "articles/good-article.mdx": article({}) }));
+  assert.equal(ok.articles[0].category, "how-to");
+  assert.deepEqual(ok.categories.map((c) => c.key), ["how-to", "basics"]);
+  assert.equal(ok.categories[0].th, "สอนทำคลิป");
+});
+
+test("articles need a cover under /covers with alt text, a known source and real size", () => {
+  const cases: Array<[Record<string, unknown> | undefined, RegExp, Record<string, Buffer>?]> = [
+    [undefined, /cover is required/],
+    [{ src: "/covers/good/cover.png", og: "/covers/good/og.png", source: "generated" }, /cover\.alt/],
+    [{ src: "/covers/good/cover.png", alt: "x", source: "generated" }, /cover\.og is required/],
+    [{ src: "/covers/good/cover.png", og: "/covers/good/cover.png", alt: "x", source: "generated" }, /cover\.og must be exactly 1200×630/],
+    [{ src: "/covers/good/cover.png", alt: "x", source: "stock" }, /cover\.source/],
+    [{ src: "https://example.com/a.png", alt: "x", source: "generated" }, /cover\.src/],
+    [{ src: "/covers/../secret.png", alt: "x", source: "generated" }, /cover\.src/],
+    [{ src: "/covers/none/cover.png", alt: "x", source: "generated" }, /cover\.src.*not found/],
+    [{ src: "/covers/small/cover.png", alt: "x", source: "generated" }, /at least 1200/, { "covers/small/cover.png": fakePng(1000, 563) }],
+    [{ src: "/covers/square/cover.png", alt: "x", source: "generated" }, /16:9 or 1200×630/, { "covers/square/cover.png": fakePng(1600, 1200) }],
+  ];
+  for (const [cover, re, images] of cases) {
+    const problems = problemsOf(tree({ "articles/good-article.mdx": article({ cover }) }, images));
+    assert.ok(problems.some((p) => re.test(p)), `${JSON.stringify(cover)}: ${problems.join("\n")}`);
+  }
+  for (const [w, h] of [[1600, 900], [1200, 630], [1920, 1080]]) {
+    const root = tree(
+      { "articles/good-article.mdx": article({ cover: { src: "/covers/x/cover.png", og: "/covers/good/og.png", alt: "ภาพ", source: "own-clip" } }) },
+      { "covers/x/cover.png": fakePng(w, h) },
+    );
+    const a = loadContent(root).articles[0];
+    assert.deepEqual(a.cover, { src: "/covers/x/cover.png", og: "/covers/good/og.png", alt: "ภาพ", source: "own-clip", width: w, height: h });
+  }
+});
+
+test("featured flag, video link and reading time", () => {
+  const body = "## หัวข้อ\n\n" + "ก".repeat(2400) + "\n\n```bash\n" + "x".repeat(5000) + "\n```\n";
+  const a = loadContent(
+    tree({ "articles/good-article.mdx": article({ featured: true, video: "https://www.youtube.com/watch?v=abc" }, body) }),
+  ).articles[0];
+  assert.equal(a.featured, true);
+  assert.equal(a.video, "https://www.youtube.com/watch?v=abc");
+  assert.equal(a.readingMinutes, 3, "about 800 Thai characters a minute; code blocks don't count");
+  const problems = problemsOf(tree({ "articles/good-article.mdx": article({ featured: "yes", video: "http://x.dev" }) }));
+  assert.ok(problems.some((p) => /featured/.test(p)), problems.join("\n"));
+  assert.ok(problems.some((p) => /video/.test(p)), problems.join("\n"));
 });
