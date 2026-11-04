@@ -1,0 +1,164 @@
+# Pulumi stack `prod` (infra/): AWS resources named kubcode-* in account
+# 955758449820. GitHub OIDC only; no long-lived AWS keys in GitHub.
+#   pull request -> unit tests -> `pulumi preview` with the read-only role
+#                   kubcode-github-preview -> PR comment with the diff summary
+#   main         -> unit tests -> preview with kubcode-github-deploy -> gate ->
+#                   `pulumi up`
+# Gate: a preview that deletes or replaces anything stops push runs. The owner
+# approves by running this workflow manually on main with the exact phrase the
+# blocked run printed (same pattern as production.yml). The phrase is a safety
+# interlock against accidents, NOT an authorization boundary.
+name: Infra
+
+on:
+  pull_request:
+    paths:
+      - "infra/**"
+      - ".github/workflows/infra.yml"
+  push:
+    branches:
+      - main
+    paths:
+      - "infra/**"
+      - ".github/workflows/infra.yml"
+  workflow_dispatch:
+    inputs:
+      approval:
+        description: 'Only when the preview deletes/replaces resources: the exact phrase from the blocked run, e.g. "approve infra 0123456789ab"'
+        required: false
+        default: ""
+
+permissions:
+  contents: read
+
+env:
+  AWS_REGION: ap-southeast-1
+  PULUMI_VERSION: "3.232.0"
+  # sha256 of pulumi-v3.232.0-linux-x64.tar.gz from the release checksums file.
+  PULUMI_SHA256: 8b72c69d8b66530ede5c6907d7d0bb3fcacac440c59e3aa2f7226e78dc724423
+  PULUMI_BACKEND_URL: s3://kubcode-pulumi-state-955758449820?region=ap-southeast-1
+  PULUMI_SKIP_UPDATE_CHECK: "true"
+  PULUMI_STACK: prod
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    defaults:
+      run:
+        working-directory: infra
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: infra/package-lock.json
+      - run: npm ci --ignore-scripts
+      - run: npm test
+      - run: npm run typecheck
+
+  preview:
+    if: github.event_name == 'pull_request'
+    needs: test
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+      id-token: write
+      pull-requests: write
+    concurrency:
+      group: infra-preview-${{ github.event.pull_request.number }}
+      cancel-in-progress: true
+    defaults:
+      run:
+        working-directory: infra
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: infra/package-lock.json
+      - run: npm ci --ignore-scripts
+      - name: Install Pulumi CLI (pinned, checksum verified)
+        run: |
+          tgz="$RUNNER_TEMP/pulumi.tgz"
+          curl -fsSLo "$tgz" "https://github.com/pulumi/pulumi/releases/download/v${PULUMI_VERSION}/pulumi-v${PULUMI_VERSION}-linux-x64.tar.gz"
+          echo "${PULUMI_SHA256}  $tgz" | sha256sum -c -
+          tar -xzf "$tgz" -C "$RUNNER_TEMP"
+          echo "$RUNNER_TEMP/pulumi" >> "$GITHUB_PATH"
+      # Pinned to the v6.3.0 commit (external action).
+      - uses: aws-actions/configure-aws-credentials@e1253824e5c10ff9df46874f81ed3ec929e19cfd
+        with:
+          role-to-assume: arn:aws:iam::955758449820:role/kubcode-github-preview
+          role-session-name: kubcode-infra-preview-${{ github.run_id }}
+          aws-region: ${{ env.AWS_REGION }}
+      - name: Pulumi preview (read-only role)
+        run: pulumi preview --stack "$PULUMI_STACK" --non-interactive --json > "$RUNNER_TEMP/preview.json"
+      - name: Summarize
+        run: npx tsx scripts/infra-gate.ts summary "$RUNNER_TEMP/preview.json" > "$RUNNER_TEMP/comment.md"
+      # One comment per PR, updated in place (found by its marker so the
+      # preview.yml deployment comment is never overwritten).
+      - name: Comment the diff summary on the PR
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR: ${{ github.event.pull_request.number }}
+          REPO: ${{ github.repository }}
+        run: |
+          marker='<!-- kubcode-infra-preview -->'
+          body="$RUNNER_TEMP/body.md"
+          { echo "$marker"; cat "$RUNNER_TEMP/comment.md"; echo; echo "_commit ${GITHUB_SHA::7}, run ${GITHUB_RUN_ID}_"; } > "$body"
+          id=$(gh api "repos/$REPO/issues/$PR/comments" --paginate \
+            --jq "[.[] | select(.user.login == \"github-actions[bot]\" and (.body | startswith(\"$marker\")))][0].id // empty")
+          if [ -n "$id" ]; then
+            gh api --method PATCH "repos/$REPO/issues/comments/$id" -F "body=@$body" > /dev/null
+          else
+            gh api --method POST "repos/$REPO/issues/$PR/comments" -F "body=@$body" > /dev/null
+          fi
+
+  up:
+    if: github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
+    needs: test
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+      id-token: write
+    # One apply at a time; never cancel a run mid-update.
+    concurrency:
+      group: infra-prod
+      cancel-in-progress: false
+    defaults:
+      run:
+        working-directory: infra
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: infra/package-lock.json
+      - run: npm ci --ignore-scripts
+      - name: Install Pulumi CLI (pinned, checksum verified)
+        run: |
+          tgz="$RUNNER_TEMP/pulumi.tgz"
+          curl -fsSLo "$tgz" "https://github.com/pulumi/pulumi/releases/download/v${PULUMI_VERSION}/pulumi-v${PULUMI_VERSION}-linux-x64.tar.gz"
+          echo "${PULUMI_SHA256}  $tgz" | sha256sum -c -
+          tar -xzf "$tgz" -C "$RUNNER_TEMP"
+          echo "$RUNNER_TEMP/pulumi" >> "$GITHUB_PATH"
+      - uses: aws-actions/configure-aws-credentials@e1253824e5c10ff9df46874f81ed3ec929e19cfd
+        with:
+          role-to-assume: arn:aws:iam::955758449820:role/kubcode-github-deploy
+          role-session-name: kubcode-infra-up-${{ github.run_id }}
+          aws-region: ${{ env.AWS_REGION }}
+      - name: Pulumi preview
+        run: pulumi preview --stack "$PULUMI_STACK" --non-interactive --json > "$RUNNER_TEMP/preview.json"
+      - name: Gate (deletes/replaces need the owner's approval phrase)
+        env:
+          INFRA_APPROVAL: ${{ inputs.approval }}
+        run: npx tsx scripts/infra-gate.ts gate "$RUNNER_TEMP/preview.json"
+      # Same commit and serialized by the concurrency group, so `up` computes
+      # the plan the gate just checked.
+      - name: Pulumi up
+        run: pulumi up --stack "$PULUMI_STACK" --non-interactive --yes --skip-preview

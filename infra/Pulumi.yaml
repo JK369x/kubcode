@@ -1,0 +1,10 @@
+name: kubcode-infra
+description: kubcode AWS resources (kubcode-*) in account 955758449820, ap-southeast-1
+runtime:
+  name: nodejs
+  options:
+    typescript: true
+    packagemanager: npm
+# Pinned per project so this never touches the machine's default Pulumi login.
+backend:
+  url: s3://kubcode-pulumi-state-955758449820?region=ap-southeast-1
