@@ -64,3 +64,13 @@ test("the published homepage shows each style once", () => {
   assert.ok(shelf.length < clips.length, "episodes of one style collapse into one card");
   assert.equal(shelf.reduce((n, s) => n + s.count, 0), clips.length);
 });
+
+test("every style has Thai hover details, and its tools all have /tools pages", async () => {
+  const { getContent } = await import("../lib/content");
+  const toolSlugs = new Set(getContent().tools.map((t) => t.slug));
+  for (const [slug, style] of Object.entries(SHOWCASE_STYLES)) {
+    assert.match(style.detail, /^[฀-๿A-Za-z]/, `${slug} needs a detail line`);
+    assert.ok(style.detail.length <= 160, `${slug} detail stays short`);
+    for (const tool of style.tools) assert.ok(toolSlugs.has(tool), `${slug}: no /tools/${tool} page`);
+  }
+});

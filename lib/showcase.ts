@@ -1,5 +1,6 @@
 import { isPublishable, MEDIA_POLICY, PUBLISHED_MEDIA, type MediaPolicy } from "./publication";
-import { SHOWCASE_ALLOWLIST, type ShowcaseCredit } from "./showcase-allowlist";
+import { SHOWCASE_ALLOWLIST, SHOWCASE_STYLES, type ShowcaseCredit } from "./showcase-allowlist";
+import type { Logo, Tool } from "./content";
 import { SHOWCASE_MANIFEST } from "./showcase-manifest";
 
 /** A showcase clip as the homepage renders it. */
@@ -61,4 +62,24 @@ export function styleShelf(items: readonly ShowcaseItem[]): ShelfEntry[] {
     clip: clips.find((c) => c.cover) ?? clips.find((c) => c.aspect === "portrait") ?? clips[0],
     count: clips.length,
   }));
+}
+
+/** A tool as a style card shows it: a small logo with the product name. */
+export type StyleTool = { slug: string; name: string; logo: Logo };
+
+/**
+ * Each style's tools, resolved against the /tools pages (server side, where
+ * content is readable) in the order the style lists them.
+ */
+export function styleToolsFrom(tools: readonly Tool[]): Record<string, StyleTool[]> {
+  const bySlug = new Map(tools.map((t) => [t.slug, t]));
+  return Object.fromEntries(
+    Object.entries(SHOWCASE_STYLES).map(([style, s]) => [
+      style,
+      s.tools.flatMap((slug) => {
+        const t = bySlug.get(slug);
+        return t ? [{ slug: t.slug, name: t.name, logo: t.logo }] : [];
+      }),
+    ]),
+  );
 }

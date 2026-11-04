@@ -2,7 +2,7 @@
 import { useId, type ReactNode } from "react";
 import { Play } from "lucide-react";
 import type { Skill } from "@/lib/catalog";
-import { publishedShowcase, type ShowcaseItem } from "@/lib/showcase";
+import { publishedShowcase, type ShowcaseItem, type StyleTool } from "@/lib/showcase";
 import { StyleShelf } from "./StyleShelf";
 import styles from "./KineticHero.module.css";
 
@@ -15,6 +15,7 @@ export function KineticHero({
   activeSlug,
   onSelectSkill,
   clips = SHOWCASE,
+  styleTools,
   children,
 }: {
   skills: readonly Skill[];
@@ -22,6 +23,8 @@ export function KineticHero({
   onSelectSkill: (slug: string) => void;
   /** Clips for the style shelf; defaults to what this build may publish. */
   clips?: readonly ShowcaseItem[];
+  /** Each style's tools with logos, resolved on the server (lib/showcase styleToolsFrom). */
+  styleTools?: Readonly<Record<string, readonly StyleTool[]>>;
   /** Search / browse actions owned by the page (query state stays there). */
   children?: ReactNode;
 }) {
@@ -85,7 +88,7 @@ export function KineticHero({
         )}
       </div>
 
-      {hasClips && <StyleShelf items={clips} />}
+      {hasClips && <StyleShelf items={clips} styleTools={styleTools} />}
     </section>
   );
 }

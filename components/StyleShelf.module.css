@@ -44,22 +44,6 @@
   min-width: 0;
 }
 
-.link {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  color: var(--ink);
-  text-decoration: none;
-  border-radius: var(--radius);
-}
-.link:focus-visible {
-  outline: none;
-}
-.link:focus-visible .media {
-  outline: 3px solid var(--purple);
-  outline-offset: -3px;
-}
-
 .media {
   position: relative;
   display: block;
@@ -86,6 +70,8 @@
 }
 
 .name {
+  margin: 0;
+  color: var(--ink);
   font:
     600 clamp(17px, 1.35vw, 20px) / 1.25 Archivo,
     Anuphan,
@@ -93,17 +79,114 @@
   letter-spacing: -0.02em;
 }
 .meta {
-  display: inline-flex;
-  align-items: center;
-  gap: 2px;
+  margin: 2px 0 0;
   color: var(--muted);
   font-size: 13px;
   line-height: 1.4;
 }
-a.link:hover .name {
-  text-decoration: underline;
-  text-decoration-thickness: 1px;
-  text-underline-offset: 4px;
+
+/* Tools the style uses: small logo tiles in the media's top-right corner. */
+.tools {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  z-index: 2;
+  display: flex;
+  gap: 4px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.tools :global(.tool-logo-icon) {
+  width: 26px;
+  height: 26px;
+  padding: 4px;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgb(0 0 0 / 0.35);
+}
+.more {
+  display: grid;
+  place-items: center;
+  min-width: 26px;
+  height: 26px;
+  padding: 0 5px;
+  border-radius: 8px;
+  background: rgb(12 11 16 / 0.72);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+/* Style details: over the bottom of the media on hover or focus. The scrim
+ * keeps the text readable on any frame; the preview stays visible above. */
+.detail {
+  position: absolute;
+  inset: auto 0 0;
+  z-index: 1;
+  margin: 0;
+  padding: 48px 14px 14px;
+  background: linear-gradient(to top, rgb(8 6 12 / 0.92) 55%, rgb(8 6 12 / 0));
+  color: #fff;
+  font-size: 13px;
+  line-height: 1.55;
+  opacity: 0;
+  transform: translateY(8px);
+  transition:
+    opacity 200ms ease-out,
+    transform 200ms ease-out;
+  pointer-events: none;
+}
+.card:hover .detail,
+.card:focus-within .detail {
+  opacity: 1;
+  transform: none;
+}
+
+.actions {
+  display: flex;
+  gap: 6px;
+  margin-top: 10px;
+}
+.action,
+.lock {
+  display: inline-flex;
+  flex: 1 1 0;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  min-height: 40px;
+  padding: 0 10px;
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 1.2;
+  text-decoration: none;
+  white-space: nowrap;
+}
+.action {
+  background: var(--selected);
+  color: var(--selected-ink);
+}
+.action:hover {
+  background: var(--purple);
+  color: var(--action-hover-ink);
+}
+.lock {
+  border: 1px solid var(--line);
+  background: transparent;
+  color: var(--ink);
+}
+a.lock:hover {
+  border-color: var(--purple);
+}
+.lock:disabled {
+  color: var(--muted);
+  cursor: not-allowed;
+}
+.action:focus-visible,
+.lock:focus-visible {
+  outline: 3px solid var(--purple);
+  outline-offset: 2px;
 }
 
 .footer {
@@ -174,6 +257,10 @@ a.link:hover .name {
   }
   .video {
     display: none;
+  }
+  .detail {
+    transition: none;
+    transform: none;
   }
   .toggle {
     display: none;

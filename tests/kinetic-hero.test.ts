@@ -35,19 +35,38 @@ const { SHOWCASE_STYLES } = require("../lib/showcase-allowlist") as typeof impor
 
 const CLIPS = publishedShowcase("licensed-only");
 const SHELF = styleShelf(CLIPS);
+const { getContent } = require("../lib/content") as typeof import("../lib/content");
+const { styleToolsFrom } = require("../lib/showcase") as typeof import("../lib/showcase");
+const STYLE_TOOLS = styleToolsFrom(getContent().tools);
 const noop = () => {};
 const renderHero = (activeSlug = skills[0].slug, children?: string, clips = CLIPS) =>
   render(
     createElement(
       KineticHero,
-      { skills, activeSlug, onSelectSkill: noop, clips },
+      { skills, activeSlug, onSelectSkill: noop, clips, styleTools: STYLE_TOOLS },
       children ? createElement("span", { className: "slot" }, children) : null,
     ),
   );
 
-/** The style cards (<li>) of the shelf; loop copies carry data-copy. */
-const allItems = (html: string) =>
-  [...html.matchAll(/<li\b([^>]*)>([\s\S]*?)<\/li>/g)].map(([, attrs, body]) => ({ attrs, body }));
+/** Top-level <li> cards of the shelf track (cards contain their own lists); loop copies carry data-copy. */
+function allItems(html: string) {
+  const out: { attrs: string; body: string }[] = [];
+  let depth = 0;
+  let start = -1;
+  let attrs = "";
+  for (const m of html.matchAll(/<(\/?)li\b([^>]*)>/g)) {
+    if (!m[1]) {
+      if (depth === 0) {
+        start = m.index! + m[0].length;
+        attrs = m[2];
+      }
+      depth++;
+    } else if (--depth === 0) {
+      out.push({ attrs, body: html.slice(start, m.index!) });
+    }
+  }
+  return out;
+}
 const cards = (html: string) => allItems(html).filter((i) => !/data-copy/.test(i.attrs));
 const cardFor = (html: string, posterSrc: string) => cards(html).find((c) => c.body.includes(`src="${posterSrc}"`));
 
@@ -71,22 +90,72 @@ test("no run of episodes: a series appears once, under its style", () => {
   assert.equal(zombieCards.length, 1);
 });
 
-test("a card goes to its skill page, else to the published post, else nowhere", () => {
+test("skill styles: see the template, download locked behind sign-in", () => {
   const html = renderHero();
-  for (const entry of SHELF) {
+  for (const entry of SHELF.filter((e) => SHOWCASE_STYLES[e.style].skill)) {
     const card = cardFor(html, entry.clip.poster.src)!;
-    const link = card.body.match(/<a\b([^>]*)>/);
-    const skill = SHOWCASE_STYLES[entry.style].skill;
-    if (skill) {
-      assert.ok(link?.[1].includes(`href="/skills/${skill}"`), entry.style);
-      assert.doesNotMatch(link![1], /target=/);
-    } else if (entry.clip.link) {
+    const skill = SHOWCASE_STYLES[entry.style].skill!;
+    assert.match(card.body, new RegExp(`<a[^>]*href="/skills/${skill}"[^>]*>[\\s\\S]*?ดู template`), entry.style);
+    assert.match(card.body, /<a[^>]*href="\/account"[^>]*>[\s\S]*?เข้าสู่ระบบเพื่อดาวน์โหลด/, entry.style);
+    assert.doesNotMatch(card.body, /ดูคลิป/, entry.style);
+  }
+});
+
+test("styles without a skill: only a link to the clip, no template or download", () => {
+  const html = renderHero();
+  for (const entry of SHELF.filter((e) => !SHOWCASE_STYLES[e.style].skill)) {
+    const card = cardFor(html, entry.clip.poster.src)!;
+    assert.doesNotMatch(card.body, /ดู template|ดาวน์โหลด/, entry.style);
+    if (entry.clip.link) {
+      const link = card.body.match(/<a\b([^>]*)>[\s\S]*?ดูคลิป/);
       assert.ok(link?.[1].includes(`href="${entry.clip.link.url}"`), entry.style);
       assert.match(link![1], /target="_blank"/);
       assert.match(link![1], /rel="noopener noreferrer"/);
-      assert.match(card.body, /เปิดแท็บใหม่/);
     } else {
-      assert.equal(link, null, entry.style);
+      assert.doesNotMatch(card.body, /<a\b/, entry.style);
+    }
+  }
+});
+
+test("signed in: the download button says it is coming, and is disabled", () => {
+  const { CardActions } = require("../components/StyleShelf") as typeof import("../components/StyleShelf");
+  const entry = SHELF.find((e) => SHOWCASE_STYLES[e.style].skill)!;
+  const html = render(createElement(CardActions, { entry, signedIn: true }));
+  assert.match(html, /<button[^>]*disabled=""[^>]*>[\s\S]*?ดาวน์โหลดเร็วๆ นี้/);
+  assert.doesNotMatch(html, /href="\/account"/);
+});
+
+test("tool icons: up to three, named, not links; more shows +N", () => {
+  const html = renderHero();
+  for (const entry of SHELF) {
+    const card = cardFor(html, entry.clip.poster.src)!;
+    const tools = STYLE_TOOLS[entry.style] ?? [];
+    const icons = card.body.match(/<ul[^>]*aria-label="เครื่องมือที่ใช้"[^>]*>([\s\S]*?)<\/ul>/);
+    if (tools.length === 0) {
+      assert.equal(icons, null, entry.style);
+      continue;
+    }
+    assert.ok(icons, entry.style);
+    assert.doesNotMatch(icons[1], /<a\b/, "icons are not links");
+    for (const t of tools.slice(0, 3)) assert.match(icons[1], new RegExp(`title="${t.name}"`), t.name);
+    if (tools.length > 3) assert.match(icons[1], new RegExp(`\\+${tools.length - 3}`));
+  }
+});
+
+test("hover details: each card carries its style's description", () => {
+  const html = renderHero();
+  for (const entry of SHELF) {
+    const card = cardFor(html, entry.clip.poster.src)!;
+    assert.ok(card.body.includes(SHOWCASE_STYLES[entry.style].detail), entry.style);
+  }
+});
+
+test("no link inside another link in any card", () => {
+  for (const card of cards(renderHero())) {
+    let depth = 0;
+    for (const tag of card.body.matchAll(/<(\/?)a\b/g)) {
+      depth += tag[1] ? -1 : 1;
+      assert.ok(depth <= 1, "nested link");
     }
   }
 });
@@ -165,9 +234,13 @@ test("selected-work cue hands off to the native preview anchor", () => {
   assert.doesNotMatch(html, /id="(selected-example|skill-index)"/);
 });
 
-test("hero makes no download claims and renders the action slot", () => {
+test("downloads stay locked: no download link or file, only sign-in; action slot renders", () => {
   const html = renderHero(skills[0].slug, "ACTION-SLOT");
-  assert.doesNotMatch(html, /ดาวน์โหลด|\/api\/download|\sdownload(=|\s|>)/);
+  assert.doesNotMatch(html, /\/api\/download|\sdownload(=|\s|>)|\.zip"/);
+  const total = (html.match(/ดาวน์โหลด/g) || []).length;
+  const onSignIn = [...html.matchAll(/<a[^>]*href="\/account"[^>]*>[\s\S]*?<\/a>/g)]
+    .reduce((n, m) => n + (m[0].match(/ดาวน์โหลด/g) || []).length, 0);
+  assert.equal(onSignIn, total, "download is only ever offered through the sign-in link");
   assert.match(html, /ACTION-SLOT/);
 });
 

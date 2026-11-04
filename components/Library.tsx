@@ -15,13 +15,21 @@ import { Preview } from "./Preview";
 import { ToolChips } from "./ToolChips";
 import { MediaSkillCard } from "./MediaSkillCard";
 import { statusLabel } from "@/lib/status-labels";
+import type { StyleTool } from "@/lib/showcase";
 import { KineticHero } from "./KineticHero";
 import heroStyles from "./KineticHero.module.css";
 
 /** Article teaser data passed from the server page (content loads from disk). */
 export type ArticleTeaser = { slug: string; title: string; description: string };
 
-export function Library({ articles }: { articles: ArticleTeaser[] }) {
+export function Library({
+  articles,
+  styleTools,
+}: {
+  articles: ArticleTeaser[];
+  /** Homepage style cards' tools with logos (see lib/showcase styleToolsFrom). */
+  styleTools?: Readonly<Record<string, readonly StyleTool[]>>;
+}) {
   const [query, setQuery] = useState("");
   const [category, setCategory] = useState("all");
   const [selected, setSelected] = useState<string | null>(null);
@@ -52,6 +60,7 @@ export function Library({ articles }: { articles: ArticleTeaser[] }) {
   return (
     <main id="main" className="library-page">
       <KineticHero
+        styleTools={styleTools}
         skills={skills}
         activeSlug={selected ?? ""}
         onSelectSkill={selectSkill}

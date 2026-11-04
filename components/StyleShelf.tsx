@@ -1,7 +1,8 @@
 "use client";
-import { useState, type CSSProperties, type FocusEvent, type PointerEvent, type ReactNode } from "react";
-import { ArrowUpRight, Pause, Play } from "lucide-react";
-import { styleShelf, type ShelfEntry, type ShowcaseItem } from "@/lib/showcase";
+import { useEffect, useState, type CSSProperties, type FocusEvent, type PointerEvent } from "react";
+import { ArrowUpRight, LockKeyhole, Pause, Play } from "lucide-react";
+import { styleShelf, type ShelfEntry, type ShowcaseItem, type StyleTool } from "@/lib/showcase";
+import { ToolLogo } from "./ToolLogo";
 import { SHOWCASE_STYLES, type ShowcaseCredit } from "@/lib/showcase-allowlist";
 import styles from "./StyleShelf.module.css";
 
@@ -45,12 +46,117 @@ function stop(card: HTMLElement) {
   if (video.readyState > 0) video.currentTime = 0;
 }
 
-function Card({ entry, eager, copy }: { entry: ShelfEntry; eager: boolean; copy: boolean }) {
+/**
+ * Whether someone is signed in: undefined until known. Read once from the
+ * public session endpoint, like the header, so the page itself stays static.
+ */
+function useSignedIn(): boolean | undefined {
+  const [signedIn, setSignedIn] = useState<boolean | undefined>(undefined);
+  useEffect(() => {
+    let live = true;
+    fetch("/api/auth/session", { credentials: "same-origin", cache: "no-store" })
+      .then(async (res) => (res.ok ? ((await res.json().catch(() => ({}))) as { user?: unknown }) : {}))
+      .catch(() => ({}) as { user?: unknown })
+      .then((s) => live && setSignedIn(Boolean(s.user)));
+    return () => {
+      live = false;
+    };
+  }, []);
+  return signedIn;
+}
+
+/**
+ * A card's actions. Styles with a skill: "ดู template" plus a download that
+ * stays locked: signed out it sends people to sign in; signed in it says
+ * downloads are coming (there is no download service yet). Styles without a
+ * skill only link to the clip.
+ */
+export function CardActions({ entry, signedIn }: { entry: ShelfEntry; signedIn: boolean | undefined }) {
+  const style = SHOWCASE_STYLES[entry.style];
+  const { clip } = entry;
+  if (style?.skill) {
+    return (
+      <div className={styles.actions}>
+        <a className={styles.action} href={`/skills/${style.skill}`}>
+          ดู template
+        </a>
+        {signedIn ? (
+          <button type="button" className={styles.lock} disabled>
+            <span className="sr-only">ดาวน์โหลดเร็วๆ นี้</span>
+            <span aria-hidden="true">เร็วๆ นี้</span>
+          </button>
+        ) : (
+          <a className={styles.lock} href="/account" title="สมัครหรือเข้าสู่ระบบก่อนดาวน์โหลด">
+            <LockKeyhole size={14} aria-hidden="true" />
+            <span className="sr-only">เข้าสู่ระบบเพื่อดาวน์โหลด</span>
+            <span aria-hidden="true">ดาวน์โหลด</span>
+          </a>
+        )}
+      </div>
+    );
+  }
+  if (!clip.link) return null;
+  return (
+    <div className={styles.actions}>
+      <a className={styles.action} href={clip.link.url} target="_blank" rel="noopener noreferrer">
+        ดูคลิป
+        <ArrowUpRight size={14} aria-hidden="true" />
+        <span className="sr-only">บน {PLATFORM[clip.link.platform]} (เปิดแท็บใหม่)</span>
+      </a>
+    </div>
+  );
+}
+
+function ToolIcons({ tools }: { tools: readonly StyleTool[] }) {
+  if (tools.length === 0) return null;
+  const shown = tools.slice(0, 3);
+  const rest = tools.slice(3);
+  return (
+    <ul className={styles.tools} aria-label="เครื่องมือที่ใช้">
+      {shown.map((t) => (
+        <li key={t.slug} title={t.name}>
+          <ToolLogo slug={t.slug} logo={t.logo} size="icon" morph={false} />
+          <span className="sr-only">{t.name}</span>
+        </li>
+      ))}
+      {rest.length > 0 && (
+        <li className={styles.more} title={rest.map((t) => t.name).join(", ")}>
+          <span aria-hidden="true">+{rest.length}</span>
+          <span className="sr-only">และอีก {rest.map((t) => t.name).join(", ")}</span>
+        </li>
+      )}
+    </ul>
+  );
+}
+
+function Card({
+  entry,
+  tools,
+  signedIn,
+  eager,
+  copy,
+}: {
+  entry: ShelfEntry;
+  tools: readonly StyleTool[];
+  signedIn: boolean | undefined;
+  eager: boolean;
+  copy: boolean;
+}) {
   const { clip, count } = entry;
-  const style = SHOWCASE_STYLES[entry.style] ?? { name: entry.style };
-  const body: ReactNode = (
-    <>
-      <span className={styles.media}>
+  const style = SHOWCASE_STYLES[entry.style] ?? { name: entry.style, detail: "", tools: [] };
+  return (
+    <li
+      className={styles.card}
+      data-style={entry.style}
+      {...(copy ? { "data-copy": "", "aria-hidden": true, inert: true } : {})}
+      onPointerEnter={(e: PointerEvent<HTMLLIElement>) => e.pointerType !== "touch" && play(e.currentTarget)}
+      onPointerLeave={(e: PointerEvent<HTMLLIElement>) => stop(e.currentTarget)}
+      onFocus={(e: FocusEvent<HTMLLIElement>) => play(e.currentTarget)}
+      onBlur={(e: FocusEvent<HTMLLIElement>) => {
+        if (!e.currentTarget.contains(e.relatedTarget as Node | null)) stop(e.currentTarget);
+      }}
+    >
+      <div className={styles.media}>
         <img
           className={styles.poster}
           src={clip.poster.src}
@@ -73,51 +179,12 @@ function Card({ entry, eager, copy }: { entry: ShelfEntry; eager: boolean; copy:
             tabIndex={-1}
           />
         )}
-      </span>
-      <span className={styles.name}>{style.name}</span>
-      <span className={styles.meta}>
-        <span>
-          {count} คลิป
-          {!style.skill && clip.link && `, ดูบน ${PLATFORM[clip.link.platform]}`}
-        </span>
-        {!style.skill && clip.link && (
-          <>
-            <ArrowUpRight size={14} aria-hidden="true" />
-            <span className="sr-only">(เปิดแท็บใหม่)</span>
-          </>
-        )}
-      </span>
-    </>
-  );
-
-  let content: ReactNode;
-  if (style.skill) {
-    content = (
-      <a className={styles.link} href={`/skills/${style.skill}`}>
-        {body}
-      </a>
-    );
-  } else if (clip.link) {
-    content = (
-      <a className={styles.link} href={clip.link.url} target="_blank" rel="noopener noreferrer">
-        {body}
-      </a>
-    );
-  } else {
-    content = <div className={styles.link}>{body}</div>;
-  }
-
-  return (
-    <li
-      className={styles.card}
-      data-style={entry.style}
-      {...(copy ? { "data-copy": "", "aria-hidden": true, inert: true } : {})}
-      onPointerEnter={(e: PointerEvent<HTMLLIElement>) => e.pointerType !== "touch" && play(e.currentTarget)}
-      onPointerLeave={(e: PointerEvent<HTMLLIElement>) => stop(e.currentTarget)}
-      onFocus={(e: FocusEvent<HTMLLIElement>) => play(e.currentTarget)}
-      onBlur={(e: FocusEvent<HTMLLIElement>) => stop(e.currentTarget)}
-    >
-      {content}
+        <ToolIcons tools={tools} />
+        {style.detail && <p className={styles.detail}>{style.detail}</p>}
+      </div>
+      <p className={styles.name}>{style.name}</p>
+      <p className={styles.meta}>{count} คลิป</p>
+      <CardActions entry={entry} signedIn={signedIn} />
     </li>
   );
 }
@@ -128,8 +195,16 @@ function Card({ entry, eager, copy }: { entry: ShelfEntry; eager: boolean; copy:
  * moves by exactly one half). Hover, focus and the pause button stop it;
  * reduced motion shows a static, scrollable row instead.
  */
-export function StyleShelf({ items }: { items: readonly ShowcaseItem[] }) {
+export function StyleShelf({
+  items,
+  styleTools = {},
+}: {
+  items: readonly ShowcaseItem[];
+  /** Each style's tools with their logos, resolved on the server. */
+  styleTools?: Readonly<Record<string, readonly StyleTool[]>>;
+}) {
   const [paused, setPaused] = useState(false);
+  const signedIn = useSignedIn();
   const shelf = styleShelf(items);
   const credits = creditsOf(shelf.map((s) => s.clip));
   const repeats = repeatsFor(shelf.length);
@@ -141,7 +216,14 @@ export function StyleShelf({ items }: { items: readonly ShowcaseItem[] }) {
       <div className={styles.viewport}>
         <ul className={styles.track} style={duration} aria-label="ตัวอย่างคลิป สไตล์ละหนึ่งคลิป">
           {track.map((entry, i) => (
-            <Card key={`${entry.style}-${i}`} entry={entry} eager={i < 6} copy={i >= shelf.length} />
+            <Card
+              key={`${entry.style}-${i}`}
+              entry={entry}
+              tools={styleTools[entry.style] ?? []}
+              signedIn={signedIn}
+              eager={i < 6}
+              copy={i >= shelf.length}
+            />
           ))}
         </ul>
       </div>
