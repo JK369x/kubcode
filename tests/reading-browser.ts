@@ -227,7 +227,7 @@ async function main() {
     {
       const { page, errors } = await open({ width: 1280, theme: "dark" });
       await page.goto(base + "/tools", { waitUntil: "networkidle" });
-      await page.getByRole("link", { name: /Remotion — เขียนวิดีโอด้วย React/ }).click();
+      await page.getByRole("link", { name: "Remotion", exact: true }).click();
       await page.waitForURL("**/tools/remotion");
       await page.locator(".page-rail").waitFor();
       await page.locator(".page-rail").getByText("ดาวและคอมเมนต์ยังไม่เปิดใช้งานบนเซิร์ฟเวอร์นี้").waitFor();
@@ -315,6 +315,71 @@ async function main() {
       await page.context().close();
     }
     checks.push("/articles: featured hero, category chips as URLs (filter + aria-current + noindex <3), AVIF/WebP covers, card → article transition with cover hero, reduced motion, 4 screenshots");
+
+    // /tools: production-line stage filter, logo cards, morph card → tool page.
+    for (const [width, theme] of [[1280, "dark"], [1280, "light"], [390, "dark"], [390, "light"]] as const) {
+      const { page, errors } = await open({ width, theme });
+      await page.goto(base + "/tools", { waitUntil: "networkidle" });
+      const line = page.getByRole("navigation", { name: "ขั้นตอนทำคลิป" });
+      assert.equal(await line.getByRole("link", { name: /ทั้งหมด/ }).getAttribute("aria-current"), "page");
+      const cards = page.locator("main article");
+      assert.equal(await cards.count(), 7);
+      // Every logo is a local file that actually loaded (or a monogram).
+      const logos = await page.locator("main article .tool-logo").evaluateAll((els) =>
+        els.map((el) => {
+          const img = el.querySelector("img");
+          return img ? { src: img.getAttribute("src"), ok: img.complete && img.naturalWidth > 0 } : { src: "monogram", ok: el.textContent!.trim().length > 0 };
+        }),
+      );
+      assert.equal(logos.length, 7);
+      for (const l of logos) assert.ok(l.ok && (l.src === "monogram" || /^\/tools\/[a-z0-9-]+\/logo\.(svg|png)$/.test(l.src!)), JSON.stringify(l));
+      // Stars are off on this server: no counts are shown.
+      assert.equal(await page.locator("main article [data-stars]").count(), 0, "star counts hidden while interactions are off");
+      assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth), false, "no horizontal scroll");
+      await page.screenshot({ path: `.qa/tools-${width}-${theme}.png`, fullPage: true });
+      if (width === 1280 && theme === "dark") {
+        const svg = logos.find((l) => l.src?.endsWith(".svg"));
+        if (svg) {
+          const res = await page.request.get(base + svg.src);
+          assert.match(res.headers()["content-security-policy"] ?? "", /default-src 'none'.*sandbox/, "SVG logos are served sandboxed");
+        }
+        // The external link is its own action and opens a new tab, not the card.
+        const ext = cards.filter({ hasText: "FFmpeg" }).getByRole("link", { name: /ffmpeg\.org/ });
+        assert.equal(await ext.getAttribute("target"), "_blank");
+        await ext.scrollIntoViewIfNeeded();
+        const box = (await ext.boundingBox())!;
+        const top = await page.evaluate(([x, y]) => document.elementFromPoint(x, y)?.closest("a")?.getAttribute("href"), [box.x + box.width / 2, box.y + box.height / 2]);
+        assert.equal(top, "https://ffmpeg.org", "external link sits above the card's stretched link");
+        await line.getByRole("link", { name: /เขียนบทและโค้ด/ }).click();
+        await page.waitForURL("**/tools/c/script");
+        assert.equal(await page.locator("main h1").innerText(), "เขียนบทและโค้ด");
+        assert.equal(await cards.count(), 3);
+        assert.equal(await line.getByRole("link", { name: /เขียนบทและโค้ด/ }).getAttribute("aria-current"), "page");
+        const robots = await page.locator('meta[name="robots"]').evaluateAll((els) => els.map((el) => el.getAttribute("content")).join(" "));
+        assert.doesNotMatch(robots, /noindex/, "3 tools: indexable");
+        await page.goto(base + "/tools/c/render", { waitUntil: "networkidle" });
+        assert.match((await page.locator('meta[name="robots"]').getAttribute("content")) ?? "", /noindex/, "fewer than 3 tools: noindex");
+        assert.equal((await page.request.get(base + "/tools/c/image")).status(), 404, "empty stage 404s");
+        await page.goto(base + "/tools", { waitUntil: "networkidle" });
+        const before = await page.evaluate(() => (window as unknown as { __vt: number }).__vt);
+        await page.getByRole("link", { name: "OpenCode", exact: true }).click();
+        await page.waitForURL("**/tools/opencode");
+        assert.ok((await page.evaluate(() => (window as unknown as { __vt: number }).__vt)) > before, "card → tool page uses a view transition");
+        const names = await page.evaluate(() => [...document.querySelectorAll(".reading-title-row *")].map((el) => getComputedStyle(el).viewTransitionName).filter((n) => n !== "none"));
+        assert.deepEqual(names.sort(), ["kb-logo-tool-opencode", "kb-title-tool-opencode"], "logo and title morph from the card");
+        await page.waitForTimeout(800);
+        await page.screenshot({ path: ".qa/tool-page-1280-dark.png" });
+        assert.equal(await page.locator(".crumbs").getByRole("link", { name: "เขียนบทและโค้ด" }).getAttribute("href"), "/tools/c/script");
+      }
+      if (width === 390 && theme === "light") {
+        await page.goto(base + "/tools/remotion", { waitUntil: "networkidle" });
+        assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth), false);
+        await page.screenshot({ path: ".qa/tool-page-390-light.png" });
+      }
+      assert.deepEqual(errors, []);
+      await page.context().close();
+    }
+    checks.push("/tools: 7 logo cards (local files that load), stage chips as URLs (filter + aria-current + noindex <3 + empty 404), external link above the card link, stars hidden when off, logo+title morph card → page (reduced motion: global view-transition rule above), 4+2 screenshots");
 
     console.log(`PASS reading browser (${checks.length} checks)\n- ${checks.join("\n- ")}`);
   } finally {

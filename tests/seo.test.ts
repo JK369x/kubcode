@@ -46,6 +46,8 @@ const tool: Tool = {
   category: "render",
   links: { repo: "https://github.com/remotion-dev/remotion", website: "https://www.remotion.dev" },
   license: "ฟรีสำหรับทีม ≤3 คน",
+  pricing: "free-tier",
+  logo: { kind: "monogram", text: "R", reason: "test" },
 };
 const content: Content = { tags: [], categories: [], articles: [article], tools: [tool] };
 

@@ -57,6 +57,8 @@ export const COMMENT_PAGE_SIZE = 20;
 
 export interface InteractionStore {
   pageState(page: PageKey, viewer: SessionClaims | null, options?: PageOptions): Promise<PageState>;
+  /** Public star count per page slug of one kind (pages with no stars omitted). */
+  starCounts(kind: PageKind): Promise<Record<string, number>>;
   toggleStar(viewer: SessionClaims, page: PageKey): Promise<{ ok: true; starred: boolean; stars: number } | Failure>;
   addComment(
     viewer: SessionClaims,
@@ -160,6 +162,13 @@ export function createPgInteractionStore(pool: Pool): InteractionStore {
   }
 
   return {
+    async starCounts(kind) {
+      const { rows } = await pool.query<{ slug: string; n: string }>(
+        "SELECT page_slug AS slug, count(*) AS n FROM kubcode_accounts.page_stars WHERE page_kind = $1 GROUP BY page_slug",
+        [kind],
+      );
+      return Object.fromEntries(rows.map((r) => [r.slug, Number(r.n)]));
+    },
     async pageState(page, session, options = {}) {
       const viewer = await viewerOf(pool, session);
       const owner = viewer?.isOwner ?? false;

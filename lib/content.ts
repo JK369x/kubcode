@@ -3,6 +3,7 @@ import path from "node:path";
 import { imageSize } from "image-size";
 import { parse as parseYaml } from "yaml";
 import { rawSkills } from "./catalog";
+import { isProductLogoPath } from "./publication";
 
 export type Tag = { slug: string; th: string; en: string; description: string };
 
@@ -65,6 +66,29 @@ export const TOOL_CATEGORIES = [
 ] as const;
 export type ToolCategory = (typeof TOOL_CATEGORIES)[number];
 
+/** Price model shown as a badge: free, a usable free plan, or paid only. */
+export const PRICING = ["free", "free-tier", "paid"] as const;
+export type Pricing = (typeof PRICING)[number];
+
+/**
+ * Product logo: the makers' own file, stored locally (never hotlinked) with
+ * where it came from and which usage guideline applies; or, when there is no
+ * official asset we may use, a neutral monogram and the reason.
+ */
+export type Logo =
+  | {
+      kind: "image";
+      src: string;
+      alt: string;
+      sourceUrl: string;
+      /** null when no guideline was found. */
+      guidelineUrl: string | null;
+      fetchedAt: string;
+      /** The file already carries the clear space its guideline asks for: draw it edge to edge. */
+      includesClearSpace: boolean;
+    }
+  | { kind: "monogram"; text: string; reason: string };
+
 export const LINK_KINDS = ["repo", "website", "docs"] as const;
 export type ToolLinks = Partial<Record<(typeof LINK_KINDS)[number], string>>;
 
@@ -76,6 +100,8 @@ export type Tool = PageBase & {
   links: ToolLinks;
   /** Our short licence note, e.g. "MIT" or "free for teams ≤3". */
   license: string;
+  pricing: Pricing;
+  logo: Logo;
 };
 
 export type Page = Article | Tool;
@@ -268,6 +294,61 @@ class FieldReader {
     return ok ? { src: src as string, og: og as string, alt: alt as string, source: source as Cover["source"], width, height } : empty;
   }
 
+  /** Product logo rules (see Logo and isProductLogoPath). */
+  logo(publicDir: string, toolSlug: string, name: string): Logo {
+    const raw = this.data.logo;
+    if (raw === undefined) {
+      this.problem("logo", "is required");
+      return { kind: "monogram", text: monogram(name), reason: "" };
+    }
+    const r = asRecord(raw);
+    if (r.fallback !== undefined) {
+      if (r.fallback !== "monogram") this.problem("logo.fallback", 'must be "monogram"');
+      const reason = typeof r.reason === "string" ? r.reason.trim() : "";
+      if (!reason) this.problem("logo.reason", "is required (say why there is no official logo)");
+      return { kind: "monogram", text: monogram(name), reason };
+    }
+    const { src, alt, source_url, guideline_url, fetched_at, includes_clear_space } = r;
+    if (includes_clear_space !== undefined && typeof includes_clear_space !== "boolean") {
+      this.problem("logo.includes_clear_space", "must be true or false");
+    }
+    if (typeof alt !== "string" || alt.trim() === "") this.problem("logo.alt", "is required");
+    if (!isHttpsUrl(source_url)) this.problem("logo.source_url", "must be an https URL (the page the file came from)");
+    if (guideline_url !== "none found" && !isHttpsUrl(guideline_url)) {
+      this.problem("logo.guideline_url", 'must be an https URL or "none found"');
+    }
+    const fetchedAt = new FieldReader(this.file, { "logo.fetched_at": fetched_at }, this.problems).date("logo.fetched_at");
+    if (typeof src !== "string" || !isProductLogoPath(src, toolSlug)) {
+      this.problem("logo.src", `must be /tools/${toolSlug}/logo.svg or .png (a local copy, never a hotlink)`);
+    } else {
+      let file: Buffer | null = null;
+      try {
+        file = readFileSync(path.join(publicDir, src));
+      } catch {
+        this.problem("logo.src", `not found: ${src}`);
+      }
+      if (file && src.endsWith(".svg")) {
+        if (svgIsActive(file.toString("utf8"))) this.problem("logo.src", "SVG has active or external content (scripts, handlers, external links)");
+      } else if (file) {
+        try {
+          const { width = 0, height = 0 } = imageSize(file);
+          if (width < 128 || height < 128) this.problem("logo.src", `PNG must be at least 128×128 (${width}×${height})`);
+        } catch {
+          this.problem("logo.src", `unreadable image: ${src}`);
+        }
+      }
+    }
+    return {
+      kind: "image",
+      src: String(src ?? ""),
+      alt: String(alt ?? ""),
+      sourceUrl: String(source_url ?? ""),
+      guidelineUrl: guideline_url === "none found" ? null : String(guideline_url ?? ""),
+      fetchedAt,
+      includesClearSpace: includes_clear_space === true,
+    };
+  }
+
   oneOf<T extends string>(field: string, allowed: readonly T[]): T {
     const value = this.data[field];
     if (!allowed.includes(value as T)) {
@@ -315,6 +396,29 @@ class FieldReader {
     }
     return value.map(String);
   }
+}
+
+/** Initials of the first two words, e.g. "What If Animation" → "WI". */
+function monogram(name: string): string {
+  return name
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((w) => [...w][0]!.toUpperCase())
+    .join("");
+}
+
+/**
+ * Logos are served from our own origin, where an SVG opened directly runs
+ * like a page. Refuse anything that can execute or load from elsewhere;
+ * only same-document (#id) references are allowed.
+ */
+function svgIsActive(svg: string): boolean {
+  if (/<!DOCTYPE|<!ENTITY|<script|<foreignObject|<iframe|<embed|<object|<set\b|<animate|@import|javascript:/i.test(svg)) return true;
+  if (/\son[a-z]+\s*=/i.test(svg)) return true;
+  for (const m of svg.matchAll(/(?:xlink:)?href\s*=\s*["']([^"']*)["']/gi)) if (!m[1].startsWith("#")) return true;
+  for (const m of svg.matchAll(/url\(\s*['"]?([^'")]*)/gi)) if (!m[1].startsWith("#")) return true;
+  return false;
 }
 
 export function isHttpsUrl(value: unknown): value is string {
@@ -439,14 +543,19 @@ export function loadContent(root: string = DEFAULT_ROOT): Content {
       readingMinutes: readingMinutes(base.body),
     };
   }, tagSlugs);
-  const tools = readPages(root, "tools", problems, (fm, base): Tool => ({
-    kind: "tool",
-    ...base,
-    name: fm.text("name", LIMITS.title),
-    category: fm.oneOf("category", TOOL_CATEGORIES),
-    links: fm.links(),
-    license: fm.text("license", LIMITS.description),
-  }), tagSlugs);
+  const tools = readPages(root, "tools", problems, (fm, base): Tool => {
+    const name = fm.text("name", LIMITS.title);
+    return {
+      kind: "tool",
+      ...base,
+      name,
+      category: fm.oneOf("category", TOOL_CATEGORIES),
+      links: fm.links(),
+      license: fm.text("license", LIMITS.description),
+      pricing: fm.oneOf("pricing", PRICING),
+      logo: fm.logo(publicDir, base.slug, name),
+    };
+  }, tagSlugs);
   const pages = [...articles, ...tools];
 
   const known: Record<RefKind, Set<string>> = {

@@ -303,3 +303,15 @@ test("local-study hero keeps the original full-media stage", () => {
   assert.match(html, /data-motion-toggle/);
   assert.doesNotMatch(html, /data-media="none"|รอยืนยันสิทธิ์/);
 });
+
+test("product logos are references, not example media: one exact path per tool, in every policy", async () => {
+  const { isProductLogoPath, isPublishable } = await import("../lib/publication");
+  assert.equal(isProductLogoPath("/tools/remotion/logo.svg", "remotion"), true);
+  assert.equal(isProductLogoPath("/tools/remotion/logo.png", "remotion"), true);
+  // Never another tool's folder, a preview/poster, a nested path or a hotlink.
+  for (const url of ["/tools/ffmpeg/logo.svg", "/previews/remotion.png", "/tools/remotion/x/logo.svg", "/tools/remotion/logo.svg?x", "https://remotion.dev/logo.svg"]) {
+    assert.equal(isProductLogoPath(url, "remotion"), false, url);
+  }
+  // The example-media allowlist is unchanged by logos: still closed in licensed-only.
+  assert.equal(isPublishable("/tools/remotion/logo.svg", "licensed-only"), false);
+});

@@ -63,6 +63,20 @@ export function isPublishable(
   return allowlist.has(url);
 }
 
+/**
+ * Product logos are a separate class from the example media above. They are
+ * not our or an author's work: they are the makers' own marks, shown only
+ * next to the product's name to say which product a page is about
+ * (nominative use). So they are allowed in every policy, including
+ * licensed-only, but only at exactly one path per tool,
+ * /tools/<tool-slug>/logo.svg|png. The content schema enforces that path and
+ * a provenance record, so a logo field can never carry a preview or poster
+ * past the allowlist above.
+ */
+export function isProductLogoPath(url: string, toolSlug: string): boolean {
+  return url === `/tools/${toolSlug}/logo.svg` || url === `/tools/${toolSlug}/logo.png`;
+}
+
 /** Thai notices for withheld media; shown instead of any stand-in artwork. */
 export const RIGHTS_PENDING_LABEL = "สื่อรอยืนยันสิทธิ์เผยแพร่";
 export const RIGHTS_PENDING_NOTE =

@@ -142,6 +142,28 @@ export async function handlePageState(request: Request, deps: InteractionDeps = 
   }
 }
 
+/**
+ * GET /api/interactions/star-counts?kind=tool — counts for the index cards. Public
+ * aggregate only: no session is read and no per-user data is returned.
+ */
+export async function handleStarCounts(request: Request, deps: InteractionDeps = {}): Promise<Response> {
+  const env = deps.env ?? process.env;
+  const accounts = readAccountsConfig(env);
+  if (accounts.mode === "off" || !interactionsEnabled(env)) return jsonNoStore({ available: false });
+  if (accounts.mode === "broken") return accountErrorResponse("ACCOUNTS_UNAVAILABLE");
+  const kind = new URL(request.url).searchParams.get("kind");
+  if (kind !== "tool" && kind !== "skill") return badRequest();
+  const exists = deps.pageExists ?? defaultPageExists;
+  try {
+    const counts = await (deps.storeFor ?? getInteractionStore)(accounts.databaseUrl).starCounts(kind);
+    const stars = Object.fromEntries(Object.entries(counts).filter(([slug]) => exists({ kind, slug })));
+    return jsonNoStore({ available: true, stars });
+  } catch (error) {
+    logDbFailure("STAR_COUNTS", error);
+    return accountErrorResponse("ACCOUNTS_UNAVAILABLE");
+  }
+}
+
 export const handleStar = (request: Request, deps: InteractionDeps = {}) =>
   write(request, deps, "STAR_TOGGLE", async (ctx, body) => {
     if (!onlyKeys(body, ["kind", "slug"])) return badRequest();

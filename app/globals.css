@@ -881,14 +881,6 @@ footer small {
   color: var(--purple);
   text-decoration: underline;
 }
-.tool-group {
-  margin-top: 36px;
-}
-.tool-group > h2 {
-  font-size: 15px;
-  color: var(--muted);
-  margin-bottom: 8px;
-}
 .related {
   margin-top: 52px;
   display: grid;
@@ -2351,4 +2343,62 @@ html[data-theme="light"] .shiki span {
 
 .reading-col > .tool-facts {
   margin: 0 0 40px;
+}
+
+/* Tool logos: the maker's file as supplied, on a white tile in both themes
+   so no mark needs recolouring; padding keeps clear space around it. */
+.tool-logo {
+  display: inline-grid;
+  flex: none;
+  place-items: center;
+  width: 56px;
+  height: 56px;
+  padding: 9px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: #fff;
+}
+.tool-logo img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+.tool-logo-page {
+  width: 72px;
+  height: 72px;
+  padding: 12px;
+  border-radius: 18px;
+}
+.tool-logo.tool-logo.is-edge {
+  padding: 0;
+}
+.tool-logo.is-monogram {
+  background: var(--surface-soft);
+  color: var(--muted);
+  font: 600 19px/1 Archivo, sans-serif;
+  letter-spacing: 0.02em;
+}
+.tool-logo-page.is-monogram {
+  font-size: 24px;
+}
+.reading-title-row {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  margin: 14px 0 18px;
+}
+.reading-head .reading-title-row h1 {
+  margin: 0;
+}
+@media (max-width: 760px) {
+  .tool-logo-page {
+    width: 56px;
+    height: 56px;
+    padding: 9px;
+    border-radius: 14px;
+  }
+  .reading-title-row {
+    align-items: flex-start;
+    gap: 14px;
+  }
 }
