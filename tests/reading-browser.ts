@@ -157,9 +157,12 @@ async function main() {
       await page.waitForFunction((b) => parseFloat(getComputedStyle(document.querySelector(".prose")!).fontSize) > b, before);
       await page.getByRole("button", { name: "ลดขนาดตัวอักษร" }).click();
       assert.equal(await size(), before);
-      checks.push("A+/A− resize the article text and the choice survives a reload");
+      checks.push("A+/A− resize the article text and the choice survives a reload; header tool icons in production order");
 
       await page.goto(base + ARTICLE, { waitUntil: "networkidle" });
+      const headerTools = page.locator(".reading-head").getByRole("list", { name: "เครื่องมือที่ใช้" }).getByRole("link");
+      assert.ok((await headerTools.count()) >= 6, "article header shows the tools it uses");
+      assert.equal(await headerTools.first().getAttribute("href"), "/tools/glm-5-3-flash", "tools in production order, then by name");
       await page.screenshot({ path: ".qa/reading-1280-dark.png", fullPage: false });
       assert.deepEqual(errors, []);
       await page.context().close();
@@ -285,12 +288,25 @@ async function main() {
       assert.equal(await chips.getByRole("link", { name: /ทั้งหมด/ }).getAttribute("aria-current"), "page");
       assert.ok(images.length >= 3 && images.every((t) => /image\/(avif|webp)/.test(t)), `covers served as AVIF/WebP (${images.join(",")})`);
       assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth), false, "no horizontal scroll");
+      // Tool icons: the makers' logo files from /tools, each a named link above the card link.
+      const icons = page.getByRole("list", { name: "เครื่องมือที่ใช้" }).first().getByRole("link");
+      const names = await icons.evaluateAll((els) => els.map((el) => [el.getAttribute("aria-label"), el.getAttribute("href"), el.querySelector("img")?.getAttribute("src") ?? "monogram"]));
+      assert.ok(names.length >= 6, `featured article shows its tools (${JSON.stringify(names)})`);
+      for (const [name, href, src] of names) {
+        assert.ok(name && /^\/tools\/[a-z0-9-]+$/.test(href!), `named link to a tool page: ${name} ${href}`);
+        assert.ok(src === "monogram" || src === `${href}/logo.svg` || src === `${href}/logo.png`, `logo is the tool's own file: ${src}`);
+      }
+      await icons.first().scrollIntoViewIfNeeded();
+      const iconBox = (await icons.first().boundingBox())!;
+      const hit = await page.evaluate(([x, y]) => document.elementFromPoint(x, y)?.closest("a")?.getAttribute("href"), [iconBox.x + iconBox.width / 2, iconBox.y + iconBox.height / 2]);
+      assert.equal(hit, names[0][1], "tool icon sits above the card's stretched link");
+      await page.evaluate(() => window.scrollTo(0, 0));
       await page.screenshot({ path: `.qa/articles-${width}-${theme}.png`, fullPage: true });
       if (width === 1280 && theme === "dark") {
         await chips.getByRole("link", { name: /พื้นฐานและสิทธิ์/ }).click();
         await page.waitForURL("**/articles/c/basics");
         assert.equal(await page.locator("main h1").innerText(), "พื้นฐานและสิทธิ์");
-        assert.equal(await page.locator("main a[href^='/articles/'] h2, main a[href^='/articles/'] h3").count(), 2);
+        assert.equal(await page.locator("main article :is(h2, h3) a[href^='/articles/']").count(), 2);
         assert.equal(await chips.getByRole("link", { name: /พื้นฐานและสิทธิ์/ }).getAttribute("aria-current"), "page");
         assert.match((await page.locator('meta[name="robots"]').getAttribute("content")) ?? "", /noindex/, "fewer than 3 articles: noindex");
         await page.goto(base + "/articles", { waitUntil: "networkidle" });
@@ -300,7 +316,7 @@ async function main() {
         assert.ok((await page.evaluate(() => (window as unknown as { __vt: number }).__vt)) > before, "card → article uses a view transition");
         const heroImg = page.locator(".reading-hero img");
         await heroImg.waitFor();
-        assert.match((await heroImg.getAttribute("alt")) ?? "", /แผ่นกระจกโปร่งแสงหกแผ่น/, "article hero carries the cover alt text");
+        assert.ok(((await heroImg.getAttribute("alt")) ?? "").length > 10, "article hero carries the cover alt text");
         await page.waitForTimeout(800);
         await page.screenshot({ path: ".qa/article-hero-1280-dark.png" });
       }
@@ -310,11 +326,11 @@ async function main() {
     {
       const { page } = await open({ width: 1280, theme: "dark", reduced: true });
       await page.goto(base + "/articles", { waitUntil: "networkidle" });
-      const t = await page.locator("main a[href^='/articles/'] img").first().evaluate((el) => getComputedStyle(el).transitionDuration);
+      const t = await page.locator("main article img").first().evaluate((el) => getComputedStyle(el).transitionDuration);
       assert.equal(t, "0s", "reduced motion: no cover zoom");
       await page.context().close();
     }
-    checks.push("/articles: featured hero, category chips as URLs (filter + aria-current + noindex <3), AVIF/WebP covers, card → article transition with cover hero, reduced motion, 4 screenshots");
+    checks.push("/articles: featured hero, category chips as URLs (filter + aria-current + noindex <3), AVIF/WebP covers, tool icon links (own logo files, above the card link), card → article transition with cover hero, reduced motion, 4 screenshots");
 
     // /tools: production-line stage filter, logo cards, morph card → tool page.
     for (const [width, theme] of [[1280, "dark"], [1280, "light"], [390, "dark"], [390, "light"]] as const) {

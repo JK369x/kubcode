@@ -83,3 +83,13 @@ test("stage pages are indexable only with three or more tools, and only those en
   assert.ok(urls.includes("https://kubcode.dev/tools/c/script"));
   assert.ok(!urls.includes("https://kubcode.dev/tools/c/render"));
 });
+
+test("an article's tools come from links either way, in production order, each once", async () => {
+  const { articleTools } = await import("../lib/tool-index");
+  const c = content(
+    [t("ffmpeg", "package", "FFmpeg"), t("remotion", "render", "Remotion", [{ kind: "article", slug: "a1" }]), t("opencode", "script", "OpenCode")],
+    [article("a1", [{ kind: "tool", slug: "ffmpeg" }, { kind: "tool", slug: "opencode" }, { kind: "skill", slug: "freshstack-what-if" }]), article("a2", [])],
+  );
+  assert.deepEqual(articleTools(c, c.articles[0]).map((x) => x.slug), ["opencode", "remotion", "ffmpeg"]);
+  assert.deepEqual(articleTools(c, c.articles[1]), []);
+});

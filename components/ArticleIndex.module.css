@@ -61,11 +61,30 @@
 
 /* Cards */
 .card {
+  position: relative;
   display: flex;
   flex-direction: column;
   gap: 14px;
   color: var(--ink);
+}
+/* The title link covers the whole card; tool icons sit above it. */
+.link {
+  color: inherit;
   text-decoration: none;
+}
+.link::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 16px;
+}
+.link:focus-visible {
+  outline: none;
+}
+.tools {
+  position: relative;
+  z-index: 1;
+  margin-top: 4px;
 }
 .cover {
   position: relative;
@@ -79,10 +98,10 @@
   transition: transform 0.5s cubic-bezier(0.22, 1, 0.36, 1);
 }
 .card:hover .cover img,
-.card:focus-visible .cover img {
+.card:has(.link:focus-visible) .cover img {
   transform: scale(1.03);
 }
-.card:focus-visible {
+.card:has(.link:focus-visible) {
   outline: 2px solid var(--purple);
   outline-offset: 6px;
   border-radius: 16px;
@@ -178,7 +197,7 @@
     transition: none;
   }
   .card:hover .cover img,
-  .card:focus-visible .cover img {
+  .card:has(.link:focus-visible) .cover img {
     transform: none;
   }
 }
