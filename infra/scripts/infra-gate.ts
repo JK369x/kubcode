@@ -29,6 +29,7 @@ function main(): number {
   const decision = decideInfra(report, {
     event: process.env.GITHUB_EVENT_NAME ?? "",
     actor: process.env.GITHUB_ACTOR ?? "",
+    triggeringActor: process.env.GITHUB_TRIGGERING_ACTOR ?? "",
     owner: process.env.GITHUB_REPOSITORY_OWNER ?? "",
     approval: process.env.INFRA_APPROVAL ?? "",
   });

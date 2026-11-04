@@ -7,7 +7,7 @@
 // boundary. So even if CI rewrote its own role policy, it could not reach
 // beyond kubcode-* resources (this account also holds client resources).
 // Changing the boundary is an admin-only, local `pulumi up` (see README).
-import { ACCOUNT_ID, GITHUB_REPO, NAMES, REGION } from "./constants";
+import { ACCOUNT_ID, GITHUB_SUB_PREFIX, NAMES, REGION } from "./constants";
 
 export type Statement = {
   Sid?: string;
@@ -49,7 +49,7 @@ export function githubTrustPolicy(oidcProviderArn: string, subjects: readonly st
   if (subjects.length === 0) throw new Error("at least one GitHub subject is required");
   for (const sub of subjects) {
     if (sub.includes("*")) throw new Error(`wildcard GitHub subject not allowed: ${sub}`);
-    if (!sub.startsWith(`repo:${GITHUB_REPO}:`)) throw new Error(`subject must belong to ${GITHUB_REPO}: ${sub}`);
+    if (!sub.startsWith(`${GITHUB_SUB_PREFIX}:`)) throw new Error(`subject must start with ${GITHUB_SUB_PREFIX}: ${sub}`);
   }
   return doc([
     {
@@ -181,6 +181,14 @@ function sharedDeployStatements(boundaryArn: string): Statement[] {
       Resource: boundaryArn,
     },
     { Sid: "DenyBoundaryRemoval", Effect: "Deny", Action: "iam:DeleteRolePermissionsBoundary", Resource: KUBCODE_ROLES },
+    {
+      // Who may assume the GitHub roles is admin-only: CI must not widen
+      // their trust (e.g. to another repo or account) or delete them.
+      Sid: "DenyGithubRoleTrustChanges",
+      Effect: "Deny",
+      Action: ["iam:UpdateAssumeRolePolicy", "iam:DeleteRole"],
+      Resource: [iam("role", NAMES.deployRole), iam("role", NAMES.previewRole)],
+    },
     {
       Sid: "DenySharedOidcWrites",
       Effect: "Deny",

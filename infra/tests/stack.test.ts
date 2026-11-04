@@ -103,8 +103,8 @@ test("deploy and preview roles carry the boundary and trust only their GitHub su
     JSON.parse(roles.find((r) => r.inputs.name === name)!.inputs.assumeRolePolicy).Statement[0].Condition.StringEquals[
       "token.actions.githubusercontent.com:sub"
     ];
-  assert.deepEqual(sub(NAMES.deployRole), ["repo:JK369x/kubcode:ref:refs/heads/main"]);
-  assert.deepEqual(sub(NAMES.previewRole), ["repo:JK369x/kubcode:pull_request"]);
+  assert.deepEqual(sub(NAMES.deployRole), ["repo:JK369x@104179568/kubcode@1444458364:ref:refs/heads/main"]);
+  assert.deepEqual(sub(NAMES.previewRole), ["repo:JK369x@104179568/kubcode@1444458364:pull_request"]);
 });
 
 test("media bucket: private, SSE-KMS, no versioning, multipart cleanup, kubcode.dev CORS", async () => {

@@ -34,7 +34,7 @@ function actionMatches(pattern: string, action: string): boolean {
 const grants = (s: Statement, action: string) => actionsOf(s).some((p) => actionMatches(p, action));
 
 test("GitHub trust: only the kubcode repo subjects, STS audience, the existing OIDC provider", () => {
-  const doc = githubTrustPolicy(GITHUB_OIDC_PROVIDER_ARN, ["repo:JK369x/kubcode:ref:refs/heads/main"]);
+  const doc = githubTrustPolicy(GITHUB_OIDC_PROVIDER_ARN, ["repo:JK369x@104179568/kubcode@1444458364:ref:refs/heads/main"]);
   assert.equal(doc.Statement.length, 1);
   const [s] = doc.Statement;
   assert.equal(s.Effect, "Allow");
@@ -43,14 +43,17 @@ test("GitHub trust: only the kubcode repo subjects, STS audience, the existing O
   assert.deepEqual(s.Condition, {
     StringEquals: {
       "token.actions.githubusercontent.com:aud": "sts.amazonaws.com",
-      "token.actions.githubusercontent.com:sub": ["repo:JK369x/kubcode:ref:refs/heads/main"],
+      "token.actions.githubusercontent.com:sub": ["repo:JK369x@104179568/kubcode@1444458364:ref:refs/heads/main"],
     },
   });
 });
 
-test("GitHub trust rejects wildcards and other repositories", () => {
-  assert.throws(() => githubTrustPolicy(GITHUB_OIDC_PROVIDER_ARN, ["repo:JK369x/kubcode:*"]), /wildcard/);
-  assert.throws(() => githubTrustPolicy(GITHUB_OIDC_PROVIDER_ARN, ["repo:other/repo:ref:refs/heads/main"]), /JK369x\/kubcode/);
+test("GitHub trust rejects wildcards, other repositories and the legacy (mutable) subject", () => {
+  assert.throws(() => githubTrustPolicy(GITHUB_OIDC_PROVIDER_ARN, ["repo:JK369x@104179568/kubcode@1444458364:*"]), /wildcard/);
+  // The repo uses GitHub's immutable subject (owner/repo IDs); the name-only
+  // form never appears in its tokens and could match a re-created namesake.
+  assert.throws(() => githubTrustPolicy(GITHUB_OIDC_PROVIDER_ARN, ["repo:JK369x/kubcode:ref:refs/heads/main"]), /JK369x/);
+  assert.throws(() => githubTrustPolicy(GITHUB_OIDC_PROVIDER_ARN, ["repo:other/repo:ref:refs/heads/main"]), /JK369x/);
   assert.throws(() => githubTrustPolicy(GITHUB_OIDC_PROVIDER_ARN, []), /subject/);
 });
 
@@ -119,6 +122,9 @@ test("deploy boundary: the boundary itself, the OIDC provider and the igtest spi
     assert.ok(denied(a, GITHUB_OIDC_PROVIDER_ARN), `${a} on the shared OIDC provider must be denied`);
   assert.ok(denied("iam:DeleteRole", `arn:aws:iam::${ACCOUNT_ID}:role/kubcode-igtest-receiver-role`));
   assert.ok(denied("s3:DeleteBucket", `arn:aws:s3:::${NAMES.stateBucket}`));
+  // CI must not rewrite who can assume (or delete) its own GitHub roles.
+  for (const role of [DEPLOY_ROLE, PREVIEW_ROLE])
+    for (const a of ["iam:UpdateAssumeRolePolicy", "iam:DeleteRole"]) assert.ok(denied(a, role), `${a} on ${role}`);
   assert.ok(denied("s3:DeleteObjectVersion", `arn:aws:s3:::${NAMES.stateBucket}/x`));
 });
 

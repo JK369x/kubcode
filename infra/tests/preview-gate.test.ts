@@ -10,7 +10,7 @@ const step = (op: string, type: string, name: string) => ({
 });
 const preview = (steps: object[]) => JSON.stringify({ steps, changeSummary: {} });
 
-const owner = { event: "push", actor: "JK369x", owner: "JK369x", approval: "" };
+const owner = { event: "push", actor: "JK369x", triggeringActor: "JK369x", owner: "JK369x", approval: "" };
 
 test("creates and updates apply automatically", () => {
   const report = parsePreview(
@@ -42,9 +42,11 @@ test("the phrase is bound to the exact destructive set (order-independent)", () 
 test("only the owner's manual run with the exact phrase approves", () => {
   const report = parsePreview(preview([step("delete", "aws:s3/bucket:Bucket", "old")]));
   const phrase = approvalPhrase(report);
-  const dispatch = { event: "workflow_dispatch", actor: "JK369x", owner: "JK369x", approval: phrase };
+  const dispatch = { event: "workflow_dispatch", actor: "JK369x", triggeringActor: "JK369x", owner: "JK369x", approval: phrase };
   assert.equal(decideInfra(report, dispatch).apply, true);
   assert.equal(decideInfra(report, { ...dispatch, actor: "someone-else" }).apply, false);
+  // A re-run keeps the original actor; whoever re-ran it must be the owner too.
+  assert.equal(decideInfra(report, { ...dispatch, triggeringActor: "someone-else" }).apply, false);
   assert.equal(decideInfra(report, { ...dispatch, approval: `${phrase} ` }).apply, false);
   assert.equal(decideInfra(report, { ...dispatch, event: "push" }).apply, false);
 });

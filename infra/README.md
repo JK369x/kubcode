@@ -21,8 +21,8 @@ access to them.
 | KMS `alias/kubcode-secrets` | stack (`protect: true`) | BYOK envelope encryption, rotation on. See the key policy below |
 | S3 `kubcode-media-955758449820` | stack | Block public access, SSE-KMS (`aws/s3` + bucket key), versioning off, abort incomplete multipart after 7 days, CORS `https://kubcode.dev` PUT/POST/GET (exposes `ETag`), TLS-only |
 | IAM policy `kubcode-deploy-boundary` | stack, **admin-only changes** | Permissions boundary for every `kubcode-*` role |
-| IAM role `kubcode-github-deploy` | stack | OIDC `repo:JK369x/kubcode:ref:refs/heads/main` only. Runs `pulumi up` |
-| IAM role `kubcode-github-preview` | stack | OIDC `repo:JK369x/kubcode:pull_request` only. Read-only, plus Pulumi lock objects |
+| IAM role `kubcode-github-deploy` | stack | OIDC sub `repo:JK369x@104179568/kubcode@1444458364:ref:refs/heads/main` only. Runs `pulumi up` |
+| IAM role `kubcode-github-preview` | stack | OIDC sub `repo:JK369x@104179568/kubcode@1444458364:pull_request` only. Read-only, plus Pulumi lock objects |
 | Budget `kubcode-monthly` ($5, `user:project$kubcode`) | stack | Created only once `kubcode:budgetEmail` is set |
 | Cost allocation tag `project` | `scripts/bootstrap.sh cost-tag` | Can be activated only after billing has seen the tag (up to 24h) |
 | Lambda concurrency quota | `scripts/bootstrap.sh quota N` | The API accepts only N > 1000 (the AWS default). Lower values need a console support case |
@@ -32,6 +32,14 @@ or `pulumi logout`** for this project: the machine's default login is used by
 other work.
 
 ## Permission model
+
+- **OIDC subject**: the repo uses GitHub's *immutable* subject (owner and repo
+  IDs). Check it with `gh api repos/JK369x/kubcode/actions/oidc/customization/sub`.
+  Tokens carry `repo:JK369x@104179568/kubcode@1444458364:…`, never `repo:JK369x/kubcode:…`. A trust policy written
+  with the name-only form fails with "Not authorized to perform
+  sts:AssumeRoleWithWebIdentity". `githubTrustPolicy` rejects any other prefix.
+- Trust changes and deletion of the two GitHub roles are denied to CI. Who can
+  assume them is decided only by an admin-run apply.
 
 - Every `kubcode-*` role carries the boundary `kubcode-deploy-boundary`. The deploy
   role can create or change roles only when they carry that boundary
@@ -84,8 +92,15 @@ policy on the key itself would create a dependency cycle.
   fails and prints `approve infra <digest>`. The digest is bound to the exact set
   of destructive steps. The owner then runs *Actions → Infra → Run workflow* on
   `main` with that phrase. Another actor, or a phrase that does not match, does
-  not apply. This is an accident interlock, not an authorization boundary
-  (anyone who can push can edit workflows).
+  not apply. A re-run must also be triggered by the owner (`GITHUB_TRIGGERING_ACTOR`).
+  This is an accident interlock, not an authorization boundary (anyone who can
+  push can edit workflows).
+- The gate checks the preview, then `pulumi up --skip-preview` recomputes the
+  plan from the same commit and the same state, inside the `infra-prod`
+  concurrency group. The plan can only differ if someone applies to the stack
+  locally between those two steps. Don't apply locally while an Infra run is in
+  progress. (`pulumi up --plan` would close this gap, but it is still a preview
+  feature in CLI 3.232.)
 
 ## Admin-only local apply (bootstrap, boundary changes, emergencies)
 

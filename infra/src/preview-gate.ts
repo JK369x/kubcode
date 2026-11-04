@@ -7,7 +7,7 @@ import { createHash } from "node:crypto";
 
 export type PreviewStep = { op: string; urn: string };
 export type PreviewReport = { steps: PreviewStep[]; changes: PreviewStep[]; destructive: PreviewStep[] };
-export type GateContext = { event: string; actor: string; owner: string; approval: string };
+export type GateContext = { event: string; actor: string; triggeringActor: string; owner: string; approval: string };
 export type GateDecision = { apply: boolean; reason: string };
 
 // Pulumi step ops that remove or recreate something that exists today.
@@ -59,7 +59,9 @@ export function decideInfra(report: PreviewReport, ctx: GateContext): GateDecisi
       `To approve, the repository owner runs the Infra workflow manually on main with approval "${phrase}".`,
   });
   if (ctx.event !== "workflow_dispatch") return blocked("blocked");
-  if (!ctx.owner || ctx.actor !== ctx.owner) return blocked(`blocked: ${ctx.actor || "unknown actor"} is not the repository owner`);
+  // A re-run keeps the original actor, so whoever triggered this attempt must be the owner too.
+  for (const who of [ctx.actor, ctx.triggeringActor])
+    if (!ctx.owner || who !== ctx.owner) return blocked(`blocked: ${who || "unknown actor"} is not the repository owner`);
   if (ctx.approval !== phrase) return blocked("blocked: approval phrase does not match this preview");
   return { apply: true, reason: `owner approved destructive changes (${phrase})` };
 }

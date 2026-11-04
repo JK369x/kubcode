@@ -2,7 +2,6 @@
 // unrelated client resources: everything this stack owns is named kubcode-*.
 export const ACCOUNT_ID = "955758449820";
 export const REGION = "ap-southeast-1";
-export const GITHUB_REPO = "JK369x/kubcode";
 export const PROJECT_TAG = { project: "kubcode" } as const;
 export const MEDIA_CORS_ORIGIN = "https://kubcode.dev";
 
@@ -24,7 +23,12 @@ export const NAMES = {
   outOfScopePrefix: "kubcode-igtest-",
 } as const;
 
+// The repo uses GitHub's immutable OIDC subject (owner/repo IDs), see
+// `gh api repos/JK369x/kubcode/actions/oidc/customization/sub`. Tokens never
+// carry the name-only `repo:JK369x/kubcode:` form.
+export const GITHUB_SUB_PREFIX = "repo:JK369x@104179568/kubcode@1444458364";
+
 export const GITHUB_SUBJECTS = {
-  deploy: [`repo:${GITHUB_REPO}:ref:refs/heads/main`],
-  preview: [`repo:${GITHUB_REPO}:pull_request`],
+  deploy: [`${GITHUB_SUB_PREFIX}:ref:refs/heads/main`],
+  preview: [`${GITHUB_SUB_PREFIX}:pull_request`],
 } as const;
