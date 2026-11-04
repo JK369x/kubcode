@@ -27,7 +27,8 @@ export function ToolLogo({
           // eslint-disable-next-line @next/next/no-img-element
           <img src={logo.src} alt="" width={px} height={px} decoding="async" />
         ) : (
-          logo.text
+          // Drawn by CSS so the letters never become part of a link's name.
+          <span data-monogram={logo.text} />
         )}
       </span>
   );

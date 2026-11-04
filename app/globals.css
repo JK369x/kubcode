@@ -2372,6 +2372,9 @@ html[data-theme="light"] .shiki span {
 .tool-logo.tool-logo.is-edge {
   padding: 0;
 }
+[data-monogram]::before {
+  content: attr(data-monogram);
+}
 .tool-logo.is-monogram {
   background: var(--surface-soft);
   color: var(--muted);

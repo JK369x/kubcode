@@ -346,7 +346,7 @@ async function main() {
       const logos = await page.locator("main article .tool-logo").evaluateAll((els) =>
         els.map((el) => {
           const img = el.querySelector("img");
-          return img ? { src: img.getAttribute("src"), ok: img.complete && img.naturalWidth > 0 } : { src: "monogram", ok: el.textContent!.trim().length > 0 };
+          return img ? { src: img.getAttribute("src"), ok: img.complete && img.naturalWidth > 0 } : { src: "monogram", ok: (el.querySelector("[data-monogram]")?.getAttribute("data-monogram") ?? "").length > 0 };
         }),
       );
       assert.equal(logos.length, content.tools.length);
@@ -385,7 +385,12 @@ async function main() {
         await page.getByRole("link", { name: "OpenCode", exact: true }).click();
         await page.waitForURL("**/tools/opencode");
         assert.ok((await page.evaluate(() => (window as unknown as { __vt: number }).__vt)) > before, "card → tool page uses a view transition");
-        const names = await page.evaluate(() => [...document.querySelectorAll(".reading-title-row *")].map((el) => getComputedStyle(el).viewTransitionName).filter((n) => n !== "none"));
+        // Shared names as served (React marks them with vt-name; the CSS
+        // property itself only exists mid-transition, so it can't be read reliably).
+        const served = async (path: string) =>
+          (await (await page.request.get(base + path)).text()).match(new RegExp(`vt-name="(kb-(?:logo|title)-tool-opencode)"`, "g"))?.map((m) => m.slice(9, -1)) ?? [];
+        assert.deepEqual((await served("/tools")).sort(), ["kb-logo-tool-opencode", "kb-title-tool-opencode"], "card names the logo and title");
+        const names = await served("/tools/opencode");
         assert.deepEqual(names.sort(), ["kb-logo-tool-opencode", "kb-title-tool-opencode"], "logo and title morph from the card");
         await page.waitForTimeout(800);
         await page.screenshot({ path: ".qa/tool-page-1280-dark.png" });
