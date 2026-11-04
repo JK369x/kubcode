@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Sets up the kubcode-web box. Runs as root on the box, from a copy of this
-# host/ directory (scripts/provision.sh sends it). Safe to re-run.
+# host/ directory (`scripts/webhost.sh provision` sends it). Safe to re-run.
 #
 # KUBCODE_SETUP_NO_SYSTEMD=1 skips steps that need a running systemd/sshd,
 # for testing in a plain ubuntu:24.04 container.
@@ -12,7 +12,7 @@ NO_SYSTEMD="${KUBCODE_SETUP_NO_SYSTEMD:-0}"
 log() { echo "setup: $*"; }
 
 [ "$(id -u)" = 0 ] || { echo "setup: run as root" >&2; exit 1; }
-[ -s deploy_key.pub ] || { echo "setup: host/deploy_key.pub is missing (run scripts/deploy-key.sh first)" >&2; exit 1; }
+[ -s deploy_key.pub ] || { echo "setup: host/deploy_key.pub is missing (run: webhost.sh deploy-key)" >&2; exit 1; }
 grep -Eq '^ssh-ed25519 [A-Za-z0-9+/=]+ kubcode-ci-deploy$' deploy_key.pub || { echo "setup: deploy_key.pub is not the CI deploy key" >&2; exit 1; }
 
 export DEBIAN_FRONTEND=noninteractive

@@ -82,6 +82,11 @@ test("only SSH, HTTP and HTTPS are open", async () => {
   assert.equal(ports.instanceName, "kubcode-web");
   const opened = ports.portInfos.map((p: any) => `${p.protocol}/${p.fromPort}-${p.toPort}`).sort();
   assert.deepEqual(opened, ["tcp/22-22", "tcp/443-443", "tcp/80-80"]);
+  // Stated, not left to AWS defaults: the stack says exactly what is open.
+  for (const p of ports.portInfos) {
+    assert.deepEqual(p.cidrs, ["0.0.0.0/0"]);
+    assert.deepEqual(p.ipv6Cidrs, ["::/0"]);
+  }
 });
 
 test("apex record stays on Vercel until the cutover, with TTL 60", async () => {

@@ -42,10 +42,17 @@ export function createWebStack(cfg: WebStackConfig) {
   });
   const opts = { provider };
 
-  const keyPair = new aws.lightsail.KeyPair("admin-key", { name: WEB.keyPair, publicKey: cfg.adminPublicKey }, opts);
+  // Only used when the instance is created. Rotate the admin key on the box
+  // (~ubuntu/.ssh/authorized_keys); a change here would otherwise replace the
+  // key pair and, through keyPairName, the protected instance.
+  const keyPair = new aws.lightsail.KeyPair(
+    "admin-key",
+    { name: WEB.keyPair, publicKey: cfg.adminPublicKey },
+    { ...opts, ignoreChanges: ["publicKey"] },
+  );
 
-  // The OS is set up by host/provision.sh over SSH (re-runnable), not by
-  // user data, which only runs once.
+  // The OS is set up by host/setup.sh (`webhost.sh provision`, re-runnable),
+  // not by user data, which only runs once.
   const instance = new aws.lightsail.Instance(
     "web",
     {
@@ -68,12 +75,18 @@ export function createWebStack(cfg: WebStackConfig) {
   );
 
   // Replaces Lightsail's default ports. SSH stays open to all because GitHub
-  // runner IPs are not fixed; the box allows keys only (provision.sh).
+  // runner IPs are not fixed; the box allows keys only (host/setup.sh).
   new aws.lightsail.InstancePublicPorts(
     "web-ports",
     {
       instanceName: instance.name,
-      portInfos: [22, 80, 443].map((port) => ({ protocol: "tcp", fromPort: port, toPort: port })),
+      portInfos: [22, 80, 443].map((port) => ({
+        protocol: "tcp",
+        fromPort: port,
+        toPort: port,
+        cidrs: ["0.0.0.0/0"],
+        ipv6Cidrs: ["::/0"],
+      })),
     },
     opts,
   );
@@ -90,7 +103,8 @@ export function createWebStack(cfg: WebStackConfig) {
       // The record predates this stack (Vercel setup); take it over in place.
       allowOverwrite: true,
     },
-    opts,
+    // A destroy would take kubcode.dev offline; switching dnsTarget is an update.
+    { ...opts, protect: true },
   );
 
   return {

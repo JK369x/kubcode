@@ -61,7 +61,7 @@ Status: accepted (2026-11-04, owner) · Supersedes the Vercel hosting in HANDOFF
   only and reverse-proxies to the app. Requests by bare IP or another host
   name get no site. The existing canonical-host check in `lib/auth-policy.ts`
   stays the second layer.
-- **Host glue is shell** (`provision.sh`, `kubcode-deploy`, `set-env.sh`),
+- **Host glue is shell** (`host/setup.sh`, `host/kubcode-deploy`, `scripts/webhost.sh`),
   the same as `infra/scripts/bootstrap.sh`. It is not backend product code, so
   the Rust rule doesn't apply. The box needs no toolchain.
 - **Migrations are unchanged:** GitHub Actions still plans, gates and migrates
@@ -71,15 +71,17 @@ Status: accepted (2026-11-04, owner) · Supersedes the Vercel hosting in HANDOFF
 
 1. Admin runs `pulumi up` in `infra/web` with `dnsTarget=vercel`. This creates
    the box and IP, and takes over the `A` record unchanged except for TTL 60.
-2. Admin runs `provision.sh` over SSH. It is idempotent.
-3. Owner runs `set-env.sh` and types the secrets into hidden prompts. The
+2. Admin runs `webhost.sh known-hosts` and `webhost.sh deploy-key` (which
+   provisions the box with `host/setup.sh`; idempotent).
+3. Owner runs `webhost.sh set-env` and types the secrets into hidden prompts. The
    values go straight to the box over SSH stdin and nowhere else.
 4. The PR merges. `production.yml` builds and deploys to the box, and the box
    smoke-tests on localhost.
 5. Check through an SSH tunnel with `Host: kubcode.dev`.
-6. Admin sets `dnsTarget=lightsail` and runs `pulumi up`. Caddy issues the
-   certificate on the first request. Then check `https://kubcode.dev`, Google
-   login and LINE login.
+6. Admin sets `dnsTarget=lightsail`, runs `pulumi up`, then `webhost.sh tls`
+   (Caddy's certificate attempts failed while DNS pointed at Vercel; a restart
+   makes it retry at once). Then check `https://kubcode.dev`, Google login and
+   LINE login, and re-run Production so its public smoke runs.
 7. Rollback: `dnsTarget=vercel`, `pulumi up`. With TTL 60 this takes about a
    minute.
 8. After 1–2 quiet days, remove the Vercel steps and secrets from CI.
@@ -91,4 +93,4 @@ Status: accepted (2026-11-04, owner) · Supersedes the Vercel hosting in HANDOFF
 - We now own OS patching (unattended-upgrades), TLS renewal (Caddy) and uptime.
   There is no uptime alert yet; adding one is a follow-up.
 - Previews are gone, so UI review happens locally before merging.
-- A box rebuild needs the owner to re-enter the secrets (`set-env.sh`).
+- A box rebuild needs the owner to re-enter the secrets (`webhost.sh set-env`).
