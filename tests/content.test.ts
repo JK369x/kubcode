@@ -16,6 +16,15 @@ test("repo content loads the two migrated articles from MDX", () => {
   assert.match(article.body, /## หกชั้นที่ต้องอ่านให้แยกกัน/);
 });
 
+const GOOD_SVG = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><rect width="64" height="64" fill="#000"/></svg>';
+const LOGO = {
+  src: "/tools/good-tool/logo.svg",
+  alt: "โลโก้ Good Tool",
+  source_url: "https://example.com/brand",
+  guideline_url: "https://example.com/brand",
+  fetched_at: "2026-11-04",
+};
+
 const CATEGORIES =
   "how-to:\n  th: สอนทำคลิป\n  description: d\nbasics:\n  th: พื้นฐานและสิทธิ์\n  description: d\n";
 
@@ -36,6 +45,7 @@ function tree(files: Record<string, string>, images: Record<string, Buffer> = {}
   const pics: Record<string, Buffer> = {
     "covers/good/cover.png": fakePng(1600, 900),
     "covers/good/og.png": fakePng(1200, 630),
+    "tools/good-tool/logo.svg": Buffer.from(GOOD_SVG),
     ...images,
   };
   for (const [rel, data] of Object.entries(pics)) {
@@ -188,6 +198,8 @@ function tool(fm: Record<string, unknown>, body = "## What it is\n\nText\n"): st
     refs: [],
     links: { website: "https://example.com" },
     license: "MIT",
+    pricing: "free",
+    logo: LOGO,
     updated: "2026-11-03",
     sources: [],
     ...fm,
@@ -287,4 +299,78 @@ test("featured flag, video link and reading time", () => {
   const problems = problemsOf(tree({ "articles/good-article.mdx": article({ featured: "yes", video: "http://x.dev" }) }));
   assert.ok(problems.some((p) => /featured/.test(p)), problems.join("\n"));
   assert.ok(problems.some((p) => /video/.test(p)), problems.join("\n"));
+});
+
+test("tools carry a local product logo with provenance", () => {
+  const [t] = loadContent(tree({ "tools/good-tool.mdx": tool({}) })).tools;
+  assert.deepEqual(t.logo, {
+    kind: "image",
+    src: "/tools/good-tool/logo.svg",
+    alt: "โลโก้ Good Tool",
+    sourceUrl: "https://example.com/brand",
+    guidelineUrl: "https://example.com/brand",
+    fetchedAt: "2026-11-04",
+    includesClearSpace: false,
+  });
+  const edge = loadContent(tree({ "tools/good-tool.mdx": tool({ logo: { ...LOGO, includes_clear_space: true } }) })).tools[0];
+  assert.equal(edge.logo.kind === "image" && edge.logo.includesClearSpace, true);
+  const none = loadContent(tree({ "tools/good-tool.mdx": tool({ logo: { ...LOGO, guideline_url: "none found" } }) })).tools[0];
+  assert.equal(none.logo.kind === "image" && none.logo.guidelineUrl, null);
+  assert.equal(t.pricing, "free");
+});
+
+test("a tool without an official asset uses a monogram, and says why", () => {
+  const [t] = loadContent(
+    tree({ "tools/good-tool.mdx": tool({ name: "What If Animation", logo: { fallback: "monogram", reason: "เจ้าของไม่มีโลโก้ทางการ" } }) }),
+  ).tools;
+  assert.deepEqual(t.logo, { kind: "monogram", text: "WI", reason: "เจ้าของไม่มีโลโก้ทางการ" });
+  const problems = problemsOf(tree({ "tools/good-tool.mdx": tool({ logo: { fallback: "monogram" } }) }));
+  assert.ok(problems.some((p) => /logo\.reason is required/.test(p)), problems.join("\n"));
+});
+
+test("tool logos need provenance, a file under the tool's own folder, and a usable size", () => {
+  const cases: Array<[unknown, RegExp, Record<string, Buffer>?]> = [
+    [undefined, /logo is required/],
+    [{ ...LOGO, source_url: undefined }, /logo\.source_url must be an https URL/],
+    [{ ...LOGO, source_url: "http://example.com" }, /logo\.source_url must be an https URL/],
+    [{ ...LOGO, guideline_url: undefined }, /logo\.guideline_url must be an https URL or "none found"/],
+    [{ ...LOGO, fetched_at: "yesterday" }, /logo\.fetched_at must be a real date/],
+    [{ ...LOGO, alt: "" }, /logo\.alt is required/],
+    // Hotlinks and paths outside the tool's own folder (e.g. preview media) are refused.
+    [{ ...LOGO, src: "https://example.com/logo.svg" }, /logo\.src must be \/tools\/good-tool\/logo\.svg or \.png/],
+    [{ ...LOGO, src: "/previews/clip-poster.png" }, /logo\.src must be/],
+    [{ ...LOGO, src: "/tools/other-tool/logo.svg" }, /logo\.src must be/],
+    [{ ...LOGO, src: "/tools/good-tool/logo.png" }, /logo\.src not found/],
+    [{ ...LOGO, src: "/tools/good-tool/logo.png" }, /at least 128×128/, { "tools/good-tool/logo.png": fakePng(64, 64) }],
+  ];
+  for (const [logo, re, images] of cases) {
+    const problems = problemsOf(tree({ "tools/good-tool.mdx": tool({ logo }) }, images));
+    assert.ok(problems.some((p) => re.test(p)), `${JSON.stringify(logo)}: ${problems.join("\n")}`);
+  }
+  const png = loadContent(tree({ "tools/good-tool.mdx": tool({ logo: { ...LOGO, src: "/tools/good-tool/logo.png" } }) }, { "tools/good-tool/logo.png": fakePng(256, 256) }));
+  assert.equal(png.tools[0].logo.kind === "image" && png.tools[0].logo.src, "/tools/good-tool/logo.png");
+});
+
+test("SVG logos are served from our origin, so active content is refused", () => {
+  const bad = [
+    '<svg xmlns="http://www.w3.org/2000/svg"><script>alert(1)</script></svg>',
+    '<svg xmlns="http://www.w3.org/2000/svg" onload="alert(1)"><rect/></svg>',
+    '<svg xmlns="http://www.w3.org/2000/svg"><foreignObject><p>x</p></foreignObject></svg>',
+    '<svg xmlns="http://www.w3.org/2000/svg"><image href="https://evil.example/x.png"/></svg>',
+    '<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"><a xlink:href="javascript:alert(1)"><rect/></a></svg>',
+    '<!DOCTYPE svg [<!ENTITY x "y">]><svg xmlns="http://www.w3.org/2000/svg"><rect/></svg>',
+    '<svg xmlns="http://www.w3.org/2000/svg"><a href="#x"><set attributeName="href" to="&#106;avascript:alert(1)"/></a></svg>',
+    '<svg xmlns="http://www.w3.org/2000/svg"><style>@import url(https://evil.example/a.css);</style></svg>',
+  ];
+  for (const svg of bad) {
+    const problems = problemsOf(tree({ "tools/good-tool.mdx": tool({}) }, { "tools/good-tool/logo.svg": Buffer.from(svg) }));
+    assert.ok(problems.some((p) => /logo\.src SVG has active or external content/.test(p)), `${svg}: ${problems.join("\n")}`);
+  }
+  const ok = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 8 8"><defs><linearGradient id="g"/></defs><use href="#g"/><rect fill="url(#g)"/></svg>';
+  loadContent(tree({ "tools/good-tool.mdx": tool({}) }, { "tools/good-tool/logo.svg": Buffer.from(ok) }));
+});
+
+test("tools state whether they are free, have a free tier, or are paid", () => {
+  const problems = problemsOf(tree({ "tools/good-tool.mdx": tool({ pricing: "cheap" }) }));
+  assert.ok(problems.some((p) => /pricing must be one of free, free-tier, paid/.test(p)), problems.join("\n"));
 });

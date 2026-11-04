@@ -17,7 +17,7 @@ function page(kind: "article" | "tool", slug: string, fm: Record<string, unknown
     refs: [],
     updated: "2026-11-03",
     ...(kind === "tool"
-      ? { name: slug, category: "render", license: "MIT", links: {} }
+      ? { name: slug, category: "render", license: "MIT", pricing: "free", logo: { fallback: "monogram", reason: "fixture" }, links: {} }
       : { category: "basics", cover: { src: "/covers/t/cover.png", og: "/covers/t/og.png", alt: "a", source: "generated" } }),
     ...fm,
   };
