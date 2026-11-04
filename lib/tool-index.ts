@@ -42,3 +42,9 @@ export function toolUsage(content: Content, tool: Tool): { articles: number; ski
     skills: links.filter((l) => l.kind === "skill").length,
   };
 }
+
+/** Tools an article links to (or that link to it), in production order. */
+export function articleTools(content: Content, article: { slug: string }): Tool[] {
+  const slugs = new Set(related(content, { kind: "article", slug: article.slug }).filter((l) => l.kind === "tool").map((l) => l.slug));
+  return sortTools(content.tools.filter((t) => slugs.has(t.slug)));
+}

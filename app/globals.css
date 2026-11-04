@@ -2372,6 +2372,9 @@ html[data-theme="light"] .shiki span {
 .tool-logo.tool-logo.is-edge {
   padding: 0;
 }
+[data-monogram]::before {
+  content: attr(data-monogram);
+}
 .tool-logo.is-monogram {
   background: var(--surface-soft);
   color: var(--muted);
@@ -2401,4 +2404,38 @@ html[data-theme="light"] .shiki span {
     align-items: flex-start;
     gap: 14px;
   }
+}
+
+/* Tool icon row on article cards and headers. */
+.tool-icons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.tool-icons a {
+  display: block;
+  border-radius: 10px;
+}
+.tool-icons a:focus-visible {
+  outline: 2px solid var(--purple);
+  outline-offset: 2px;
+}
+.tool-logo-icon {
+  width: 32px;
+  height: 32px;
+  padding: 5px;
+  border-radius: 9px;
+}
+.tool-icons a:hover .tool-logo {
+  border-color: var(--purple);
+}
+.tool-logo-icon.is-monogram {
+  font-size: 11px;
+  letter-spacing: 0;
+}
+.reading-tools {
+  margin-top: 14px;
 }

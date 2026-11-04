@@ -1,31 +1,33 @@
 import Image from "next/image";
 import Link from "next/link";
 import { PlayCircle } from "lucide-react";
-import type { Article } from "@/lib/content";
+import type { Article, Tool } from "@/lib/content";
 import { thaiDate } from "@/lib/dates";
 import { coverTransitionName, titleTransitionName } from "@/lib/view-transition-names";
 import { Morph } from "./Morph";
+import { ToolIconRow } from "./ToolIconRow";
 import styles from "./ArticleIndex.module.css";
 
-/** One article in the index: the whole card is a single link. */
+/**
+ * One article in the index. The title is the card's link (stretched over the
+ * card); the tool icons are their own links on top of it.
+ */
 export function ArticleCard({
   article: a,
   categoryLabel,
+  tools,
   featured = false,
   priority = false,
 }: {
   article: Article;
   categoryLabel: string;
+  tools: Tool[];
   featured?: boolean;
   priority?: boolean;
 }) {
   const Heading = featured ? "h2" : "h3";
   return (
-    <Link
-      href={`/articles/${a.slug}`}
-      transitionTypes={["nav-forward"]}
-      className={featured ? `${styles.card} ${styles.featured}` : styles.card}
-    >
+    <article className={featured ? `${styles.card} ${styles.featured}` : styles.card}>
       <Morph name={coverTransitionName(a.slug)}>
         <div className={styles.cover}>
           {/* The title is the link text; the cover is decorative here. */}
@@ -41,7 +43,11 @@ export function ArticleCard({
       <div className={styles.text}>
         <span className={styles.badge}>{categoryLabel}</span>
         <Morph name={titleTransitionName("article", a.slug)}>
-          <Heading className={styles.title}>{a.title}</Heading>
+          <Heading className={styles.title}>
+            <Link href={`/articles/${a.slug}`} transitionTypes={["nav-forward"]} className={styles.link}>
+              {a.title}
+            </Link>
+          </Heading>
         </Morph>
         <p className={styles.lead}>{a.description}</p>
         <p className={styles.meta}>
@@ -53,7 +59,8 @@ export function ArticleCard({
             </span>
           )}
         </p>
+        <ToolIconRow tools={tools} className={styles.tools} />
       </div>
-    </Link>
+    </article>
   );
 }

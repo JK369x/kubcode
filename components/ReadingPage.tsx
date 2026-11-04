@@ -31,6 +31,7 @@ export function ReadingPage({
   interactions,
   cover,
   titleMark,
+  headerTools,
 }: {
   kind: "article" | "tool";
   slug: string;
@@ -53,6 +54,8 @@ export function ReadingPage({
   cover?: { src: string; alt: string; width: number; height: number };
   /** Shown before the title, e.g. a tool's logo. */
   titleMark?: ReactNode;
+  /** Shown under the tags, e.g. the tools an article uses. */
+  headerTools?: ReactNode;
 }) {
   const date = new Date(`${updated}T00:00:00Z`).toLocaleDateString("th-TH", {
     day: "numeric",
@@ -112,6 +115,11 @@ export function ReadingPage({
             <div className="enter" style={enter(3)}>
               <TagList slugs={tags} tags={allTags} />
             </div>
+            {headerTools && (
+              <div className="reading-tools enter" style={enter(3)}>
+                {headerTools}
+              </div>
+            )}
             <div className="reading-rule enter" style={enter(4)}>
               <FontSizeControl />
             </div>

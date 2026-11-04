@@ -17,6 +17,7 @@ import { accountToken } from "../lib/accounts/session";
 import { CSRF_COOKIE } from "../lib/accounts/http";
 import { SESSION_COOKIE_NAME } from "../lib/auth-policy";
 import { throwawayDb } from "./accounts-db/harness";
+import { loadContent } from "../lib/content";
 
 const FIXTURE = {
   NEXTAUTH_URL: "https://kubcode.dev",
@@ -293,7 +294,7 @@ async function main() {
         const remotionStars = page.locator("main article").filter({ has: page.getByRole("heading", { name: "Remotion", exact: true }) }).locator("[data-stars]");
         await remotionStars.waitFor();
         assert.equal(await remotionStars.getAttribute("data-stars"), "1", `${label}: card star count`);
-        assert.equal(await page.locator("main article [data-stars]").count(), 7, `${label}: every card shows a count`);
+        assert.equal(await page.locator("main article [data-stars]").count(), loadContent().tools.length, `${label}: every card shows a count`);
         await page.screenshot({ path: `.qa/tools-stars-${label}.png` });
         assert.deepEqual(errors, [], `console errors at ${label}`);
         await page.close();

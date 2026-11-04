@@ -1,6 +1,7 @@
 import Link from "next/link";
 import type { Content } from "@/lib/content";
 import { articleIndex } from "@/lib/article-index";
+import { articleTools } from "@/lib/tool-index";
 import { ArticleCard } from "./ArticleCard";
 import styles from "./ArticleIndex.module.css";
 
@@ -29,11 +30,11 @@ export function ArticleIndex({ content, category }: { content: Content; category
           ))}
         </ul>
       </nav>
-      {featured && <ArticleCard article={featured} categoryLabel={label(featured.category)} featured priority />}
+      {featured && <ArticleCard article={featured} categoryLabel={label(featured.category)} tools={articleTools(content, featured)} featured priority />}
       {rest.length > 0 && (
         <section aria-label="บทความอื่น" className={styles.grid}>
           {rest.map((a) => (
-            <ArticleCard key={a.slug} article={a} categoryLabel={label(a.category)} />
+            <ArticleCard key={a.slug} article={a} categoryLabel={label(a.category)} tools={articleTools(content, a)} />
           ))}
         </section>
       )}

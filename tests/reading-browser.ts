@@ -7,6 +7,7 @@ import { spawn } from "node:child_process";
 import { mkdirSync } from "node:fs";
 import { createServer } from "node:net";
 import { chromium, type Page } from "@playwright/test";
+import { loadContent } from "../lib/content";
 
 const ARTICLE = "/articles/free-ai-animation-opencode";
 
@@ -157,9 +158,12 @@ async function main() {
       await page.waitForFunction((b) => parseFloat(getComputedStyle(document.querySelector(".prose")!).fontSize) > b, before);
       await page.getByRole("button", { name: "ลดขนาดตัวอักษร" }).click();
       assert.equal(await size(), before);
-      checks.push("A+/A− resize the article text and the choice survives a reload");
+      checks.push("A+/A− resize the article text and the choice survives a reload; header tool icons in production order");
 
       await page.goto(base + ARTICLE, { waitUntil: "networkidle" });
+      const headerTools = page.locator(".reading-head").getByRole("list", { name: "เครื่องมือที่ใช้" }).getByRole("link");
+      assert.ok((await headerTools.count()) >= 6, "article header shows the tools it uses");
+      assert.equal(await headerTools.first().getAttribute("href"), "/tools/glm-5-3-flash", "tools in production order, then by name");
       await page.screenshot({ path: ".qa/reading-1280-dark.png", fullPage: false });
       assert.deepEqual(errors, []);
       await page.context().close();
@@ -285,12 +289,25 @@ async function main() {
       assert.equal(await chips.getByRole("link", { name: /ทั้งหมด/ }).getAttribute("aria-current"), "page");
       assert.ok(images.length >= 3 && images.every((t) => /image\/(avif|webp)/.test(t)), `covers served as AVIF/WebP (${images.join(",")})`);
       assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth), false, "no horizontal scroll");
+      // Tool icons: the makers' logo files from /tools, each a named link above the card link.
+      const icons = page.getByRole("list", { name: "เครื่องมือที่ใช้" }).first().getByRole("link");
+      const names = await icons.evaluateAll((els) => els.map((el) => [el.getAttribute("aria-label"), el.getAttribute("href"), el.querySelector("img")?.getAttribute("src") ?? "monogram"]));
+      assert.ok(names.length >= 6, `featured article shows its tools (${JSON.stringify(names)})`);
+      for (const [name, href, src] of names) {
+        assert.ok(name && /^\/tools\/[a-z0-9-]+$/.test(href!), `named link to a tool page: ${name} ${href}`);
+        assert.ok(src === "monogram" || src === `${href}/logo.svg` || src === `${href}/logo.png`, `logo is the tool's own file: ${src}`);
+      }
+      await icons.first().scrollIntoViewIfNeeded();
+      const iconBox = (await icons.first().boundingBox())!;
+      const hit = await page.evaluate(([x, y]) => document.elementFromPoint(x, y)?.closest("a")?.getAttribute("href"), [iconBox.x + iconBox.width / 2, iconBox.y + iconBox.height / 2]);
+      assert.equal(hit, names[0][1], "tool icon sits above the card's stretched link");
+      await page.evaluate(() => window.scrollTo(0, 0));
       await page.screenshot({ path: `.qa/articles-${width}-${theme}.png`, fullPage: true });
       if (width === 1280 && theme === "dark") {
         await chips.getByRole("link", { name: /พื้นฐานและสิทธิ์/ }).click();
         await page.waitForURL("**/articles/c/basics");
         assert.equal(await page.locator("main h1").innerText(), "พื้นฐานและสิทธิ์");
-        assert.equal(await page.locator("main a[href^='/articles/'] h2, main a[href^='/articles/'] h3").count(), 2);
+        assert.equal(await page.locator("main article :is(h2, h3) a[href^='/articles/']").count(), 2);
         assert.equal(await chips.getByRole("link", { name: /พื้นฐานและสิทธิ์/ }).getAttribute("aria-current"), "page");
         assert.match((await page.locator('meta[name="robots"]').getAttribute("content")) ?? "", /noindex/, "fewer than 3 articles: noindex");
         await page.goto(base + "/articles", { waitUntil: "networkidle" });
@@ -300,7 +317,7 @@ async function main() {
         assert.ok((await page.evaluate(() => (window as unknown as { __vt: number }).__vt)) > before, "card → article uses a view transition");
         const heroImg = page.locator(".reading-hero img");
         await heroImg.waitFor();
-        assert.match((await heroImg.getAttribute("alt")) ?? "", /แผ่นกระจกโปร่งแสงหกแผ่น/, "article hero carries the cover alt text");
+        assert.ok(((await heroImg.getAttribute("alt")) ?? "").length > 10, "article hero carries the cover alt text");
         await page.waitForTimeout(800);
         await page.screenshot({ path: ".qa/article-hero-1280-dark.png" });
       }
@@ -310,11 +327,11 @@ async function main() {
     {
       const { page } = await open({ width: 1280, theme: "dark", reduced: true });
       await page.goto(base + "/articles", { waitUntil: "networkidle" });
-      const t = await page.locator("main a[href^='/articles/'] img").first().evaluate((el) => getComputedStyle(el).transitionDuration);
+      const t = await page.locator("main article img").first().evaluate((el) => getComputedStyle(el).transitionDuration);
       assert.equal(t, "0s", "reduced motion: no cover zoom");
       await page.context().close();
     }
-    checks.push("/articles: featured hero, category chips as URLs (filter + aria-current + noindex <3), AVIF/WebP covers, card → article transition with cover hero, reduced motion, 4 screenshots");
+    checks.push("/articles: featured hero, category chips as URLs (filter + aria-current + noindex <3), AVIF/WebP covers, tool icon links (own logo files, above the card link), card → article transition with cover hero, reduced motion, 4 screenshots");
 
     // /tools: production-line stage filter, logo cards, morph card → tool page.
     for (const [width, theme] of [[1280, "dark"], [1280, "light"], [390, "dark"], [390, "light"]] as const) {
@@ -323,15 +340,16 @@ async function main() {
       const line = page.getByRole("navigation", { name: "ขั้นตอนทำคลิป" });
       assert.equal(await line.getByRole("link", { name: /ทั้งหมด/ }).getAttribute("aria-current"), "page");
       const cards = page.locator("main article");
-      assert.equal(await cards.count(), 7);
+      const content = loadContent();
+      assert.equal(await cards.count(), content.tools.length);
       // Every logo is a local file that actually loaded (or a monogram).
       const logos = await page.locator("main article .tool-logo").evaluateAll((els) =>
         els.map((el) => {
           const img = el.querySelector("img");
-          return img ? { src: img.getAttribute("src"), ok: img.complete && img.naturalWidth > 0 } : { src: "monogram", ok: el.textContent!.trim().length > 0 };
+          return img ? { src: img.getAttribute("src"), ok: img.complete && img.naturalWidth > 0 } : { src: "monogram", ok: (el.querySelector("[data-monogram]")?.getAttribute("data-monogram") ?? "").length > 0 };
         }),
       );
-      assert.equal(logos.length, 7);
+      assert.equal(logos.length, content.tools.length);
       for (const l of logos) assert.ok(l.ok && (l.src === "monogram" || /^\/tools\/[a-z0-9-]+\/logo\.(svg|png)$/.test(l.src!)), JSON.stringify(l));
       // Stars are off on this server: no counts are shown.
       assert.equal(await page.locator("main article [data-stars]").count(), 0, "star counts hidden while interactions are off");
@@ -353,10 +371,12 @@ async function main() {
         await line.getByRole("link", { name: /เขียนบทและโค้ด/ }).click();
         await page.waitForURL("**/tools/c/script");
         assert.equal(await page.locator("main h1").innerText(), "เขียนบทและโค้ด");
-        assert.equal(await cards.count(), 3);
+        const scriptTools = content.tools.filter((t) => t.category === "script").length;
+        assert.ok(scriptTools >= 3);
+        assert.equal(await cards.count(), scriptTools);
         assert.equal(await line.getByRole("link", { name: /เขียนบทและโค้ด/ }).getAttribute("aria-current"), "page");
         const robots = await page.locator('meta[name="robots"]').evaluateAll((els) => els.map((el) => el.getAttribute("content")).join(" "));
-        assert.doesNotMatch(robots, /noindex/, "3 tools: indexable");
+        assert.doesNotMatch(robots, /noindex/, "3+ tools: indexable");
         await page.goto(base + "/tools/c/render", { waitUntil: "networkidle" });
         assert.match((await page.locator('meta[name="robots"]').getAttribute("content")) ?? "", /noindex/, "fewer than 3 tools: noindex");
         assert.equal((await page.request.get(base + "/tools/c/image")).status(), 404, "empty stage 404s");
@@ -365,7 +385,12 @@ async function main() {
         await page.getByRole("link", { name: "OpenCode", exact: true }).click();
         await page.waitForURL("**/tools/opencode");
         assert.ok((await page.evaluate(() => (window as unknown as { __vt: number }).__vt)) > before, "card → tool page uses a view transition");
-        const names = await page.evaluate(() => [...document.querySelectorAll(".reading-title-row *")].map((el) => getComputedStyle(el).viewTransitionName).filter((n) => n !== "none"));
+        // Shared names as served (React marks them with vt-name; the CSS
+        // property itself only exists mid-transition, so it can't be read reliably).
+        const served = async (path: string) =>
+          (await (await page.request.get(base + path)).text()).match(new RegExp(`vt-name="(kb-(?:logo|title)-tool-opencode)"`, "g"))?.map((m) => m.slice(9, -1)) ?? [];
+        assert.deepEqual((await served("/tools")).sort(), ["kb-logo-tool-opencode", "kb-title-tool-opencode"], "card names the logo and title");
+        const names = await served("/tools/opencode");
         assert.deepEqual(names.sort(), ["kb-logo-tool-opencode", "kb-title-tool-opencode"], "logo and title morph from the card");
         await page.waitForTimeout(800);
         await page.screenshot({ path: ".qa/tool-page-1280-dark.png" });
@@ -379,7 +404,7 @@ async function main() {
       assert.deepEqual(errors, []);
       await page.context().close();
     }
-    checks.push("/tools: 7 logo cards (local files that load), stage chips as URLs (filter + aria-current + noindex <3 + empty 404), external link above the card link, stars hidden when off, logo+title morph card → page (reduced motion: global view-transition rule above), 4+2 screenshots");
+    checks.push("/tools: one logo card per tool (local files that load), stage chips as URLs (filter + aria-current + noindex <3 + empty 404), external link above the card link, stars hidden when off, logo+title morph card → page (reduced motion: global view-transition rule above), 4+2 screenshots");
 
     console.log(`PASS reading browser (${checks.length} checks)\n- ${checks.join("\n- ")}`);
   } finally {

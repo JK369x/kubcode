@@ -8,6 +8,8 @@ import { JsonLd } from "@/components/JsonLd";
 import { ReadingPage } from "@/components/ReadingPage";
 import { RelatedLinks } from "@/components/RelatedLinks";
 import { SourceCredits } from "@/components/SourceCredits";
+import { ToolIconRow } from "@/components/ToolIconRow";
+import { articleTools } from "@/lib/tool-index";
 
 export const dynamicParams = false;
 
@@ -27,6 +29,7 @@ export default async function Article({ params }: Props) {
   if (!a) notFound();
   const content = getContent();
   const { content: body, toc } = await renderMdx(a.body);
+  const tools = articleTools(content, a);
   const crumbs = [
     { name: "kubcode", href: "/" },
     { name: "บทความ", href: "/articles" },
@@ -44,6 +47,7 @@ export default async function Article({ params }: Props) {
       allTags={content.tags}
       toc={toc}
       cover={a.cover}
+      headerTools={tools.length > 0 ? <ToolIconRow tools={tools} /> : undefined}
       after={
         <>
           <JsonLd data={articleJsonLd(a)} />
