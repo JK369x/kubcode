@@ -1,0 +1,10 @@
+#!/bin/sh
+# Starts the release in the working directory (systemd sets it to `current`).
+# The DB CA is public and multi-line, so it ships in the release (db-ca.pem)
+# instead of the one-line-per-variable env file.
+set -eu
+if [ -f ./db-ca.pem ]; then
+  KUBCODE_DB_CA_CERT=$(cat ./db-ca.pem)
+  export KUBCODE_DB_CA_CERT
+fi
+exec /usr/local/bin/node server.js

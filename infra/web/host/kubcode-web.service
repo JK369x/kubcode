@@ -1,0 +1,35 @@
+# kubcode.dev Next.js standalone server. Env (secrets) comes from
+# /etc/kubcode/web.env (root, 0600), read by systemd before dropping to `kubcode`.
+[Unit]
+Description=kubcode.dev web (Next.js standalone)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=kubcode
+Group=kubcode
+# Resolved at each (re)start, so a restart picks up the new release.
+WorkingDirectory=/srv/kubcode/current
+EnvironmentFile=/etc/kubcode/web.env
+Environment=NODE_ENV=production PORT=3000 HOSTNAME=127.0.0.1 NEXT_TELEMETRY_DISABLED=1
+ExecStart=/usr/local/lib/kubcode/start-web
+Restart=on-failure
+RestartSec=2
+MemoryMax=750M
+
+NoNewPrivileges=yes
+ProtectSystem=strict
+ProtectHome=yes
+PrivateTmp=yes
+PrivateDevices=yes
+ProtectKernelTunables=yes
+ProtectKernelModules=yes
+ProtectControlGroups=yes
+RestrictSUIDSGID=yes
+LockPersonality=yes
+CapabilityBoundingSet=
+ReadWritePaths=/var/cache/kubcode-web
+
+[Install]
+WantedBy=multi-user.target
