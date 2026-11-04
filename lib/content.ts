@@ -1,5 +1,6 @@
 import { readdirSync, readFileSync } from "node:fs";
 import path from "node:path";
+import { imageSize } from "image-size";
 import { parse as parseYaml } from "yaml";
 import { rawSkills } from "./catalog";
 
@@ -25,7 +26,31 @@ type PageBase = {
   body: string;
 };
 
-export type Article = PageBase & { kind: "article" };
+/** Article cover: a local image under public/covers with known provenance. */
+export const COVER_SOURCES = ["generated", "own-clip", "own-screenshot"] as const;
+export type Cover = {
+  src: string;
+  /** 1200×630 crop used as the Open Graph image. */
+  og: string;
+  alt: string;
+  source: (typeof COVER_SOURCES)[number];
+  width: number;
+  height: number;
+};
+
+const COVER_PATH = /^\/covers\/[a-z0-9-]+(\/[a-z0-9-]+)*\.(png|jpe?g|webp)$/;
+
+export type Category = { key: string; th: string; description: string };
+
+export type Article = PageBase & {
+  kind: "article";
+  category: string;
+  cover: Cover;
+  featured: boolean;
+  /** Link to a clip of this article (https), shown as a "มีคลิป" badge. */
+  video?: string;
+  readingMinutes: number;
+};
 
 /** The eight production stages a tool can belong to (PRD). */
 export const TOOL_CATEGORIES = [
@@ -58,7 +83,7 @@ export type Page = Article | Tool;
 /** Upstream credit; url is optional for private sources we cannot link. */
 export type Source = { title: string; url?: string };
 
-export type Content = { tags: Tag[]; articles: Article[]; tools: Tool[] };
+export type Content = { tags: Tag[]; categories: Category[]; articles: Article[]; tools: Tool[] };
 
 /** Thrown when content files break the schema; lists every problem found. */
 export class ContentError extends Error {
@@ -175,6 +200,74 @@ class FieldReader {
     });
   }
 
+  bool(field: string): boolean {
+    const value = this.data[field];
+    if (value === undefined) return false;
+    if (typeof value !== "boolean") this.problem(field, "must be true or false");
+    return value === true;
+  }
+
+  optionalHttps(field: string): string | undefined {
+    const value = this.data[field];
+    if (value === undefined) return undefined;
+    if (!isHttpsUrl(value)) {
+      this.problem(field, "must be an https URL");
+      return undefined;
+    }
+    return value;
+  }
+
+  /**
+   * Cover rules: a file under public/covers, alt text, a known source, at
+   * least 1200px wide and either 16:9 or exactly 1200×630.
+   */
+  cover(publicDir: string): Cover {
+    const raw = this.data.cover;
+    const empty: Cover = { src: "", og: "", alt: "", source: "generated", width: 0, height: 0 };
+    if (raw === undefined) {
+      this.problem("cover", "is required");
+      return empty;
+    }
+    const { src, og, alt, source } = asRecord(raw);
+    let ok = true;
+    if (typeof alt !== "string" || alt.trim() === "") (this.problem("cover.alt", "is required"), (ok = false));
+    if (!COVER_SOURCES.includes(source as Cover["source"])) {
+      this.problem("cover.source", `must be one of ${COVER_SOURCES.join(", ")}`);
+      ok = false;
+    }
+    const sizeOf = (field: string, file: unknown): { width: number; height: number } | null => {
+      if (typeof file !== "string" || !COVER_PATH.test(file)) {
+        this.problem(field, "must be a /covers/<...>.png|jpg|webp path under public/");
+        return null;
+      }
+      try {
+        const size = imageSize(readFileSync(path.join(publicDir, file)));
+        return { width: size.width ?? 0, height: size.height ?? 0 };
+      } catch {
+        this.problem(field, `not found or unreadable: ${file}`);
+        return null;
+      }
+    };
+    const size = sizeOf("cover.src", src);
+    if (!size) return empty;
+    const { width, height } = size;
+    if (og === undefined) (this.problem("cover.og", "is required (a 1200×630 crop for social cards)"), (ok = false));
+    else {
+      const ogSize = sizeOf("cover.og", og);
+      if (!ogSize) ok = false;
+      else if (ogSize.width !== 1200 || ogSize.height !== 630) {
+        this.problem("cover.og", `must be exactly 1200×630 (${ogSize.width}×${ogSize.height})`);
+        ok = false;
+      }
+    }
+    if (width < 1200) (this.problem("cover", `must be at least 1200px wide (${width}×${height})`), (ok = false));
+    else if (!(Math.abs(width / height - 16 / 9) < 0.01 || (width === 1200 && height === 630))) {
+      this.problem("cover", `must be 16:9 or 1200×630 (${width}×${height})`);
+      ok = false;
+    }
+    return ok ? { src: src as string, og: og as string, alt: alt as string, source: source as Cover["source"], width, height } : empty;
+  }
+
   oneOf<T extends string>(field: string, allowed: readonly T[]): T {
     const value = this.data[field];
     if (!allowed.includes(value as T)) {
@@ -237,6 +330,22 @@ function asRecord(value: unknown): Record<string, unknown> {
   return value && typeof value === "object" && !Array.isArray(value)
     ? (value as Record<string, unknown>)
     : {};
+}
+
+function loadCategories(root: string, problems: string[]): Category[] {
+  const data = asRecord(parseYaml(readFileSync(path.join(root, "categories.yaml"), "utf8")));
+  return Object.entries(data).map(([key, entry]) => {
+    const fm = new FieldReader(`categories.yaml: ${key}`, asRecord(entry), problems);
+    const problem = slugProblem(key);
+    if (problem) fm.problem("key", problem);
+    return { key, th: fm.text("th", LIMITS.title), description: fm.text("description", LIMITS.description) };
+  });
+}
+
+/** Rough reading time: ~800 Thai characters a minute; code blocks excluded. */
+export function readingMinutes(body: string): number {
+  const prose = body.replace(/```[\s\S]*?```/g, "").replace(/[#>*_`\-[\]()]/g, "").replace(/\s+/g, "");
+  return Math.max(1, Math.round(prose.length / 800));
 }
 
 function loadTags(root: string, problems: string[]): Tag[] {
@@ -316,10 +425,20 @@ export function loadContent(root: string = DEFAULT_ROOT): Content {
   const tags = loadTags(root, problems);
   const tagSlugs = new Set(tags.map((t) => t.slug));
 
-  const articles = readPages(root, "articles", problems, (_fm, base): Article => ({
-    kind: "article",
-    ...base,
-  }), tagSlugs);
+  const categories = loadCategories(root, problems);
+  const publicDir = path.join(root, "..", "public");
+  const articles = readPages(root, "articles", problems, (fm, base): Article => {
+    const video = fm.optionalHttps("video");
+    return {
+      kind: "article",
+      ...base,
+      category: fm.oneOf("category", categories.map((c) => c.key)),
+      cover: fm.cover(publicDir),
+      featured: fm.bool("featured"),
+      ...(video ? { video } : {}),
+      readingMinutes: readingMinutes(base.body),
+    };
+  }, tagSlugs);
   const tools = readPages(root, "tools", problems, (fm, base): Tool => ({
     kind: "tool",
     ...base,
@@ -368,6 +487,7 @@ export function loadContent(root: string = DEFAULT_ROOT): Content {
   if (problems.length > 0) throw new ContentError(problems);
   return {
     tags,
+    categories,
     articles: articles.map((p) => p.page),
     tools: tools.map((p) => p.page),
   };

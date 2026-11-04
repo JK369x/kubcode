@@ -2030,6 +2030,18 @@ img.tool-mark {
   max-width: 720px;
   margin-top: 36px;
 }
+.reading-hero {
+  position: relative;
+  margin: 32px 0 0;
+  max-width: 760px;
+  aspect-ratio: 16 / 9;
+  overflow: hidden;
+  border-radius: 22px;
+  background: var(--surface-soft);
+}
+.reading-hero img {
+  object-fit: cover;
+}
 .reading-after {
   max-width: 720px;
 }

@@ -1,16 +1,19 @@
-import { OG_SIZE, ogImage } from "@/lib/og";
-import { getContent, getArticle } from "@/lib/content";
+import { readFile } from "node:fs/promises";
+import path from "node:path";
+import { getArticle, getContent } from "@/lib/content";
 
-// Prerender one card per page at build time (no runtime font/content reads).
+// Every article has a validated 1200×630 cover crop: serve it as the social
+// card, prerendered per article at build time.
 export function generateStaticParams() {
   return getContent().articles.map((p) => ({ slug: p.slug }));
 }
 
-export const size = OG_SIZE;
-export const contentType = "image/png";
-export const alt = "บทความจาก kubcode";
+export const size = { width: 1200, height: 630 };
+export const contentType = "image/jpeg";
+export const alt = "ภาพปกบทความจาก kubcode";
 
 export default async function Image({ params }: { params: Promise<{ slug: string }> }) {
   const a = getArticle((await params).slug)!;
-  return ogImage({ eyebrow: "บทความ", title: a.title, description: a.description });
+  const data = await readFile(path.join(process.cwd(), "public", a.cover.og));
+  return new Response(data, { headers: { "Content-Type": "image/jpeg" } });
 }

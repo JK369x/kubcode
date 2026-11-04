@@ -1,0 +1,11 @@
+{
+  "slug": "free-ai-animation-opencode",
+  "tool": "codex imagegen",
+  "date": "2026-11-04",
+  "source": "generated",
+  "prompt": "Use case: stylized-concept\nAsset type: kubcode editorial article cover, first in a cohesive three-image series.\nPrimary request: a restrained, playful illustration of making a short animated clip with code. A tiny abstract faceless stick-figure made of smooth lavender rods steps out of a glowing film frame. A gently curving sequence of translucent empty film frames emerges from a small dark unmarked terminal-like slab, with no screen content or interface.\nStyle/medium: refined soft 3D with layered frosted glass and satin paper materials, calm editorial illustration, clean deliberate geometry.\nScene/backdrop: seamless deep purple to near-black background, #100e15 and #2c1549, subtle ground shadow.\nComposition/framing: wide landscape 16:9; all subjects grouped in the right two-thirds, left third quiet dark negative space. Keep the complete motif within the central 80% of image height and away from edges so a slightly shorter wide crop retains everything.\nLighting/mood: broad soft directional light from upper left, gentle lavender glow, restrained warm highlight, considered and calm.\nColor palette: deep purple and near-black, lavender #bb98ff and #d1b9ff, consistent monochromatic purple series.\nConstraints: no text, letters, numbers, readable code, logos, brands, watermark, UI chrome, screenshots, realistic people, faces, or named artist imitation. The slab is a simple physical abstract object without UI. No harsh artifacts. Render a polished landscape illustration.",
+  "master": "cover.jpg",
+  "og": "og.jpg",
+  "width": 1600,
+  "height": 900
+}

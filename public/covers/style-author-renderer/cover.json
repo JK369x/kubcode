@@ -1,0 +1,11 @@
+{
+  "slug": "style-author-renderer",
+  "tool": "codex imagegen",
+  "date": "2026-11-04",
+  "source": "generated",
+  "prompt": "Use case: stylized-concept\nAsset type: kubcode editorial cover, third in a consistent three-cover series.\nPrimary request: SIX and only SIX translucent frosted-glass sheets floating in an exploded stack. Make the count unambiguous: six sheets, six visible upper edges, no extra sheets, no duplicate sheets. Each carries exactly one abstract sculptural pattern. From front to back the sheets have: a single arcing curved path (not an S); a few soft scattered dots; three overlapping rounded geometric shapes; concentric circular rings; smooth parallel wave ridges; a cluster of three faceted pebbles. Do not add another dotted sheet. Use compact landscape-oriented sheets and generous spacing between all six sheets. Physical layered art objects with light passing through, not interface windows.\nStyle/medium: calm polished soft 3D editorial illustration, satin paper and frosted lavender glass, delicate depth, clean geometry, matching a lavender film-strip and frosted toolbox cover series.\nBackdrop/palette: deep purple to near-black #100e15 and #2c1549, lavender accents #bb98ff and #d1b9ff, no other saturated colors.\nComposition: landscape 16:9. Entire six-sheet arrangement on the right two-thirds. The left third is quiet dark negative space. Three-quarter view, slightly exploded in depth diagonally, all six panes entirely within the middle 75% of image height with generous room at top and bottom for crop safety.\nLighting: broad soft directional light from upper left, lavender transmitted light and soft shadows, tiny warm edge highlights, calm and considered.\nConstraints: absolutely no text, letters, numbers, writing-like symbols, logos, brands, watermark, UI chrome, screenshots, people or faces. No window controls or labels. No named artist imitation. Avoid harsh artifacts. Exactly six floating sheets, no more, no less.",
+  "master": "cover.jpg",
+  "og": "og.jpg",
+  "width": 1600,
+  "height": 900
+}

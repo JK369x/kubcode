@@ -273,6 +273,49 @@ async function main() {
     }
     checks.push("mobile: comments button opens a bottom sheet; focus trapped and restored; Esc and back close it");
 
+    // /articles: featured hero, category filter as real URLs, optimised covers.
+    for (const [width, theme] of [[1280, "dark"], [1280, "light"], [390, "dark"], [390, "light"]] as const) {
+      const { page, errors } = await open({ width, theme });
+      const images: string[] = [];
+      page.on("response", (r) => r.url().includes("/_next/image") && images.push(r.headers()["content-type"] ?? ""));
+      await page.goto(base + "/articles", { waitUntil: "networkidle" });
+      const hero = page.locator("main h2").first();
+      assert.match(await hero.innerText(), /ทำแอนิเมชัน AI ฟรีแบบของเรา/, "featured: true takes the hero slot");
+      const chips = page.getByRole("navigation", { name: "หมวดบทความ" });
+      assert.equal(await chips.getByRole("link", { name: /ทั้งหมด/ }).getAttribute("aria-current"), "page");
+      assert.ok(images.length >= 3 && images.every((t) => /image\/(avif|webp)/.test(t)), `covers served as AVIF/WebP (${images.join(",")})`);
+      assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth), false, "no horizontal scroll");
+      await page.screenshot({ path: `.qa/articles-${width}-${theme}.png`, fullPage: true });
+      if (width === 1280 && theme === "dark") {
+        await chips.getByRole("link", { name: /พื้นฐานและสิทธิ์/ }).click();
+        await page.waitForURL("**/articles/c/basics");
+        assert.equal(await page.locator("main h1").innerText(), "พื้นฐานและสิทธิ์");
+        assert.equal(await page.locator("main a[href^='/articles/'] h2, main a[href^='/articles/'] h3").count(), 2);
+        assert.equal(await chips.getByRole("link", { name: /พื้นฐานและสิทธิ์/ }).getAttribute("aria-current"), "page");
+        assert.match((await page.locator('meta[name="robots"]').getAttribute("content")) ?? "", /noindex/, "fewer than 3 articles: noindex");
+        await page.goto(base + "/articles", { waitUntil: "networkidle" });
+        const before = await page.evaluate(() => (window as unknown as { __vt: number }).__vt);
+        await page.getByRole("link", { name: /สไตล์ ผู้เขียน และ renderer/ }).click();
+        await page.waitForURL("**/articles/style-author-renderer");
+        assert.ok((await page.evaluate(() => (window as unknown as { __vt: number }).__vt)) > before, "card → article uses a view transition");
+        const heroImg = page.locator(".reading-hero img");
+        await heroImg.waitFor();
+        assert.match((await heroImg.getAttribute("alt")) ?? "", /แผ่นกระจกโปร่งแสงหกแผ่น/, "article hero carries the cover alt text");
+        await page.waitForTimeout(800);
+        await page.screenshot({ path: ".qa/article-hero-1280-dark.png" });
+      }
+      assert.deepEqual(errors, []);
+      await page.context().close();
+    }
+    {
+      const { page } = await open({ width: 1280, theme: "dark", reduced: true });
+      await page.goto(base + "/articles", { waitUntil: "networkidle" });
+      const t = await page.locator("main a[href^='/articles/'] img").first().evaluate((el) => getComputedStyle(el).transitionDuration);
+      assert.equal(t, "0s", "reduced motion: no cover zoom");
+      await page.context().close();
+    }
+    checks.push("/articles: featured hero, category chips as URLs (filter + aria-current + noindex <3), AVIF/WebP covers, card → article transition with cover hero, reduced motion, 4 screenshots");
+
     console.log(`PASS reading browser (${checks.length} checks)\n- ${checks.join("\n- ")}`);
   } finally {
     await browser.close();
