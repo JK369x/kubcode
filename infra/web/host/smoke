@@ -5,6 +5,8 @@
 set -euo pipefail
 BASE="${KUBCODE_SMOKE_BASE:-http://127.0.0.1:3000}"
 H=(-H "Host: kubcode.dev" -H "X-Forwarded-Host: kubcode.dev" -H "X-Forwarded-Proto: https")
+# CI pins kubcode.dev to the box's IP so a stale resolver can't test Vercel.
+if [ -n "${KUBCODE_SMOKE_RESOLVE:-}" ]; then H+=(--resolve "$KUBCODE_SMOKE_RESOLVE"); fi
 
 code=000
 for _ in $(seq 1 45); do

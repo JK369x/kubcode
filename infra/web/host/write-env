@@ -2,12 +2,17 @@
 # Replaces /etc/kubcode/web.env with the KEY='value' lines on stdin (from
 # scripts/webhost.sh set-env), keeping an existing NEXTAUTH_SECRET or
 # generating one here, then restarts and smoke-tests the app if a release is
-# live. Prints key names only, never values. Runs as root.
+# live. If that smoke fails (a mistyped secret), the previous file is put back
+# and the app restarted on it. Prints key names only, never values. Runs as root.
 set -euo pipefail
 umask 077
 f="${KUBCODE_ENV_FILE:-/etc/kubcode/web.env}"
+ROOT="${KUBCODE_ROOT:-/srv/kubcode}"
+SYSTEMCTL="${KUBCODE_SYSTEMCTL:-systemctl}"
+SMOKE="${KUBCODE_SMOKE:-/usr/local/lib/kubcode/smoke}"
 new=$(mktemp "$(dirname "$f")/.web.env.XXXXXX")
-trap 'rm -f "$new"' EXIT
+backup=$(mktemp "$(dirname "$f")/.web.env.prev.XXXXXX")
+trap 'rm -f "$new" "$backup"' EXIT
 
 while IFS= read -r line; do
   [ -n "$line" ] || continue
@@ -23,10 +28,21 @@ else
   printf "NEXTAUTH_SECRET='%s'\n" "$(openssl rand -base64 48 | tr -d '\n')" >>"$new"
 fi
 chmod 600 "$new"
+had_old=0
+if [ -f "$f" ]; then cp -p "$f" "$backup"; had_old=1; fi
 mv "$new" "$f"
 echo "write-env: keys $(cut -d= -f1 "$f" | sort | tr '\n' ' ')"
 
-if [ "${KUBCODE_ENV_NO_RESTART:-0}" != 1 ] && [ -e /srv/kubcode/current ]; then
-  systemctl restart kubcode-web.service
-  /usr/local/lib/kubcode/smoke
+if [ "${KUBCODE_ENV_NO_RESTART:-0}" != 1 ] && [ -e "$ROOT/current" ]; then
+  $SYSTEMCTL restart kubcode-web.service
+  if ! "$SMOKE"; then
+    if [ "$had_old" = 1 ]; then
+      mv "$backup" "$f"
+      $SYSTEMCTL restart kubcode-web.service
+      echo "write-env: smoke failed with the new values; restored the previous web.env and restarted" >&2
+    else
+      echo "write-env: smoke failed with the new values (no previous web.env to restore)" >&2
+    fi
+    exit 1
+  fi
 fi

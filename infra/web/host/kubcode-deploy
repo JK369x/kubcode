@@ -68,7 +68,9 @@ prune() {
 
 deploy() {
   local sha=$1 sum=$2 dir="$RELEASES/$1" tmp size old_cur old_prev
-  [ "$(link_of current)" != "$dir" ] || die 3 "$sha is already live"
+  # Already live = current AND it passed its smoke (logged). A release left
+  # current without that record is installed again and smoked.
+  if [ "$(link_of current)" = "$dir" ] && [ -f "$LOG" ] && grep -qx "$sha" "$LOG"; then die 3 "$sha is already live"; fi
   mkdir -p "$RELEASES" "$CACHE"
   tmp=$(mktemp -d "$ROOT/.incoming.XXXXXX")
   INCOMING=$tmp
@@ -95,27 +97,28 @@ deploy() {
   mkdir -p "$tmp/x/.next"
   ln -s "$CACHE" "$tmp/x/.next/cache"
 
-  rm -rf "$dir" # leftover from an earlier failed attempt; never the live one (checked above)
+  old_cur=$(link_of current)
+  # Re-installing the unverified current release: there is nothing good to restore to.
+  [ "$old_cur" != "$dir" ] || old_cur=""
+  rm -rf "$dir" # leftover from an earlier failed attempt (never a verified live release)
   mv "$tmp/x" "$dir"
 
-  old_cur=$(link_of current)
   old_prev=$(link_of previous)
+  # A restart that fails counts like a failed smoke: restore below.
   switch_to "$dir"
-  restart
-  if "$SMOKE"; then
+  if restart && "$SMOKE"; then
     echo "$sha" >>"$LOG"
     prune
     echo "kubcode-deploy: $sha live"
     return 0
   fi
 
-  echo "kubcode-deploy: smoke failed for $sha" >&2
+  echo "kubcode-deploy: restart or smoke failed for $sha" >&2
   if [ -n "$old_cur" ]; then
     echo "kubcode-deploy: restoring $(basename "$old_cur")" >&2
     ln -sfn "$old_cur" "$ROOT/current"
     if [ -n "$old_prev" ]; then ln -sfn "$old_prev" "$ROOT/previous"; else rm -f "$ROOT/previous"; fi
-    restart
-    "$SMOKE" || echo "kubcode-deploy: WARNING the restored release also fails its smoke test" >&2
+    { restart && "$SMOKE"; } || echo "kubcode-deploy: WARNING the restored release also fails to restart or smoke" >&2
   else
     rm -f "$ROOT/current"
   fi

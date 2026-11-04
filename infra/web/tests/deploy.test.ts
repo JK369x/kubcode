@@ -5,14 +5,18 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
 import { createHash } from "node:crypto";
-import { existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, readlinkSync, statSync, writeFileSync, chmodSync } from "node:fs";
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, readlinkSync, statSync, symlinkSync, writeFileSync, chmodSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 
 const SCRIPT = resolve(__dirname, "../host/kubcode-deploy");
 const sha = (n: number) => n.toString(16).padStart(40, "0");
 
-type Box = { root: string; log: string; run: (cmd: string, input?: Buffer, smokeOk?: boolean) => ReturnType<typeof spawnSync> };
+type Box = {
+  root: string;
+  log: string;
+  run: (cmd: string, input?: Buffer, smokeOk?: boolean, restartOk?: boolean) => ReturnType<typeof spawnSync>;
+};
 
 function box(): Box {
   const dir = mkdtempSync(join(tmpdir(), "kubcode-deploy-"));
@@ -23,7 +27,7 @@ function box(): Box {
   const log = join(dir, "calls.log");
   writeFileSync(log, "");
   const systemctl = join(dir, "systemctl");
-  writeFileSync(systemctl, `#!/bin/sh\necho "systemctl $*" >> "${log}"\n`);
+  writeFileSync(systemctl, `#!/bin/sh\necho "systemctl $*" >> "${log}"\n[ "$RESTART_OK" != 0 ]\n`);
   chmodSync(systemctl, 0o755);
   const smoke = join(dir, "smoke");
   // The stub reports which release `current` points at when the smoke runs.
@@ -32,7 +36,7 @@ function box(): Box {
   return {
     root,
     log,
-    run: (cmd, input, smokeOk = true) =>
+    run: (cmd, input, smokeOk = true, restartOk = true) =>
       spawnSync("bash", [SCRIPT], {
         input,
         env: {
@@ -44,6 +48,7 @@ function box(): Box {
           KUBCODE_SMOKE: smoke,
           KUBCODE_MAX_BYTES: "200000",
           SMOKE_OK: smokeOk ? "1" : "0",
+          RESTART_OK: restartOk ? "1" : "0",
         },
       }),
   };
@@ -120,6 +125,28 @@ test("a failed smoke puts the previous release back and fails the deploy", () =>
     "systemctl restart kubcode-web.service",
     `smoke ${join(b.root, "releases", sha(1))}`,
   ]);
+});
+
+test("a failed restart restores the previous release like a failed smoke", () => {
+  const b = box();
+  assert.equal(deploy(b, 1).status, 0);
+  const t = tarball("release 2");
+  // Every restart fails (e.g. web.env missing); the restore still runs.
+  const r = b.run(`deploy ${sha(2)} ${t.sum}`, t.bytes, true, false);
+  assert.notEqual(r.status, 0);
+  assert.equal(current(b), join(b.root, "releases", sha(1)));
+  assert.equal(existsSync(join(b.root, "releases", sha(2))), false);
+});
+
+test("a release that never passed its smoke is not reported as already live", () => {
+  const b = box();
+  // Simulate a box left on an unverified release (e.g. a crash mid-deploy).
+  mkdirSync(join(b.root, "releases", sha(1)), { recursive: true });
+  writeFileSync(join(b.root, "releases", sha(1), "server.js"), "");
+  symlinkSync(join(b.root, "releases", sha(1)), join(b.root, "current"));
+  const r = deploy(b, 1);
+  assert.equal(r.status, 0, String(r.stderr));
+  assert.match(calls(b).at(-1) ?? "", /^smoke /);
 });
 
 test("only exact verbs and hex arguments are accepted", () => {
