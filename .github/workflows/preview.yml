@@ -1,6 +1,11 @@
 # Every push to a non-main branch: the shared checks (tests, types, build).
 # No preview deployment: production moved off Vercel to Lightsail
 # (docs/adr/0001-host-web-on-lightsail.md); review UI changes locally.
+#
+# Trust boundary: repository secrets (MIGRATION_DATABASE_URL,
+# LIGHTSAIL_DEPLOY_KEY) are readable by any branch's workflow, so anyone who
+# can push a branch can reach production. Only the owner has push access;
+# keep it that way (see HANDOFF.md section 7a).
 name: Preview
 
 on:

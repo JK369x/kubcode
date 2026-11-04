@@ -10,6 +10,9 @@
 # (GitHub environment reviewers are not available for this private repo plan).
 # That phrase is a safety interlock against accidents, NOT an authorization
 # boundary: anyone with push access could edit a workflow to use the secrets.
+# LIGHTSAIL_DEPLOY_KEY is a repository secret too: any branch's workflow can
+# read it and install code that then runs next to every runtime secret on the
+# box. Only the owner has push access; keep it that way (HANDOFF.md 7a).
 name: Production
 
 on:
@@ -113,13 +116,8 @@ jobs:
           MIGRATION_APPROVAL: ${{ inputs.approval }}
         run: npx tsx scripts/ci-migration-gate.ts "$RUNNER_TEMP/plan.txt"
 
-      - name: Migrate production database
-        if: steps.gate.outputs.migrate == 'true'
-        env:
-          DATABASE_URL: ${{ secrets.MIGRATION_DATABASE_URL }}
-          NODE_ENV: production
-        run: KUBCODE_DB_CA_CERT="$(cat db/certs/supabase-prod-ca.pem)" npx tsx scripts/accounts-migrate.ts --apply
-
+      # Before migrating: if the box can't be reached (missing LIGHTSAIL_*
+      # settings, box down, key mid-rotation), stop with the schema untouched.
       # The deploy key can only run infra/web/host/kubcode-deploy (forced
       # command); the host key is pinned from the Lightsail API (webhost.sh).
       - name: Prepare SSH to the box
@@ -144,6 +142,13 @@ jobs:
           EOF
           ssh -F "$RUNNER_TEMP/ssh/config" box status | tee -a "$GITHUB_STEP_SUMMARY"
 
+      - name: Migrate production database
+        if: steps.gate.outputs.migrate == 'true'
+        env:
+          DATABASE_URL: ${{ secrets.MIGRATION_DATABASE_URL }}
+          NODE_ENV: production
+        run: KUBCODE_DB_CA_CERT="$(cat db/certs/supabase-prod-ca.pem)" npx tsx scripts/accounts-migrate.ts --apply
+
       # Exit 3 = this commit is already live (e.g. a manual run to approve a
       # migration): nothing to deploy.
       - name: Deploy to the box (smoke on the box, auto-restore on fail)
@@ -157,21 +162,27 @@ jobs:
           ssh -F "$RUNNER_TEMP/ssh/config" box "deploy $GITHUB_SHA $SUM" < "$RUNNER_TEMP/release.tar.gz"
           rc=$?
           set -e
-          if [ "$rc" -eq 3 ]; then echo "::notice::$GITHUB_SHA is already live"; exit 0; fi
+          if [ "$rc" -eq 3 ]; then echo "::notice::$GITHUB_SHA is already live (smoked earlier); nothing deployed"; exit 0; fi
           [ "$rc" -eq 0 ] || { echo "::error::deploy failed (exit $rc); the box kept or restored the previous release"; exit 1; }
+          echo "deployed=true" >> "$GITHUB_OUTPUT"
           echo "Deployed $GITHUB_SHA" >> "$GITHUB_STEP_SUMMARY"
 
       # Until the DNS cutover kubcode.dev still serves the old Vercel
-      # deployment, so the public smoke only runs once it resolves to the box.
+      # deployment, so the public smoke only runs once it resolves to the box,
+      # and then goes to the box's IP (--resolve) over real TLS, so a stale
+      # resolver on the runner can't test the wrong server. Only after a deploy
+      # made by this run: never roll back a release this run didn't install.
       - name: Smoke test kubcode.dev (roll back on the box on fail)
-        if: steps.deploy.outcome == 'success'
+        if: steps.deploy.outputs.deployed == 'true'
         run: |
-          live=$(dig +short A kubcode.dev @1.1.1.1 | sort | tr '\n' ' ')
+          set -o pipefail
+          live=$(dig +short A kubcode.dev @1.1.1.1 | sort | tr '\n' ' ') || { echo "::error::DNS lookup failed"; exit 1; }
+          [ -n "$live" ] || { echo "::error::kubcode.dev has no A record answer"; exit 1; }
           if [ "$live" != "$LIGHTSAIL_HOST " ]; then
             echo "::notice::kubcode.dev resolves to [$live], not the box; skipped the public smoke" | tee -a "$GITHUB_STEP_SUMMARY"
             exit 0
           fi
-          if KUBCODE_SMOKE_BASE="$CANONICAL_ORIGIN" infra/web/host/smoke; then exit 0; fi
+          if KUBCODE_SMOKE_BASE="$CANONICAL_ORIGIN" KUBCODE_SMOKE_RESOLVE="kubcode.dev:443:$LIGHTSAIL_HOST" infra/web/host/smoke; then exit 0; fi
           echo "::error::kubcode.dev smoke failed; rolling back on the box"
           ssh -F "$RUNNER_TEMP/ssh/config" box rollback
           exit 1
