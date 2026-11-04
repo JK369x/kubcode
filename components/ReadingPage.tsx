@@ -30,6 +30,7 @@ export function ReadingPage({
   after,
   interactions,
   cover,
+  titleMark,
 }: {
   kind: "article" | "tool";
   slug: string;
@@ -50,6 +51,8 @@ export function ReadingPage({
   interactions?: InteractionTarget;
   /** Article cover shown as the hero image under the header. */
   cover?: { src: string; alt: string; width: number; height: number };
+  /** Shown before the title, e.g. a tool's logo. */
+  titleMark?: ReactNode;
 }) {
   const date = new Date(`${updated}T00:00:00Z`).toLocaleDateString("th-TH", {
     day: "numeric",
@@ -90,10 +93,19 @@ export function ReadingPage({
                 อัปเดต <time dateTime={updated}>{date}</time>
               </span>
             </p>
-            <TitleTransition kind={kind} slug={slug}>
-              {/* No entrance animation: on list → page navigation the title morphs. */}
-              <h1>{title}</h1>
-            </TitleTransition>
+            {titleMark ? (
+              <div className="reading-title-row">
+                {titleMark}
+                <TitleTransition kind={kind} slug={slug}>
+                  <h1>{title}</h1>
+                </TitleTransition>
+              </div>
+            ) : (
+              <TitleTransition kind={kind} slug={slug}>
+                {/* No entrance animation: on list → page navigation the title morphs. */}
+                <h1>{title}</h1>
+              </TitleTransition>
+            )}
             <p className="lead enter" style={enter(2)}>
               {lead}
             </p>

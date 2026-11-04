@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { CANONICAL_ORIGIN } from "./auth-policy";
-import type { Article, Content, Page, Tool } from "./content";
+import { TOOL_CATEGORIES, type Article, type Content, type Page, type Tool, type ToolCategory } from "./content";
 import { rawSkills } from "./catalog";
 import { hrefOf } from "./content-links";
 
@@ -141,6 +141,11 @@ export function categoryIsIndexable(content: Content, key: string): boolean {
   return content.articles.filter((a) => a.category === key).length >= TAG_INDEX_MIN;
 }
 
+/** Stage pages (/tools/c/<stage>) follow the same three-page rule. */
+export function stageIsIndexable(content: Content, stage: ToolCategory): boolean {
+  return content.tools.filter((t) => t.category === stage).length >= TAG_INDEX_MIN;
+}
+
 export type SitemapEntry = { url: string; lastModified?: string };
 
 export function sitemapEntries(content: Content): SitemapEntry[] {
@@ -157,6 +162,7 @@ export function sitemapEntries(content: Content): SitemapEntry[] {
     ...content.categories
       .filter((c) => categoryIsIndexable(content, c.key))
       .map((c) => ({ url: absoluteUrl(`/articles/c/${c.key}`) })),
+    ...TOOL_CATEGORIES.filter((c) => stageIsIndexable(content, c)).map((c) => ({ url: absoluteUrl(`/tools/c/${c}`) })),
     ...content.tags
       .filter((t) => tagIsIndexable(content, t.slug))
       .map((t) => ({ url: absoluteUrl(tagHref(t.slug)) })),

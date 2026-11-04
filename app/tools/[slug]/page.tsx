@@ -9,6 +9,9 @@ import { JsonLd } from "@/components/JsonLd";
 import { ReadingPage } from "@/components/ReadingPage";
 import { RelatedLinks } from "@/components/RelatedLinks";
 import { SourceCredits } from "@/components/SourceCredits";
+import { ToolLogo } from "@/components/ToolLogo";
+import { PRICING_LABELS } from "@/lib/kb-labels";
+import { stageHref } from "@/lib/tool-index";
 
 export const dynamicParams = false;
 
@@ -33,6 +36,7 @@ export default async function ToolPage({ params }: Props) {
   const crumbs = [
     { name: "kubcode", href: "/" },
     { name: "เครื่องมือ", href: "/tools" },
+    { name: CATEGORY_LABELS[t.category], href: stageHref(t.category) },
   ];
   return (
     <ReadingPage
@@ -42,6 +46,7 @@ export default async function ToolPage({ params }: Props) {
       badge={CATEGORY_LABELS[t.category]}
       updated={t.updated}
       title={t.title}
+      titleMark={<ToolLogo slug={t.slug} logo={t.logo} size="page" />}
       lead={t.description}
       tags={t.tags}
       allTags={content.tags}
@@ -49,6 +54,10 @@ export default async function ToolPage({ params }: Props) {
       interactions={{ kind: "tool", slug: t.slug, title: t.name }}
       intro={
         <dl className="tool-facts">
+          <div>
+            <dt>ราคา</dt>
+            <dd>{PRICING_LABELS[t.pricing]}</dd>
+          </div>
           <div>
             <dt>ไลเซนส์</dt>
             <dd>{t.license}</dd>
