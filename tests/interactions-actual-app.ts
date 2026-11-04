@@ -325,23 +325,46 @@ async function main() {
           imageRequests.push(route.request().headers()["referer"]);
           await route.fulfill({ status: 200, contentType: "image/png", body: png });
         });
+        // The browser speaks plain http here, so it would drop the __Host-/
+        // __Secure- cookies the server sets (e.g. NextAuth's CSRF cookie).
+        // A small jar in the proxy keeps them, as an https browser would.
+        const jar = new Map<string, string>();
+        for (const part of cookie.split(/;\s*/).filter(Boolean)) {
+          const eq = part.indexOf("=");
+          jar.set(part.slice(0, eq), part.slice(eq + 1));
+        }
         await page.route("http://kubcode-ui.test/**", async (route) => {
           const { pathname, search } = new URL(route.request().url());
-          const response = await route.fetch({
-            url: `http://127.0.0.1:${port}${pathname}${search}`,
-            headers: {
-              ...route.request().headers(),
-              host: "kubcode.dev",
-              origin: "https://kubcode.dev",
-              "x-forwarded-proto": "https",
-              cookie: cookie,
-            },
-            maxRedirects: 0,
-          });
-          await route.fulfill({ response });
+          let response;
+          try {
+            response = await route.fetch({
+              url: `http://127.0.0.1:${port}${pathname}${search}`,
+              headers: {
+                ...route.request().headers(),
+                host: "kubcode.dev",
+                origin: "https://kubcode.dev",
+                "x-forwarded-proto": "https",
+                cookie: [...jar].map(([k, v]) => `${k}=${v}`).join("; "),
+              },
+              maxRedirects: 0,
+            });
+          } catch {
+            return; // the page closed while this request was in flight
+          }
+          for (const h of response.headersArray()) {
+            if (h.name.toLowerCase() !== "set-cookie") continue;
+            const [pair, ...attrs] = h.value.split(";");
+            const eq = pair.indexOf("=");
+            const name = pair.slice(0, eq).trim();
+            const value = pair.slice(eq + 1).trim();
+            const expired = value === "" || attrs.some((a) => /^\s*max-age=0\s*$/i.test(a));
+            if (expired) jar.delete(name);
+            else jar.set(name, value);
+          }
+          await route.fulfill({ response }).catch(() => undefined); // page may be closing
         });
         await page.goto("http://kubcode-ui.test/articles");
-        return { page, imageRequests, nav: page.getByRole("navigation", { name: "หลัก" }) };
+        return { page, imageRequests, jar, nav: page.getByRole("navigation", { name: "หลัก" }) };
       };
 
       // Signed out: a เข้าสู่ระบบ pill, no member link.
@@ -369,7 +392,7 @@ async function main() {
         { width: 390, theme: "light" },
       ]) {
         const label = `${run.width}-${run.theme}`;
-        const { page, nav, imageRequests } = await open(withPic, run);
+        const { page, nav, imageRequests, jar } = await open(withPic, run);
         const btn = nav.getByRole("button", { name: /^บัญชีของ App Member/ });
         await btn.waitFor();
         await btn.locator("img").waitFor();
@@ -397,12 +420,25 @@ async function main() {
         await page.mouse.click(run.width / 2, 600);
         assert.equal(await btn.getAttribute("aria-expanded"), "false", `${label}: outside click closes`);
         assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth), false, `${label}: no horizontal scroll`);
+        if (label === "1280-dark") {
+          // Sign out without next-auth/react: CSRF token, POST signout, go to /account.
+          await btn.click();
+          const signout = page.waitForResponse((r) => new URL(r.url()).pathname === "/api/auth/signout");
+          await page.getByRole("button", { name: "ออกจากระบบ", exact: true }).click();
+          const res = await signout;
+          assert.equal(res.status(), 200, "signout accepted (CSRF ok)");
+          // Set-Cookie is hidden from page-side responses; the proxy's jar
+          // records what the server actually sent.
+          assert.equal(jar.has("__Secure-next-auth.session-token"), false, "server cleared the session cookie");
+          await page.waitForURL("**/account");
+          await page.getByRole("navigation", { name: "หลัก" }).getByRole("link", { name: "เข้าสู่ระบบ", exact: true }).waitFor();
+        }
         await page.close();
       }
     } finally {
       await navBrowser.close();
     }
-    step("header: signed-out pill; avatar from provider host with no Referer; initial fallback; menu opens by click/Enter, Tab enters, Esc returns focus, outside click closes (desktop + mobile, light + dark)");
+    step("header: signed-out pill; avatar from provider host with no Referer; initial fallback; menu opens by click/Enter, Tab enters, Esc returns focus, outside click closes (desktop + mobile, light + dark); sign out clears the session and shows the pill");
 
     writeFileSync(".qa/interactions-actual-app.json", JSON.stringify({ status: "passed", fictionalMembers: true, steps }, null, 2));
     console.log(`PASS interactions actual app (${steps.length} steps)\n- ${steps.join("\n- ")}`);

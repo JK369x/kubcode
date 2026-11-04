@@ -1,6 +1,5 @@
 "use client";
 import Link from "next/link";
-import { signOut } from "next-auth/react";
 import { useCallback, useEffect, useId, useRef, useState } from "react";
 import { avatarInitial, safeAvatarUrl } from "@/lib/avatar";
 import styles from "./AccountMenu.module.css";
@@ -74,6 +73,28 @@ export function AccountMenuView({
   );
 }
 
+/**
+ * Signs out through the NextAuth endpoints directly (same requests the SDK
+ * makes). The header is on every page, and next-auth/react reads
+ * NEXTAUTH_URL at import time, which breaks builds where it is empty.
+ */
+async function signOutToAccount() {
+  try {
+    const csrf = await fetch("/api/auth/csrf", { credentials: "same-origin", cache: "no-store" });
+    const { csrfToken } = (await csrf.json().catch(() => ({}))) as { csrfToken?: string };
+    if (csrfToken) {
+      await fetch("/api/auth/signout", {
+        method: "POST",
+        credentials: "same-origin",
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+        body: new URLSearchParams({ csrfToken, callbackUrl: "/account", json: "true" }),
+      });
+    }
+  } finally {
+    window.location.assign("/account");
+  }
+}
+
 type SessionJson = { user?: { name?: string | null; image?: string | null } };
 
 /** Loads the public session on the client so every page can stay static. */
@@ -141,7 +162,7 @@ export function AccountMenu() {
         panelId={panelId}
         buttonRef={button}
         onToggle={() => setOpen((v) => !v)}
-        onSignOut={() => signOut({ callbackUrl: "/account" })}
+        onSignOut={() => void signOutToAccount()}
       />
     </div>
   );

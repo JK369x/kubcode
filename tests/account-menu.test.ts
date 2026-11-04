@@ -3,6 +3,11 @@ import assert from "node:assert/strict";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 
+// Preview builds run with NEXTAUTH_URL present but empty. The header is on
+// every page, so its module must load with that environment (next-auth/react
+// parses NEXTAUTH_URL at import time and would throw "Invalid URL").
+process.env.NEXTAUTH_URL = "";
+
 // Node cannot load CSS modules; stub them as identity class maps before
 // requiring the component (tsx compiles this file as CommonJS).
 const NodeModule = require("node:module") as { _extensions: Record<string, (m: { exports: unknown }) => void> };
