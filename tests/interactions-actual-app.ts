@@ -138,6 +138,10 @@ async function main() {
     assert.deepEqual((await write("/api/interactions/star", a, TOOL)).json(), { ok: true, starred: false, stars: 1 });
     step("star / unstar by two members");
 
+    const counts = await (await call(port, "/api/interactions/star-counts?kind=tool")).json();
+    assert.deepEqual(counts, { available: true, stars: { remotion: 1 } });
+    step("star counts for the tool index: public, known pages only");
+
     assert.equal((await write("/api/interactions/star", a, TOOL, { origin: "https://evil.example" })).status, 403);
     assert.equal((await write("/api/interactions/star", "", TOOL)).status, 401);
     assert.equal((await write("/api/interactions/star", a, { kind: "tool", slug: "no-such-tool" })).status, 404);
@@ -284,6 +288,13 @@ async function main() {
         }
         await starScope.getByRole("button", { name: "ให้ดาวแล้ว" }).click();
         await starScope.getByRole("button", { name: "ให้ดาว", exact: true }).waitFor();
+        // The tool index shows the public count on each card (member b's star).
+        await page.goto("http://kubcode-ui.test/tools");
+        const remotionStars = page.locator("main article").filter({ has: page.getByRole("heading", { name: "Remotion", exact: true }) }).locator("[data-stars]");
+        await remotionStars.waitFor();
+        assert.equal(await remotionStars.getAttribute("data-stars"), "1", `${label}: card star count`);
+        assert.equal(await page.locator("main article [data-stars]").count(), 7, `${label}: every card shows a count`);
+        await page.screenshot({ path: `.qa/tools-stars-${label}.png` });
         assert.deepEqual(errors, [], `console errors at ${label}`);
         await page.close();
         // Keep the 20 s comment interval out of the next run's way.
@@ -295,7 +306,7 @@ async function main() {
     } finally {
       await browser.close();
     }
-    step("browser UI (desktop rail and mobile sheet, light + dark): star, 20-thread pages + แสดงเพิ่ม, panel scrolls without moving the page, comment, delete, unstar");
+    step("browser UI (desktop rail and mobile sheet, light + dark): star, 20-thread pages + แสดงเพิ่ม, panel scrolls without moving the page, comment, delete, unstar, card star counts on /tools");
 
     // Header account control: avatar from the provider host (served locally
     // here), initial fallback, signed-out pill, and the menu's keyboard and

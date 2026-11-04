@@ -27,11 +27,11 @@ export function ToolCard({ tool: t, usage }: { tool: Tool; usage: { articles: nu
         <ToolLogo slug={t.slug} logo={t.logo} size="card" />
         <div className={styles.heading}>
           <Morph name={titleTransitionName("tool", t.slug)}>
-            <h3 className={styles.name}>
+            <h2 className={styles.name}>
               <Link href={`/tools/${t.slug}`} transitionTypes={["nav-forward"]} className={styles.link}>
                 {t.name}
               </Link>
-            </h3>
+            </h2>
           </Morph>
           <p className={styles.stage}>
             <span className={styles.step} aria-label={`ขั้นที่ ${TOOL_CATEGORIES.indexOf(t.category) + 1}`}>

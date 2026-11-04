@@ -334,7 +334,7 @@ async function main() {
       assert.equal(logos.length, 7);
       for (const l of logos) assert.ok(l.ok && (l.src === "monogram" || /^\/tools\/[a-z0-9-]+\/logo\.(svg|png)$/.test(l.src!)), JSON.stringify(l));
       // Stars are off on this server: no counts are shown.
-      assert.equal(await page.locator("main article [aria-label$=' ดาว']").count(), 0, "star counts hidden while interactions are off");
+      assert.equal(await page.locator("main article [data-stars]").count(), 0, "star counts hidden while interactions are off");
       assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth), false, "no horizontal scroll");
       await page.screenshot({ path: `.qa/tools-${width}-${theme}.png`, fullPage: true });
       if (width === 1280 && theme === "dark") {

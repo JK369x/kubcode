@@ -29,8 +29,9 @@ export function ToolStars({ slug, className }: { slug: string; className?: strin
   if (!counts) return null;
   const n = counts[slug] ?? 0;
   return (
-    <span className={className} aria-label={`${n} ดาว`}>
+    <span className={className} data-stars={n}>
       <Star size={14} aria-hidden /> {n}
+      <span className="sr-only"> ดาว</span>
     </span>
   );
 }
