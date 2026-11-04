@@ -1,0 +1,7 @@
+secretsprovider: awskms://alias/kubcode-pulumi?region=ap-southeast-1
+config:
+  pulumi:disable-default-providers:
+    - aws
+  # "vercel" until the cutover; "lightsail" to switch; back to "vercel" to roll back.
+  kubcode-web:dnsTarget: vercel
+  kubcode-web:adminPublicKey: ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIAeMftuWAZAken17KHCJPAi2coMWq+h5tM0NHEmKZgqr kubcode-web-admin

@@ -14,12 +14,16 @@ on:
   pull_request:
     paths:
       - "infra/**"
+      # The web host stack is admin-applied only (docs/adr/0001).
+      - "!infra/web/**"
       - ".github/workflows/infra.yml"
   push:
     branches:
       - main
     paths:
       - "infra/**"
+      # The web host stack is admin-applied only (docs/adr/0001).
+      - "!infra/web/**"
       - ".github/workflows/infra.yml"
   workflow_dispatch:
     inputs:

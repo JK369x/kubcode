@@ -1,0 +1,19 @@
+{
+  "name": "kubcode-web-infra",
+  "private": true,
+  "description": "Pulumi (TypeScript) project for the kubcode.dev web host on Lightsail. Admin-applied only; CI never runs it.",
+  "main": "index.ts",
+  "scripts": {
+    "test": "tsx --test tests/*.test.ts",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@pulumi/aws": "7.53.0",
+    "@pulumi/pulumi": "3.232.0"
+  },
+  "devDependencies": {
+    "@types/node": "22.19.0",
+    "tsx": "4.20.6",
+    "typescript": "5.9.3"
+  }
+}
