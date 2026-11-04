@@ -16,8 +16,8 @@ import {
 import { deployBoundaryPolicy, deployPolicy, githubTrustPolicy, previewPolicy, secretsKeyPolicy } from "./policies";
 
 export type StackConfig = {
-  /** Budget alert recipient; the budget is skipped until the owner sets one. */
-  budgetEmail?: string;
+  /** Budget alert recipient (a stack secret); the budget is skipped until the owner sets one. */
+  budgetEmail?: pulumi.Input<string>;
   /** Humans who can administer the secrets key outside CI (lockout safety). */
   breakGlassAdminArns: string[];
   /** Roles allowed to encrypt/decrypt with alias/kubcode-secrets (the Lambda roles). */

@@ -23,7 +23,7 @@ access to them.
 | IAM policy `kubcode-deploy-boundary` | stack, **admin-only changes** | Permissions boundary for every `kubcode-*` role |
 | IAM role `kubcode-github-deploy` | stack | OIDC sub `repo:JK369x@104179568/kubcode@1444458364:ref:refs/heads/main` only. Runs `pulumi up` |
 | IAM role `kubcode-github-preview` | stack | OIDC sub `repo:JK369x@104179568/kubcode@1444458364:pull_request` only. Read-only, plus Pulumi lock objects |
-| Budget `kubcode-monthly` ($5, `user:project$kubcode`) | stack | Created only once `kubcode:budgetEmail` is set |
+| Budget `kubcode-monthly` ($5, `user:project$kubcode`) | stack | Created only once the secret `kubcode:budgetEmail` is set |
 | Cost allocation tag `project` | `scripts/bootstrap.sh cost-tag` | Can be activated only after billing has seen the tag (up to 24h) |
 | Lambda concurrency quota | `scripts/bootstrap.sh quota N` | The API accepts only N > 1000 (the AWS default). Lower values need a console support case |
 
@@ -129,10 +129,14 @@ infra/scripts/bootstrap.sh cost-tag   # retry after ~24h if billing has not seen
 ### Budget email
 
 ```bash
-pulumi -C infra config set --stack prod kubcode:budgetEmail <address chosen by the owner>
+pulumi -C infra config set --stack prod --secret kubcode:budgetEmail <address chosen by the owner>
 ```
 
-Then open a PR. The budget appears as one `create` in the preview.
+The address is stored as a stack secret (encrypted with `alias/kubcode-pulumi`),
+so the owner's personal address is not in git as plaintext. Then open a PR. The
+budget appears as one `create` in the preview, and CI applies it on merge. Set
+on 2026-11-04 (address chosen by the owner). Notifications: actual > 80% and
+forecast > 100% of $5.
 
 ## Tests
 

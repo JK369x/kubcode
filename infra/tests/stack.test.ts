@@ -40,7 +40,7 @@ pulumi.runtime.setMocks(
 
 const settle = (o: pulumi.Output<unknown>) => new Promise((resolve) => o.apply(resolve));
 
-async function build(opts: { budgetEmail?: string; secretsKeyUserArns?: pulumi.Input<string>[] } = {}) {
+async function build(opts: { budgetEmail?: pulumi.Input<string>; secretsKeyUserArns?: pulumi.Input<string>[] } = {}) {
   resources = [];
   invokes = [];
   const { createStack } = await import("../src/stack");
@@ -174,4 +174,13 @@ test("budget: $5 monthly on project=kubcode, only when an email is configured", 
   assert.deepEqual(b.costFilters, [{ name: "TagKeyValue", values: ["user:project$kubcode"] }]);
   assert.ok(b.notifications.length >= 1);
   for (const n of b.notifications) assert.deepEqual(n.subscriberEmailAddresses, ["owner@example.com"]);
+});
+
+test("budget email can be a stack secret (kept out of git as plaintext)", async () => {
+  await build({ budgetEmail: pulumi.secret("owner@example.com") });
+  const b = one("aws:budgets/budget:Budget").inputs;
+  // Pulumi's wire format for a secret value: the whole notifications list is secret.
+  const SECRET_SIG = "4dabf18193072939515e22adb298388d";
+  assert.equal(b.notifications[SECRET_SIG], "1b47061264138c4ac30d75fd1eb44270", "notifications must be marked secret");
+  for (const n of b.notifications.value) assert.deepEqual(n.subscriberEmailAddresses, ["owner@example.com"]);
 });
