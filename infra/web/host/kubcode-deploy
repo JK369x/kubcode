@@ -129,7 +129,7 @@ deploy() {
 rollback() {
   local prev
   prev=$(link_of previous)
-  [ -n "$prev" ] && [ -d "$prev" ] || die 1 "no previous release to roll back to"
+  if [ -z "$prev" ] || [ ! -d "$prev" ]; then die 1 "no previous release to roll back to"; fi
   switch_to "$prev"
   restart
   "$SMOKE" || die 1 "smoke failed after rollback to $(basename "$prev")"
