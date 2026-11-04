@@ -8,10 +8,10 @@ import path from "node:path";
 import {
   SHOWCASE_MANIFEST,
   showcaseMediaPaths,
-  validateShowcase,
-  publishedShowcase,
   type ShowcaseManifestEntry,
-} from "../lib/showcase";
+} from "../lib/showcase-manifest";
+import { validateShowcase } from "../lib/showcase-check";
+import { publishedShowcase } from "../lib/showcase";
 import { SHOWCASE_ALLOWLIST, type ShowcaseAllowEntry } from "../lib/showcase-allowlist";
 import { PUBLISHED_MEDIA, isPublishable } from "../lib/publication";
 import { rawSkills } from "../lib/catalog";

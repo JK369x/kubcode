@@ -1,1 +1,558 @@
-[]
+[
+  {
+    "id": "2026-10-25_zombie-condo_ep01_tomorrow-invasion",
+    "title": "ซอมบี้บุกพรุ่งนี้ จะรอดหรือหิวก่อน? | ซอมบี้คอนโด EP.1",
+    "aspect": "portrait",
+    "poster": {
+      "src": "/showcase/2026-10-25_zombie-condo_ep01_tomorrow-invasion/poster.jpg",
+      "width": 480,
+      "height": 854,
+      "bytes": 46702,
+      "sha256": "f73cd4a08cbfab2931c49fb48a6280aac06a1d49f111ec27e6b167ba9917d2cb"
+    },
+    "preview": {
+      "src": "/showcase/2026-10-25_zombie-condo_ep01_tomorrow-invasion/preview.mp4",
+      "width": 360,
+      "height": 640,
+      "seconds": 3.5,
+      "bytes": 121648,
+      "sha256": "8e8b4c0456b136600f02a0bbf595259b7a98244f8c08442150703be94e8fce62"
+    },
+    "link": {
+      "url": "https://www.instagram.com/reel/De52hP9MDsi/",
+      "platform": "instagram",
+      "evidence": "clip.json platforms.instagram.published (2026-10-25T04:40:51+0000)"
+    },
+    "madeWith": {
+      "music": "see CREDITS",
+      "renderer": "lemo-opuscar core (Playwright/Chromium + FFmpeg)",
+      "style": "sci-fi sitcom toon (Lemo-Opuscar toon.js)",
+      "voice": "thai-jk (VoxCPM2 approved-calm-male-v1)"
+    },
+    "source": {
+      "path": "~/Studio/clips/2026-10-25_zombie-condo_ep01_tomorrow-invasion/video.mp4",
+      "sha256": "0ddd441e55b0e080ab957df2a4dea5fe438cf277f1ad7f2d83422c714e617543"
+    }
+  },
+  {
+    "id": "2026-10-25_zombie-condo_ep02_fridge-curry-paste",
+    "title": "ซอมบี้บุก แต่ตู้เย็นมีแค่พริกแกง | คอนโดวันสิ้นโลก EP.2",
+    "aspect": "portrait",
+    "poster": {
+      "src": "/showcase/2026-10-25_zombie-condo_ep02_fridge-curry-paste/poster.jpg",
+      "width": 480,
+      "height": 854,
+      "bytes": 44296,
+      "sha256": "8695c7deec299ce18062c441e8c6210fdb763199964f8448c91ed5b255894924"
+    },
+    "preview": {
+      "src": "/showcase/2026-10-25_zombie-condo_ep02_fridge-curry-paste/preview.mp4",
+      "width": 360,
+      "height": 640,
+      "seconds": 3.5,
+      "bytes": 127316,
+      "sha256": "a87ee8f7534801c7778de670498a18c7bf9b1267f61153d48277cd617b595849"
+    },
+    "link": {
+      "url": "https://www.instagram.com/reel/De6ZhU5M0ii/",
+      "platform": "instagram",
+      "evidence": "clip.json platforms.instagram.published (2026-10-25T09:38:41+0000)"
+    },
+    "madeWith": {
+      "music": "original synthesized music + foley (CREDITS)",
+      "renderer": "lemo-opuscar core (Playwright/Chromium + FFmpeg)",
+      "style": "sci-fi sitcom toon (Lemo-Opuscar toon.js)",
+      "voice": "thai-jk (VoxCPM2-4bit approved-calm-male-v1)"
+    },
+    "source": {
+      "path": "~/Studio/clips/2026-10-25_zombie-condo_ep02_fridge-curry-paste/video.mp4",
+      "sha256": "0ffbc5123ffca4871b665ea273ae994ff018a79973fc78dfa66ceb527a159e2b"
+    }
+  },
+  {
+    "id": "2026-10-25_zombie-condo_ep03_mop-camera",
+    "title": "ส่องทางเดินซอมบี้ ด้วยไม้ถูพื้น | คอนโดวันสิ้นโลก EP.3",
+    "aspect": "portrait",
+    "poster": {
+      "src": "/showcase/2026-10-25_zombie-condo_ep03_mop-camera/poster.jpg",
+      "width": 480,
+      "height": 854,
+      "bytes": 47069,
+      "sha256": "3c609b3d63219e8be49ba35547ff05b7953b2687d3144e3d52b7b12f71b7545a"
+    },
+    "preview": {
+      "src": "/showcase/2026-10-25_zombie-condo_ep03_mop-camera/preview.mp4",
+      "width": 360,
+      "height": 640,
+      "seconds": 3.5,
+      "bytes": 105787,
+      "sha256": "a274da53459aea4ef22f97d7eba8c89aebfe7f6c8b9162e322f5886dcacdd436"
+    },
+    "link": {
+      "url": "https://www.instagram.com/reel/De9ACfTM1ZA/",
+      "platform": "instagram",
+      "evidence": "clip.json platforms.instagram.published (2026-10-26T09:50:56+0000)"
+    },
+    "madeWith": {
+      "music": "original synthesized music + foley (CREDITS)",
+      "renderer": "lemo-opuscar core (Playwright/Chromium + FFmpeg)",
+      "style": "sci-fi sitcom toon (Lemo-Opuscar toon.js)",
+      "voice": "thai-jk (VoxCPM2-4bit approved-calm-male-v1)"
+    },
+    "source": {
+      "path": "~/Studio/clips/2026-10-25_zombie-condo_ep03_mop-camera/video.mp4",
+      "sha256": "fd69b89a98b5a0c109025714ab6439eb3f6dcce53221bbe0a1dab85db0946782"
+    }
+  },
+  {
+    "id": "2026-10-25_zombie-condo_ep04_shopping-cart",
+    "title": "ขโมยรถเข็นกลางดงซอมบี้ | คอนโดวันสิ้นโลก EP.4",
+    "aspect": "portrait",
+    "poster": {
+      "src": "/showcase/2026-10-25_zombie-condo_ep04_shopping-cart/poster.jpg",
+      "width": 480,
+      "height": 854,
+      "bytes": 44306,
+      "sha256": "f9dc998c56c653401647a0e5a5d312fdc4783247b58a14d844f2b3a91b6239fe"
+    },
+    "preview": {
+      "src": "/showcase/2026-10-25_zombie-condo_ep04_shopping-cart/preview.mp4",
+      "width": 360,
+      "height": 640,
+      "seconds": 3.5,
+      "bytes": 92143,
+      "sha256": "23124c04ce8bc6bc51d75ab0f1dd8d906e933ae916da74b4d04f2c3c674c6024"
+    },
+    "link": {
+      "url": "https://www.instagram.com/reel/DfB_nhDsfKz/",
+      "platform": "instagram",
+      "evidence": "clip.json platforms.instagram.published (2026-10-28T08:23:30+0000)"
+    },
+    "madeWith": {
+      "music": "original synthesized music + foley (CREDITS)",
+      "renderer": "lemo-opuscar core (Playwright/Chromium + FFmpeg)",
+      "style": "sci-fi sitcom toon (Lemo-Opuscar toon.js)",
+      "voice": "thai-jk (VoxCPM2-4bit approved-calm-male-v1)"
+    },
+    "source": {
+      "path": "~/Studio/clips/2026-10-25_zombie-condo_ep04_shopping-cart/video.mp4",
+      "sha256": "74809e36aca9f3fc9891b51c65e2f08309dce4c79081b49a4e00846a9bfc6074"
+    }
+  },
+  {
+    "id": "2026-10-26_zombie-condo_ep05_tap-water-stops",
+    "title": "ซอมบี้ล้อมคอนโด แล้วน้ำก๊อกก็หยุด | คอนโดวันสิ้นโลก EP.5",
+    "aspect": "portrait",
+    "poster": {
+      "src": "/showcase/2026-10-26_zombie-condo_ep05_tap-water-stops/poster.jpg",
+      "width": 480,
+      "height": 854,
+      "bytes": 47843,
+      "sha256": "f69e7038444525136fb5ebb4a7ec4b879208e174b69c7930300d3511fd8b0023"
+    },
+    "preview": {
+      "src": "/showcase/2026-10-26_zombie-condo_ep05_tap-water-stops/preview.mp4",
+      "width": 360,
+      "height": 640,
+      "seconds": 3.5,
+      "bytes": 109614,
+      "sha256": "df5fcd88cd27020c65ca93c7dec2a6c0761bb688752dbbe9b5cd9519362b8867"
+    },
+    "link": {
+      "url": "https://www.instagram.com/reel/DfEEUzhxtGu/",
+      "platform": "instagram",
+      "evidence": "clip.json platforms.instagram.published (n/a)"
+    },
+    "madeWith": {
+      "music": "original synthesized music + foley (CREDITS)",
+      "renderer": "lemo-opuscar core (Playwright/Chromium + FFmpeg)",
+      "style": "sci-fi sitcom toon (Lemo-Opuscar toon.js)",
+      "voice": "thai-jk (VoxCPM2-4bit approved-calm-male-v1)"
+    },
+    "source": {
+      "path": "~/Studio/clips/2026-10-26_zombie-condo_ep05_tap-water-stops/video.mp4",
+      "sha256": "bf8e49cc85339aa499d2ad16b5327b29d2204987fe938ddaf09c37b7415cbc7e"
+    }
+  },
+  {
+    "id": "2026-10-26_zombie-condo_ep06_fire-stairs-voice",
+    "title": "บันไดหนีไฟที่มีเสียงเรียกเรา | คอนโดวันสิ้นโลก EP.6",
+    "aspect": "portrait",
+    "poster": {
+      "src": "/showcase/2026-10-26_zombie-condo_ep06_fire-stairs-voice/poster.jpg",
+      "width": 480,
+      "height": 854,
+      "bytes": 23791,
+      "sha256": "09407ce9aa679202461548ee657f4a2e47550d9eceb679a09ea5de6aeca450ec"
+    },
+    "preview": {
+      "src": "/showcase/2026-10-26_zombie-condo_ep06_fire-stairs-voice/preview.mp4",
+      "width": 360,
+      "height": 640,
+      "seconds": 3.5,
+      "bytes": 53345,
+      "sha256": "b87206969def5ca8a760ae13f1c3cfaaf00e3c4069f85b6cef960ba67e7ea760"
+    },
+    "link": {
+      "url": "https://www.instagram.com/reel/DfEqJmpzStw/",
+      "platform": "instagram",
+      "evidence": "clip.json platforms.instagram.published (n/a)"
+    },
+    "madeWith": {
+      "music": "original synthesized music + foley (CREDITS)",
+      "renderer": "lemo-opuscar core (Playwright/Chromium + FFmpeg)",
+      "style": "sci-fi sitcom toon (Lemo-Opuscar toon.js)",
+      "voice": "thai-jk (VoxCPM2-4bit approved-calm-male-v1)"
+    },
+    "source": {
+      "path": "~/Studio/clips/2026-10-26_zombie-condo_ep06_fire-stairs-voice/video.mp4",
+      "sha256": "98862850b270709af81e7ea9be98e92188c7be57903a7ac7b8e926d4971640e8"
+    }
+  },
+  {
+    "id": "2026-10-26_zombie-condo_ep07_neighbor-wont-open",
+    "title": "เพื่อนบ้านมีอาหาร แต่ไม่ยอมเปิดห้อง | คอนโดวันสิ้นโลก EP.7",
+    "aspect": "portrait",
+    "poster": {
+      "src": "/showcase/2026-10-26_zombie-condo_ep07_neighbor-wont-open/poster.jpg",
+      "width": 480,
+      "height": 854,
+      "bytes": 34633,
+      "sha256": "d975efc96420d483586ee96ec7965d11eb83ded3fbeb74b08450ccc6bbcced00"
+    },
+    "preview": {
+      "src": "/showcase/2026-10-26_zombie-condo_ep07_neighbor-wont-open/preview.mp4",
+      "width": 360,
+      "height": 640,
+      "seconds": 3.5,
+      "bytes": 68913,
+      "sha256": "489b69bf5cd8381db9d0945cb4fa8ba8ecc45f8fd1d887d581868c0fa9e38787"
+    },
+    "link": {
+      "url": "https://www.instagram.com/reel/DfE3KFiKOW1/",
+      "platform": "instagram",
+      "evidence": "clip.json platforms.instagram.published (n/a)"
+    },
+    "madeWith": {
+      "music": "original synthesized music + foley (CREDITS)",
+      "renderer": "lemo-opuscar core (Playwright/Chromium + FFmpeg)",
+      "style": "sci-fi sitcom toon (Lemo-Opuscar toon.js)",
+      "voice": "thai-jk (VoxCPM2-4bit approved-calm-male-v1)"
+    },
+    "source": {
+      "path": "~/Studio/clips/2026-10-26_zombie-condo_ep07_neighbor-wont-open/video.mp4",
+      "sha256": "9441fd6c41c93b83818278aec6e5cb13c3c045f659cbd2541a08aac71e70d180"
+    }
+  },
+  {
+    "id": "2026-10-29_mall-infection_ep01_first-night",
+    "title": "ห้างติดเชื้อ! กฎ 3 ข้อที่ห้ามแหก | EP.1 — คืนแรกในห้าง",
+    "aspect": "portrait",
+    "poster": {
+      "src": "/showcase/2026-10-29_mall-infection_ep01_first-night/poster.jpg",
+      "width": 480,
+      "height": 854,
+      "bytes": 13823,
+      "sha256": "b371b5d958847e7b43d74856c70fbb1463ee2786ab84342891c408c6f1110298"
+    },
+    "preview": {
+      "src": "/showcase/2026-10-29_mall-infection_ep01_first-night/preview.mp4",
+      "width": 360,
+      "height": 640,
+      "seconds": 3.5,
+      "bytes": 19386,
+      "sha256": "ddacc4340659d6265c8378cfb944b444d26389d7bfde0d6a8c2d2dd318ef27cc"
+    },
+    "link": null,
+    "madeWith": {
+      "cover": "ChatGPT-generated v2 (05-ตรวจไฟล์/cover-generation.json)",
+      "music": "music-bed.wav + HyperFrames SFX (assets/sfx/CREDITS.md)",
+      "renderer": "hyperframes + three.js",
+      "style": "low-poly (three.js) horror, bilingual TH/EN captions",
+      "voice": "thai-jk (VoxCPM2 approved-calm-male-v1)"
+    },
+    "source": {
+      "path": "~/Studio/clips/2026-10-29_mall-infection_ep01_first-night/video.mp4",
+      "sha256": "367d5e991b6e1bd8bc908419a082e22ce568670a41a821c8804c5302f3143896"
+    }
+  },
+  {
+    "id": "2026-10-30_mall-infection_ep02_stairs",
+    "title": "ห้างติดเชื้อ! บันไดนี้…ไม่ปลอดภัย | EP.2 — ทางบันได",
+    "aspect": "portrait",
+    "poster": {
+      "src": "/showcase/2026-10-30_mall-infection_ep02_stairs/poster.jpg",
+      "width": 480,
+      "height": 854,
+      "bytes": 21893,
+      "sha256": "1af931ee3ea91d1f3e4b5e681362cb93b0f02e2679b478b603944eaa469e6211"
+    },
+    "preview": {
+      "src": "/showcase/2026-10-30_mall-infection_ep02_stairs/preview.mp4",
+      "width": 360,
+      "height": 640,
+      "seconds": 3.5,
+      "bytes": 30268,
+      "sha256": "64d9fb471fa43e6485ffb0b0f54156675b4a6f5711666d28f7d3390e0f7a11c8"
+    },
+    "link": {
+      "url": "https://www.youtube.com/shorts/prYKypKYpEU",
+      "platform": "youtube",
+      "evidence": "clip.json platforms.youtube.published (checked n/a)"
+    },
+    "madeWith": {
+      "music": "music-bed.wav + HyperFrames SFX",
+      "renderer": "hyperframes + three.js",
+      "style": "low-poly (three.js) horror, subtitle-pop v3",
+      "voice": "thai-jk (VoxCPM2)"
+    },
+    "source": {
+      "path": "~/Studio/clips/2026-10-30_mall-infection_ep02_stairs/video.mp4",
+      "sha256": "ab35dcaa0bf44229507949aef18a9efa87d6d30035c12910a6289797de473df3"
+    }
+  },
+  {
+    "id": "2026-10-28_satire-stories_ep01_elon-dream-low-poly",
+    "title": "ถ้าโลกอนาคตเป็นของ Elon Musk…ชีวิตคุณจะเป็นยังไง?",
+    "aspect": "portrait",
+    "poster": {
+      "src": "/showcase/2026-10-28_satire-stories_ep01_elon-dream-low-poly/poster.jpg",
+      "width": 480,
+      "height": 854,
+      "bytes": 28513,
+      "sha256": "181e9f60560416f7ab936bf90772307eab85386238468bf5267e43102e1b40eb"
+    },
+    "preview": {
+      "src": "/showcase/2026-10-28_satire-stories_ep01_elon-dream-low-poly/preview.mp4",
+      "width": 360,
+      "height": 640,
+      "seconds": 3.5,
+      "bytes": 52176,
+      "sha256": "29e601057dc64eadb3f1821cdaf9fcc9468886eba69470f7273778a046f634fc"
+    },
+    "link": {
+      "url": "https://www.youtube.com/watch?v=OOBfCzi7gz0",
+      "platform": "youtube",
+      "evidence": "clip.json platforms.youtube.published (checked 2026-10-29T02:42:01.767Z)"
+    },
+    "madeWith": {
+      "music": "music-bed.wav (see AUDIO-PLAN.md)",
+      "renderer": "hyperframes + three.js",
+      "style": "low-poly (three.js) satire story",
+      "voice": "thai-jk (VoxCPM2)"
+    },
+    "source": {
+      "path": "~/Studio/clips/2026-10-28_satire-stories_ep01_elon-dream-low-poly/video.mp4",
+      "sha256": "db3e28a40de2cd08091cec5863716c1fd15cd2af1c990cf01c157ca0d75a8485"
+    }
+  },
+  {
+    "id": "2026-10-25_us-antarctica_ep01_mystery-short",
+    "title": "สหรัฐกับแอนตาร์กติกา — Short (v4)",
+    "aspect": "portrait",
+    "poster": {
+      "src": "/showcase/2026-10-25_us-antarctica_ep01_mystery-short/poster.jpg",
+      "width": 480,
+      "height": 854,
+      "bytes": 20106,
+      "sha256": "88736e2cb690d3dc5358307fee62ccda3501cf41d0dac19d21efa3d65ef4fa54"
+    },
+    "preview": {
+      "src": "/showcase/2026-10-25_us-antarctica_ep01_mystery-short/preview.mp4",
+      "width": 360,
+      "height": 640,
+      "seconds": 3.5,
+      "bytes": 19968,
+      "sha256": "894110e1abcbf521469f88bccb8488a178efc9550cf7fe4ebbb1f0997cf8099f"
+    },
+    "link": null,
+    "madeWith": {
+      "music": "no music; HyperFrames media-use SFX only (ASSETS.md)",
+      "renderer": "hyperframes",
+      "style": "mystery adventure, highlight text only",
+      "voice": "thai-jk (VoxCPM2-4bit approved calm male)"
+    },
+    "source": {
+      "path": "~/Studio/clips/2026-10-25_us-antarctica_ep01_mystery-short/video.mp4",
+      "sha256": "84f048415e4f6a992fa2b112be904f0ca9d751557f00c81ae8c92317a9fb1e6e"
+    }
+  },
+  {
+    "id": "2026-11-01_freshstack-what-if_ep03_internet-gone-week",
+    "title": "ถ้าอินเทอร์เน็ตหายไปทั้งโลก 1 สัปดาห์",
+    "aspect": "portrait",
+    "poster": {
+      "src": "/showcase/2026-11-01_freshstack-what-if_ep03_internet-gone-week/poster.jpg",
+      "width": 480,
+      "height": 854,
+      "bytes": 38888,
+      "sha256": "df8698982bad837982861f44dd06f00e8306bf3fef99b829a1cb0e451d56e1c4"
+    },
+    "preview": {
+      "src": "/showcase/2026-11-01_freshstack-what-if_ep03_internet-gone-week/preview.mp4",
+      "width": 360,
+      "height": 640,
+      "seconds": 3.5,
+      "bytes": 57266,
+      "sha256": "c3b83a116f7cb341e1cfde8cea94c974b759e3c5160adc5fff1a20e052eeb064"
+    },
+    "link": null,
+    "madeWith": {
+      "music": "unknown",
+      "renderer": "remotion 4.0.530",
+      "style": "freshstack-what-if (React SVG, reframed 9:16)",
+      "voice": "thai-jk (VoxCPM2 approved-calm-male-v1)"
+    },
+    "source": {
+      "path": "~/Studio/clips/2026-11-01_freshstack-what-if_ep03_internet-gone-week/video.mp4",
+      "sha256": "c021bf78c4e051871f0f8c83d0604689b00c15cefe0fd56a20e7ca1365ac73db"
+    }
+  },
+  {
+    "id": "2026-11-01_freshstack-what-if_ep05_no-one-can-lie",
+    "title": "ถ้าทุกคนโกหกไม่ได้อีกต่อไป",
+    "aspect": "portrait",
+    "poster": {
+      "src": "/showcase/2026-11-01_freshstack-what-if_ep05_no-one-can-lie/poster.jpg",
+      "width": 480,
+      "height": 854,
+      "bytes": 44071,
+      "sha256": "73a84f1675ba77e718555f1178cffa8e12cdb2b8b1bc31bd1c47a7b0f4ac8ca1"
+    },
+    "preview": {
+      "src": "/showcase/2026-11-01_freshstack-what-if_ep05_no-one-can-lie/preview.mp4",
+      "width": 360,
+      "height": 640,
+      "seconds": 3.5,
+      "bytes": 67700,
+      "sha256": "7cef84fd8b9c683c84cb2cd7fb0021562d8fc4fa95dd138dada263e0594ac6ed"
+    },
+    "link": null,
+    "madeWith": {
+      "music": "unknown",
+      "renderer": "remotion 4.0.530",
+      "style": "freshstack-what-if (React SVG stick-figure, cropped 9:16)",
+      "voice": "thai-jk (VoxCPM2)"
+    },
+    "source": {
+      "path": "~/Studio/clips/2026-11-01_freshstack-what-if_ep05_no-one-can-lie/video.mp4",
+      "sha256": "a57d98168fa32013af996f675dc1507aafbbb521dfaf3884507276fa52fd97a3"
+    }
+  },
+  {
+    "id": "2026-11-01_what-if-studio_ep01_mute-touch",
+    "title": "Mute Touch — ถ้าปิดเสียงของสิ่งที่แตะได้ แต่ทุกเสียงย้อนกลับทันทีที่คุณหัวเราะ",
+    "aspect": "landscape",
+    "poster": {
+      "src": "/showcase/2026-11-01_what-if-studio_ep01_mute-touch/poster.jpg",
+      "width": 640,
+      "height": 360,
+      "bytes": 26336,
+      "sha256": "42d222cde4270440eae24bcf08f833686f8edd9d76294379d470884dfa85f991"
+    },
+    "preview": {
+      "src": "/showcase/2026-11-01_what-if-studio_ep01_mute-touch/preview.mp4",
+      "width": 640,
+      "height": 360,
+      "seconds": 3.5,
+      "bytes": 58348,
+      "sha256": "34d5f6904d3eb3bd4a3e4c7261ae7a6cadae59753ceb1ade4bbf2f9603db84f7"
+    },
+    "link": null,
+    "madeWith": {
+      "music": "ElevenLabs sound-generation music bed + 8 SFX (639 credits total)",
+      "renderer": "remotion",
+      "style": "freshstack-what-if (stylized, 16:9)",
+      "voice": "ElevenLabs eleven_v3 Thai (1 take, 317 credits)",
+      "writer": "OpenCode glm-5.3-flash-free + supervisor"
+    },
+    "source": {
+      "path": "~/Studio/clips/2026-11-01_what-if-studio_ep01_mute-touch/video.mp4",
+      "sha256": "b7ba06fe16628715c4fd07c0a8cef579af21e4931b9c3b8863e1792af3d0d9db"
+    }
+  },
+  {
+    "id": "2026-11-01_jk-soft-story-motion-v2_ep02_friends-drifting-apart",
+    "title": "เพื่อนสนิทที่ห่างกันไปโดยไม่เคยทะเลาะ",
+    "aspect": "portrait",
+    "poster": {
+      "src": "/showcase/2026-11-01_jk-soft-story-motion-v2_ep02_friends-drifting-apart/poster.jpg",
+      "width": 480,
+      "height": 854,
+      "bytes": 20667,
+      "sha256": "de276858b8136dc6a397d695c20eadfdc39510911a46cbf20c64913eb1d40432"
+    },
+    "preview": {
+      "src": "/showcase/2026-11-01_jk-soft-story-motion-v2_ep02_friends-drifting-apart/preview.mp4",
+      "width": 360,
+      "height": 640,
+      "seconds": 3.5,
+      "bytes": 34036,
+      "sha256": "b6dda915a5b492c7a24e1ab834e7ccf798d16c8153b37d33fefb2d1ad8750bbf"
+    },
+    "link": null,
+    "madeWith": {
+      "music": "unknown",
+      "renderer": "hyperframes",
+      "style": "jk-soft-story-motion-v2",
+      "voice": "thai-jk (approved-calm-male-v1)"
+    },
+    "source": {
+      "path": "~/Studio/clips/2026-11-01_jk-soft-story-motion-v2_ep02_friends-drifting-apart/video.mp4",
+      "sha256": "1c9c6e7fa70a3f353de7f4b177a4eaef0df7174b4587d548df3da1f442ac3405"
+    }
+  },
+  {
+    "id": "low-poly-urban-study",
+    "title": "Low-poly Urban — ตัวอย่างสไตล์ 8 วินาที",
+    "aspect": "portrait",
+    "poster": {
+      "src": "/showcase/low-poly-urban-study/poster.jpg",
+      "width": 480,
+      "height": 854,
+      "bytes": 31371,
+      "sha256": "685e13b8b4b29a50256dc659ca7e5a26a3740ac99ed5e6d910c11e0c4d05b45a"
+    },
+    "preview": {
+      "src": "/showcase/low-poly-urban-study/preview.mp4",
+      "width": 360,
+      "height": 640,
+      "seconds": 3.5,
+      "bytes": 47291,
+      "sha256": "ee1771b943c0c0e7785a32c11e2241c006869634658863e8e1c1223a4ae55463"
+    },
+    "link": null,
+    "madeWith": {
+      "renderer": "Three.js 0.170.0 + HyperFrames",
+      "style": "low-poly-urban",
+      "voice": "silent"
+    },
+    "source": {
+      "path": "~/work/ai-video/jk-animation-studio/styles/low-poly-urban/examples/city/demo.mp4",
+      "sha256": "3957961cde8bf0d96a11a4712fbc0e58285c1725e35cc2ab8bbae8a1fe203e68"
+    }
+  },
+  {
+    "id": "jk-soft-story-still",
+    "title": "Soft Story — ภาพนิ่ง v2 ที่เลือกแล้ว",
+    "aspect": "landscape",
+    "poster": {
+      "src": "/showcase/jk-soft-story-still/poster.jpg",
+      "width": 640,
+      "height": 360,
+      "bytes": 26569,
+      "sha256": "423a5bf79c40cddd414ddadce2b62b80aa68739cd5da2b81d8b44b8de614d4ca"
+    },
+    "preview": null,
+    "link": null,
+    "madeWith": {
+      "renderer": "Editable SVG",
+      "style": "jk-soft-story",
+      "voice": "silent"
+    },
+    "source": {
+      "path": "~/work/ai-video/jk-animation-studio/styles/jk-soft-story/assets/selected-v2.png",
+      "sha256": "6627ec8249019ba60b44a857f5a5e8b13fb233263ba5e8b9c7ce3a88c354dbcd"
+    }
+  }
+]

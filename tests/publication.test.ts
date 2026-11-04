@@ -171,8 +171,8 @@ test("resolveMediaPolicy: production default deny, explicit modes, unknown fails
   }
 });
 
-test("published allowlist starts empty and exposes none of the actual previews", () => {
-  assert.equal(pub.PUBLISHED_MEDIA.size, 0);
+test("published allowlist holds only showcase files and exposes none of the catalog previews", () => {
+  for (const url of pub.PUBLISHED_MEDIA) assert.match(url, /^\/showcase\/[^/]+\/(poster\.jpg|preview\.mp4)$/);
   assert.ok(ALL_RAW_MEDIA.length >= 9);
   for (const url of ALL_RAW_MEDIA) {
     assert.equal(pub.isPublishable(url, "licensed-only"), false, url);
