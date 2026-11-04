@@ -1,0 +1,55 @@
+---
+slug: claude-code
+title: "Claude Code: AI agent เขียนโค้ดของ Anthropic"
+name: "Claude Code"
+description: "Claude Code คือ AI agent ของ Anthropic ที่อ่านโปรเจกต์ แก้ไฟล์ และรันคำสั่งให้ ใช้ skill แบบ SKILL.md ได้ ต้องมีแผน Claude แบบเสียเงินหรือ API"
+tags: [ai-agent]
+category: script
+refs:
+  - tool:opencode
+  - tool:codex-cli
+  - skill:growkaz-stickman
+  - skill:thai-survival
+links:
+  website: https://claude.com/product/claude-code
+  repo: https://github.com/anthropics/claude-code
+  docs: https://code.claude.com/docs
+license: "ซอฟต์แวร์ปิด (© Anthropic) ใช้ตาม Commercial Terms"
+pricing: paid
+logo:
+  fallback: monogram
+  text: CC
+  reason: "แนวทางเครื่องหมายการค้าของ Anthropic กำหนดให้ขออนุมัติก่อนใช้โลโก้ (anthropic.com/legal/trademark-guidelines) เราจึงไม่ใช้โลโก้"
+updated: 2026-11-04
+go: [cc]
+sources:
+  - title: "Claude Code docs: Overview"
+    url: https://code.claude.com/docs/en/overview
+  - title: "Claude Code docs: Set up"
+    url: https://code.claude.com/docs/en/setup
+  - title: "Claude Code docs: Skills"
+    url: https://code.claude.com/docs/en/skills
+  - title: "Claude pricing"
+    url: https://claude.com/pricing
+---
+## คืออะไร
+
+Claude Code เป็น AI agent สำหรับงานโค้ดจาก Anthropic ทำงานได้ทั้งใน terminal, IDE, แอปเดสก์ท็อป และเบราว์เซอร์ มันอ่านไฟล์ในโปรเจกต์ แก้โค้ด และรันคำสั่งตามที่เราสั่ง ตัวโปรแกรมไม่ใช่โอเพนซอร์ส ไฟล์ไลเซนส์ใน repo ระบุว่าใช้ตาม Commercial Terms ของ Anthropic
+
+## ใช้ทำอะไรในงานคลิปของเรา
+
+เราใช้ Claude Code เป็น "ผู้เขียน" อีกตัวหนึ่ง มันเปิด skill ของเรา เขียนโค้ดฉาก แล้วสั่งเรนเดอร์ ตัวอย่างใน [growkaz stickman](/skills/growkaz-stickman) และ [thai survival](/skills/thai-survival) มีทั้งชุดที่ Claude Code เขียนและชุดที่ [Codex CLI](/tools/codex-cli) เขียน เทียบกันได้ เพราะผู้เขียนเป็นคนละชั้นกับสไตล์ภาพและตัวเรนเดอร์
+
+## ติดตั้งและเริ่มใช้
+
+- วิธีที่เอกสารแนะนำบน macOS, Linux และ WSL คือ `curl -fsSL https://claude.ai/install.sh | bash` ส่วนบน Windows ใช้ PowerShell `irm https://claude.ai/install.ps1 | iex`
+- ติดตั้งผ่าน Homebrew (`brew install --cask claude-code`) หรือ npm (`npm install -g @anthropic-ai/claude-code`, ต้องใช้ Node.js 22 ขึ้นไป) ก็ได้
+- เปิดจากในโฟลเดอร์งานด้วยคำสั่ง `claude` แล้วลงชื่อเข้าใช้
+
+## ค่าใช้จ่าย
+
+แผนฟรีของ claude.ai ใช้ Claude Code ไม่ได้ ต้องมีแผน Pro, Max, Ultra, Team หรือ Enterprise หรือบัญชี Console ที่จ่ายตามการใช้ API องค์กรเรียกผ่าน Amazon Bedrock, Google Cloud หรือ Microsoft Foundry ได้ด้วย ราคาเปลี่ยนได้ ดูหน้าราคาของ Claude ก่อนสมัคร
+
+## skill
+
+Claude Code อ่าน skill จากโฟลเดอร์ที่มีไฟล์ `SKILL.md` ไว้ที่ `.claude/skills/<ชื่อ>/` ในโปรเจกต์ หรือ `~/.claude/skills/<ชื่อ>/` สำหรับทุกโปรเจกต์ รูปแบบนี้ตามมาตรฐาน Agent Skills แบบเปิด skill ชุดเดียวกันจึงย้ายไปใช้กับ agent อื่นที่รองรับได้ ดู [ก่อนติดตั้ง skill](/articles/install-with-permissions) ว่าต้องตรวจอะไรก่อนเปิดให้ agent ใช้

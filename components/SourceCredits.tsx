@@ -51,7 +51,7 @@ function LogoCredit({ name, logo }: { name: string; logo: Extract<Page, { kind: 
           )
         </>
       ) : (
-        <>ไม่มีโลโก้ทางการของ {name} ที่เราใช้ได้ จึงแสดงอักษรย่อแทน</>
+        <>แสดงอักษรย่อแทนโลโก้ {name}: {logo.reason}</>
       )}
     </>
   );

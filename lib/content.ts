@@ -306,7 +306,10 @@ class FieldReader {
       if (r.fallback !== "monogram") this.problem("logo.fallback", 'must be "monogram"');
       const reason = typeof r.reason === "string" ? r.reason.trim() : "";
       if (!reason) this.problem("logo.reason", "is required (say why there is no official logo)");
-      return { kind: "monogram", text: monogram(name), reason };
+      if (r.text !== undefined && !(typeof r.text === "string" && /^[A-Za-z0-9]{1,3}$/.test(r.text))) {
+        this.problem("logo.text", "must be 1-3 letters or digits");
+      }
+      return { kind: "monogram", text: typeof r.text === "string" ? r.text : monogram(name), reason };
     }
     const { src, alt, source_url, guideline_url, fetched_at, includes_clear_space } = r;
     if (includes_clear_space !== undefined && typeof includes_clear_space !== "boolean") {

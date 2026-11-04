@@ -7,6 +7,7 @@ import { spawn } from "node:child_process";
 import { mkdirSync } from "node:fs";
 import { createServer } from "node:net";
 import { chromium, type Page } from "@playwright/test";
+import { loadContent } from "../lib/content";
 
 const ARTICLE = "/articles/free-ai-animation-opencode";
 
@@ -339,7 +340,8 @@ async function main() {
       const line = page.getByRole("navigation", { name: "ขั้นตอนทำคลิป" });
       assert.equal(await line.getByRole("link", { name: /ทั้งหมด/ }).getAttribute("aria-current"), "page");
       const cards = page.locator("main article");
-      assert.equal(await cards.count(), 7);
+      const content = loadContent();
+      assert.equal(await cards.count(), content.tools.length);
       // Every logo is a local file that actually loaded (or a monogram).
       const logos = await page.locator("main article .tool-logo").evaluateAll((els) =>
         els.map((el) => {
@@ -347,7 +349,7 @@ async function main() {
           return img ? { src: img.getAttribute("src"), ok: img.complete && img.naturalWidth > 0 } : { src: "monogram", ok: el.textContent!.trim().length > 0 };
         }),
       );
-      assert.equal(logos.length, 7);
+      assert.equal(logos.length, content.tools.length);
       for (const l of logos) assert.ok(l.ok && (l.src === "monogram" || /^\/tools\/[a-z0-9-]+\/logo\.(svg|png)$/.test(l.src!)), JSON.stringify(l));
       // Stars are off on this server: no counts are shown.
       assert.equal(await page.locator("main article [data-stars]").count(), 0, "star counts hidden while interactions are off");
@@ -369,10 +371,12 @@ async function main() {
         await line.getByRole("link", { name: /เขียนบทและโค้ด/ }).click();
         await page.waitForURL("**/tools/c/script");
         assert.equal(await page.locator("main h1").innerText(), "เขียนบทและโค้ด");
-        assert.equal(await cards.count(), 3);
+        const scriptTools = content.tools.filter((t) => t.category === "script").length;
+        assert.ok(scriptTools >= 3);
+        assert.equal(await cards.count(), scriptTools);
         assert.equal(await line.getByRole("link", { name: /เขียนบทและโค้ด/ }).getAttribute("aria-current"), "page");
         const robots = await page.locator('meta[name="robots"]').evaluateAll((els) => els.map((el) => el.getAttribute("content")).join(" "));
-        assert.doesNotMatch(robots, /noindex/, "3 tools: indexable");
+        assert.doesNotMatch(robots, /noindex/, "3+ tools: indexable");
         await page.goto(base + "/tools/c/render", { waitUntil: "networkidle" });
         assert.match((await page.locator('meta[name="robots"]').getAttribute("content")) ?? "", /noindex/, "fewer than 3 tools: noindex");
         assert.equal((await page.request.get(base + "/tools/c/image")).status(), 404, "empty stage 404s");
@@ -395,7 +399,7 @@ async function main() {
       assert.deepEqual(errors, []);
       await page.context().close();
     }
-    checks.push("/tools: 7 logo cards (local files that load), stage chips as URLs (filter + aria-current + noindex <3 + empty 404), external link above the card link, stars hidden when off, logo+title morph card → page (reduced motion: global view-transition rule above), 4+2 screenshots");
+    checks.push("/tools: one logo card per tool (local files that load), stage chips as URLs (filter + aria-current + noindex <3 + empty 404), external link above the card link, stars hidden when off, logo+title morph card → page (reduced motion: global view-transition rule above), 4+2 screenshots");
 
     console.log(`PASS reading browser (${checks.length} checks)\n- ${checks.join("\n- ")}`);
   } finally {

@@ -326,6 +326,11 @@ test("a tool without an official asset uses a monogram, and says why", () => {
   assert.deepEqual(t.logo, { kind: "monogram", text: "WI", reason: "เจ้าของไม่มีโลโก้ทางการ" });
   const problems = problemsOf(tree({ "tools/good-tool.mdx": tool({ logo: { fallback: "monogram" } }) }));
   assert.ok(problems.some((p) => /logo\.reason is required/.test(p)), problems.join("\n"));
+  // Two names with the same initials can set their own short text.
+  const own = loadContent(tree({ "tools/good-tool.mdx": tool({ name: "Codex CLI", logo: { fallback: "monogram", text: "Cx", reason: "r" } }) })).tools[0];
+  assert.equal(own.logo.kind === "monogram" && own.logo.text, "Cx");
+  const long = problemsOf(tree({ "tools/good-tool.mdx": tool({ logo: { fallback: "monogram", text: "ABCD", reason: "r" } }) }));
+  assert.ok(long.some((p) => /logo\.text must be 1-3 letters/.test(p)), long.join("\n"));
 });
 
 test("tool logos need provenance, a file under the tool's own folder, and a usable size", () => {

@@ -1,0 +1,54 @@
+---
+slug: codex-cli
+title: "Codex CLI: AI agent เขียนโค้ดโอเพนซอร์สของ OpenAI"
+name: "Codex CLI"
+description: "Codex CLI คือ AI agent เขียนโค้ดของ OpenAI ที่รันในเครื่อง โค้ดเป็นโอเพนซอร์ส (Apache-2.0) ลงชื่อด้วยบัญชี ChatGPT หรือใช้ API key ก็ได้"
+tags: [ai-agent, free-tier]
+category: script
+refs:
+  - tool:opencode
+  - skill:growkaz-stickman
+  - skill:thai-survival
+links:
+  website: https://learn.chatgpt.com/docs/codex/cli
+  repo: https://github.com/openai/codex
+  docs: https://learn.chatgpt.com/docs/codex/cli
+license: "Apache-2.0 (โอเพนซอร์ส)"
+pricing: free-tier
+logo:
+  fallback: monogram
+  text: Cx
+  reason: "แนวทางแบรนด์ของ OpenAI ห้ามใช้โลโก้โดยไม่ได้รับอนุญาต (openai.com/brand) และ Codex ไม่มีโลโก้แยกให้ดาวน์โหลด"
+updated: 2026-11-04
+go: [codex]
+sources:
+  - title: "openai/codex README"
+    url: https://github.com/openai/codex
+  - title: "Codex docs: CLI"
+    url: https://learn.chatgpt.com/docs/codex/cli
+  - title: "Codex docs: Pricing"
+    url: https://learn.chatgpt.com/docs/pricing
+  - title: "Codex docs: Build skills"
+    url: https://learn.chatgpt.com/docs/build-skills
+---
+## คืออะไร
+
+Codex CLI เป็น AI agent เขียนโค้ดของ OpenAI ที่รันในเครื่องเรา อ่านไฟล์ในโปรเจกต์ แก้โค้ด และรันคำสั่งใน terminal ตัวโปรแกรมเป็นโอเพนซอร์สภายใต้สัญญาอนุญาต Apache-2.0 และพัฒนาบน GitHub
+
+## ใช้ทำอะไรในงานคลิปของเรา
+
+เราใช้ Codex CLI เป็นผู้เขียนอีกตัวคู่กับ [Claude Code](/tools/claude-code) ตัวอย่างใน [growkaz stickman](/skills/growkaz-stickman) และ [thai survival](/skills/thai-survival) มีชุดที่ Codex CLI เขียนเองจาก skill เดียวกัน ภาพที่ได้ต่างกันเพราะผู้เขียนต่างกัน แม้สไตล์และตัวเรนเดอร์เหมือนเดิม
+
+## ติดตั้งและเริ่มใช้
+
+- npm: `npm install -g @openai/codex` หรือ Homebrew: `brew install --cask codex`
+- มีสคริปต์ติดตั้งสำหรับ macOS/Linux และ Windows กับไฟล์ binary ใน GitHub Releases ด้วย
+- เปิดจากในโฟลเดอร์งานด้วยคำสั่ง `codex` แล้วเลือก Sign in with ChatGPT หรือใช้ API key
+
+## ค่าใช้จ่าย
+
+หน้าราคาของ Codex บอกว่ารวมอยู่ในแผน ChatGPT ตั้งแต่ Free และ Go ไปจนถึง Plus, Pro, Business, Edu และ Enterprise แผน Free เหมาะกับงานสั้น ๆ และเปิดให้ใช้แบบค่อย ๆ ทยอย ถ้าใช้ API key จะคิดเงินตามราคา API และไม่ได้ฟีเจอร์บนคลาวด์บางอย่าง
+
+## skill
+
+Codex อ่าน skill จากโฟลเดอร์ที่มีไฟล์ `SKILL.md` ไว้ที่ `.agents/skills` ในโปรเจกต์ หรือ `~/.agents/skills` สำหรับผู้ใช้ เรียกใช้ด้วย `/skills` หรือพิมพ์ `$` รูปแบบนี้ตามมาตรฐาน Agent Skills แบบเปิดเหมือน Claude Code
