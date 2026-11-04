@@ -75,6 +75,7 @@ function fixture() {
     id,
     source: "studio:clip-a",
     label: "Clip A",
+    style: "fixture-style",
     rights: "Own work.",
     at: 1,
   };

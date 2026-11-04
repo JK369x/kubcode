@@ -210,7 +210,7 @@ Current sources are `Library`, `KineticHero`/module, `MediaSkillCard`/module, sh
 
 ## Colors
 
-Page surfaces use the declared dark/light ink, muted, line and selected pairs. Purple marks choices and navigation, not every vendor identity. Hero dark uses `#2c1549`, `#f5f1fb`, `#d6c6e9`; light uses `#ebe0fa`, `#2a1241`, `#59416c`.
+Page surfaces use the declared dark/light ink, muted, line and selected pairs. Purple marks choices and navigation, not every vendor identity. The homepage hero sits on the page background with the global ink/muted/line pairs; there is no enclosing purple hero panel (owner, 2026-11-04). The `hero-*` colour tokens above are retired.
 
 Media cards remain dark objects (`#0c0b10`, white text) in both page themes. Their bottom scrim is solely for legibility. Real tool marks retain original colors on small neutral discs; legitimately monochrome marks are theme-safe.
 
@@ -236,19 +236,19 @@ Covers may crop; native playback preserves the complete frame. Two local covers 
 
 ## Elevation & Depth
 
-Overlapping hero artwork gets bounded offset/soft-blur depth. Catalog scrims protect text; tiny top badge backdrops are bounded. No GPU shader is mounted.
+Hero work is a style shelf: one 9:16 card per style (`lib/showcase-allowlist.ts` `style` + `cover`), titled by the style with its clip count below the media, never over it. Catalog scrims protect text; tiny top badge backdrops are bounded. No GPU shader is mounted.
 
-Authored assembly finishes within785ms. Shallow drift/parallax run only when permitted, visible and on screen. Explicit pause and reduced-motion stop nonessential motion. No JavaScript frame loop drives ambient animation. Native scrolling and video controls remain intact.
+Nothing in the hero moves on its own: a muted preview plays only while a card is hovered or focused (never on touch, reduced motion or Save-Data), so there is no pause control. No JavaScript frame loop drives ambient animation. Native scrolling and video controls remain intact.
 
 ## Shapes
 
-Hero24px, catalog22px, shared unavailable/conditions controls12px. Controls have at least44px targets. Pills identify navigation, categories and genuine author switches; do not make every content group a nested card.
+Catalog and hero media22px, shared unavailable/conditions controls12px. Controls have at least44px targets. Pills identify navigation, categories and genuine author switches; do not make every content group a nested card.
 
 ## Components
 
 ### Hero, search and selection
 
-`KineticHero` displays only genuine known-size artwork. Search intersects real metadata/category and has a truthful empty state. Selection opens the real `Preview`; pause, reduced-motion, offscreen and document visibility are distinct states. No playback or download success is synthesized.
+`KineticHero` + `StyleShelf` display only genuine known-size artwork; a new style in the allowlist adds a card. Search intersects real metadata/category and has a truthful empty state. Selection opens the real `Preview`; pause, reduced-motion, offscreen and document visibility are distinct states. No playback or download success is synthesized.
 
 ### Cards and native preview
 

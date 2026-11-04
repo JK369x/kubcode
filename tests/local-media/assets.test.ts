@@ -11,7 +11,7 @@ const NodeModule = require("node:module") as {
 NodeModule._extensions[".css"] = (m) => {
   m.exports = new Proxy({}, { get: (_t, key) => key === "__esModule" ? false : String(key) });
 };
-const { POSTER_SIZES } = require("../../components/KineticHero") as typeof import("../../components/KineticHero");
+const { SHOWCASE_MANIFEST } = require("../../lib/showcase-manifest") as typeof import("../../lib/showcase-manifest");
 
 function imageSize(file: string): { w: number; h: number } {
   const b = readFileSync(file);
@@ -42,8 +42,8 @@ test("every referenced local poster/video actually exists and is nonempty", () =
   }
 });
 
-test("all hero poster intrinsic dimensions match the actual local image headers", () => {
-  for (const [src, size] of Object.entries(POSTER_SIZES)) {
-    assert.deepEqual(imageSize("public" + src), size, src);
+test("all hero poster intrinsic dimensions match the actual image headers", () => {
+  for (const { poster } of SHOWCASE_MANIFEST) {
+    assert.deepEqual(imageSize("public" + poster.src), { w: poster.width, h: poster.height }, poster.src);
   }
 });

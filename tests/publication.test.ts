@@ -123,11 +123,11 @@ test("no-media card names the skill's real category, not captions", () => {
   assert.doesNotMatch(html, /<video\b|previews\//);
 });
 
-test("hero without publishable works shows a rights-pending notice, no dead stage controls", () => {
+test("hero without approved clips shows a rights-pending notice, no dead motion controls", () => {
   const html = render(
     createElement(
       KineticHero,
-      { skills: skills.map(withheld), activeSlug: "", onSelectSkill: () => {} },
+      { skills: skills.map(withheld), activeSlug: "", onSelectSkill: () => {}, clips: [] },
       createElement("span", { className: "slot" }, "SEARCH"),
     ),
   );
@@ -294,13 +294,13 @@ test("no-examples skills keep their own honest no-media copy", () => {
   }
 });
 
-test("local-study hero keeps the original full-media stage", () => {
+test("hero shows the approved clips as one card per style", () => {
   const html = render(
     createElement(KineticHero, { skills, activeSlug: "", onSelectSkill: () => {} }),
   );
   assert.match(html, /ดูงานจริง/);
-  assert.match(html, /aria-label="ผลงานจริงในคลัง"/);
-  assert.match(html, /data-motion-toggle/);
+  assert.match(html, /aria-label="ตัวอย่างคลิป สไตล์ละหนึ่งคลิป"/);
+  assert.doesNotMatch(html, /data-motion-toggle/);
   assert.doesNotMatch(html, /data-media="none"|รอยืนยันสิทธิ์/);
 });
 

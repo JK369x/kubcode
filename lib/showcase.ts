@@ -7,6 +7,10 @@ export type ShowcaseItem = {
   id: string;
   label: string;
   title: string;
+  /** Key into SHOWCASE_STYLES. */
+  style: string;
+  /** This clip represents its style on the homepage. */
+  cover: boolean;
   aspect: "portrait" | "landscape";
   poster: { src: string; width: number; height: number };
   preview: { src: string } | null;
@@ -30,6 +34,8 @@ export function publishedShowcase(
       id: m.id,
       label: entry.label,
       title: m.title,
+      style: entry.style,
+      cover: entry.cover === true,
       aspect: m.aspect,
       poster: { src: m.poster.src, width: m.poster.width, height: m.poster.height },
       preview: m.preview && isPublishable(m.preview.src, policy, allowlist) ? { src: m.preview.src } : null,
@@ -37,4 +43,22 @@ export function publishedShowcase(
       credits: entry.credits ?? [],
     }];
   });
+}
+
+/** One homepage card: a style, the clip that represents it, and how many clips it has. */
+export type ShelfEntry = { style: string; clip: ShowcaseItem; count: number };
+
+/**
+ * Groups clips into one entry per style, in first-seen order. The style's
+ * cover clip represents it; without one, its first portrait clip (cards are
+ * portrait), else its first clip.
+ */
+export function styleShelf(items: readonly ShowcaseItem[]): ShelfEntry[] {
+  const groups = new Map<string, ShowcaseItem[]>();
+  for (const item of items) groups.set(item.style, [...(groups.get(item.style) ?? []), item]);
+  return [...groups].map(([style, clips]) => ({
+    style,
+    clip: clips.find((c) => c.cover) ?? clips.find((c) => c.aspect === "portrait") ?? clips[0],
+    count: clips.length,
+  }));
 }

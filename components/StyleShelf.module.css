@@ -1,0 +1,119 @@
+/*
+ * Homepage style shelf: one 9:16 card per style on the page background.
+ * Posters by default; a muted preview fades in only while a card is hovered
+ * or focused. The row scrolls natively once there are more styles than fit.
+ */
+
+.shelf {
+  margin-top: clamp(32px, 4vw, 56px);
+}
+
+.row {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(172px, 1fr);
+  gap: clamp(12px, 1.4vw, 20px);
+  margin: 0;
+  padding: 0 0 12px;
+  list-style: none;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  scroll-snap-type: x mandatory;
+  scrollbar-width: thin;
+  scrollbar-color: var(--line) transparent;
+}
+
+.card {
+  min-width: 0;
+  scroll-snap-align: start;
+}
+
+.link {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  color: var(--ink);
+  text-decoration: none;
+  border-radius: var(--radius);
+}
+.link:focus-visible {
+  outline: none;
+}
+.link:focus-visible .media {
+  outline: 3px solid var(--purple);
+  outline-offset: 4px;
+}
+
+.media {
+  position: relative;
+  display: block;
+  aspect-ratio: 9 / 16;
+  margin-bottom: 10px;
+  overflow: hidden;
+  border-radius: var(--radius);
+  background: var(--media);
+}
+.poster,
+.video {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.video {
+  opacity: 0;
+  transition: opacity 220ms ease-out;
+}
+.card[data-playing] .video {
+  opacity: 1;
+}
+
+.name {
+  font:
+    600 clamp(17px, 1.35vw, 20px) / 1.25 Archivo,
+    Anuphan,
+    sans-serif;
+  letter-spacing: -0.02em;
+}
+.meta {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.4;
+}
+a.link:hover .name {
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 4px;
+}
+
+.credits {
+  margin: 14px 0 0;
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.6;
+}
+.credits a {
+  color: inherit;
+  text-underline-offset: 3px;
+}
+
+@media (max-width: 719px) {
+  .row {
+    /* Two cards and a peek of the third say "swipe for more"; the row runs
+     * to the screen edge so the peek is not cut off by the page gutter. */
+    grid-auto-columns: 42vw;
+    margin-inline: -20px;
+    padding-inline: 20px;
+    scroll-padding-inline: 20px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .video {
+    display: none;
+  }
+}

@@ -23,179 +23,116 @@ const render = (node: Parameters<typeof renderReactMarkup>[0]) =>
     "",
   );
 
+const fs = require("node:fs") as typeof import("node:fs");
+const path = require("node:path") as typeof import("node:path");
 const { skills } = require("../lib/catalog") as typeof import("../lib/catalog");
-const { coverFor } = require("../lib/media-covers") as typeof import("../lib/media-covers");
+const { publishedShowcase } = require("../lib/showcase") as typeof import("../lib/showcase");
 const hero =
   require("../components/KineticHero") as typeof import("../components/KineticHero");
-const { KineticHero, composeStage, resolveMotion, pointerShift, POSTER_SIZES } =
-  hero;
+const { KineticHero } = hero;
+const { styleShelf } = require("../lib/showcase") as typeof import("../lib/showcase");
+const { SHOWCASE_STYLES } = require("../lib/showcase-allowlist") as typeof import("../lib/showcase-allowlist");
 
+const CLIPS = publishedShowcase("licensed-only");
+const SHELF = styleShelf(CLIPS);
 const noop = () => {};
-const renderHero = (activeSlug = skills[0].slug, children?: string) =>
+const renderHero = (activeSlug = skills[0].slug, children?: string, clips = CLIPS) =>
   render(
     createElement(
       KineticHero,
-      { skills, activeSlug, onSelectSkill: noop },
+      { skills, activeSlug, onSelectSkill: noop, clips },
       children ? createElement("span", { className: "slot" }, children) : null,
     ),
   );
 
+/** The style cards (<li>) of the shelf. */
+const cards = (html: string) =>
+  [...html.matchAll(/<li\b([^>]*)>([\s\S]*?)<\/li>/g)].map(([, attrs, body]) => ({ attrs, body }));
+const cardFor = (html: string, posterSrc: string) => cards(html).find((c) => c.body.includes(`src="${posterSrc}"`));
 
-// ---------------------------------------------------------------- stage data
-
-test("stage uses only real local posters from the catalog, unique slugs", () => {
-  const items = composeStage(skills);
-  assert.ok(items.length >= 3 && items.length <= 4, String(items.length));
-  assert.equal(new Set(items.map((i) => i.slug)).size, items.length);
-  for (const item of items) {
-    const skill = skills.find((s) => s.slug === item.slug);
-    assert.ok(skill, "stage item must be a catalog skill: " + item.slug);
-    assert.equal(item.name, skill.name);
-    assert.ok(
-      coverFor(skill) === item.poster,
-      "poster must belong to that skill's own example",
-    );
-    assert.ok(item.poster.startsWith("/previews/"));
-    assert.ok(!item.poster.includes(".."));
-  }
-});
-
-test("zero-media skills are excluded, never given stand-in art", () => {
-  const items = composeStage(skills);
-  const zeroMedia = skills.filter((s) => !s.examples.some((e) => e.poster));
-  assert.ok(zeroMedia.length >= 1);
-  for (const skill of zeroMedia) {
-    assert.ok(!items.some((i) => i.slug === skill.slug), skill.slug);
-  }
-  assert.deepEqual(composeStage(zeroMedia), []);
-});
-
-test("every selected stage poster has declared intrinsic dimensions", () => {
-  for (const item of composeStage(skills)) {
-    assert.ok(POSTER_SIZES[item.poster], "stage needs known size: " + item.poster);
-  }
-});
-
-test("composition: one dominant landscape plus distinct-shape fragments", () => {
-  const items = composeStage(skills);
-  assert.deepEqual(
-    items.map((i) => i.slot),
-    items.map((_, index) => index),
-  );
-  assert.equal(items[0].shape, "landscape", "slot 0 is the wide dominant work");
-  assert.equal(items[1].shape, "portrait");
-  if (items[2]) assert.equal(items[2].shape, "landscape");
-  if (items[3]) assert.equal(items[3].shape, "portrait");
-});
-
-test("read-only input: frozen catalog is accepted and left untouched", () => {
-  const frozen = Object.freeze(skills.map((s) => Object.freeze({ ...s })));
-  const before = JSON.stringify(frozen);
-  const items = composeStage(frozen);
-  assert.ok(items.length > 0);
-  assert.equal(JSON.stringify(frozen), before);
-  // Stable slugs are passed through, not rewritten.
-  const slugs = new Set(skills.map((s) => s.slug));
-  assert.ok(items.every((i) => slugs.has(i.slug)));
-});
-
-test("tool labels are the catalog's own runtime names", () => {
-  const urban = composeStage(skills).find((i) => i.slug === "low-poly-urban");
-  assert.ok(urban, "low-poly-urban has a real poster");
-  assert.deepEqual(urban.tools, ["Three.js", "HyperFrames"]);
-});
-
-// ------------------------------------------------------------- motion gating
-
-const base = {
-  reducedMotion: false,
-  userPaused: false,
-  onScreen: true,
-  documentHidden: false,
-  finePointer: true,
-};
-
-test("motion runs only when allowed, on screen, visible and not paused", () => {
-  assert.deepEqual(resolveMotion(base), {
-    drift: "running",
-    parallax: true,
-    entrance: true,
-  });
-  assert.equal(resolveMotion({ ...base, userPaused: true }).drift, "paused");
-  assert.equal(resolveMotion({ ...base, onScreen: false }).drift, "paused");
-  assert.equal(resolveMotion({ ...base, documentHidden: true }).drift, "paused");
-  for (const k of ["userPaused", "onScreen", "documentHidden"] as const) {
-    const flipped = { ...base, [k]: !base[k] };
-    assert.equal(resolveMotion(flipped).parallax, false, k);
-  }
-});
-
-test("reduced motion disables entrance, drift and parallax", () => {
-  assert.deepEqual(resolveMotion({ ...base, reducedMotion: true }), {
-    drift: "off",
-    parallax: false,
-    entrance: false,
-  });
-});
-
-test("parallax needs a fine pointer", () => {
-  assert.equal(resolveMotion({ ...base, finePointer: false }).parallax, false);
-  assert.equal(resolveMotion({ ...base, finePointer: false }).drift, "running");
-});
-
-test("pointer shift is bounded to [-1, 1] and safe on empty rects", () => {
-  const rect = { left: 100, top: 50, width: 200, height: 100 };
-  assert.deepEqual(pointerShift(200, 100, rect), { x: 0, y: 0 });
-  assert.deepEqual(pointerShift(300, 150, rect), { x: 1, y: 1 });
-  assert.deepEqual(pointerShift(100, 50, rect), { x: -1, y: -1 });
-  assert.deepEqual(pointerShift(9999, -9999, rect), { x: 1, y: -1 });
-  assert.deepEqual(
-    pointerShift(10, 10, { left: 0, top: 0, width: 0, height: 0 }),
-    { x: 0, y: 0 },
-  );
-});
-
-// ------------------------------------------------------------- SSR semantics
-
-test("SSR hero: one Thai h1, real artwork visible, no media autoplay", () => {
+test("SSR hero: one Thai h1 and one card per style, named by its style", () => {
   const html = renderHero();
   assert.equal((html.match(/<h1\b/g) || []).length, 1);
-  const h1Text = (html.match(/<h1\b[^>]*>([\s\S]*?)<\/h1>/)?.[1] ?? "")
-    .replace(/<[^>]+>/g, "")
-    .trim();
-  assert.match(h1Text, /^[฀-๿]/, "heading is Thai: " + h1Text);
-  for (const item of composeStage(skills)) {
-    const img = html.match(
-      new RegExp(`<img[^>]*src="${item.poster.replace(/[.]/g, "\\.")}"[^>]*>`),
-    );
-    assert.ok(img, "poster rendered in SSR: " + item.poster);
-    assert.match(img[0], /width="\d+"/);
-    assert.match(img[0], /height="\d+"/);
-    assert.doesNotMatch(img[0], /\shidden\b/);
+  const h1Text = (html.match(/<h1\b[^>]*>([\s\S]*?)<\/h1>/)?.[1] ?? "").replace(/<[^>]+>/g, "").trim();
+  assert.match(h1Text, /^[\u0E00-\u0E7F]/, "heading is Thai: " + h1Text);
+  assert.equal(cards(html).length, SHELF.length);
+  for (const entry of SHELF) {
+    const card = cardFor(html, entry.clip.poster.src);
+    assert.ok(card, entry.style);
+    assert.ok(card.body.includes(SHOWCASE_STYLES[entry.style].name), entry.style);
+    assert.match(card.body, new RegExp(`${entry.count} คลิป`), `${entry.style} clip count`);
   }
-  assert.doesNotMatch(html, /<video|<audio|autoplay/i);
-  assert.match(html, /data-drift="running"/);
 });
 
-test("hero buttons name the actual work and reflect the active selection", () => {
-  const html = renderHero("low-poly-urban");
-  const buttons = [
-    ...html.matchAll(/<button([^>]*data-slug="([^"]+)"[^>]*)>/g),
-  ];
-  const items = composeStage(skills);
-  assert.equal(buttons.length, items.length);
-  for (const [, attrs, slug] of buttons) {
-    const item = items.find((i) => i.slug === slug)!;
-    assert.match(attrs, /type="button"/);
-    const label = attrs.match(/aria-label="([^"]+)"/)?.[1] ?? "";
-    assert.ok(label.startsWith(item.name), label);
-    for (const tool of item.tools) assert.ok(label.includes(tool), label);
-    assert.match(
-      attrs,
-      new RegExp(`aria-pressed="${slug === "low-poly-urban"}"`),
-    );
+test("no run of episodes: a series appears once, under its style", () => {
+  const html = renderHero();
+  const zombieCards = cards(html).filter((c) => /zombie-condo/.test(c.body));
+  assert.equal(zombieCards.length, 1);
+});
+
+test("a card goes to its skill page, else to the published post, else nowhere", () => {
+  const html = renderHero();
+  for (const entry of SHELF) {
+    const card = cardFor(html, entry.clip.poster.src)!;
+    const link = card.body.match(/<a\b([^>]*)>/);
+    const skill = SHOWCASE_STYLES[entry.style].skill;
+    if (skill) {
+      assert.ok(link?.[1].includes(`href="/skills/${skill}"`), entry.style);
+      assert.doesNotMatch(link![1], /target=/);
+    } else if (entry.clip.link) {
+      assert.ok(link?.[1].includes(`href="${entry.clip.link.url}"`), entry.style);
+      assert.match(link![1], /target="_blank"/);
+      assert.match(link![1], /rel="noopener noreferrer"/);
+      assert.match(card.body, /เปิดแท็บใหม่/);
+    } else {
+      assert.equal(link, null, entry.style);
+    }
   }
-  assert.match(html, /src="\/tool-icons\/threejs\.svg"/);
+});
+
+test("previews never autoplay or download before someone hovers or focuses", () => {
+  const html = renderHero();
+  const videos = [...html.matchAll(/<video\b[^>]*>/g)].map((m) => m[0]);
+  assert.ok(videos.length > 0);
+  for (const v of videos) {
+    assert.doesNotMatch(v, /\ssrc=|autoplay/i);
+    assert.match(v, /data-src="\/showcase\/[^"]+\/preview\.mp4"/);
+    assert.match(v, /muted=""/);
+    assert.match(v, /playsInline=""|playsinline=""/);
+    assert.match(v, /preload="none"/);
+  }
+  for (const img of [...html.matchAll(/<img\b[^>]*>/g)].map((m) => m[0])) {
+    assert.match(img, /width="\d+"/);
+    assert.match(img, /height="\d+"/);
+  }
+});
+
+test("nothing moves on its own, so there is no pause control", () => {
+  const html = renderHero();
+  assert.doesNotMatch(html, /data-motion-toggle|หยุดภาพเคลื่อนไหว|data-copy/);
+});
+
+test("credit line covers exactly the credits of the cards shown", () => {
+  const html = renderHero();
+  const line = html.match(/<p\b[^>]*>เครดิต:[\s\S]*?<\/p>/)?.[0] ?? "";
+  const shown = SHELF.flatMap((s) => s.clip.credits);
+  for (const c of shown) assert.ok(line.includes(c.text), c.text);
+  if (shown.length === 0) assert.equal(line, "");
+});
+
+test("without approved clips: no shelf, honest copy", () => {
+  const html = renderHero(skills[0].slug, undefined, []);
+  assert.doesNotMatch(html, /<video|<li\b/);
+  assert.match(html, /data-media="none"/);
+});
+
+test("CSS: no enclosing purple panel; reduced motion shows posters only", () => {
+  const heroCss = fs.readFileSync(path.join(__dirname, "../components/KineticHero.module.css"), "utf8");
+  const heroRule = heroCss.match(/(^|\n)\.hero\s*\{([^}]*)\}/)?.[2] ?? "";
+  assert.doesNotMatch(heroRule, /background|border-radius/, "the hero sits on the page background");
+  const shelfCss = fs.readFileSync(path.join(__dirname, "../components/StyleShelf.module.css"), "utf8");
+  const reduced = [...shelfCss.matchAll(/@media \(prefers-reduced-motion: reduce\) \{([\s\S]*?)\n\}/g)].map((m) => m[1]).join("\n");
+  assert.match(reduced, /\.video\s*\{[^}]*display:\s*none/);
 });
 
 test("selected-work cue hands off to the native preview anchor", () => {
@@ -205,21 +142,6 @@ test("selected-work cue hands off to the native preview anchor", () => {
   assert.match(cue[1], /Stickman Cinema/);
   // The hero never owns the anchors it points at.
   assert.doesNotMatch(html, /id="(selected-example|skill-index)"/);
-});
-
-test("pause control is a real toggle with a Thai accessible name", () => {
-  const html = renderHero();
-  const toggles = [
-    ...html.matchAll(/<button([^>]*data-motion-toggle[^>]*)>([\s\S]*?)<\/button>/g),
-  ];
-  assert.equal(toggles.length, 1);
-  const [, attrs, content] = toggles[0];
-  assert.match(attrs, /type="button"/);
-  assert.match(attrs, /aria-pressed="false"/, "unpressed (playing) by default");
-  // Accessible name comes from visible text, which stays constant across
-  // states; aria-pressed carries the state.
-  const name = content.replace(/<[^>]+>/g, "").trim();
-  assert.match(name, /หยุดภาพเคลื่อนไหว/);
 });
 
 test("hero makes no download claims and renders the action slot", () => {
