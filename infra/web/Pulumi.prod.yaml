@@ -5,3 +5,4 @@ config:
   # "vercel" until the cutover; "lightsail" to switch; back to "vercel" to roll back.
   kubcode-web:dnsTarget: vercel
   kubcode-web:adminPublicKey: ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIAeMftuWAZAken17KHCJPAi2coMWq+h5tM0NHEmKZgqr kubcode-web-admin
+encryptedkey: AQICAHg/qnhkdb+lGzfqTWldTMzjWH4VOnlPQ5apDFUq6eejTQEkFWughyiUFA9uHgkEAqbNAAAAfjB8BgkqhkiG9w0BBwagbzBtAgEAMGgGCSqGSIb3DQEHATAeBglghkgBZQMEAS4wEQQMklkk+5pfxwAhmCJgAgEQgDvCn02EfzV+ykaR7/l2o2ROqliR3jOxPIOVr+IZ3IRTA0W3asuUT0RqbdlGcViTIvuhDm/uBgFlHgDoGA==

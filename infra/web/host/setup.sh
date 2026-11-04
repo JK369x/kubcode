@@ -88,7 +88,9 @@ if [ "$NO_SYSTEMD" != 1 ]; then
   systemctl daemon-reload
   systemctl enable kubcode-web.service >/dev/null
   systemctl reload caddy || systemctl restart caddy
-  systemctl reload ssh
+  # Ubuntu 24.04 starts sshd per connection (ssh.socket): new logins read the
+  # new config; reload only if a daemon is running.
+  systemctl try-reload-or-restart ssh.service
   # Start only once there is a release and env; the first deploy restarts it.
   if [ -e /srv/kubcode/current ] && [ -s /etc/kubcode/web.env ]; then systemctl restart kubcode-web.service; fi
 fi

@@ -73,6 +73,9 @@ Run each step from the repo root on the owner's machine with AWS profile `defaul
 - To roll back to the previous release: `webhost.sh rollback`. It **swaps**
   live and previous, so running it twice undoes it. Check `webhost.sh status`
   first, especially after CI has already rolled back on its own.
+- Admin SSH (`webhost.sh ssh`, `provision`, `set-env`, ...) uses a short-lived
+  certificate from the Lightsail API by default, so it needs only the AWS
+  `default` profile. Set `KUBCODE_ADMIN_KEY` to use your own key instead.
 - Rotate the admin SSH key on the box (`~ubuntu/.ssh/authorized_keys`), not in
   `Pulumi.prod.yaml`: the key pair is only used when the instance is created.
 - Rotate the CI deploy key with `webhost.sh deploy-key`.

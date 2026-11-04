@@ -23,17 +23,36 @@ REGION=ap-southeast-1
 export AWS_PROFILE="${AWS_PROFILE:-default}"
 HERE=$(cd "$(dirname "$0")/.." && pwd) # infra/web
 KNOWN_HOSTS="$HERE/.known_hosts"       # git-ignored; host keys change on rebuild
-ADMIN_KEY="${KUBCODE_ADMIN_KEY:-$HOME/.ssh/id_ed25519}"
+# Admin login: by default a short-lived SSH certificate from the Lightsail
+# API (what Lightsail's browser SSH uses), so no passphrase or agent is
+# needed. Set KUBCODE_ADMIN_KEY to use your own key instead (it must be
+# usable without a prompt, e.g. loaded in ssh-agent).
+ADMIN_KEY="${KUBCODE_ADMIN_KEY:-}"
 
 die() { echo "webhost: $*" >&2; exit 1; }
 TMP=""
-trap '[ -z "$TMP" ] || rm -rf "$TMP"' EXIT
+ACCESS=""
+trap '[ -z "$TMP" ] || rm -rf "$TMP"; [ -z "$ACCESS" ] || rm -rf "$ACCESS"' EXIT
 box_ip() {
   aws lightsail get-static-ip --region "$REGION" --static-ip-name "$STATIC_IP" --query 'staticIp.ipAddress' --output text
 }
 admin_ssh() {
+  local id=()
   [ -s "$KNOWN_HOSTS" ] || die "no pinned host keys; run: webhost.sh known-hosts"
-  ssh -i "$ADMIN_KEY" -o IdentitiesOnly=yes -o UserKnownHostsFile="$KNOWN_HOSTS" -o StrictHostKeyChecking=yes "ubuntu@$(box_ip)" "$@"
+  if [ -n "$ADMIN_KEY" ]; then
+    id=(-i "$ADMIN_KEY")
+  else
+    if [ -z "$ACCESS" ]; then
+      ACCESS=$(mktemp -d)
+      (umask 077 && aws lightsail get-instance-access-details --region "$REGION" --instance-name "$INSTANCE" --protocol ssh --output json |
+        python3 -c 'import json, sys
+d = json.load(sys.stdin)["accessDetails"]
+open(sys.argv[1] + "/key", "w").write(d["privateKey"])
+open(sys.argv[1] + "/key-cert.pub", "w").write(d["certKey"] + "\n")' "$ACCESS")
+    fi
+    id=(-i "$ACCESS/key" -o CertificateFile="$ACCESS/key-cert.pub")
+  fi
+  ssh "${id[@]}" -o IdentitiesOnly=yes -o UserKnownHostsFile="$KNOWN_HOSTS" -o StrictHostKeyChecking=yes "ubuntu@$(box_ip)" "$@"
 }
 
 known_hosts() {
