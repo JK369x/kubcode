@@ -1,6 +1,7 @@
 # Design — Settings page + encrypted key store + Connect YouTube/Instagram (scheduler slice 2)
 
-Status: **draft, waiting for orchestrator OK** · 2026-11-04 · inputs: `docs/scheduler.md`,
+Status: **approved by orchestrator 2026-11-04** (A wrap key, callback on kubcode.dev + HMAC,
+boundary Deny), with notes folded into §1, §2 and §7 · 2026-11-04 · inputs: `docs/scheduler.md`,
 `docs/scheduler-prd.md` (orchestrator repo), `infra/README.md`, `HANDOFF.md` §7a/§7b.
 
 ## 0. Findings that change the plan (read first)
@@ -44,8 +45,10 @@ fewer moving parts and no runtime dependency, so **pick A**. Its only real cost 
   row columns, never read from the envelope. This stops anyone copying a ciphertext into another
   user's row or another kind, and stops replaying an older version.
 - `key_slot` maps to an **allowlisted** KMS key ARN in code, so a row cannot point Lambda at another key.
-- The public key PEM is committed (`lib/keys/secrets-wrap-v1.pub.pem`), with a test pinning its
-  SHA-256 fingerprint. Changing it needs review and a deploy.
+- The public key PEM is committed (`lib/keys/secrets-wrap-v1.pub.pem`). A test in `npm test`
+  pins the SHA-256 fingerprint of its SPKI DER, and the Rust crate pins the same value, so a key
+  swapped in the repo fails CI. The fingerprint is taken from `aws kms get-public-key` at creation.
+  Changing it needs review and a deploy.
 - An interop test checks Node `publicEncrypt(oaepHash: sha256)` against KMS `Decrypt` (MGF1-SHA256)
   before anything ships.
 - Plaintext is limited to 4 KiB. Structured secrets are JSON, e.g. `{"client_secret": "…"}`.
@@ -70,13 +73,20 @@ the client secret and the PKCE verifier, and only the Lambda can decrypt those.
    - Google: `access_type=offline&prompt=consent`, `code_challenge_method=S256`, scopes
      `youtube.upload youtube.readonly`, client_id read from the plaintext column.
    - IG: `www.instagram.com/oauth/authorize`, scopes `instagram_business_basic,instagram_business_content_publish`
-     (insights, comments and messages are not requested in phase 1).
+     (insights, comments and messages are not requested in phase 1). **Business Login for
+     Instagram has no PKCE.** IG intents have no verifier. Protection comes from the single-use
+     `state`, the server-side intent bound to the session, and the app secret that only the Lambda
+     can decrypt (without it a stolen code cannot be exchanged).
 2. **Callback** `GET /api/keys/oauth/callback/{provider}` (Vercel). Checks: canonical host,
    state hash lookup, intent open and unexpired, provider matches the path, cookie hash matches,
    session user = intent user, session binding matches. Then it atomically sets
    `phase=exchanging` (single use) and calls the Lambda `POST /oauth/exchange {state, code}`,
-   HMAC-signed with `KUBCODE_CONNECT_HMAC_KEY` (timestamp ±60 s, body hash). The HMAC is not an
-   AWS credential: it only stops anonymous internet traffic from making the Lambda hit the DB.
+   HMAC-signed with `KUBCODE_CONNECT_HMAC_KEY`. The signature covers method, path, timestamp,
+   a random 128-bit nonce and the SHA-256 of the body. The Lambda accepts timestamps within ±5 min
+   and rejects replays by inserting `sha256(nonce)` into `connect_request_nonces` (primary key,
+   rows older than 10 min are pruned). The HMAC is not an AWS credential: it only stops anonymous
+   internet traffic from making the Lambda hit the DB. In the threat model it is a
+   **Vercel-env-level secret** (§7).
    Finally it redirects to a fixed `/account/keys?notice=…` (no open redirect). A provider
    `error=` closes the intent as failed.
 3. **Exchange** (Rust Lambda `kubcode-oauth-connect`). Loads the intent by `hash(state)` in phase
@@ -91,7 +101,9 @@ the client secret and the PKCE verifier, and only the Lambda can decrypt those.
 4. **Disconnect** `POST /api/keys/connections/{id}/disconnect`. Vercel marks the row `revoking`
    and calls the Lambda `/oauth/revoke`. Google: `oauth2.googleapis.com/revoke`. IG has no reliable
    revoke API for this login, so the UI links to Instagram › Apps and websites. The ciphertext is
-   **wiped even if the revoke fails**, and the failure goes to the audit log.
+   **wiped even if the revoke fails or the Lambda is unreachable** (Vercel can delete the row
+   itself after a timeout). Every disconnect writes `oauth_disconnected`, plus
+   `oauth_revoke_failed` with a fixed code when the revoke did not succeed.
 
 ## 3. Token refresh job
 
@@ -115,6 +127,8 @@ passes the destructive gate. Grants and policies are inside the file, as in 0002
   constraint change.
 - `oauth_connections(id, user_id CASCADE, provider CHECK IN ('youtube','instagram'), external_account_id, account_label, scopes text[], app_secret_version int /*detect replaced app creds*/, envelope, key_slot, version, status CHECK IN ('active','needs_reconnect','revoking'), token_expires_at, last_refreshed_at, last_checked_at, last_error_code CHECK ~'^[a-z_]{1,40}$', created_at, updated_at, UNIQUE(user_id, provider, external_account_id))`.
 - `oauth_connect_intents(id, user_id CASCADE, provider, state_hash bytea UNIQUE, cookie_hash, session_binding_hash, verifier_envelope NULL, phase CHECK IN ('await_callback','exchanging','closed'), status CHECK IN ('open','consumed','failed','expired'), created_at, expires_at, closed_at)`. It has a partial unique index allowing one open intent per user, and a CHECK that closed intents have the verifier wiped.
+- `connect_request_nonces(nonce_hash bytea PRIMARY KEY CHECK len=32, created_at)`: HMAC replay
+  guard. Only `kubcode_worker` can use it (INSERT, plus DELETE of rows older than 10 min).
 - `secret_audit_events(id identity, user_id SET NULL, event ~'^[a-z_]{1,40}$', subject text /*kind or provider, no values*/, actor CHECK IN ('user','lambda','operator'), created_at)`.
   Events: `secret_saved|secret_replaced|secret_deleted|oauth_connect_started|oauth_connected|oauth_connect_failed|oauth_disconnected|oauth_revoke_failed|token_refreshed|token_refresh_failed|secret_used`.
 
@@ -182,7 +196,7 @@ roles go through normal CI afterwards. The public key is exported once with
 
 | Attacker has | Can | Cannot |
 |---|---|---|
-| **Vercel env** (DATABASE_URL `kubcode_app`, NEXTAUTH_SECRET, HMAC key, public key) | Forge sessions and act as any user in the UI. Read metadata (kinds, last 4, account labels, audit). Delete or replace secrets. **Inject** attacker-chosen secrets or connect their own accounts (substitution). Call the connect Lambda (it only completes intents). | Decrypt any stored secret or token: no `kms:Decrypt`, no AWS creds, and no SELECT on envelope columns. Read the worker DB URL. Recover past plaintexts. |
+| **Vercel env** (DATABASE_URL `kubcode_app`, NEXTAUTH_SECRET, **HMAC key**, public key) | Forge sessions and act as any user in the UI. Read metadata (kinds, last 4, account labels, audit). Delete or replace secrets. **Inject** attacker-chosen secrets or connect their own accounts (substitution). With the HMAC key: sign Lambda requests, but these only complete or revoke intents and connections that they could already drive through the forged UI. The Lambda returns no secret. Rotate the HMAC key together with the other Vercel env secrets. | Decrypt any stored secret or token: no `kms:Decrypt`, no AWS creds, and no SELECT on envelope columns. Read the worker DB URL. Recover past plaintexts. |
 | **Supabase DB read** (backup or a leaked privileged URL) | Metadata, last-4 hints, ciphertext, state/cookie hashes. With write access: substitution and DoS. | Decrypt envelopes or PKCE verifiers. Move ciphertext across rows (AAD fails). Use hashed state tokens. |
 | **GitHub repo read** | Code, public key, ARNs, infra layout. | Anything secret: nothing secret is in git. |
 | **Push to main** (owner creds, also used by agents) / CI | Ship Lambda code that decrypts and exfiltrates. **This is the trust root.** It leaves a trail (CloudTrail Decrypt, Lambda versions). | Grant itself Decrypt directly (boundary Deny), or change the boundary or GitHub trust. |
