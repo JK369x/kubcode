@@ -36,13 +36,14 @@ export default async function Article({ params }: Props) {
       kind="article"
       slug={a.slug}
       crumbs={crumbs}
-      badge="บทความ"
+      badge={content.categories.find((c) => c.key === a.category)?.th ?? "บทความ"}
       updated={a.updated}
       title={a.title}
       lead={a.description}
       tags={a.tags}
       allTags={content.tags}
       toc={toc}
+      cover={a.cover}
       after={
         <>
           <JsonLd data={articleJsonLd(a)} />

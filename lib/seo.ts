@@ -136,6 +136,11 @@ export function tagIsIndexable(content: Content, tag: string): boolean {
   return pages(content).filter((p) => p.tags.includes(tag)).length >= TAG_INDEX_MIN;
 }
 
+/** Category pages are indexed only once they hold at least this many articles. */
+export function categoryIsIndexable(content: Content, key: string): boolean {
+  return content.articles.filter((a) => a.category === key).length >= TAG_INDEX_MIN;
+}
+
 export type SitemapEntry = { url: string; lastModified?: string };
 
 export function sitemapEntries(content: Content): SitemapEntry[] {
@@ -149,6 +154,9 @@ export function sitemapEntries(content: Content): SitemapEntry[] {
     { url: absoluteUrl("/tools"), lastModified: latest },
     ...pages(content).map((p) => ({ url: absoluteUrl(hrefOf(p)), lastModified: p.updated })),
     ...rawSkills.map((s) => ({ url: absoluteUrl(hrefOf({ kind: "skill", slug: s.slug })) })),
+    ...content.categories
+      .filter((c) => categoryIsIndexable(content, c.key))
+      .map((c) => ({ url: absoluteUrl(`/articles/c/${c.key}`) })),
     ...content.tags
       .filter((t) => tagIsIndexable(content, t.slug))
       .map((t) => ({ url: absoluteUrl(tagHref(t.slug)) })),

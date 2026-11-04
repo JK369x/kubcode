@@ -1,5 +1,8 @@
 import Link from "next/link";
 import { TitleTransition } from "@/components/TitleTransition";
+import Image from "next/image";
+import { Morph } from "./Morph";
+import { coverTransitionName } from "@/lib/view-transition-names";
 import type { CSSProperties, ReactNode } from "react";
 import type { Tag } from "@/lib/content";
 import type { TocItem } from "@/lib/mdx";
@@ -26,6 +29,7 @@ export function ReadingPage({
   children,
   after,
   interactions,
+  cover,
 }: {
   kind: "article" | "tool";
   slug: string;
@@ -44,6 +48,8 @@ export function ReadingPage({
   after?: ReactNode;
   /** Stars + comments in the right rail (tool and skill pages). */
   interactions?: InteractionTarget;
+  /** Article cover shown as the hero image under the header. */
+  cover?: { src: string; alt: string; width: number; height: number };
 }) {
   const date = new Date(`${updated}T00:00:00Z`).toLocaleDateString("th-TH", {
     day: "numeric",
@@ -98,6 +104,13 @@ export function ReadingPage({
               <FontSizeControl />
             </div>
           </header>
+          {cover && (
+            <Morph name={coverTransitionName(slug)}>
+              <figure className="reading-hero">
+                <Image src={cover.src} alt={cover.alt} fill priority sizes="(min-width: 1180px) 760px, 100vw" />
+              </figure>
+            </Morph>
+          )}
           <div className="reading-col">
             {toc.length > 1 && (
               <details className="toc-mobile">

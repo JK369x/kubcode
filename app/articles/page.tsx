@@ -1,30 +1,14 @@
-import Link from "next/link";
-import { TitleTransition } from "@/components/TitleTransition";
-import { ArrowUpRight } from "lucide-react";
+import type { Metadata } from "next";
+import { ArticleIndex } from "@/components/ArticleIndex";
 import { getContent } from "@/lib/content";
+import { metadataFor } from "@/lib/seo";
+
+export const metadata: Metadata = metadataFor({
+  title: "บทความ — อ่านก่อนลงมือทำคลิป",
+  description: "บทความสอนทำคลิปด้วย AI เลือกเครื่องมือ เบื้องหลังคลิป และเรื่องสิทธิ์ที่ต้องรู้ แยกตามหมวด",
+  path: "/articles",
+});
+
 export default function Articles() {
-  const { articles } = getContent();
-  return (
-    <main id="main" className="reading-index">
-      <h1>อ่านก่อนลงมือ</h1>
-      <p className="lead">
-        บันทึกวิธีคิดจากงานจริง แยกเครื่องมือ ข้อกำหนด และสิทธิ์ให้ชัด
-      </p>
-      {articles.map((a) => (
-        <Link className="article-row" key={a.slug} href={"/articles/" + a.slug} transitionTypes={["nav-forward"]}>
-          <div>
-            <TitleTransition kind="article" slug={a.slug}>
-              <h2>{a.title}</h2>
-            </TitleTransition>
-            <p>{a.description}</p>
-          </div>
-          <ArrowUpRight />
-        </Link>
-      ))}
-      <p className="source-note">
-        เขียนด้วยคำของเราเอง และให้เครดิตต้นทางท้ายทุกบทความ
-        ไม่ใช่การรับรองชุดเครื่องมือภายนอก
-      </p>
-    </main>
-  );
+  return <ArticleIndex content={getContent()} />;
 }
