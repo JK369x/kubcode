@@ -45,9 +45,10 @@ const renderHero = (activeSlug = skills[0].slug, children?: string, clips = CLIP
     ),
   );
 
-/** The style cards (<li>) of the shelf. */
-const cards = (html: string) =>
+/** The style cards (<li>) of the shelf; loop copies carry data-copy. */
+const allItems = (html: string) =>
   [...html.matchAll(/<li\b([^>]*)>([\s\S]*?)<\/li>/g)].map(([, attrs, body]) => ({ attrs, body }));
+const cards = (html: string) => allItems(html).filter((i) => !/data-copy/.test(i.attrs));
 const cardFor = (html: string, posterSrc: string) => cards(html).find((c) => c.body.includes(`src="${posterSrc}"`));
 
 test("SSR hero: one Thai h1 and one card per style, named by its style", () => {
@@ -107,9 +108,24 @@ test("previews never autoplay or download before someone hovers or focuses", () 
   }
 });
 
-test("nothing moves on its own, so there is no pause control", () => {
+test("the row loops: copies are hidden from assistive tech and keyboard", () => {
   const html = renderHero();
-  assert.doesNotMatch(html, /data-motion-toggle|หยุดภาพเคลื่อนไหว|data-copy/);
+  const copies = allItems(html).filter((i) => /data-copy/.test(i.attrs));
+  assert.ok(copies.length >= SHELF.length, "the loop has a second half");
+  for (const copy of copies) {
+    assert.match(copy.attrs, /aria-hidden="true"/);
+    assert.match(copy.attrs, /inert=""/);
+  }
+});
+
+test("a pause control stops the slide; it is a real toggle with a Thai name", () => {
+  const html = renderHero();
+  const toggles = [...html.matchAll(/<button([^>]*data-motion-toggle[^>]*)>([\s\S]*?)<\/button>/g)];
+  assert.equal(toggles.length, 1);
+  const [, attrs, content] = toggles[0];
+  assert.match(attrs, /type="button"/);
+  assert.match(attrs, /aria-pressed="false"/);
+  assert.match(content.replace(/<[^>]+>/g, "").trim(), /หยุดเลื่อน/);
 });
 
 test("credit line covers exactly the credits of the cards shown", () => {
@@ -120,9 +136,9 @@ test("credit line covers exactly the credits of the cards shown", () => {
   if (shown.length === 0) assert.equal(line, "");
 });
 
-test("without approved clips: no shelf, honest copy", () => {
+test("without approved clips: no shelf, no motion control, honest copy", () => {
   const html = renderHero(skills[0].slug, undefined, []);
-  assert.doesNotMatch(html, /<video|<li\b/);
+  assert.doesNotMatch(html, /<video|<li\b|data-motion-toggle/);
   assert.match(html, /data-media="none"/);
 });
 
@@ -133,6 +149,11 @@ test("CSS: no enclosing purple panel; reduced motion shows posters only", () => 
   const shelfCss = fs.readFileSync(path.join(__dirname, "../components/StyleShelf.module.css"), "utf8");
   const reduced = [...shelfCss.matchAll(/@media \(prefers-reduced-motion: reduce\) \{([\s\S]*?)\n\}/g)].map((m) => m[1]).join("\n");
   assert.match(reduced, /\.video\s*\{[^}]*display:\s*none/);
+  assert.match(reduced, /\.track\s*\{[^}]*animation:\s*none/, "no sliding with reduced motion");
+  assert.match(reduced, /\[data-copy\]\s*\{[^}]*display:\s*none/, "no duplicate cards when static");
+  assert.match(reduced, /overflow-x:\s*auto/, "the static row can still be scrolled");
+  assert.match(shelfCss, /\.viewport:hover \.track,\s*\.viewport:focus-within \.track/, "hover and focus pause the slide");
+  assert.match(shelfCss, /\[data-paused\] \.track/, "the pause button stops the slide");
 });
 
 test("selected-work cue hands off to the native preview anchor", () => {

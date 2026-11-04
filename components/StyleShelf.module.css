@@ -1,31 +1,47 @@
 /*
- * Homepage style shelf: one 9:16 card per style on the page background.
- * Posters by default; a muted preview fades in only while a card is hovered
- * or focused. The row scrolls natively once there are more styles than fit.
+ * Homepage style shelf: one 9:16 card per style, running edge to edge and
+ * sliding slowly in a seamless loop. Hover, focus and the pause button stop
+ * it; a muted preview fades in only while a card is hovered or focused.
+ * Reduced motion: no slide, no copies, a static row that scrolls natively.
  */
 
 .shelf {
+  --card-w: clamp(180px, 15vw, 232px);
+  --gap: clamp(12px, 1.4vw, 20px);
   margin-top: clamp(32px, 4vw, 56px);
 }
 
-.row {
-  display: grid;
-  grid-auto-flow: column;
-  grid-auto-columns: minmax(172px, 1fr);
-  gap: clamp(12px, 1.4vw, 20px);
+/* Breaks out of the page gutters to the full window width. */
+.viewport {
+  margin-inline: calc(50% - 50vw);
+  overflow: hidden;
+}
+
+.track {
+  display: flex;
+  gap: var(--gap);
+  width: max-content;
   margin: 0;
-  padding: 0 0 12px;
+  padding: 0;
   list-style: none;
-  overflow-x: auto;
-  overscroll-behavior-x: contain;
-  scroll-snap-type: x mandatory;
-  scrollbar-width: thin;
-  scrollbar-color: var(--line) transparent;
+  animation: slide var(--slide-duration, 100s) linear infinite;
+}
+/* The track is two equal halves; moving by one half (plus half a gap, so
+ * the spacing at the seam matches) loops without a jump. */
+@keyframes slide {
+  to {
+    transform: translateX(calc(-50% - var(--gap) / 2));
+  }
+}
+.viewport:hover .track,
+.viewport:focus-within .track,
+.shelf[data-paused] .track {
+  animation-play-state: paused;
 }
 
 .card {
+  flex: 0 0 var(--card-w);
   min-width: 0;
-  scroll-snap-align: start;
 }
 
 .link {
@@ -41,7 +57,7 @@
 }
 .link:focus-visible .media {
   outline: 3px solid var(--purple);
-  outline-offset: 4px;
+  outline-offset: -3px;
 }
 
 .media {
@@ -90,8 +106,15 @@ a.link:hover .name {
   text-underline-offset: 4px;
 }
 
+.footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-top: 14px;
+}
 .credits {
-  margin: 14px 0 0;
+  margin: 0;
   color: var(--muted);
   font-size: 13px;
   line-height: 1.6;
@@ -100,20 +123,59 @@ a.link:hover .name {
   color: inherit;
   text-underline-offset: 3px;
 }
+.toggle {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  padding: 0 16px 0 13px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--ink);
+  font-size: 14px;
+}
+.toggle[aria-pressed="true"] {
+  background: var(--selected);
+  border-color: var(--selected);
+  color: var(--selected-ink);
+}
+.toggle:focus-visible {
+  outline: 3px solid var(--purple);
+  outline-offset: 3px;
+}
 
 @media (max-width: 719px) {
-  .row {
-    /* Two cards and a peek of the third say "swipe for more"; the row runs
-     * to the screen edge so the peek is not cut off by the page gutter. */
-    grid-auto-columns: 42vw;
-    margin-inline: -20px;
-    padding-inline: 20px;
-    scroll-padding-inline: 20px;
+  .shelf {
+    --card-w: 42vw;
+  }
+  .footer {
+    flex-direction: column;
+    align-items: flex-start;
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
+  .track {
+    animation: none;
+    padding-inline: 20px;
+  }
+  .card[data-copy] {
+    display: none;
+  }
+  .viewport {
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    scroll-padding-inline: 20px;
+  }
+  .card {
+    scroll-snap-align: start;
+  }
   .video {
+    display: none;
+  }
+  .toggle {
     display: none;
   }
 }

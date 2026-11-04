@@ -238,7 +238,7 @@ Covers may crop; native playback preserves the complete frame. Two local covers 
 
 Hero work is a style shelf: one 9:16 card per style (`lib/showcase-allowlist.ts` `style` + `cover`), titled by the style with its clip count below the media, never over it. Catalog scrims protect text; tiny top badge backdrops are bounded. No GPU shader is mounted.
 
-Nothing in the hero moves on its own: a muted preview plays only while a card is hovered or focused (never on touch, reduced motion or Save-Data), so there is no pause control. No JavaScript frame loop drives ambient animation. Native scrolling and video controls remain intact.
+The style shelf runs edge to edge and slides slowly in a seamless loop (owner, 2026-11-04); hover, focus and the "หยุดเลื่อน" toggle pause it, and reduced motion shows a static scrollable row. A muted preview plays only while a card is hovered or focused (never on touch, reduced motion or Save-Data). No JavaScript frame loop drives ambient animation. Native scrolling and video controls remain intact.
 
 ## Shapes
 

@@ -300,7 +300,7 @@ test("hero shows the approved clips as one card per style", () => {
   );
   assert.match(html, /ดูงานจริง/);
   assert.match(html, /aria-label="ตัวอย่างคลิป สไตล์ละหนึ่งคลิป"/);
-  assert.doesNotMatch(html, /data-motion-toggle/);
+  assert.match(html, /data-motion-toggle/);
   assert.doesNotMatch(html, /data-media="none"|รอยืนยันสิทธิ์/);
 });
 
