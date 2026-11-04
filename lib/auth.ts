@@ -38,6 +38,7 @@ import {
   sessionClaims,
 } from "./accounts/session";
 import { getAccountStore, type LoginProfile } from "./accounts/store";
+import { safeAvatarUrl } from "./avatar";
 
 // Logs only the library's fixed code; metadata (errors, request bodies,
 // profiles, tokens) is dropped on purpose.
@@ -93,6 +94,14 @@ function loginProfile(account: unknown, profile: unknown): LoginProfile | null {
   return { provider: token.provider, subject: token.sub, displayName, email };
 }
 
+// Google and LINE ID tokens carry `picture`; LINE's profile API calls it
+// `pictureUrl`. Only allowlisted provider image URLs survive.
+function profilePicture(profile: unknown): string | null {
+  if (!profile || typeof profile !== "object") return null;
+  const p = profile as { picture?: unknown; pictureUrl?: unknown };
+  return safeAvatarUrl(p.picture) ?? safeAvatarUrl(p.pictureUrl);
+}
+
 const SETTINGS_URL = `${CANONICAL_ORIGIN}/account/settings`;
 
 // Central accounts (feature ON). Every decision fails closed: an outage or an
@@ -125,7 +134,8 @@ function accountCallbacks(accounts: AccountsRuntime): NextAuthOptions["callbacks
       try {
         const result = await store.resolveLogin(proof);
         if (result.status !== "ok") return false;
-        ctx.login = { ...proof, userId: result.userId, sessionVersion: result.sessionVersion };
+        // The picture rides in the encrypted session only; the store never sees it.
+        ctx.login = { ...proof, userId: result.userId, sessionVersion: result.sessionVersion, picture: profilePicture(profile) };
         return true;
       } catch (error) {
         logDbFailure("LOGIN", error);
@@ -143,6 +153,7 @@ function accountCallbacks(accounts: AccountsRuntime): NextAuthOptions["callbacks
           subject: login.subject,
           name: login.displayName,
           email: login.email,
+          picture: login.picture,
         }) as unknown as JWT;
       }
       // Session read: the client-supplied `session` update payload is ignored.
