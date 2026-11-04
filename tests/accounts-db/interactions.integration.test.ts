@@ -58,6 +58,20 @@ test("stars toggle on and off per user and the public count follows", async () =
   assert.equal((await store.pageState(TOOL, b)).starred, true);
 });
 
+test("star counts group by page within one kind, for the tool index", async () => {
+  const a = await member();
+  const b = await member();
+  const FFMPEG = { kind: "tool", slug: "ffmpeg" } as const;
+  const before = await store.starCounts("tool");
+  await store.toggleStar(a, FFMPEG);
+  await store.toggleStar(b, FFMPEG);
+  await store.toggleStar(a, SKILL);
+  const counts = await store.starCounts("tool");
+  assert.equal(counts.ffmpeg, (before.ffmpeg ?? 0) + 2);
+  assert.equal(counts["freshstack-what-if"], undefined, "skill stars are not tool stars");
+  assert.equal((await store.starCounts("skill"))["freshstack-what-if"] >= 1, true);
+});
+
 test("a stale or foreign session cannot write", async () => {
   const a = await member();
   const stale = { ...a, sv: a.sv + 1 };

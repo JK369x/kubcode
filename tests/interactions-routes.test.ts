@@ -11,6 +11,7 @@ import {
   handlePageState,
   handlePublicName,
   handleStar,
+  handleStarCounts,
   type InteractionDeps,
 } from "../lib/interactions/routes";
 
@@ -209,4 +210,22 @@ test("page state passes a validated cursor and clamps the page size", async () =
   await handlePageState(url("&limit=5"), deps(store as never));
   assert.deepEqual(seen, { before: null, limit: 5 });
   await expectError(await handlePageState(url("&before=nope"), deps(untouchable)), 400, "BAD_REQUEST");
+});
+
+test("star counts for the tool index: public, read without a session, unknown slugs dropped", async () => {
+  const read = (q: string) => new Request(`https://kubcode.dev/api/interactions/star-counts${q}`, { headers: { host: "kubcode.dev" } });
+  const off = await handleStarCounts(read("?kind=tool"), deps(untouchable, AUTH_ENV));
+  assert.equal(off.status, 200);
+  assert.deepEqual(await off.json(), { available: false });
+  assert.deepEqual(await (await handleStarCounts(read("?kind=tool"), deps(untouchable, ACCOUNTS_ONLY_ENV))).json(), { available: false });
+  await expectError(await handleStarCounts(read("?kind=article"), deps(untouchable)), 400, "BAD_REQUEST");
+  let asked: unknown;
+  const res = await handleStarCounts(
+    read("?kind=tool"),
+    deps({ starCounts: async (kind) => ((asked = kind), { remotion: 4, "gone-tool": 9 }) }),
+  );
+  assert.equal(res.status, 200);
+  assert.equal(res.headers.get("cache-control"), "no-store");
+  assert.equal(asked, "tool");
+  assert.deepEqual(await res.json(), { available: true, stars: { remotion: 4 } });
 });
