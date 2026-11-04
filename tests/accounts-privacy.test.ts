@@ -101,3 +101,12 @@ test("privacy: stars, comments and the public comment name are disclosed", () =>
   assert.match(privacyHtml(), /href="\/account\/settings"/);
   assert.match(text, /รายงาน/);
 });
+
+test("privacy: the provider picture is shown only to the signed-in member and is not stored", () => {
+  const text = privacyText();
+  assert.match(text, /รูปโปรไฟล์/);
+  assert.match(text, /แสดงที่ส่วนหัวของเว็บ/);
+  assert.match(text, /เฉพาะคุณ/);
+  assert.match(text, /ไม่เก็บในฐานข้อมูล/);
+  assert.match(text, /ไม่แสดงอีเมลหรือรูปโปรไฟล์/, "comments still never show the picture");
+});

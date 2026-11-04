@@ -234,7 +234,7 @@ try {
     check("article link", { href });
   }
   await page
-    .getByRole("link", { name: "พื้นที่สมาชิก", exact: false })
+    .getByRole("link", { name: "เข้าสู่ระบบ", exact: true })
     .first()
     .click();
   await page.waitForURL("**/account");

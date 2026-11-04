@@ -71,7 +71,7 @@ async function main() {
 
     const accounts = createPgAccountStore(db.pool);
     let n = 0;
-    async function member(opts: { owner?: boolean; ageHours?: number } = {}) {
+    async function member(opts: { owner?: boolean; ageHours?: number; picture?: string } = {}) {
       const profile = { provider: "google" as const, subject: `g-app-${++n}`, displayName: `App Member ${n}`, email: `app${n}@example.test` };
       const r = await accounts.resolveLogin(profile);
       assert.equal(r.status, "ok");
@@ -80,7 +80,7 @@ async function main() {
         "UPDATE kubcode_accounts.users SET created_at = now() - make_interval(hours => $2), is_owner = $3 WHERE id = $1",
         [r.userId, opts.ageHours ?? 48, opts.owner ?? false],
       );
-      const token = accountToken({ userId: r.userId, sessionVersion: r.sessionVersion, provider: "google", subject: profile.subject, name: profile.displayName, email: profile.email });
+      const token = accountToken({ userId: r.userId, sessionVersion: r.sessionVersion, provider: "google", subject: profile.subject, name: profile.displayName, email: profile.email, picture: opts.picture });
       return `${SESSION_COOKIE_NAME}=${await encode({ token: token as never, secret: FIXTURE.NEXTAUTH_SECRET })}`;
     }
     const [a, b, owner, fresh] = [await member(), await member(), await member({ owner: true }), await member({ ageHours: 1 })];
@@ -296,6 +296,113 @@ async function main() {
       await browser.close();
     }
     step("browser UI (desktop rail and mobile sheet, light + dark): star, 20-thread pages + แสดงเพิ่ม, panel scrolls without moving the page, comment, delete, unstar");
+
+    // Header account control: avatar from the provider host (served locally
+    // here), initial fallback, signed-out pill, and the menu's keyboard and
+    // pointer behaviour.
+    const PIC = "https://lh3.googleusercontent.com/a/fixture-avatar=s96-c";
+    const withPic = await member({ picture: PIC });
+    const noPic = await member();
+    const png = Buffer.from(
+      "iVBORw0KGgoAAAANSUhEUgAAAAIAAAACCAIAAAD91JpzAAAAFklEQVR4nGP8z8DAwMDAxMDAwMAAABjfAgQfr0nMAAAAAElFTkSuQmCC",
+      "base64",
+    );
+    const navBrowser = await chromium.launch({
+      headless: true,
+      channel: "chrome",
+      args: [`--host-resolver-rules=MAP kubcode-ui.test 127.0.0.1:${port}`],
+    });
+    try {
+      const open = async (cookie: string, run: { width: number; theme: string }) => {
+        const page = await navBrowser.newPage({ viewport: { width: run.width, height: 760 } });
+        await page.addInitScript((t) => {
+          try {
+            localStorage.setItem("jk-theme", t);
+          } catch {}
+        }, run.theme);
+        const imageRequests: Array<string | undefined> = [];
+        await page.route("https://lh3.googleusercontent.com/**", async (route) => {
+          imageRequests.push(route.request().headers()["referer"]);
+          await route.fulfill({ status: 200, contentType: "image/png", body: png });
+        });
+        await page.route("http://kubcode-ui.test/**", async (route) => {
+          const { pathname, search } = new URL(route.request().url());
+          const response = await route.fetch({
+            url: `http://127.0.0.1:${port}${pathname}${search}`,
+            headers: {
+              ...route.request().headers(),
+              host: "kubcode.dev",
+              origin: "https://kubcode.dev",
+              "x-forwarded-proto": "https",
+              cookie: cookie,
+            },
+            maxRedirects: 0,
+          });
+          await route.fulfill({ response });
+        });
+        await page.goto("http://kubcode-ui.test/articles");
+        return { page, imageRequests, nav: page.getByRole("navigation", { name: "หลัก" }) };
+      };
+
+      // Signed out: a เข้าสู่ระบบ pill, no member link.
+      {
+        const { page, nav } = await open("", { width: 1280, theme: "dark" });
+        await nav.getByRole("link", { name: "เข้าสู่ระบบ", exact: true }).waitFor();
+        assert.equal(await nav.getByRole("link", { name: "เข้าสู่ระบบ" }).getAttribute("href"), "/account");
+        assert.equal(await nav.getByText("พื้นที่สมาชิก").count(), 0);
+        await page.screenshot({ path: ".qa/nav-signed-out-1280-dark.png", clip: { x: 0, y: 0, width: 1280, height: 110 } });
+        await page.close();
+      }
+      // No picture: the initial on purple.
+      {
+        const { page, nav } = await open(noPic, { width: 1280, theme: "light" });
+        const btn = nav.getByRole("button", { name: /^บัญชีของ App Member/ });
+        await btn.waitFor();
+        assert.equal(await btn.locator("img").count(), 0);
+        assert.equal((await btn.innerText()).trim(), "A");
+        await page.close();
+      }
+      for (const run of [
+        { width: 1280, theme: "dark" },
+        { width: 1280, theme: "light" },
+        { width: 390, theme: "dark" },
+        { width: 390, theme: "light" },
+      ]) {
+        const label = `${run.width}-${run.theme}`;
+        const { page, nav, imageRequests } = await open(withPic, run);
+        const btn = nav.getByRole("button", { name: /^บัญชีของ App Member/ });
+        await btn.waitFor();
+        await btn.locator("img").waitFor();
+        await page.waitForFunction(() => (document.querySelector("nav img") as HTMLImageElement | null)?.complete === true);
+        assert.equal(await btn.locator("img").evaluate((i: HTMLImageElement) => i.naturalWidth > 0), true, `${label}: avatar loaded`);
+        assert.ok(imageRequests.length > 0 && imageRequests.every((r) => r === undefined), `${label}: no Referer to the image host`);
+        assert.equal(await btn.getAttribute("aria-expanded"), "false");
+
+        await btn.click();
+        assert.equal(await btn.getAttribute("aria-expanded"), "true");
+        const panel = page.locator(`#${(await btn.getAttribute("aria-controls"))!.replace(/:/g, "\\:")}`);
+        await panel.getByText(/App Member/).waitFor();
+        const box = await panel.boundingBox();
+        assert.ok(box && box.x >= 0 && box.x + box.width <= run.width, `${label}: menu stays on screen`);
+        await page.screenshot({ path: `.qa/nav-menu-${label}.png`, clip: { x: 0, y: 0, width: run.width, height: 260 } });
+
+        await page.keyboard.press("Escape");
+        assert.equal(await btn.getAttribute("aria-expanded"), "false");
+        assert.equal(await btn.evaluate((b) => b === document.activeElement), true, `${label}: Esc returns focus`);
+
+        await page.keyboard.press("Enter");
+        assert.equal(await btn.getAttribute("aria-expanded"), "true", `${label}: keyboard opens`);
+        await page.keyboard.press("Tab");
+        assert.equal(await page.evaluate(() => document.activeElement?.textContent), "ตั้งค่าบัญชี", `${label}: Tab enters the menu`);
+        await page.mouse.click(run.width / 2, 600);
+        assert.equal(await btn.getAttribute("aria-expanded"), "false", `${label}: outside click closes`);
+        assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth), false, `${label}: no horizontal scroll`);
+        await page.close();
+      }
+    } finally {
+      await navBrowser.close();
+    }
+    step("header: signed-out pill; avatar from provider host with no Referer; initial fallback; menu opens by click/Enter, Tab enters, Esc returns focus, outside click closes (desktop + mobile, light + dark)");
 
     writeFileSync(".qa/interactions-actual-app.json", JSON.stringify({ status: "passed", fictionalMembers: true, steps }, null, 2));
     console.log(`PASS interactions actual app (${steps.length} steps)\n- ${steps.join("\n- ")}`);
