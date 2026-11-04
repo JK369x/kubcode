@@ -14,6 +14,19 @@ on:
   push:
     branches:
       - main
+    # Infra/docs-only changes skip Vercel (and its upload quota) entirely; no
+    # check is required on main, so a skipped run leaves nothing pending.
+    # infra/ has its own Infra workflow. docs/covers* still triggers because
+    # tests/cover-brief.test.ts reads it. Later patterns override earlier ones.
+    paths:
+      - "**"
+      - ".github/**"
+      - "!infra/**"
+      - "!.github/workflows/infra.yml"
+      - "!docs/**"
+      - "docs/covers.md"
+      - "docs/covers/**"
+      - "!*.md"
   workflow_dispatch:
     inputs:
       approval:
