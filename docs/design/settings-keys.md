@@ -226,6 +226,12 @@ the PR branch, then merge; the CI run on main is then a no-op. Exact commands: `
 "Settings keys wrap key". Afterwards `npm run keys:wrap-key -- export` writes
 `lib/keys/secrets-wrap-v1.pub.pem` and prints the SPKI SHA-256 fingerprint; a follow-up commit
 sets `CURRENT_WRAP_KEY` and pins that fingerprint in a TS test and in the Rust crate.
+
+**Applied 2026-11-05** (admin `pulumi up` from `fd9ff2a`: 3 created, 3 updated). Key
+`arn:aws:kms:ap-southeast-1:955758449820:key/39320743-1ef2-4627-b212-df76db143dc3`, SPKI SHA-256
+`3e1ff570c6db6682616c623cffbcfd84a572291462d4b564f30efd65d9268ac5`, pinned in
+`tests/wrap-key.test.ts` and `services/crates/kubcode-envelope/src/keys.rs` (slot 1 → that ARN, the
+only allowlisted slot). `interop --expect-denied` passed: the admin cannot Decrypt.
 `npm run keys:wrap-key -- interop --expect-denied` proves the admin cannot Decrypt; the same
 command without the flag, run with a step-5 Lambda role, is the Node ↔ KMS interop check.
 
@@ -274,7 +280,8 @@ Every write uses the existing CSRF/Origin guards.
   `canUseKeys`.
 - The page 404s when the flag is off or the member is not allowed, redirects signed-out visitors to
   `/account`, and is `noindex`.
-- `lib/keys/wrap-key.ts` holds `CURRENT_WRAP_KEY = null` until step 4. While null, saving answers
+- `lib/keys/wrap-key.ts` held `CURRENT_WRAP_KEY = null` until step 4 (set to wrap key v1 on
+  2026-11-05). With no key, saving answers
   `NOT_READY` (after the member check, so only an allowed member learns it), and the page disables
   the save buttons. Reading and deleting work.
 - Connect/disconnect buttons render disabled with "เร็วๆ นี้" until step 5.

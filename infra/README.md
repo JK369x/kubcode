@@ -267,6 +267,9 @@ The admin sets them with the CLI at step 5 instead.
    SHA-256 fingerprint. Commit the PEM on the PR branch (the public key is not
    a secret) and post the fingerprint on the PR; the follow-up commit sets
    `CURRENT_WRAP_KEY` and pins the fingerprint in the TS test and the Rust crate.
+   **Done 2026-11-05:** key `39320743-1ef2-4627-b212-df76db143dc3`, SPKI SHA-256
+   `3e1ff570c6db6682616c623cffbcfd84a572291462d4b564f30efd65d9268ac5`
+   (pinned in `tests/wrap-key.test.ts` and `kubcode-envelope/src/keys.rs`).
 3. **Merge** the PR (after #23). The CI run on main should be a no-op.
 4. **At step 5**, once the Lambdas exist (run this block in `bash`; it uses `read -s`):
    ```bash
