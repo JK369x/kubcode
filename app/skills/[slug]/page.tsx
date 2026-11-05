@@ -110,7 +110,10 @@ export default async function Detail({
                     : "ต้นแบบเว็บนี้ไม่ได้แนบ source kit และไม่ได้ยืนยันการติดตั้งหรือ render จาก clean clone"}{" "}
                   ใช้ metadata เพื่อช่วยเลือก ไม่ใช่คำสั่งผลิตงานที่ผ่านการรับรอง
                 </p>
-                <p>{PUBLICATION_NOTICE}</p>
+                <p>
+                  {PUBLICATION_NOTICE}
+                  {approvedPackageFor(s.slug) ? "" : " · ยังไม่มีชุดดาวน์โหลด"}
+                </p>
                 <small className="rights-code">{PREVIEW_NOTICE}</small>
               </details>
             </div>
