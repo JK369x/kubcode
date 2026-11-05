@@ -231,7 +231,10 @@ function Card({
           />
         )}
         <ToolIcons tools={tools} />
-        {style.detail && <p className={styles.detail}>{style.detail}</p>}
+        <div className={styles.overlay}>
+          {style.detail && <p className={styles.detail}>{style.detail}</p>}
+          <CardActions entry={entry} signedIn={signedIn} available={available} />
+        </div>
       </div>
       <p className={styles.name}>{style.name}</p>
       <p className={styles.meta}>
@@ -239,7 +242,6 @@ function Card({
         <br />
         {count} คลิป
       </p>
-      <CardActions entry={entry} signedIn={signedIn} available={available} />
     </li>
   );
 }
