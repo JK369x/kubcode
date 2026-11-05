@@ -42,8 +42,9 @@ const ACCOUNT_TABLES = [
   "star_toggles",
   "page_comments",
   "comment_reports",
+  "download_events",
 ];
-const ALL_VERSIONS = ["0001_accounts", "0002_interactions"];
+const ALL_VERSIONS = ["0001_accounts", "0002_interactions", "0003_downloads"];
 
 // Refuses anything that is not clearly a local test database BEFORE any
 // connection is attempted.
@@ -281,12 +282,12 @@ test("account data lives only in kubcode_accounts: no public objects, RLS on, po
   assert.deepEqual(rls.rows.map((r) => r.relname), [...ACCOUNT_TABLES].sort());
   assert.ok(rls.rows.every((r) => r.relrowsecurity), "RLS enabled on every account table");
   // 0001 tables have no policy here (their server policy is an operator step);
-  // 0002 grants its own tables to the runtime role only, never to API roles.
+  // 0002 and 0003 grant their own tables to the runtime role only, never to API roles.
   const policies = await raw.query<{ tablename: string; policyname: string; roles: string[] }>(
     "SELECT tablename, policyname, roles::text[] AS roles FROM pg_policies WHERE schemaname = 'kubcode_accounts'",
   );
   for (const p of policies.rows) {
-    assert.ok(["page_stars", "star_toggles", "page_comments", "comment_reports"].includes(p.tablename), p.tablename);
+    assert.ok(["page_stars", "star_toggles", "page_comments", "comment_reports", "download_events"].includes(p.tablename), p.tablename);
     assert.equal(p.policyname, "kubcode_server_access");
     assert.deepEqual(p.roles, ["kubcode_app"]);
   }
