@@ -3,6 +3,7 @@ import { useEffect, useState, type CSSProperties, type FocusEvent, type PointerE
 import { ArrowUpRight, LockKeyhole, Pause, Play } from "lucide-react";
 import { styleShelf, type ShelfEntry, type ShowcaseItem, type StyleTool } from "@/lib/showcase";
 import { ToolLogo } from "./ToolLogo";
+import { playPreview as play, stopPreview as stop } from "./hoverPreview";
 import { SHOWCASE_STYLES, type ShowcaseCredit } from "@/lib/showcase-allowlist";
 import styles from "./StyleShelf.module.css";
 
@@ -25,25 +26,6 @@ export function creditsOf(items: readonly ShowcaseItem[]): ShowcaseCredit[] {
   const seen = new Map<string, ShowcaseCredit>();
   for (const item of items) for (const c of item.credits) if (!seen.has(c.text)) seen.set(c.text, c);
   return [...seen.values()];
-}
-
-// Previews play only while someone points at or focuses a card: nothing
-// moves on its own, and nothing downloads until then.
-function play(card: HTMLElement) {
-  const video = card.querySelector<HTMLVideoElement>("video[data-src]");
-  if (!video) return;
-  if (window.matchMedia?.("(prefers-reduced-motion: reduce)").matches) return;
-  if ((navigator as Navigator & { connection?: { saveData?: boolean } }).connection?.saveData) return;
-  if (!video.getAttribute("src")) video.src = video.dataset.src!;
-  card.dataset.playing = "";
-  video.play().catch(() => delete card.dataset.playing);
-}
-function stop(card: HTMLElement) {
-  const video = card.querySelector<HTMLVideoElement>("video");
-  delete card.dataset.playing;
-  if (!video) return;
-  video.pause();
-  if (video.readyState > 0) video.currentTime = 0;
 }
 
 /**
