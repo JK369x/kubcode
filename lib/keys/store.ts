@@ -8,6 +8,7 @@ import { randomUUID } from "node:crypto";
 import type { Pool, PoolClient } from "pg";
 import type { SessionClaims } from "../accounts/session";
 import { withTransaction } from "../accounts/db";
+import { lockMember } from "../accounts/member";
 import { sealSecret, type WrapKey } from "./envelope";
 
 type KindSpec = {
@@ -109,18 +110,11 @@ function validate(input: SaveSecretInput): Validated | Failure {
 // Session check + row lock on the member, then the per-user RLS scope.
 // Phase 1 is owner-only (design §8).
 async function enter(c: PoolClient, s: SessionClaims): Promise<string | Failure> {
-  const { rows } = await c.query<{ id: string; is_owner: boolean }>(
-    `SELECT u.id, u.is_owner FROM kubcode_accounts.users u
-      WHERE u.id = $1 AND u.status = 'active' AND u.session_version = $2
-        AND EXISTS (SELECT 1 FROM kubcode_accounts.user_identities i
-                     WHERE i.user_id = u.id AND i.provider = $3 AND i.subject = $4)
-      FOR UPDATE OF u`,
-    [s.uid, s.sv, s.provider, s.sub],
-  );
-  if (!rows[0]) return fail("NOT_SIGNED_IN");
-  if (!rows[0].is_owner) return fail("FORBIDDEN");
-  await c.query("SELECT set_config('kubcode.user_id', $1, true)", [rows[0].id]);
-  return rows[0].id;
+  const member = await lockMember(c, s);
+  if (!member) return fail("NOT_SIGNED_IN");
+  if (!member.isOwner) return fail("FORBIDDEN");
+  await c.query("SELECT set_config('kubcode.user_id', $1, true)", [member.id]);
+  return member.id;
 }
 
 const audit = (c: PoolClient, userId: string, event: string, subject: string) =>
