@@ -63,6 +63,17 @@ test("skill page reads as plain steps; internal rights wording is folded away", 
   assert.match(folded, /source kit/, "the honest detail is still on the page");
 });
 
+test("step 3 and the folded note promise a download only where a package exists", async () => {
+  const stepsOf = (html: string) => html.match(/<ol[^>]*>([\s\S]*?)<\/ol>/)?.[1] ?? "";
+  const what = await renderSkillPage("freshstack-what-if");
+  assert.match(stepsOf(what), /ดาวน์โหลดชุด skill \(ต้องเข้าสู่ระบบ\)/);
+  assert.doesNotMatch(what, /ไม่ได้แนบ source kit/);
+  const stick = await renderSkillPage("growkaz-stickman");
+  assert.doesNotMatch(stepsOf(stick), /ดาวน์โหลดชุด skill/);
+  assert.match(stepsOf(stick), /ยังไม่มีชุดให้ดาวน์โหลด/);
+  assert.match(stick, /ไม่ได้แนบ source kit/);
+});
+
 test("a skill without clips keeps its existing preview and gets the same plain sections", async () => {
   const html = await renderSkillPage("thai-jk-voice");
   assert.doesNotMatch(html, /คลิปที่ทำด้วยสกิลนี้/);

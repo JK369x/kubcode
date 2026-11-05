@@ -46,13 +46,13 @@ try {
   await page.waitForURL("**/skills/growkaz-stickman#download");
   assert.equal(await page.locator("#download").count(), 1);
   assert((await page.locator("h1").innerText()).includes("Stickman Cinema"));
-  assert.equal(
-    (
+  assert.deepEqual(
+    await (
       await page.request.get(
         "http://127.0.0.1:3040/api/download/growkaz-stickman",
       )
-    ).status(),
-    503,
+    ).json(),
+    { available: false },
   );
   checks.push({ target: "real detail anchor and fail-closed API" });
   for (const width of [390, 768, 1440])

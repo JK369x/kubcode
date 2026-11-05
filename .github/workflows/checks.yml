@@ -51,3 +51,30 @@ jobs:
       - run: npm run test:accounts-db
         env:
           KUBCODE_TEST_DATABASE_URL: postgres://postgres:fixture-only@127.0.0.1:5432/kubcode_ci_test
+
+  # Rust presign Lambda (docs/design/package-signer.md). Also proves the musl
+  # release build and the deployable zip, so a broken build never reaches infra.
+  signer:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      RUST_TOOLCHAIN: "1.94.1"
+    defaults:
+      run:
+        working-directory: services/package-signer
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Rust toolchain and musl tools
+        run: |
+          rustup toolchain install "$RUST_TOOLCHAIN" --profile minimal \
+            --component rustfmt --component clippy \
+            --target x86_64-unknown-linux-musl
+          rustup default "$RUST_TOOLCHAIN"
+          sudo apt-get update
+          sudo apt-get install -y musl-tools zip
+      - run: cargo fmt --check
+      - run: cargo clippy --all-targets --locked -- -D warnings
+      - run: cargo test --locked
+      - run: ./build-lambda.sh
+      # Lambda needs the executable bit inside the zip (Pulumi uploads it as-is).
+      - run: unzip -Z dist/bootstrap.zip | grep -E '^-rwx.*bootstrap$'

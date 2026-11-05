@@ -412,9 +412,12 @@ test("privacy page states the actual data use without compliance promises", () =
   assert.doesNotMatch(html, /ปฏิบัติตาม (PDPA|GDPR)|compliant|ไม่มี log|ไม่มีการบันทึก log/i);
 });
 
-test("download route remains unavailable", () => {
+test("download route only delegates to the gated download handlers", () => {
+  // Flag, CSRF, approved package, DB-checked session and limit: tests/download-routes.test.ts.
   const source = readFileSync(join(root, "app/api/download/[slug]/route.ts"), "utf8");
-  assert.match(source, /503/);
+  assert.match(source, /handleDownload\(request/);
+  assert.match(source, /handleDownloadStatus\(request/);
+  assert.doesNotMatch(source, /amazonaws|presign|S3/i);
 });
 
 // ------------------------------------------- library-backed (next-auth v4)

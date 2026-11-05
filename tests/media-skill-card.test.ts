@@ -2,6 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { createElement, isValidElement, type ReactNode } from "react";
 import { renderToStaticMarkup as renderReactMarkup } from "react-dom/server";
+import { approvedPackageFor } from "../lib/packages";
 
 // Node cannot load CSS modules; stub them as identity class maps before
 // requiring the component (tsx compiles this file as CommonJS).
@@ -100,14 +101,15 @@ test("navigation: real detail link and real conditions link, both named", () => 
   assert.match(links[1][2], /เงื่อนไข/, "visible text is part of the name");
 });
 
-test("download stays truly disabled with no fake success or file href", () => {
+test("download renders disabled on the server with no fake success or file href", () => {
   for (const skill of skills) {
     const html = render(skill);
     const download = tags(html, "button").filter((b) => !/card-preview/.test(b));
     assert.equal(download.length, 1, skill.slug);
     assert.match(download[0], /\sdisabled(=""|\s|>)/);
     assert.match(html, /ดาวน์โหลด skill/);
-    assert.match(html, /ยังไม่เปิดดาวน์โหลด/);
+    // Packaged skills check the session in the browser first (ADR 0002).
+    assert.match(html, approvedPackageFor(skill.slug) ? /กำลังตรวจสอบ/ : /ยังไม่เปิดดาวน์โหลด/, skill.slug);
     assert.doesNotMatch(html, /\sdownload(=|\s|>)/);
     assert.doesNotMatch(html, /\/api\/download|\.zip/i);
     assert.doesNotMatch(html, /ดาวน์โหลดสำเร็จ|เริ่มดาวน์โหลด|กำลังดาวน์โหลด/);

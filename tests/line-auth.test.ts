@@ -707,9 +707,10 @@ test("privacy page separates Google and LINE purpose, received and discarded dat
   assert.doesNotMatch(html, /ปฏิบัติตาม (PDPA|GDPR)|compliant|certified|ได้รับการรับรอง/i);
 });
 
-test("neither login grants membership, downloads or MCP rights", () => {
-  for (const path of ["app/api/download/[slug]/route.ts", "app/api/account/route.ts"])
-    assert.match(readFileSync(join(root, path), "utf8"), /503/, path);
+test("neither login grants membership, roles or MCP rights; downloads are decided per request", () => {
+  // Downloads come from being a signed-in member (ADR 0002), checked against the
+  // database on every request, never from claims carried in the session token.
+  assert.match(readFileSync(join(root, "app/api/account/route.ts"), "utf8"), /503/);
   const { minimalToken, toPublicSession } = policy();
   const session = toPublicSession(
     minimalToken({ provider: "line", sub: "Ufixture", name: "N", approved: true, canDownload: true, mcp: true, role: "admin" }),

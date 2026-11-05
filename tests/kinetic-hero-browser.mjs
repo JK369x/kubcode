@@ -87,7 +87,7 @@ try{
  await page.emulateMedia({reducedMotion:'no-preference'});await page.waitForTimeout(300);assert.ok((await runningLoops()).length>0);check('live motion preference can restore eligible motion');
  await page.evaluate(()=>localStorage.setItem('jk-theme','light'));await page.goto(`${base}/articles`);await settle();assert.equal(await page.locator('html').getAttribute('data-theme'),'light');
  await page.goto(`${base}/skills/growkaz-stickman`);await settle();assert.equal(await page.locator('html').getAttribute('data-theme'),'light');await playSeek();check('theme and actual detail-page playback survive route navigation');
- const api=await page.request.get(`${base}/api/download/growkaz-stickman`);assert.equal(api.status(),503);check('backend download still fails closed');
+ const api=await page.request.get(`${base}/api/download/growkaz-stickman`);assert.deepEqual(await api.json(),{available:false});check('unlicensed skill download stays closed');
  const fallback=await browser.newContext({viewport:{width:390,height:844},javaScriptEnabled:false});const staticPage=await fallback.newPage();await staticPage.goto(base);await staticPage.waitForTimeout(800);assert.equal(await staticPage.locator('h1').isVisible(),true);assert.ok(await staticPage.locator('section:has(h1) img').count()>0);check('SSR/no-JS hero content stays visible');await fallback.close();
  assert.equal(report.errors.length,0);report.status='passed';
 }catch(error){report.status='failed';report.failure=String(error);throw error;}

@@ -4,6 +4,7 @@ import { statusLabel } from "@/lib/status-labels";
 import { notFound } from "next/navigation";
 import { Preview } from "@/components/Preview";
 import { DownloadAction } from "@/components/DownloadAction";
+import { approvedPackageFor } from "@/lib/packages";
 import Link from "next/link";
 import type { Metadata } from "next";
 import { getContent } from "@/lib/content";
@@ -81,7 +82,11 @@ export default async function Detail({
               <ol className="steps">
                 <li>ดูคลิปตัวอย่าง แล้วเช็คว่าเป็นแนวที่อยากทำ</li>
                 <li>เตรียมเครื่องมือตามรายการ “สิ่งที่ต้องมี” ด้านบน</li>
-                <li>ดาวน์โหลดชุด skill (ต้องเข้าสู่ระบบ) แล้วสั่ง AI agent ของคุณเป็นภาษาไทยได้เลย</li>
+                <li>
+                  {approvedPackageFor(s.slug)
+                    ? "ดาวน์โหลดชุด skill (ต้องเข้าสู่ระบบ) แล้วสั่ง AI agent ของคุณเป็นภาษาไทยได้เลย"
+                    : "skill นี้ยังไม่มีชุดให้ดาวน์โหลด ระหว่างนี้ใช้คลิปและรายการด้านบนเป็นแนวทาง"}
+                </li>
               </ol>
               <DownloadAction slug={s.slug} />
               <Link href="/articles/install-with-permissions">
@@ -100,9 +105,10 @@ export default async function Detail({
                   ข้ามชุดโดยไม่ตรวจ dependency และ source ที่คู่กัน
                 </p>
                 <p>
-                  ต้นแบบเว็บนี้ไม่ได้แนบ source kit และไม่ได้ยืนยันการติดตั้งหรือ
-                  render จาก clean clone ใช้ metadata เพื่อช่วยเลือก
-                  ไม่ใช่คำสั่งผลิตงานที่ผ่านการรับรอง
+                  {approvedPackageFor(s.slug)
+                    ? "ชุดดาวน์โหลดคือ source kit จากผู้สร้างต้นทางตามสัญญาอนุญาตที่ระบุ เว็บนี้ยังไม่ได้ยืนยันการติดตั้งหรือ render จาก clean clone"
+                    : "ต้นแบบเว็บนี้ไม่ได้แนบ source kit และไม่ได้ยืนยันการติดตั้งหรือ render จาก clean clone"}{" "}
+                  ใช้ metadata เพื่อช่วยเลือก ไม่ใช่คำสั่งผลิตงานที่ผ่านการรับรอง
                 </p>
                 <p>{PUBLICATION_NOTICE}</p>
                 <small className="rights-code">{PREVIEW_NOTICE}</small>
