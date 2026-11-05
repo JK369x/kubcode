@@ -24,6 +24,10 @@ boundary Deny), with notes folded into §1, §2 and §7 · 2026-11-04 · inputs:
 5. **Existing tokens are not imported.** The owner reconnects through the UI: the Google tokens
    belong to the Desktop client and would expire under Testing anyway.
 
+> **Hosting note (2026-11-05):** the web app moved from Vercel to a Lightsail box (ADR 0001).
+> Where §1–§3 and §7 say "Vercel" or "Vercel env", read "the web host" and its `web.env`. The
+> security argument is unchanged: the web host holds no AWS credentials.
+
 ## 1. Encryption: KMS RSA public-key hybrid (recommended), not "Vercel calls a Lambda to encrypt"
 
 | | A. KMS asymmetric key, public key on Vercel | B. Vercel → Rust encrypt Lambda |
@@ -168,39 +172,68 @@ them, unless the user confirms, which also disconnects them.
 
 ## 5. Infra (Pulumi, `infra/`) — what needs an admin local apply
 
-New:
-- KMS `alias/kubcode-secrets-wrap` (RSA_4096). Key policy: KeyAdministration for deploy +
-  break-glass (no crypto, no grants), `kms:GetPublicKey` for admins/preview, `kms:Decrypt` only for
-  the explicit Lambda role ARNs with condition `kms:EncryptionAlgorithm=RSAES_OAEP_SHA_256`.
-- Lambdas (Rust, `provided.al2023`, arm64, built with cargo-lambda), each with its own role and boundary:
-  - `kubcode-oauth-connect`: Function URL, auth NONE + HMAC.
-  - `kubcode-token-refresh`: no URL.
-  Log groups `/aws/lambda/kubcode-*` with 14-day retention. No VPC.
-- Scheduler schedule `kubcode-token-refresh-daily` + role `kubcode-scheduler-invoke` (`lambda:InvokeFunction` on that one function).
-- SSM SecureString `/kubcode/prod/worker-db-url` and `/kubcode/prod/connect-hmac-key`, encrypted
-  with `alias/kubcode-secrets`. Before setting the worker URL, the operator runs
-  `ALTER ROLE kubcode_worker LOGIN PASSWORD '…'` once in the Supabase SQL editor (the role itself
-  already exists from 0004; the password never goes in git, chat or Pulumi state). Pulumi creates them with `ignoreChanges: [value]`; the admin sets
-  the real values with the CLI. The kubcode-secrets key policy gains an `SsmParameterWrite`
-  statement (Encrypt/GenerateDataKey, `kms:ViaService=ssm`, `PARAMETER_ARN` like `/kubcode/prod/*`)
-  for the break-glass admin, and `KeyUse` for the Lambda roles (via the existing hook).
-- Vercel env (Sensitive): `KUBCODE_CONNECT_URL`, `KUBCODE_CONNECT_HMAC_KEY`, `KUBCODE_KEYS_ENABLED`. **No AWS keys.**
+**As built (step 4, 2026-11-05)**, branch `infra/settings-wrap-key`:
+- KMS `alias/kubcode-secrets-wrap` (RSA_4096, ENCRYPT_DECRYPT, no rotation since asymmetric keys
+  cannot rotate, 30-day deletion window, `protect`). Key policy `wrapKeyPolicy`:
+  `KeyAdministration` for deploy + break-glass (no crypto, no grants), `RootUserRecovery` (root
+  user only), `PublicKeyRead` (`kms:GetPublicKey` etc.) for admins and preview, and `KeyDecrypt`
+  (`kms:Decrypt` with `kms:EncryptionAlgorithm=RSAES_OAEP_SHA_256`) only for the ARNs in the
+  `wrapKeyDecryptArns` hook, which must match `role/kubcode-lambda-*`. Nobody encrypts through KMS.
+- **Lambda roles are not created yet.** KMS rejects a key policy that names a role that does not
+  exist, and roles without functions would be guesses at step 5's inline policies. Step 5 creates
+  `kubcode-lambda-oauth-connect` and `kubcode-lambda-token-refresh` through CI, then an admin apply
+  adds them to the `wrapKeyDecryptArns` hook (CI cannot change the wrap key policy).
+- Boundary (`deployBoundaryPolicy`), only what was missing on main (Lambda functions, their log
+  groups and `iam:PassRole` to Lambda already came with ADR 0002):
+  - the wrap key ARN in `KubcodeKeysCeiling`;
+  - `ReadKubcodeParameters`: `ssm:GetParameter`/`GetParameters` on `parameter/kubcode/*` (ceiling
+    for the step-5 Lambdas; nothing in the boundary can write parameters);
+  - `DenyWrapKeyDecryptOutsideLambdaRoles`: Deny `kms:Decrypt` and `kms:ReEncrypt*` on the wrap
+    key unless `aws:PrincipalArn` is `role/kubcode-lambda-*` (ReEncrypt would let CI move a wrapped
+    DEK under the state key, which it can decrypt);
+  - `DenyWrapKeyPolicyAndGrants`: Deny `kms:PutKeyPolicy` and `kms:CreateGrant` on the wrap key to
+    every kubcode role, so CI cannot name an outside principal (another account) in the policy or a
+    grant. The wrap key policy is therefore admin-only, like the boundary, and the key policy carries
+    its own Deny of Decrypt/ReEncrypt outside `kubcode-lambda-*` and of all grants.
+  - **Not added:** EventBridge Scheduler, `lambda:InvokeFunction` and `iam:PassRole` to
+    `scheduler.amazonaws.com` (step 6). They would loosen two rules the infra tests pin ("no invoke",
+    "PassRole to Lambda only"), and ADR 0003 may change the refresh design. Step 6 adds them with
+    its own small admin apply.
+- `alias/kubcode-secrets` gains `SsmParameterWrite` for the break-glass admin: `kms:Encrypt` +
+  `kms:GenerateDataKey`, only with `kms:ViaService=ssm.ap-southeast-1.amazonaws.com` and
+  `kms:EncryptionContext:PARAMETER_ARN` like `parameter/kubcode/*`. The Lambda roles get `KeyUse`
+  through the existing `secretsKeyUserArns` hook at step 5.
+- **SSM parameters are not Pulumi resources** (changed from the original plan). A Pulumi-managed
+  SecureString with `ignoreChanges: [value]` re-sends the placeholder held in state on any later
+  update (e.g. a description change) and overwrites the real secret, and a refresh would pull the
+  real value into Pulumi state. The admin creates `/kubcode/prod/worker-db-url` and
+  `/kubcode/prod/connect-hmac-key` with `aws ssm put-parameter --type SecureString --key-id
+  alias/kubcode-secrets` at step 5. Before setting the worker URL, run
+  `ALTER ROLE kubcode_worker LOGIN PASSWORD '…'` once in the Supabase SQL editor (the role exists
+  from 0004). Values never go in git, chat or Pulumi state.
+- **Web host env** (Lightsail `web.env` on the box per ADR 0001, set with
+  `infra/web/scripts/webhost.sh`; not Vercel): `KUBCODE_CONNECT_URL`, `KUBCODE_CONNECT_HMAC_KEY`,
+  `KUBCODE_KEYS_ENABLED`. **No AWS credentials on the box.** kubcode's own Google/Meta app
+  credentials (ADR 0003) come with the step-5 amendment, not here.
 
-**Admin-only local `pulumi up`** (CI is denied):
-1. **Boundary change**. Adds: `lambda:*` on `function:kubcode-*`; logs on `/aws/lambda/kubcode-*`;
-   `scheduler:*` on `schedule/*/kubcode-*`; `ssm:GetParameter*`/`PutParameter` on
-   `parameter/kubcode/*`; `iam:PassRole` on `role/kubcode-*` to lambda/scheduler; the wrap key ARN
-   in `KubcodeKeysCeiling`; plus a Deny of `kms:Decrypt` on the wrap key for every principal not
-   matching `role/kubcode-lambda-*`, so CI cannot grant itself decryption through the key policy.
-2. **Creating the wrap key and its alias** (`kms:CreateKey` is not allowed for CI).
-3. **Worker login**: `ALTER ROLE kubcode_worker LOGIN PASSWORD '…'` in the Supabase SQL editor.
-4. **SSM values**: `aws ssm put-parameter --type SecureString --key-id alias/kubcode-secrets`
-   (values never go in Pulumi state, git or chat).
+Still to come (step 5/6): the two Rust Lambdas (`provided.al2023`, built with cargo-lambda; Function
+URL with HMAC for `kubcode-oauth-connect`, no URL for `kubcode-token-refresh`), their log groups
+(14 days), the Scheduler schedule `kubcode-token-refresh-daily` and role
+`kubcode-scheduler-invoke`.
 
-Order: review the PR, then the admin runs `pulumi up` from the PR branch (only kubcode-* changes),
-then merge; the CI run on main is then a no-op. Lambda code updates and key-policy changes for new
-roles go through normal CI afterwards. The public key is exported once with
-`aws kms get-public-key` and committed.
+**Admin-only local `pulumi up`** (CI cannot create KMS keys or change the boundary). Run it from
+the PR branch, then merge; the CI run on main is then a no-op. Exact commands: `infra/README.md`
+"Settings keys wrap key". Afterwards `npm run keys:wrap-key -- export` writes
+`lib/keys/secrets-wrap-v1.pub.pem` and prints the SPKI SHA-256 fingerprint; a follow-up commit
+sets `CURRENT_WRAP_KEY` and pins that fingerprint in a TS test and in the Rust crate.
+
+**Applied 2026-11-05** (admin `pulumi up` from `fd9ff2a`: 3 created, 3 updated). Key
+`arn:aws:kms:ap-southeast-1:955758449820:key/39320743-1ef2-4627-b212-df76db143dc3`, SPKI SHA-256
+`3e1ff570c6db6682616c623cffbcfd84a572291462d4b564f30efd65d9268ac5`, pinned in
+`tests/wrap-key.test.ts` and `services/crates/kubcode-envelope/src/keys.rs` (slot 1 → that ARN, the
+only allowlisted slot). `interop --expect-denied` passed: the admin cannot Decrypt.
+`npm run keys:wrap-key -- interop --expect-denied` proves the admin cannot Decrypt; the same
+command without the flag, run with a step-5 Lambda role, is the Node ↔ KMS interop check.
 
 ## 6. Rotation
 
@@ -209,7 +242,7 @@ roles go through normal CI afterwards. The public key is exported once with
   create `secrets-wrap-v2` (admin), add it as slot 2, commit the new public key, then a re-wrap
   Lambda decrypts each DEK with v1 and re-wraps it with v2 (payloads untouched). Then disable v1,
   and schedule its deletion after 30 days. Documented now, built when first needed.
-- **HMAC key / worker DB password**: put a new SSM value, update the Vercel env, redeploy. The
+- **HMAC key / worker DB password**: put a new SSM value, update the web host env (`web.env`), restart. The
   Lambda accepts current+previous for 24 h.
 
 ## 7. Threat model
@@ -247,7 +280,8 @@ Every write uses the existing CSRF/Origin guards.
   `canUseKeys`.
 - The page 404s when the flag is off or the member is not allowed, redirects signed-out visitors to
   `/account`, and is `noindex`.
-- `lib/keys/wrap-key.ts` holds `CURRENT_WRAP_KEY = null` until step 4. While null, saving answers
+- `lib/keys/wrap-key.ts` held `CURRENT_WRAP_KEY = null` until step 4 (set to wrap key v1 on
+  2026-11-05). With no key, saving answers
   `NOT_READY` (after the member check, so only an allowed member learns it), and the page disables
   the save buttons. Reading and deleting work.
 - Connect/disconnect buttons render disabled with "เร็วๆ นี้" until step 5.
@@ -263,7 +297,7 @@ Every write uses the existing CSRF/Origin guards.
    connect by the owner).
 6. `kubcode-token-refresh` + schedule.
 
-**Vercel rate limit:** Rust lives in `services/**`. Until the limit lifts (~2026-11-05 16:00),
+**Vercel rate limit (obsolete since ADR 0001 moved the web host to Lightsail; branch pushes now run checks only):** Rust lives in `services/**`. Until the limit lifts (~2026-11-05 16:00),
 only infra/docs commits are pushed. Web, migration and `services/` work stays local. Adding
 `services/**` to the preview path filter edits `preview.yml`, which itself triggers Vercel, so
 that change waits too.

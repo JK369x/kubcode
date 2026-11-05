@@ -1,8 +1,9 @@
 // /account/keys and /api/keys/* against an actual Next production server and
 // a real local PostgreSQL (throwaway database, runtime role kubcode_app).
-// FICTIONAL members only; sessions are minted with a fixture secret. No wrap
-// key is committed yet (step 4), so saving must say NOT_READY while reading
-// and deleting work. Requires a prior `next build` and
+// FICTIONAL members only; sessions are minted with a fixture secret. Saves are
+// sealed with the committed production wrap public key (slot 1); nothing here
+// can decrypt them, so only the envelope shape is checked. Requires a prior
+// `next build` and
 // KUBCODE_TEST_DATABASE_URL (loopback, database name containing "test").
 // Run: npm run test:keys-app
 import assert from "node:assert/strict";
@@ -126,10 +127,11 @@ async function main() {
     assert.equal((await call(port, "/account/keys", { headers: { cookie: guest.cookie } })).status, 404);
     const ownerPage = await call(port, "/account/keys", { headers: { cookie: owner.cookie } });
     assert.equal(ownerPage.status, 200);
-    for (const text of ["ตั้งค่าคีย์และบัญชีโพสต์", "••••", "ab12", "wxyz", "ยังบันทึกคีย์ไม่ได้", "Fixture Channel ช่องทดสอบ"])
+    for (const text of ["ตั้งค่าคีย์และบัญชีโพสต์", "••••", "ab12", "wxyz", "Fixture Channel ช่องทดสอบ"])
       assert.ok(ownerPage.text.includes(text), `owner page shows ${text}`);
+    assert.ok(!ownerPage.text.includes("ยังบันทึกคีย์ไม่ได้"), "no not-ready notice once the wrap key is set");
     assert.match(String(ownerPage.headers["x-robots-tag"] ?? "") + ownerPage.text, /noindex/);
-    step("page: signed out → /account, non-owner 404, owner 200 with hints, channel and the not-ready notice; noindex");
+    step("page: signed out → /account, non-owner 404, owner 200 with hints and channel, no not-ready notice; noindex");
 
     const csrf = (await call(port, "/api/account/csrf")).json().csrfToken as string;
     const write = (path: string, cookie: string, body: unknown, opts: { method?: string; origin?: string } = {}) =>
@@ -148,11 +150,20 @@ async function main() {
     assert.equal((await write("/api/keys/secrets", owner.cookie, SAVE, { origin: "https://evil.example" })).status, 403);
     assert.equal((await write("/api/keys/secrets", "", SAVE)).status, 401);
     assert.equal((await write("/api/keys/secrets", guest.cookie, SAVE)).json().code, "FORBIDDEN");
-    const notReady = await write("/api/keys/secrets", owner.cookie, SAVE);
-    assert.equal(notReady.status, 503);
-    assert.equal(notReady.json().code, "NOT_READY");
-    assert.doesNotMatch(notReady.text, /FIXTURE-ONLY-eleven/);
-    step("API: bad origin 403, signed out 401, non-owner FORBIDDEN, owner save NOT_READY until the wrap key exists");
+    const saved = await write("/api/keys/secrets", owner.cookie, SAVE);
+    assert.equal(saved.status, 200, saved.text);
+    assert.doesNotMatch(saved.text, /FIXTURE-ONLY-eleven/, "the secret never comes back");
+    assert.deepEqual(
+      (({ replaced, secret }) => ({ replaced, kind: secret.kind, hint: secret.hint, version: secret.version }))(saved.json()),
+      { replaced: true, kind: "elevenlabs_api_key", hint: "9z8y", version: 2 },
+    );
+    const row = (await db.pool.query("SELECT envelope, key_slot FROM kubcode_accounts.user_secrets WHERE user_id = $1 AND kind = 'elevenlabs_api_key'", [owner.id])).rows[0];
+    assert.equal(row.key_slot, 1);
+    assert.equal(row.envelope.subarray(0, 4).toString("latin1"), "KCE1");
+    assert.equal(row.envelope.readUInt8(4), 1, "sealed with wrap key v1");
+    assert.equal(row.envelope.readUInt16BE(5), 512, "RSA-4096 wrapped DEK");
+    assert.ok(!row.envelope.includes(Buffer.from("FIXTURE-ONLY-eleven")), "no plaintext in the envelope");
+    step("API: bad origin 403, signed out 401, non-owner FORBIDDEN, owner save seals with wrap key v1 (KCE1, slot 1, 512-byte wrapped DEK), secret never echoed");
 
     // ---- Browser: layout, themes, and the delete flow through the real UI.
     const csrfFixture = randomBytes(32).toString("base64url");
@@ -201,7 +212,8 @@ async function main() {
           await page.getByRole("heading", { name, level: 2 }).waitFor();
         const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
         assert.ok(overflow <= 0, `${label}: no horizontal scroll (${overflow}px)`);
-        assert.equal(await page.getByRole("button", { name: "แทนที่คีย์" }).first().isDisabled(), true, `${label}: save disabled while not ready`);
+        assert.equal(await page.getByRole("button", { name: "แทนที่คีย์" }).first().isDisabled(), true, `${label}: save waits for a typed secret`);
+        assert.equal(await page.getByLabel("Client secret").isDisabled(), false, `${label}: secret field open once the wrap key is set`);
         assert.equal(await page.getByRole("button", { name: "เชื่อมช่อง" }).isDisabled(), true, `${label}: connect waits for step 5`);
         assert.equal(await page.getByLabel("Client secret").getAttribute("type"), "password");
         assert.equal(await page.getByLabel("Client ID").inputValue(), "123456789012-fixtureonlyabc.apps.googleusercontent.com");
@@ -209,7 +221,7 @@ async function main() {
         assert.deepEqual(errors, [], `${label}: no console errors`);
         await page.close();
       }
-      step("browser: four sections, no horizontal scroll, save + connect disabled, secret field is a password input (1280/390 × dark/light)");
+      step("browser: four sections, no horizontal scroll, connect disabled, save waits for input, secret field is a password input (1280/390 × dark/light)");
 
       const { page, errors } = await open(1280, 900, "dark");
       const youtube = page.getByRole("region", { name: "YouTube" });
@@ -229,6 +241,23 @@ async function main() {
       const left = await db.pool.query("SELECT kind FROM kubcode_accounts.user_secrets WHERE user_id = $1 ORDER BY kind", [owner.id]);
       assert.deepEqual(left.rows.map((r) => r.kind), ["elevenlabs_api_key"]);
       step("browser: delete in-use YouTube client → confirm → key and channel gone, history updated, DB agrees");
+
+      // Save through the UI: Instagram app ID + secret.
+      const ui = await open(390, 844, "light");
+      const ig = ui.page.getByRole("region", { name: "Instagram" });
+      await ig.getByLabel("Instagram app ID").fill("1234567890123456");
+      await ig.getByLabel("Instagram app secret").fill("fixtureonly0000000000000000003c4d");
+      await ig.getByRole("button", { name: "บันทึกคีย์" }).click();
+      await ig.getByText("บันทึกคีย์แล้ว").waitFor();
+      await ig.getByText("3c4d").waitFor();
+      assert.equal(await ig.getByLabel("Instagram app secret").inputValue(), "", "secret field is cleared after saving");
+      await ui.page.getByRole("region", { name: "ประวัติ" }).getByText("บันทึกคีย์ · Instagram app").waitFor();
+      await ui.page.screenshot({ path: `${OUT}/after-save.png`, fullPage: true });
+      assert.deepEqual(ui.errors, [], "save flow: no console errors");
+      await ui.page.close();
+      const igRow = (await db.pool.query("SELECT public_value, hint, key_slot FROM kubcode_accounts.user_secrets WHERE user_id = $1 AND kind = 'instagram_app'", [owner.id])).rows[0];
+      assert.deepEqual(igRow, { public_value: "1234567890123456", hint: "3c4d", key_slot: 1 });
+      step("browser: save Instagram app ID + secret on mobile → status, ••••3c4d, field cleared, history updated, DB row sealed in slot 1");
     } finally {
       await browser.close();
     }

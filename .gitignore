@@ -52,3 +52,5 @@ npm-debug.log*
 !db/certs/supabase-prod-ca.pem
 # TEST ONLY RSA keys for the envelope vectors (never used outside tests).
 !tests/fixtures/envelope/test-only-*.pem
+# Public half of the KMS wrap key (SPKI, fingerprint pinned in tests/wrap-key.test.ts).
+!lib/keys/secrets-wrap-v*.pub.pem

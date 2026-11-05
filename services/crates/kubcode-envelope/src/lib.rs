@@ -15,6 +15,7 @@ use aes_gcm::{Aes256Gcm, Nonce};
 use zeroize::Zeroizing;
 
 mod context;
+pub mod keys;
 mod seal;
 pub use context::{SecretContext, SecretTable};
 pub use seal::{seal, WrapPublicKey};

@@ -15,6 +15,8 @@ export const NAMES = {
   // Managed by the stack.
   mediaBucket: `kubcode-media-${ACCOUNT_ID}`,
   secretsKeyAlias: "alias/kubcode-secrets",
+  // RSA key that wraps per-secret DEKs (docs/design/settings-keys.md §1).
+  wrapKeyAlias: "alias/kubcode-secrets-wrap",
   deployRole: "kubcode-github-deploy",
   previewRole: "kubcode-github-preview",
   deployBoundary: "kubcode-deploy-boundary",
@@ -65,3 +67,19 @@ export function validatePackageSignerKey(key: string): string {
     throw new Error(`kubcode:packageSignerKey must be at least ${PACKAGE_SIGNER_KEY_MIN_BYTES} bytes (use: openssl rand -hex 32)`);
   return key;
 }
+
+// --- Settings keys (docs/design/settings-keys.md §1, §5)
+
+// Only roles with this prefix may ever decrypt with the wrap key (boundary Deny).
+export const LAMBDA_ROLE_PREFIX = "kubcode-lambda-";
+
+/**
+ * SecureString parameters read by the step-5 Lambdas. Created and set by the
+ * admin with `aws ssm put-parameter`, never by this stack: a Pulumi-managed
+ * parameter with ignoreChanges on its value would re-send the placeholder from
+ * state on any later update and overwrite the real secret.
+ */
+export const SSM_PARAMETERS = {
+  workerDbUrl: "/kubcode/prod/worker-db-url",
+  connectHmacKey: "/kubcode/prod/connect-hmac-key",
+} as const;

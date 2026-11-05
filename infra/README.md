@@ -19,6 +19,8 @@ access to them.
 | KMS `alias/kubcode-pulumi` | `scripts/bootstrap.sh state` | Pulumi secrets provider. Default key policy (IAM-delegated); CI roles reach it by its key ARN |
 | Stack `prod` | `scripts/bootstrap.sh stack` | `awskms://alias/kubcode-pulumi?region=ap-southeast-1` |
 | KMS `alias/kubcode-secrets` | stack (`protect: true`) | BYOK envelope encryption, rotation on. See the key policy below |
+| KMS `alias/kubcode-secrets-wrap` | stack (`protect: true`), **admin creates it** | RSA_4096 ENCRYPT_DECRYPT: the web host seals per-secret DEKs with its public key, only `kubcode-lambda-*` roles may Decrypt. See "Settings keys wrap key" |
+| SSM SecureStrings `/kubcode/prod/worker-db-url`, `/kubcode/prod/connect-hmac-key` | **admin CLI only** (step 5), never the stack | Encrypted with `alias/kubcode-secrets`. Not Pulumi resources on purpose, see "Settings keys wrap key" |
 | S3 `kubcode-media-955758449820` | stack | Block public access, SSE-KMS (`aws/s3` + bucket key), versioning off, abort incomplete multipart after 7 days, CORS `https://kubcode.dev` PUT/POST/GET (exposes `ETag`), TLS-only |
 | IAM policy `kubcode-deploy-boundary` | stack, **admin-only changes** | Permissions boundary for every `kubcode-*` role |
 | IAM role `kubcode-github-deploy` | stack | OIDC sub `repo:JK369x@104179568/kubcode@1444458364:ref:refs/heads/main` only. Runs `pulumi up` |
@@ -49,7 +51,13 @@ other work.
   from editing, deleting or detaching the boundary. So even a CI run that rewrote
   its own role policy could not reach beyond `kubcode-*` resources.
 - The boundary allows S3 on `kubcode-*` buckets, KMS aliases `alias/kubcode-*`,
-  and **only the two kubcode keys by ARN** (state + secrets). It also allows IAM
+  and **only the three kubcode keys by ARN** (state, secrets, secrets-wrap).
+  `kms:Decrypt` and `kms:ReEncrypt*` on the wrap key are **denied** to every
+  principal whose ARN is not `role/kubcode-lambda-*`, and `kms:PutKeyPolicy` /
+  `kms:CreateGrant` on it are denied to every kubcode role. So CI can neither
+  grant itself decryption nor name an outside principal (another account) in
+  the key policy or a grant: the wrap key policy is admin-only. Parameters under `parameter/kubcode/*` can be read
+  (`ssm:GetParameter(s)`, for the step-5 Lambdas) but not written. It also allows IAM
   roles and policies named `kubcode-*`, budgets `kubcode-*`, Lambda functions
   `kubcode-*` (create, update, delete, tags, Function URL config, resource
   policy), CloudWatch Logs under `/aws/lambda/kubcode-*`, `iam:PassRole` of
@@ -58,7 +66,7 @@ other work.
   destructive changes to the state bucket (delete bucket, delete object versions,
   versioning/policy/lifecycle).
 - CI cannot create KMS keys or use services the boundary does not list
-  (Scheduler, SSM...). Adding them means changing the boundary, and **CI is denied
+  (Scheduler, SSM writes...). Adding them means changing the boundary, and **CI is denied
   from changing the boundary**. An admin applies that change locally (below).
 
 ### `alias/kubcode-secrets` key policy
@@ -69,6 +77,7 @@ other work.
 | `RootUserRecovery` | account root, condition `aws:PrincipalArn = …:root` | same admin actions, for recovery if every admin is lost. The condition means it is the root **user** only: it does not delegate to IAM, so other IAM admins and client roles in the account cannot take over the key |
 | `KeyRead` | `kubcode-github-preview` | describe / read policy |
 | `KeyUse` | Lambda roles (the hook below) | `Encrypt`, `Decrypt`, `GenerateDataKey`, `DescribeKey`. Absent until a role is added |
+| `SsmParameterWrite` | break-glass admins | `Encrypt`, `GenerateDataKey` only via SSM (`kms:ViaService`) and only for `parameter/kubcode/*` (`kms:EncryptionContext:PARAMETER_ARN`): lets the admin `put-parameter` the step-5 SecureStrings. No Decrypt |
 
 The key policy is a separate `aws.kms.KeyPolicy` resource: the boundary names the
 key ARN, and the key policy names roles that carry the boundary. Putting the
@@ -89,6 +98,22 @@ policy on the key itself would create a dependency cycle.
    tests, and apply that boundary change as an admin (below) before CI can
    deploy them. The package signer role in `src/stack.ts` is the template:
    boundary, `lambdaTrustPolicy()`, a small inline policy.
+
+### `alias/kubcode-secrets-wrap` key policy
+
+| Statement | Principals | Can |
+|---|---|---|
+| `KeyAdministration` | `kubcode-github-deploy`, break-glass admins | manage. **No** crypto, **no** `CreateGrant` |
+| `RootUserRecovery` | account root user only (`aws:PrincipalArn = …:root`) | same admin actions, for recovery |
+| `PublicKeyRead` | admins + `kubcode-github-preview` | `GetPublicKey`, `DescribeKey`, `GetKeyPolicy`, `ListResourceTags` |
+| `KeyDecrypt` | the `wrapKeyDecryptArns` hook in `index.ts`, which must match `role/kubcode-lambda-*` | `Decrypt` with `kms:EncryptionAlgorithm = RSAES_OAEP_SHA_256` only. Absent until step 5 adds the Lambda roles (KMS rejects a policy naming a role that does not exist) |
+| `DenyDecryptOutsideLambdaRoles` | `*` unless `aws:PrincipalArn` is `role/kubcode-lambda-*` | **Deny** `Decrypt`, `ReEncrypt*`: covers admins, root and other accounts |
+| `DenyGrants` | `*` | **Deny** `CreateGrant` |
+
+Nobody encrypts through KMS: the web host uses the committed public key
+(`lib/keys/secrets-wrap-v1.pub.pem`). CI is denied `PutKeyPolicy` and
+`CreateGrant` on this key by the boundary, so **any change to this key policy
+(including adding the step-5 Lambda roles to the hook) is an admin apply**.
 
 ## Day to day
 
@@ -199,9 +224,77 @@ Possible later hardening (not done): reserved concurrency on the function to cap
 abuse of the public URL. Not set now because the account's Lambda concurrency
 quota may be too small to reserve any (`scripts/bootstrap.sh quota`).
 
+## Settings keys wrap key (docs/design/settings-keys.md §1, §5)
+
+What the PR adds: `alias/kubcode-secrets-wrap` with its key policy, the boundary
+changes above (wrap key in the ceiling, Decrypt Deny outside
+`kubcode-lambda-*`, SSM read on `parameter/kubcode/*`) and `SsmParameterWrite`
+on `alias/kubcode-secrets`. CI cannot create KMS keys or change the boundary,
+so an admin applies it.
+
+**SSM parameters are deliberately not managed here.** With Pulumi,
+`ignoreChanges: [value]` keeps the placeholder in state; any later update of the
+parameter (description, tier, key) makes the provider send that placeholder and
+overwrite the real secret, and a refresh would copy the real value into state.
+The admin sets them with the CLI at step 5 instead.
+
+### Owner's steps, in order
+
+1. **Admin apply from the PR branch, before merging** (the first CI run on main
+   would otherwise be denied on the key and the boundary and fail halfway):
+   ```bash
+   git fetch origin && git switch infra/settings-wrap-key
+   cd infra && npm ci --ignore-scripts
+   export AWS_PROFILE=default AWS_REGION=ap-southeast-1
+   aws sts get-caller-identity --query Account --output text   # must be 955758449820
+   pulumi preview --stack prod --diff
+   ```
+   Read the preview fully. Expect exactly: **create** `secrets-wrap-key`,
+   `secrets-wrap-key-alias` (`alias/kubcode-secrets-wrap`) and
+   `secrets-wrap-key-policy`; **update** `deploy-boundary`
+   (`kubcode-deploy-boundary`) and `secrets-key-policy`. Nothing deleted or
+   replaced, nothing outside `kubcode-*`. Then:
+   ```bash
+   pulumi up --stack prod
+   pulumi stack output --stack prod wrapKeyArn
+   ```
+2. **Export the public key** (repo root, same credentials):
+   ```bash
+   npm run keys:wrap-key -- export
+   npm run keys:wrap-key -- interop --expect-denied   # PASS = the admin cannot Decrypt
+   ```
+   `export` writes `lib/keys/secrets-wrap-v1.pub.pem` and prints the SPKI
+   SHA-256 fingerprint. Commit the PEM on the PR branch (the public key is not
+   a secret) and post the fingerprint on the PR; the follow-up commit sets
+   `CURRENT_WRAP_KEY` and pins the fingerprint in the TS test and the Rust crate.
+   **Done 2026-11-05:** key `39320743-1ef2-4627-b212-df76db143dc3`, SPKI SHA-256
+   `3e1ff570c6db6682616c623cffbcfd84a572291462d4b564f30efd65d9268ac5`
+   (pinned in `tests/wrap-key.test.ts` and `kubcode-envelope/src/keys.rs`).
+3. **Merge** the PR (after #23). The CI run on main should be a no-op.
+4. **At step 5**, once the Lambdas exist (run this block in `bash`; it uses `read -s`):
+   ```bash
+   # Supabase SQL editor (role created by migration 0004):
+   #   ALTER ROLE kubcode_worker LOGIN PASSWORD '<generated>';
+   F=$(mktemp) && chmod 600 "$F"           # keeps values out of argv / ps
+   read -rs -p 'worker DB URL: ' V && printf %s "$V" > "$F" && unset V
+   aws ssm put-parameter --region ap-southeast-1 --type SecureString \
+     --key-id alias/kubcode-secrets --name /kubcode/prod/worker-db-url --value "file://$F"
+   openssl rand -hex 32 | tr -d '\n' > "$F"   # keep this value for the web host env
+   aws ssm put-parameter --region ap-southeast-1 --type SecureString \
+     --key-id alias/kubcode-secrets --name /kubcode/prod/connect-hmac-key --value "file://$F"
+   rm -f "$F"
+   ```
+   The HMAC key also goes into the web host env (`KUBCODE_CONNECT_HMAC_KEY`),
+   so copy it from the file before `rm`. Add `--overwrite` to change a value later. Values never go in git, chat or
+   Pulumi state. When step 5 adds the Lambda roles to `wrapKeyDecryptArns`,
+   that key-policy change is an admin apply too (CI cannot change this key
+   policy). Then run `npm run keys:wrap-key -- interop` with a Lambda role's
+   credentials (or inside the Lambda) for the end-to-end interop check.
+
 ## Tests
 
 `npm test` (in `infra/`) runs unit tests with Pulumi mocks. They cover policy
-scoping (boundary, deploy, preview, key policy), naming and tags (one explicit
+scoping (boundary incl. the wrap-key Decrypt Deny and SSM read, deploy, preview,
+both key policies), naming and tags (one explicit
 provider), the media bucket settings, the OIDC lookup, the budget, the package
 signer (role, log group, function, URL, package objects) and the CI gate. `npm run typecheck` checks types. The root `tsconfig.json` excludes `infra/`.

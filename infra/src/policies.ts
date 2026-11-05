@@ -7,7 +7,7 @@
 // boundary. So even if CI rewrote its own role policy, it could not reach
 // beyond kubcode-* resources (this account also holds client resources).
 // Changing the boundary is an admin-only, local `pulumi up` (see README).
-import { ACCOUNT_ID, GITHUB_SUB_PREFIX, NAMES, REGION } from "./constants";
+import { ACCOUNT_ID, GITHUB_SUB_PREFIX, LAMBDA_ROLE_PREFIX, NAMES, REGION } from "./constants";
 
 export type Statement = {
   Sid?: string;
@@ -34,6 +34,8 @@ const KUBCODE_LAMBDA_LOG_GROUPS = `arn:aws:logs:${REGION}:${ACCOUNT_ID}:log-grou
 // DescribeLogGroups is authorized against this ARN rather than the group's own.
 const LOG_GROUPS_DESCRIBE = `arn:aws:logs:${REGION}:${ACCOUNT_ID}:log-group::log-stream:`;
 const OIDC_PROVIDERS = `arn:aws:iam::${ACCOUNT_ID}:oidc-provider/*`;
+const KUBCODE_PARAMETERS = `arn:aws:ssm:${REGION}:${ACCOUNT_ID}:parameter/kubcode/*`;
+const KUBCODE_LAMBDA_ROLES = iam("role", `${LAMBDA_ROLE_PREFIX}*`);
 
 const IAM_READ = [
   "iam:GetRole",
@@ -111,13 +113,45 @@ export function githubTrustPolicy(oidcProviderArn: string, subjects: readonly st
  * services (Scheduler, SSM) and new KMS keys are added here by an admin-run
  * `pulumi up`; CI is denied from changing it.
  */
-export function deployBoundaryPolicy(opts: { stateKeyArn: string; secretsKeyArn: string; boundaryArn: string }): PolicyDocument {
+export function deployBoundaryPolicy(opts: {
+  stateKeyArn: string;
+  secretsKeyArn: string;
+  wrapKeyArn: string;
+  boundaryArn: string;
+}): PolicyDocument {
   return doc([
     ...sharedDeployStatements(opts.boundaryArn),
     // Ceiling only: a key policy that names a role ARN is still capped by the
-    // role's boundary, so the key-policy grants on these two keys must fit
-    // here. No other key (client keys included) is reachable.
-    { Sid: "KubcodeKeysCeiling", Effect: "Allow", Action: "kms:*", Resource: [opts.stateKeyArn, opts.secretsKeyArn] },
+    // role's boundary, so the key-policy grants on these keys must fit here.
+    // No other key (client keys included) is reachable.
+    {
+      Sid: "KubcodeKeysCeiling",
+      Effect: "Allow",
+      Action: "kms:*",
+      Resource: [opts.stateKeyArn, opts.secretsKeyArn, opts.wrapKeyArn],
+    },
+    // Ceiling for the step-5 Lambdas, which read their DB URL and HMAC key from
+    // SSM. Nothing in this boundary can write parameters: the admin sets them.
+    { Sid: "ReadKubcodeParameters", Effect: "Allow", Action: ["ssm:GetParameter", "ssm:GetParameters"], Resource: KUBCODE_PARAMETERS },
+    {
+      // Only kubcode-lambda-* roles may unwrap DEKs. ReEncrypt is denied too:
+      // it decrypts inside KMS and re-encrypts under a key the caller might
+      // be able to decrypt (e.g. the deploy role and the state key).
+      Sid: "DenyWrapKeyDecryptOutsideLambdaRoles",
+      Effect: "Deny",
+      Action: ["kms:Decrypt", "kms:ReEncrypt*"],
+      Resource: opts.wrapKeyArn,
+      Condition: { ArnNotLike: { "aws:PrincipalArn": KUBCODE_LAMBDA_ROLES } },
+    },
+    {
+      // The wrap key policy and grants are admin-only. Otherwise CI could name
+      // a principal outside this boundary (another account, a client role)
+      // in the key policy or a grant and decrypt from there.
+      Sid: "DenyWrapKeyPolicyAndGrants",
+      Effect: "Deny",
+      Action: ["kms:PutKeyPolicy", "kms:CreateGrant"],
+      Resource: opts.wrapKeyArn,
+    },
   ]);
 }
 
@@ -411,7 +445,13 @@ const KEY_ADMIN_ACTIONS = [
  * - users (the Lambda roles, added later) are the only principals that can
  *   encrypt/decrypt.
  */
-export function secretsKeyPolicy(opts: { adminArns: string[]; readerArns: string[]; userArns: string[] }): PolicyDocument {
+export function secretsKeyPolicy(opts: {
+  adminArns: string[];
+  readerArns: string[];
+  userArns: string[];
+  /** May encrypt SSM SecureStrings under /kubcode/* with this key (the break-glass admin). */
+  ssmWriterArns?: string[];
+}): PolicyDocument {
   if (opts.adminArns.length === 0) throw new Error("the secrets key needs at least one admin (lockout safety)");
   const root = `arn:aws:iam::${ACCOUNT_ID}:root`;
   const statements: Statement[] = [
@@ -440,6 +480,79 @@ export function secretsKeyPolicy(opts: { adminArns: string[]; readerArns: string
       Principal: { AWS: opts.userArns },
       Action: ["kms:Encrypt", "kms:Decrypt", "kms:GenerateDataKey", "kms:DescribeKey"],
       Resource: "*",
+    });
+  if (opts.ssmWriterArns?.length)
+    statements.push({
+      // `aws ssm put-parameter --type SecureString --key-id alias/kubcode-secrets`
+      // for /kubcode/* only, and only through SSM. Writing never needs Decrypt.
+      Sid: "SsmParameterWrite",
+      Effect: "Allow",
+      Principal: { AWS: opts.ssmWriterArns },
+      Action: ["kms:Encrypt", "kms:GenerateDataKey"],
+      Resource: "*",
+      Condition: {
+        StringEquals: { "kms:ViaService": `ssm.${REGION}.amazonaws.com` },
+        StringLike: { "kms:EncryptionContext:PARAMETER_ARN": KUBCODE_PARAMETERS },
+      },
+    });
+  return doc(statements);
+}
+
+/**
+ * Key policy for alias/kubcode-secrets-wrap, the RSA_4096 key whose public
+ * half seals per-secret DEKs on the web host (design §1). Same admin and
+ * root-recovery model as the secrets key. Nobody encrypts through KMS (the web
+ * host uses the committed public key); admins and the preview role may read
+ * the public key; only the named kubcode-lambda-* roles may Decrypt, and only
+ * with RSAES_OAEP_SHA_256. Explicit Denies stop Decrypt/ReEncrypt by anyone
+ * else and all grants. CI cannot change this policy (boundary Deny), so a
+ * change here is an admin apply, like the boundary.
+ */
+export function wrapKeyPolicy(opts: { adminArns: string[]; readerArns: string[]; decryptArns: string[] }): PolicyDocument {
+  if (opts.adminArns.length === 0) throw new Error("the wrap key needs at least one admin (lockout safety)");
+  const lambdaRole = new RegExp(`^arn:aws:iam::${ACCOUNT_ID}:role/${LAMBDA_ROLE_PREFIX}[a-z0-9-]+$`);
+  for (const arn of opts.decryptArns)
+    if (!lambdaRole.test(arn)) throw new Error(`wrap key Decrypt is only for ${LAMBDA_ROLE_PREFIX}* roles: ${arn}`);
+  const root = `arn:aws:iam::${ACCOUNT_ID}:root`;
+  const statements: Statement[] = [
+    { Sid: "KeyAdministration", Effect: "Allow", Principal: { AWS: opts.adminArns }, Action: KEY_ADMIN_ACTIONS, Resource: "*" },
+    {
+      Sid: "RootUserRecovery",
+      Effect: "Allow",
+      Principal: { AWS: root },
+      Action: KEY_ADMIN_ACTIONS,
+      Resource: "*",
+      Condition: { StringEquals: { "aws:PrincipalArn": root } },
+    },
+    {
+      Sid: "PublicKeyRead",
+      Effect: "Allow",
+      Principal: { AWS: [...opts.adminArns, ...opts.readerArns] },
+      Action: ["kms:GetPublicKey", "kms:DescribeKey", "kms:GetKeyPolicy", "kms:ListResourceTags"],
+      Resource: "*",
+    },
+  ];
+  statements.push(
+    {
+      // Holds for every principal (admins, root, other accounts), because the
+      // policy itself can only be changed by an admin (boundary Deny on CI).
+      Sid: "DenyDecryptOutsideLambdaRoles",
+      Effect: "Deny",
+      Principal: { AWS: "*" },
+      Action: ["kms:Decrypt", "kms:ReEncrypt*"],
+      Resource: "*",
+      Condition: { ArnNotLike: { "aws:PrincipalArn": `arn:aws:iam::${ACCOUNT_ID}:role/${LAMBDA_ROLE_PREFIX}*` } },
+    },
+    { Sid: "DenyGrants", Effect: "Deny", Principal: { AWS: "*" }, Action: "kms:CreateGrant", Resource: "*" },
+  );
+  if (opts.decryptArns.length > 0)
+    statements.push({
+      Sid: "KeyDecrypt",
+      Effect: "Allow",
+      Principal: { AWS: opts.decryptArns },
+      Action: "kms:Decrypt",
+      Resource: "*",
+      Condition: { StringEquals: { "kms:EncryptionAlgorithm": "RSAES_OAEP_SHA_256" } },
     });
   return doc(statements);
 }

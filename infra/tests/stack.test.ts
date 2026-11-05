@@ -80,7 +80,14 @@ const seen = (call: AssetCall) => assetCalls.some((c) => JSON.stringify(c) === J
 const SIGNER_KEY = "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef";
 const settle = (o: pulumi.Output<unknown>) => new Promise((resolve) => o.apply(resolve));
 
-async function build(opts: { budgetEmail?: pulumi.Input<string>; secretsKeyUserArns?: pulumi.Input<string>[]; packageSignerKey?: pulumi.Input<string> } = {}) {
+async function build(
+  opts: {
+    budgetEmail?: pulumi.Input<string>;
+    secretsKeyUserArns?: pulumi.Input<string>[];
+    wrapKeyDecryptArns?: pulumi.Input<string>[];
+    packageSignerKey?: pulumi.Input<string>;
+  } = {},
+) {
   resources = [];
   invokes = [];
   assetCalls = [];
@@ -89,6 +96,7 @@ async function build(opts: { budgetEmail?: pulumi.Input<string>; secretsKeyUserA
     budgetEmail: opts.budgetEmail,
     breakGlassAdminArns: [`arn:aws:iam::${ACCOUNT_ID}:user/super_admin`],
     secretsKeyUserArns: opts.secretsKeyUserArns ?? [],
+    wrapKeyDecryptArns: opts.wrapKeyDecryptArns ?? [],
     packageSignerKey: opts.packageSignerKey,
   });
   await Promise.all(Object.values(out).map((o) => settle(pulumi.output(o))));
@@ -180,15 +188,21 @@ test("media bucket: private, SSE-KMS, no versioning, multipart cleanup, kubcode.
   assert.ok(policy.Statement.some((s: any) => s.Effect === "Deny" && s.Condition?.Bool?.["aws:SecureTransport"] === "false"));
 });
 
+const named = (type: string, name: string) => {
+  const r = byType(type).find((r) => r.name === name);
+  assert.ok(r, `expected ${type} ${name}`);
+  return r;
+};
+
 test("secrets key: rotation on, aliased, policy hook for Lambda roles", async () => {
   const lambda = `arn:aws:iam::${ACCOUNT_ID}:role/kubcode-publisher`;
   await build({ secretsKeyUserArns: [lambda] });
-  const key = one("aws:kms/key:Key").inputs;
+  const key = named("aws:kms/key:Key", "secrets-key").inputs;
   assert.equal(key.enableKeyRotation, true);
   assert.equal(key.deletionWindowInDays, 30);
   // The key policy is a separate resource so the boundary can name the key ARN
   // without a dependency cycle (key -> boundary -> roles -> key policy).
-  const keyPolicy = one("aws:kms/keyPolicy:KeyPolicy").inputs;
+  const keyPolicy = named("aws:kms/keyPolicy:KeyPolicy", "secrets-key-policy").inputs;
   const policy = JSON.parse(keyPolicy.policy);
   assert.deepEqual(policy.Statement.find((s: any) => s.Sid === "KeyUse").Principal.AWS, [lambda]);
   assert.deepEqual(policy.Statement.find((s: any) => s.Sid === "KeyAdministration").Principal.AWS, [
@@ -198,7 +212,7 @@ test("secrets key: rotation on, aliased, policy hook for Lambda roles", async ()
   const boundary = JSON.parse(byType("aws:iam/policy:Policy").find((p) => p.inputs.name === NAMES.deployBoundary)!.inputs.policy);
   const ceiling = boundary.Statement.find((s: any) => s.Sid === "KubcodeKeysCeiling");
   assert.ok(ceiling.Resource.includes(`arn:aws:kms:${REGION}:${ACCOUNT_ID}:key/secrets-key-id`));
-  const alias = one("aws:kms/alias:Alias").inputs;
+  const alias = named("aws:kms/alias:Alias", "secrets-key-alias").inputs;
   assert.equal(alias.name, NAMES.secretsKeyAlias);
 });
 
@@ -354,4 +368,53 @@ test("package objects do not depend on the signer secret", async () => {
   assert.equal(byType("aws:s3/bucketObjectv2:BucketObjectv2").length, PACKAGES.length);
   await build({ packageSignerKey: SIGNER_KEY });
   assert.equal(byType("aws:s3/bucketObjectv2:BucketObjectv2").length, PACKAGES.length);
+});
+
+test("wrap key: RSA_4096 for encryption, no rotation (asymmetric), 30-day deletion window, aliased", async () => {
+  await build();
+  const key = named("aws:kms/key:Key", "secrets-wrap-key").inputs;
+  assert.equal(key.customerMasterKeySpec, "RSA_4096");
+  assert.equal(key.keyUsage, "ENCRYPT_DECRYPT");
+  assert.notEqual(key.enableKeyRotation, true, "asymmetric keys cannot rotate");
+  assert.equal(key.deletionWindowInDays, 30);
+  const alias = byType("aws:kms/alias:Alias").find((a) => a.inputs.name === NAMES.wrapKeyAlias);
+  assert.ok(alias, "alias/kubcode-secrets-wrap");
+  assert.equal(NAMES.wrapKeyAlias, "alias/kubcode-secrets-wrap");
+});
+
+test("wrap key policy: deploy + break-glass administer, preview reads the public key, no Decrypt yet", async () => {
+  await build();
+  const policy = JSON.parse(named("aws:kms/keyPolicy:KeyPolicy", "secrets-wrap-key-policy").inputs.policy);
+  const sid = (id: string) => policy.Statement.find((s: any) => s.Sid === id);
+  assert.deepEqual(sid("KeyAdministration").Principal.AWS, [
+    `arn:aws:iam::${ACCOUNT_ID}:role/${NAMES.deployRole}`,
+    `arn:aws:iam::${ACCOUNT_ID}:user/super_admin`,
+  ]);
+  assert.ok(sid("PublicKeyRead").Principal.AWS.includes(`arn:aws:iam::${ACCOUNT_ID}:role/${NAMES.previewRole}`));
+  assert.equal(sid("KeyDecrypt"), undefined, "step 5 adds the Lambda roles");
+  const boundary = JSON.parse(byType("aws:iam/policy:Policy").find((p) => p.inputs.name === NAMES.deployBoundary)!.inputs.policy);
+  const wrapArn = `arn:aws:kms:${REGION}:${ACCOUNT_ID}:key/secrets-wrap-key-id`;
+  assert.ok(boundary.Statement.find((s: any) => s.Sid === "KubcodeKeysCeiling").Resource.includes(wrapArn));
+  assert.ok(boundary.Statement.some((s: any) => s.Effect === "Deny" && s.Resource === wrapArn));
+});
+
+test("wrap key policy hook: Decrypt for listed kubcode-lambda-* roles", async () => {
+  const role = `arn:aws:iam::${ACCOUNT_ID}:role/kubcode-lambda-oauth-connect`;
+  await build({ wrapKeyDecryptArns: [role] });
+  const policy = JSON.parse(named("aws:kms/keyPolicy:KeyPolicy", "secrets-wrap-key-policy").inputs.policy);
+  assert.deepEqual(policy.Statement.find((s: any) => s.Sid === "KeyDecrypt").Principal.AWS, [role]);
+});
+
+test("secrets key: the break-glass admin can write /kubcode/* SecureStrings; the deploy role cannot", async () => {
+  await build();
+  const policy = JSON.parse(named("aws:kms/keyPolicy:KeyPolicy", "secrets-key-policy").inputs.policy);
+  const w = policy.Statement.find((s: any) => s.Sid === "SsmParameterWrite");
+  assert.deepEqual(w.Principal.AWS, [`arn:aws:iam::${ACCOUNT_ID}:user/super_admin`]);
+});
+
+test("SSM parameters are not managed by the stack (values are set by the admin CLI only)", async () => {
+  // A Pulumi-managed SecureString with ignoreChanges: [value] would re-send the
+  // placeholder from state on any later update and overwrite the real secret.
+  await build({ budgetEmail: "owner@example.com", packageSignerKey: SIGNER_KEY });
+  assert.equal(byType("aws:ssm/parameter:Parameter").length, 0);
 });
