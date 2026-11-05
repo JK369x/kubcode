@@ -7,3 +7,5 @@ config:
     - aws
   kubcode:budgetEmail:
     secure: v1:q7AM4EqAEpnlRJfL:4ViYa3SMRlgieyQMJlGuGA47n2HVOwHNSf857pdpLmW+AnbCPQ==
+  kubcode:packageSignerKey:
+    secure: v1:QyrGlsr2QLcIKGax:9KjlM3W9xEDfKsaD8LCIFlrfM9s2GNLjQO0YpNQR/IQBmwC5NckjF8DOji9L9sqhyfPs1F1YPTszIDNDeGCtiQf1vsWcaf5N8UrGIF3hF0Y=

@@ -9,6 +9,8 @@
 #   webhost.sh provision     copy host/ to the box and run setup.sh (re-runnable)
 #   webhost.sh set-env       owner types the secrets into hidden prompts; they go
 #                            to /etc/kubcode/web.env over SSH stdin and nowhere else
+#   webhost.sh set-downloads only the skill-download settings (signer URL + key),
+#                            merged into web.env; every other value is kept
 #   webhost.sh smoke         run the on-box smoke test
 #   webhost.sh tls           right after the DNS flip: restart Caddy so it gets the
 #                            certificate now, and wait until the box serves it
@@ -138,6 +140,15 @@ set_env() {
   admin_ssh sudo /usr/local/lib/kubcode/write-env <<<"$env"
 }
 
+# Turns skill downloads on without retyping the other secrets: write-env
+# --merge replaces just these keys, then restarts and smokes (or rolls back).
+set_downloads() {
+  local env
+  env=$(ask_downloads)
+  [ -n "$env" ] || die "no signer URL given; nothing changed"
+  admin_ssh sudo /usr/local/lib/kubcode/write-env --merge <<<"$env"
+}
+
 # Caddy tried for the certificate at provision time, while DNS still pointed
 # at Vercel, and is now backing off. A restart makes it try again at once.
 tls() {
@@ -160,6 +171,7 @@ known-hosts) known_hosts ;;
 deploy-key) deploy_key ;;
 provision) provision ;;
 set-env) set_env ;;
+set-downloads) set_downloads ;;
 smoke) admin_ssh /usr/local/lib/kubcode/smoke ;;
 tls) tls ;;
 status | rollback) admin_ssh sudo -u deploy env SSH_ORIGINAL_COMMAND="$1" /usr/local/bin/kubcode-deploy ;;
