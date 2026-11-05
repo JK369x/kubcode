@@ -1,6 +1,9 @@
 "use client";
 import { useEffect, useState, type CSSProperties, type FocusEvent, type PointerEvent } from "react";
-import { ArrowUpRight, LockKeyhole, Pause, Play } from "lucide-react";
+import { ArrowUpRight, Download, LockKeyhole, Pause, Play } from "lucide-react";
+import { approvedPackageFor } from "@/lib/packages";
+import { fetchAvailable, fetchSignedIn, startDownload } from "@/lib/downloads/client";
+import { downloadPhase } from "@/lib/downloads/view";
 import { styleShelf, type ShelfEntry, type ShowcaseItem, type StyleTool } from "@/lib/showcase";
 import { ToolLogo } from "./ToolLogo";
 import { playPreview as play, stopPreview as stop } from "./hoverPreview";
@@ -36,15 +39,27 @@ function useSignedIn(): boolean | undefined {
   const [signedIn, setSignedIn] = useState<boolean | undefined>(undefined);
   useEffect(() => {
     let live = true;
-    fetch("/api/auth/session", { credentials: "same-origin", cache: "no-store" })
-      .then(async (res) => (res.ok ? ((await res.json().catch(() => ({}))) as { user?: unknown }) : {}))
-      .catch(() => ({}) as { user?: unknown })
-      .then((s) => live && setSignedIn(Boolean(s.user)));
+    fetchSignedIn().then((v) => live && setSignedIn(v));
     return () => {
       live = false;
     };
   }, []);
   return signedIn;
+}
+
+/** Whether the server serves each packaged skill's download, asked once per shelf. */
+function useAvailable(skills: readonly string[]): Readonly<Record<string, boolean>> {
+  const [available, setAvailable] = useState<Record<string, boolean>>({});
+  const key = skills.join(",");
+  useEffect(() => {
+    let live = true;
+    for (const skill of key ? key.split(",") : [])
+      fetchAvailable(skill).then((v) => live && setAvailable((a) => ({ ...a, [skill]: v })));
+    return () => {
+      live = false;
+    };
+  }, [key]);
+  return available;
 }
 
 /**
@@ -53,7 +68,16 @@ function useSignedIn(): boolean | undefined {
  * downloads are coming (there is no download service yet). Styles without a
  * skill only link to the clip.
  */
-export function CardActions({ entry, signedIn }: { entry: ShelfEntry; signedIn: boolean | undefined }) {
+export function CardActions({
+  entry,
+  signedIn,
+  available,
+}: {
+  entry: ShelfEntry;
+  signedIn: boolean | undefined;
+  /** undefined until the server has answered. */
+  available?: boolean;
+}) {
   const style = SHOWCASE_STYLES[entry.style];
   const { clip } = entry;
   if (style?.skill) {
@@ -62,18 +86,7 @@ export function CardActions({ entry, signedIn }: { entry: ShelfEntry; signedIn: 
         <a className={styles.action} href={`/skills/${style.skill}`}>
           ดู template
         </a>
-        {signedIn ? (
-          <button type="button" className={styles.lock} disabled>
-            <span className="sr-only">ดาวน์โหลดเร็วๆ นี้</span>
-            <span aria-hidden="true">เร็วๆ นี้</span>
-          </button>
-        ) : (
-          <a className={styles.lock} href="/account" title="สมัครหรือเข้าสู่ระบบก่อนดาวน์โหลด">
-            <LockKeyhole size={14} aria-hidden="true" />
-            <span className="sr-only">เข้าสู่ระบบเพื่อดาวน์โหลด</span>
-            <span aria-hidden="true">ดาวน์โหลด</span>
-          </a>
-        )}
+        <SkillDownload skill={style.skill} signedIn={signedIn} available={available} />
       </div>
     );
   }
@@ -86,6 +99,60 @@ export function CardActions({ entry, signedIn }: { entry: ShelfEntry; signedIn: 
         <span className="sr-only">บน {PLATFORM[clip.link.platform]} (เปิดแท็บใหม่)</span>
       </a>
     </div>
+  );
+}
+
+/**
+ * The card's download control (ADR 0002). A skill with no approved package
+ * says it is coming for everyone, since signing in would not help.
+ */
+function SkillDownload({ skill, signedIn, available }: { skill: string; signedIn: boolean | undefined; available?: boolean }) {
+  const [working, setWorking] = useState(false);
+  const [error, setError] = useState("");
+  const phase = downloadPhase({ hasPackage: approvedPackageFor(skill) !== null, signedIn, available, working });
+
+  if (phase === "none" || phase === "closed") {
+    return (
+      <button type="button" className={styles.lock} disabled>
+        <span className="sr-only">ดาวน์โหลดเร็วๆ นี้</span>
+        <span aria-hidden="true">เร็วๆ นี้</span>
+      </button>
+    );
+  }
+  // Until the session is known, offer sign-in: most visitors are signed out.
+  if (phase === "signin" || phase === "checking") {
+    return (
+      <a className={styles.lock} href="/account" title="สมัครหรือเข้าสู่ระบบก่อนดาวน์โหลด">
+        <LockKeyhole size={14} aria-hidden="true" />
+        <span className="sr-only">เข้าสู่ระบบเพื่อดาวน์โหลด</span>
+        <span aria-hidden="true">ดาวน์โหลด</span>
+      </a>
+    );
+  }
+
+  async function onClick() {
+    setWorking(true);
+    setError("");
+    const message = await startDownload(skill);
+    setWorking(false);
+    if (message) setError(message);
+  }
+  return (
+    <>
+      <button
+        type="button"
+        className={styles.download}
+        disabled={phase === "working"}
+        aria-busy={phase === "working"}
+        onClick={phase === "ready" ? onClick : undefined}
+      >
+        <Download size={14} aria-hidden="true" />
+        {phase === "working" ? "กำลังเตรียม…" : "ดาวน์โหลด"}
+      </button>
+      <p className={styles.error} role="status">
+        {error}
+      </p>
+    </>
   );
 }
 
@@ -115,12 +182,14 @@ function Card({
   entry,
   tools,
   signedIn,
+  available,
   eager,
   copy,
 }: {
   entry: ShelfEntry;
   tools: readonly StyleTool[];
   signedIn: boolean | undefined;
+  available: boolean | undefined;
   eager: boolean;
   copy: boolean;
 }) {
@@ -170,7 +239,7 @@ function Card({
         <br />
         {count} คลิป
       </p>
-      <CardActions entry={entry} signedIn={signedIn} />
+      <CardActions entry={entry} signedIn={signedIn} available={available} />
     </li>
   );
 }
@@ -192,6 +261,11 @@ export function StyleShelf({
   const [paused, setPaused] = useState(false);
   const signedIn = useSignedIn();
   const shelf = styleShelf(items);
+  const packaged = shelf.flatMap((e) => {
+    const skill = SHOWCASE_STYLES[e.style]?.skill;
+    return skill && approvedPackageFor(skill) ? [skill] : [];
+  });
+  const available = useAvailable(packaged);
   const credits = creditsOf(shelf.map((s) => s.clip));
   const repeats = repeatsFor(shelf.length);
   const half = Array.from({ length: repeats }, () => shelf).flat();
@@ -207,6 +281,7 @@ export function StyleShelf({
               entry={entry}
               tools={styleTools[entry.style] ?? []}
               signedIn={signedIn}
+              available={available[SHOWCASE_STYLES[entry.style]?.skill ?? ""]}
               eager={i < 6}
               copy={i >= shelf.length}
             />
