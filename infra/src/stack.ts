@@ -29,6 +29,7 @@ import {
   packageSignerPolicy,
   previewPolicy,
   secretsKeyPolicy,
+  wrapKeyPolicy,
 } from "./policies";
 
 export type StackConfig = {
@@ -43,6 +44,8 @@ export type StackConfig = {
   packageSignerKey?: pulumi.Input<string>;
   /** Roles allowed to encrypt/decrypt with alias/kubcode-secrets (the Lambda roles). */
   secretsKeyUserArns: pulumi.Input<string>[];
+  /** kubcode-lambda-* roles allowed to Decrypt with alias/kubcode-secrets-wrap (step 5). */
+  wrapKeyDecryptArns: pulumi.Input<string>[];
 };
 
 const json = (v: unknown) => JSON.stringify(v);
@@ -75,6 +78,23 @@ export function createStack(cfg: StackConfig) {
   );
   new aws.kms.Alias("secrets-key-alias", { name: NAMES.secretsKeyAlias, targetKeyId: secretsKey.keyId }, opts);
 
+  // --- Wrap key for per-user secrets (docs/design/settings-keys.md §1): the
+  // web host seals DEKs with its committed public key; only the Lambdas
+  // unwrap. Asymmetric keys cannot rotate; rotation is a new key (design §6).
+  // kms:CreateKey is not allowed for CI, so an admin creates it (README).
+  const wrapKey = new aws.kms.Key(
+    "secrets-wrap-key",
+    {
+      description: "kubcode-secrets-wrap: RSA public key wraps per-secret DEKs; Lambda-only Decrypt",
+      customerMasterKeySpec: "RSA_4096",
+      keyUsage: "ENCRYPT_DECRYPT",
+      deletionWindowInDays: 30,
+    },
+    // Losing this key loses every stored user secret and token.
+    { ...opts, protect: true },
+  );
+  new aws.kms.Alias("secrets-wrap-key-alias", { name: NAMES.wrapKeyAlias, targetKeyId: wrapKey.keyId }, opts);
+
   // --- Permissions boundary shared by every kubcode-* role.
   const boundaryArn = `arn:aws:iam::${ACCOUNT_ID}:policy/${NAMES.deployBoundary}`;
   const boundary = new aws.iam.Policy(
@@ -83,8 +103,10 @@ export function createStack(cfg: StackConfig) {
       name: NAMES.deployBoundary,
       description: "Ceiling for every kubcode-* role; only an admin can change it (CI is denied)",
       policy: pulumi
-        .all([stateKey.targetKeyArn, secretsKey.arn])
-        .apply(([stateKeyArn, secretsKeyArn]) => json(deployBoundaryPolicy({ stateKeyArn, secretsKeyArn, boundaryArn }))),
+        .all([stateKey.targetKeyArn, secretsKey.arn, wrapKey.arn])
+        .apply(([stateKeyArn, secretsKeyArn, wrapKeyArn]) =>
+          json(deployBoundaryPolicy({ stateKeyArn, secretsKeyArn, wrapKeyArn, boundaryArn })),
+        ),
     },
     opts,
   );
@@ -143,8 +165,23 @@ export function createStack(cfg: StackConfig) {
               adminArns: [deployArn, ...cfg.breakGlassAdminArns],
               readerArns: [previewArn],
               userArns,
+              // The admin sets the step-5 SSM SecureStrings with this key.
+              ssmWriterArns: cfg.breakGlassAdminArns,
             }),
           ),
+        ),
+    },
+    opts,
+  );
+
+  new aws.kms.KeyPolicy(
+    "secrets-wrap-key-policy",
+    {
+      keyId: wrapKey.keyId,
+      policy: pulumi
+        .all([deployRole.arn, previewRole.arn, pulumi.all(cfg.wrapKeyDecryptArns)])
+        .apply(([deployArn, previewArn, decryptArns]) =>
+          json(wrapKeyPolicy({ adminArns: [deployArn, ...cfg.breakGlassAdminArns], readerArns: [previewArn], decryptArns })),
         ),
     },
     opts,
@@ -344,6 +381,8 @@ export function createStack(cfg: StackConfig) {
     mediaBucket: media.bucket,
     secretsKeyArn: secretsKey.arn,
     secretsKeyAlias: pulumi.output(NAMES.secretsKeyAlias),
+    wrapKeyArn: wrapKey.arn,
+    wrapKeyAlias: pulumi.output(NAMES.wrapKeyAlias),
     deployRoleArn: deployRole.arn,
     previewRoleArn: previewRole.arn,
     boundaryPolicyArn: boundary.arn,
