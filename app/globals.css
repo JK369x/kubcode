@@ -965,6 +965,54 @@ footer small {
   padding-left: 20px;
   color: var(--muted);
 }
+/* "ใช้ยังไง": three numbered steps, the main path through the page. */
+.detail-copy .steps {
+  display: grid;
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  counter-reset: step;
+}
+.detail-copy .steps li {
+  position: relative;
+  padding-left: 40px;
+  line-height: 1.6;
+  counter-increment: step;
+}
+.detail-copy .steps li::before {
+  content: counter(step);
+  position: absolute;
+  left: 0;
+  top: -2px;
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 999px;
+  background: var(--selected);
+  color: var(--selected-ink);
+  font-size: 14px;
+  font-weight: 600;
+}
+/* Rights and internal notes: kept on the page, folded under one summary. */
+.rights-details {
+  margin-top: 32px;
+  padding-top: 16px;
+  border-top: 1px solid var(--line);
+  color: var(--muted);
+  font-size: 14px;
+}
+.rights-details summary {
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  color: var(--ink);
+  cursor: pointer;
+}
+.rights-details p {
+  margin: 10px 0;
+}
 .rights-code {
   display: block;
   font-size: 10px;

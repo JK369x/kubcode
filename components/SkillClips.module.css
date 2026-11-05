@@ -1,0 +1,100 @@
+/*
+ * Approved clips on a skill page: the cover where the preview sits, and a
+ * grid of every clip made with the skill. Posters by default; a muted loop
+ * fades in only while an item is hovered or focused.
+ */
+
+.cover {
+  margin: 0;
+  max-width: 360px;
+}
+.media {
+  position: relative;
+  display: block;
+  aspect-ratio: 9 / 16;
+  overflow: hidden;
+  border-radius: var(--radius);
+  background: var(--media);
+}
+.poster,
+.video {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.video {
+  opacity: 0;
+  transition: opacity 220ms ease-out;
+}
+[data-playing] .video {
+  opacity: 1;
+}
+.caption {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 4px 12px;
+  margin-top: 10px;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.post {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  min-height: 32px;
+  color: var(--ink);
+  font-size: 13px;
+  text-underline-offset: 3px;
+}
+
+.section {
+  max-width: 360px;
+  margin-top: 28px;
+}
+.section h2 {
+  margin: 0;
+  font-size: 18px;
+}
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(104px, 1fr));
+  gap: clamp(12px, 1.4vw, 20px);
+  margin: 16px 0 0;
+  padding: 0;
+  list-style: none;
+}
+.item {
+  min-width: 0;
+}
+.label {
+  margin: 8px 0 0;
+  color: var(--ink);
+  font-size: 13px;
+  line-height: 1.45;
+}
+.credits {
+  margin: 16px 0 0;
+  color: var(--muted);
+  font-size: 13px;
+}
+.credits a {
+  color: inherit;
+  text-underline-offset: 3px;
+}
+
+/* Phones: a smaller cover so the description and steps are not pushed far down. */
+@media (max-width: 719px) {
+  .cover {
+    max-width: 240px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .video {
+    display: none;
+  }
+}

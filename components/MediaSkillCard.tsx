@@ -2,6 +2,7 @@ import Link from "next/link";
 import { ArrowUpRight } from "lucide-react";
 import { categories, type Skill } from "@/lib/catalog";
 import { coverFor } from "@/lib/media-covers";
+import { showcaseForSkill } from "@/lib/showcase";
 import { hasWithheldMedia } from "@/lib/publication";
 import { statusLabel } from "@/lib/status-labels";
 import { CardDownloadAction } from "./CardDownloadAction";
@@ -44,7 +45,11 @@ export function MediaSkillCard({
   onSelectSkill: (slug: string) => void;
   eager?: boolean;
 }) {
-  const poster = coverFor(skill);
+  // An approved clip made with this skill gives the card its cover (in every
+  // media mode) and opens the skill page, where those clips are; otherwise
+  // the skill's own cover under the media policy, if any.
+  const showcase = showcaseForSkill(skill.slug);
+  const poster = showcase?.cover.poster.src ?? coverFor(skill);
   const tools = getSkillTools(skill);
   const authors = getSkillTools(skill, true);
   const detailHref = "/skills/" + encodeURIComponent(skill.slug);
@@ -57,15 +62,8 @@ export function MediaSkillCard({
       data-category={skill.category}
       data-skill={skill.slug}
     >
-      <button
-        type="button"
-        className={
-          "card-preview " + styles.hit + (poster ? "" : " without-media")
-        }
-        aria-label={"ดูผลงาน " + skill.name}
-        onClick={() => onSelectSkill(skill.slug)}
-      >
-        {poster ? (
+      {showcase && poster ? (
+        <Link className={"card-preview " + styles.hit} href={detailHref} aria-label={"ดูคลิปตัวอย่าง " + skill.name}>
           <img
             className={styles.poster}
             src={poster}
@@ -74,22 +72,42 @@ export function MediaSkillCard({
             decoding="async"
             draggable={false}
           />
-        ) : (
-          <span className={styles.empty}>
-            <span className={styles.emptyGlyph}>
-              <SkillIcon category={skill.category} size={30} />
+        </Link>
+      ) : (
+        <button
+          type="button"
+          className={
+            "card-preview " + styles.hit + (poster ? "" : " without-media")
+          }
+          aria-label={"ดูผลงาน " + skill.name}
+          onClick={() => onSelectSkill(skill.slug)}
+        >
+          {poster ? (
+            <img
+              className={styles.poster}
+              src={poster}
+              alt=""
+              loading={eager ? "eager" : "lazy"}
+              decoding="async"
+              draggable={false}
+            />
+          ) : (
+            <span className={styles.empty}>
+              <span className={styles.emptyGlyph}>
+                <SkillIcon category={skill.category} size={30} />
+              </span>
+              <strong className={styles.emptyTitle}>
+                {emptyTitle(skill.category)}
+              </strong>
+              <span className={styles.emptyNote}>
+                {hasWithheldMedia(skill)
+                  ? "สื่อตัวอย่างรอยืนยันสิทธิ์เผยแพร่"
+                  : "ยังไม่มีสื่อพรีวิว"}
+              </span>
             </span>
-            <strong className={styles.emptyTitle}>
-              {emptyTitle(skill.category)}
-            </strong>
-            <span className={styles.emptyNote}>
-              {hasWithheldMedia(skill)
-                ? "สื่อตัวอย่างรอยืนยันสิทธิ์เผยแพร่"
-                : "ยังไม่มีสื่อพรีวิว"}
-            </span>
-          </span>
-        )}
-      </button>
+          )}
+        </button>
+      )}
 
       <div className={styles.top}>
         <span className={styles.status}>{status}</span>
