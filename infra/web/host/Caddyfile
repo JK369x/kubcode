@@ -1,0 +1,11 @@
+# Only kubcode.dev gets a site (and a certificate). Bare-IP or other-host
+# requests match nothing. The app's canonical-host check is the second layer.
+kubcode.dev {
+	encode zstd gzip
+	reverse_proxy 127.0.0.1:3000
+	header {
+		-Server
+		# Same value Vercel sent, so browsers keep the HTTPS-only promise.
+		Strict-Transport-Security "max-age=63072000"
+	}
+}

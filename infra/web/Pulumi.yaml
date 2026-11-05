@@ -1,0 +1,10 @@
+name: kubcode-web
+description: kubcode.dev web host on Lightsail (kubcode-web*) and the apex record. Admin-applied only.
+runtime:
+  name: nodejs
+  options:
+    typescript: true
+    packagemanager: npm
+# Same pinned backend as ../Pulumi.yaml; never touches the machine's default Pulumi login.
+backend:
+  url: s3://kubcode-pulumi-state-955758449820?region=ap-southeast-1

@@ -1,21 +1,20 @@
-# Every push to a non-main branch: checks, then a Vercel PREVIEW deployment
-# built in CI (prebuilt) and linked on the branch's open PR. Never migrates.
+# Every push to a non-main branch: the shared checks (tests, types, build).
+# No preview deployment: production moved off Vercel to Lightsail
+# (docs/adr/0001-host-web-on-lightsail.md); review UI changes locally.
 #
-# Trust boundary: VERCEL_TOKEN is account-wide (Vercel has no preview-only
-# token) and repository secrets are readable by any branch's workflow, so
-# anyone who can push a branch can reach production credentials. Only the
-# owner has push access; keep it that way (see HANDOFF.md section 7a). The
-# token is never given to steps that run project code (npm ci, vercel build).
+# Trust boundary: repository secrets (MIGRATION_DATABASE_URL,
+# LIGHTSAIL_DEPLOY_KEY) are readable by any branch's workflow, so anyone who
+# can push a branch can reach production. Only the owner has push access;
+# keep it that way (see HANDOFF.md section 7a).
 name: Preview
 
 on:
   push:
     branches-ignore:
       - main
-    # Infra/docs-only changes skip Vercel (and its upload quota) entirely; no
-    # check is required on main, so a skipped run leaves nothing pending.
-    # infra/ has its own Infra workflow. docs/covers* still triggers because
-    # tests/cover-brief.test.ts reads it. Later patterns override earlier ones.
+    # Infra/docs-only changes skip the app checks; infra/ has its own Infra
+    # workflow. docs/covers* still triggers because tests/cover-brief.test.ts
+    # reads it. Later patterns override earlier ones.
     paths:
       - "**"
       - ".github/**"
@@ -33,80 +32,6 @@ concurrency:
   group: preview-${{ github.ref }}
   cancel-in-progress: true
 
-env:
-  VERCEL_CLI_VERSION: "54.1.0"
-  VERCEL_ORG_ID: ${{ vars.VERCEL_ORG_ID }}
-  VERCEL_PROJECT_ID: ${{ vars.VERCEL_PROJECT_ID }}
-
 jobs:
   checks:
     uses: ./.github/workflows/checks.yml
-
-  preview:
-    needs: checks
-    runs-on: ubuntu-latest
-    timeout-minutes: 20
-    permissions:
-      contents: read
-      pull-requests: write
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: "22"
-          cache: npm
-      - run: npm ci --ignore-scripts
-      - run: npm install --global "vercel@${VERCEL_CLI_VERSION}"
-
-      - name: Pull preview project settings
-        env:
-          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
-        run: vercel pull --yes --environment=preview --token "$VERCEL_TOKEN"
-
-      # Runs project code (next build): no token in this step.
-      - name: Build (prebuilt, licensed-only media)
-        env:
-          NEXT_PUBLIC_MEDIA_MODE: licensed-only
-        run: vercel build --target=preview
-
-      # Deploy the prebuilt output from outside the git checkout: Vercel Hobby
-      # BLOCKS deployments whose git commit author is not a team member, and
-      # local commits carry a machine-local author email.
-      - name: Deploy preview
-        id: deploy
-        timeout-minutes: 10
-        env:
-          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
-        run: |
-          stage="$RUNNER_TEMP/deploy"
-          # Whole tree minus .git: prebuilt functions reference node_modules files.
-          mkdir -p "$stage" && rsync -a --exclude .git ./ "$stage/"
-          url=$(vercel deploy --prebuilt --target=preview --cwd "$stage" --token "$VERCEL_TOKEN")
-          host=${url#https://}
-          # An untargeted first deploy once became production: always verify.
-          info=$(curl -fsS -H "Authorization: Bearer $VERCEL_TOKEN" \
-            "https://api.vercel.com/v13/deployments/${host}?teamId=${VERCEL_ORG_ID}")
-          target=$(jq -r '.target // "preview"' <<<"$info")
-          state=$(jq -r '.readyState' <<<"$info")
-          [ "$state" = "READY" ] || { echo "::error::preview deployment is $state, not READY ($url)"; exit 1; }
-          if [ "$target" = "production" ]; then
-            echo "::error::preview deploy returned a PRODUCTION deployment ($url); investigate before merging"
-            exit 1
-          fi
-          echo "url=$url" >> "$GITHUB_OUTPUT"
-          echo "Preview: $url (target=$target)" >> "$GITHUB_STEP_SUMMARY"
-
-      - name: Comment preview URL on the open PR
-        env:
-          GH_TOKEN: ${{ github.token }}
-          URL: ${{ steps.deploy.outputs.url }}
-          BRANCH: ${{ github.ref_name }}
-          SHA: ${{ github.sha }}
-        run: |
-          pr=$(gh pr list --repo "$GITHUB_REPOSITORY" --head "$BRANCH" --state open --json number --jq '.[0].number // empty')
-          if [ -z "$pr" ]; then
-            echo "No open PR for $BRANCH; preview URL is in the run summary."
-            exit 0
-          fi
-          gh pr comment "$pr" --repo "$GITHUB_REPOSITORY" \
-            --body "Preview for \`${SHA:0:7}\`: $URL (no migrations run; preview has no production secrets)"
