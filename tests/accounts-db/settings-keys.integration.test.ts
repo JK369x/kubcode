@@ -356,3 +356,24 @@ test("the overview lists connections and only the 20 newest history events", asy
   );
   assert.equal(view.secrets[0].version, 25);
 });
+
+test("without a wrap key the store cannot seal: saves are refused, reads and deletes still work", async () => {
+  const a = await member();
+  await store.saveSecret(a, { kind: "elevenlabs_api_key", secret: ELEVEN_KEY });
+  const keyless = createPgKeyStore(db.appPool, null);
+  assert.equal(keyless.sealing, false);
+  assert.equal(store.sealing, true);
+  assert.deepEqual(await keyless.saveSecret(a, { kind: "elevenlabs_api_key", secret: ELEVEN_KEY }), { ok: false, code: "NOT_READY" });
+  const view = await keyless.overview(a);
+  assert.ok(view.ok);
+  assert.equal(view.secrets.length, 1);
+  assert.deepEqual(await keyless.deleteSecret(a, "elevenlabs_api_key"), { ok: true, disconnected: 0 });
+});
+
+test("a keyless store still checks the member before saying NOT_READY", async () => {
+  const keyless = createPgKeyStore(db.appPool, null);
+  const guest = await member({ owner: false });
+  assert.deepEqual(await keyless.saveSecret(guest, { kind: "elevenlabs_api_key", secret: ELEVEN_KEY }), { ok: false, code: "FORBIDDEN" });
+  const owner = await member();
+  assert.deepEqual(await keyless.saveSecret({ ...owner, sv: owner.sv + 1 }, { kind: "elevenlabs_api_key", secret: ELEVEN_KEY }), { ok: false, code: "NOT_SIGNED_IN" });
+});

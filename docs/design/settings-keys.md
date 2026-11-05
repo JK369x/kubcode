@@ -232,6 +232,21 @@ The page is in Thai and has four sections:
 
 Every write uses the existing CSRF/Origin guards.
 
+**As built (step 3, 2026-11-05).**
+- Routes: `POST /api/keys/secrets {kind, publicValue, secret}` and
+  `DELETE /api/keys/secrets/{kind} {confirmDisconnect?}`, both behind `guardWrite` (the interactions
+  guard: Origin + CSRF before any body byte, streamed 2 KiB cap). There is no read API: the page is
+  server-rendered from `KeyStore.overview`, so metadata never travels as a separate JSON endpoint.
+- One place per rule: `lib/keys/access.ts` holds `keysEnabled(env)` (flag `KUBCODE_KEYS_ENABLED`,
+  exactly `"true"`) and `canUseKeys(member)` (owner-only now). ADR 0003 (creators) changes only
+  `canUseKeys`.
+- The page 404s when the flag is off or the member is not allowed, redirects signed-out visitors to
+  `/account`, and is `noindex`.
+- `lib/keys/wrap-key.ts` holds `CURRENT_WRAP_KEY = null` until step 4. While null, saving answers
+  `NOT_READY` (after the member check, so only an allowed member learns it), and the page disables
+  the save buttons. Reading and deleting work.
+- Connect/disconnect buttons render disabled with "เร็วๆ นี้" until step 5.
+
 ## 9. Build plan (after OK) — vertical TDD slices
 
 1. Envelope v1: TS + Rust crates (`services/crates/kubcode-envelope`) with shared test vectors, and

@@ -7,9 +7,11 @@
 import { randomUUID } from "node:crypto";
 import type { Pool, PoolClient } from "pg";
 import type { SessionClaims } from "../accounts/session";
-import { withTransaction } from "../accounts/db";
+import { getPool, withTransaction } from "../accounts/db";
 import { lockMember } from "../accounts/member";
+import { canUseKeys } from "./access";
 import { sealSecret, type WrapKey } from "./envelope";
+import { CURRENT_WRAP_KEY } from "./wrap-key";
 
 type KindSpec = {
   /** Shape of the non-secret half (client id / app id); null = none allowed. */
@@ -44,7 +46,9 @@ export type KeyStoreErrorCode =
   | "INVALID_PUBLIC_VALUE"
   | "INVALID_SECRET"
   | "NOT_FOUND"
-  | "IN_USE";
+  | "IN_USE"
+  /** No wrap key configured yet, so nothing can be sealed. */
+  | "NOT_READY";
 export type Failure = { ok: false; code: KeyStoreErrorCode };
 
 export type SecretMeta = {
@@ -73,6 +77,8 @@ export type Overview = { ok: true; secrets: SecretMeta[]; connections: Connectio
 export type SaveSecretInput = { kind: string; publicValue?: string | null; secret: string };
 
 export interface KeyStore {
+  /** False until a wrap key exists; saves then return NOT_READY. */
+  readonly sealing: boolean;
   overview(viewer: SessionClaims): Promise<Overview | Failure>;
   /** Saves a new key or replaces the existing one of the same kind. */
   saveSecret(viewer: SessionClaims, input: SaveSecretInput): Promise<{ ok: true; replaced: boolean; secret: SecretMeta } | Failure>;
@@ -108,11 +114,11 @@ function validate(input: SaveSecretInput): Validated | Failure {
 }
 
 // Session check + row lock on the member, then the per-user RLS scope.
-// Phase 1 is owner-only (design §8).
+// Who may use keys is decided by canUseKeys alone (owner-only in phase 1).
 async function enter(c: PoolClient, s: SessionClaims): Promise<string | Failure> {
   const member = await lockMember(c, s);
   if (!member) return fail("NOT_SIGNED_IN");
-  if (!member.isOwner) return fail("FORBIDDEN");
+  if (!canUseKeys(member)) return fail("FORBIDDEN");
   await c.query("SELECT set_config('kubcode.user_id', $1, true)", [member.id]);
   return member.id;
 }
@@ -133,10 +139,12 @@ const secretMeta = (r: SecretRow): SecretMeta => ({
 });
 const SECRET_COLUMNS = "kind, public_value, hint, version, updated_at";
 
-export function createPgKeyStore(pool: Pool, wrapKey: WrapKey): KeyStore {
+export function createPgKeyStore(pool: Pool, wrapKey: WrapKey | null): KeyStore {
   const tx = <T>(work: (c: PoolClient) => Promise<T>) => withTransaction(pool, work);
 
   return {
+    sealing: wrapKey !== null,
+
     async overview(session) {
       return tx(async (c) => {
         const uid = await enter(c, session);
@@ -186,6 +194,9 @@ export function createPgKeyStore(pool: Pool, wrapKey: WrapKey): KeyStore {
       return tx(async (c) => {
         const uid = await enter(c, session);
         if (typeof uid !== "string") return uid;
+        // Only an allowed member learns that saving is not open yet.
+        if (!wrapKey) return fail("NOT_READY");
+        const key = wrapKey;
         const existing = (
           await c.query<{ id: string; version: number }>(
             "SELECT id, version FROM kubcode_accounts.user_secrets WHERE user_id = $1 AND kind = $2 FOR UPDATE",
@@ -195,7 +206,7 @@ export function createPgKeyStore(pool: Pool, wrapKey: WrapKey): KeyStore {
         const id = existing?.id ?? randomUUID();
         const version = existing ? existing.version + 1 : 1;
         const plaintext = JSON.stringify({ [KINDS[v.kind].field]: v.secret });
-        const envelope = sealSecret({ table: "user_secrets", rowId: id, userId: uid, kind: v.kind, version }, plaintext, wrapKey);
+        const envelope = sealSecret({ table: "user_secrets", rowId: id, userId: uid, kind: v.kind, version }, plaintext, key);
         const hint = v.secret.slice(-4);
         const saved = existing
           ? await c.query<SecretRow>(
@@ -203,13 +214,13 @@ export function createPgKeyStore(pool: Pool, wrapKey: WrapKey): KeyStore {
                   SET public_value = $3, envelope = $4, key_slot = $5, hint = $6, version = $7, updated_at = now()
                 WHERE id = $1 AND user_id = $2
             RETURNING ${SECRET_COLUMNS}`,
-              [id, uid, v.publicValue, envelope, wrapKey.slot, hint, version],
+              [id, uid, v.publicValue, envelope, key.slot, hint, version],
             )
           : await c.query<SecretRow>(
               `INSERT INTO kubcode_accounts.user_secrets (id, user_id, kind, public_value, envelope, key_slot, hint, version)
                VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
             RETURNING ${SECRET_COLUMNS}`,
-              [id, uid, v.kind, v.publicValue, envelope, wrapKey.slot, hint, version],
+              [id, uid, v.kind, v.publicValue, envelope, key.slot, hint, version],
             );
         await audit(c, uid, existing ? "secret_replaced" : "secret_saved", v.kind);
         return { ok: true as const, replaced: Boolean(existing), secret: secretMeta(saved.rows[0]) };
@@ -246,4 +257,8 @@ export function createPgKeyStore(pool: Pool, wrapKey: WrapKey): KeyStore {
       });
     },
   };
+}
+
+export function getKeyStore(databaseUrl: string): KeyStore {
+  return createPgKeyStore(getPool(databaseUrl), CURRENT_WRAP_KEY);
 }
