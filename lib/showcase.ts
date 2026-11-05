@@ -83,3 +83,21 @@ export function styleToolsFrom(tools: readonly Tool[]): Record<string, StyleTool
     ]),
   );
 }
+
+/** A catalogue skill's approved clips: every clip of every style that names it. */
+export type SkillShowcase = { cover: ShowcaseItem; clips: ShowcaseItem[]; detail?: string };
+
+/**
+ * Approved showcase clips for a catalogue skill, or null when none of its
+ * styles has a published clip. The cover is the first such style's cover clip.
+ */
+export function showcaseForSkill(
+  slug: string,
+  items: readonly ShowcaseItem[] = publishedShowcase(),
+): SkillShowcase | null {
+  const styles = Object.entries(SHOWCASE_STYLES).filter(([, s]) => s.skill === slug).map(([key]) => key);
+  const clips = items.filter((c) => styles.includes(c.style));
+  if (clips.length === 0) return null;
+  const first = styleShelf(clips)[0];
+  return { cover: first.clip, clips, detail: SHOWCASE_STYLES[first.style]?.detail };
+}

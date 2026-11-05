@@ -12,6 +12,8 @@ import { breadcrumbJsonLd, metadataFor } from "@/lib/seo";
 import { JsonLd } from "@/components/JsonLd";
 import { RelatedLinks } from "@/components/RelatedLinks";
 import { PageRail } from "@/components/PageRail";
+import { SkillClipGrid, SkillCover } from "@/components/SkillClips";
+import { showcaseForSkill } from "@/lib/showcase";
 export function generateStaticParams() {
   return skills.map((s) => ({ slug: s.slug }));
 }
@@ -37,6 +39,8 @@ export default async function Detail({
   const { slug } = await params;
   const s = skills.find((s) => s.slug === slug);
   if (!s) notFound();
+  // Approved clips made with this skill, if any style names it.
+  const showcase = showcaseForSkill(s.slug);
   return (
     <main id="main" className="detail-page">
       <JsonLd
@@ -57,30 +61,28 @@ export default async function Detail({
             </p>
           </div>
           <div className="detail-grid">
-            <Preview skill={s} />
+            {showcase ? (
+              <div className="detail-media">
+                <SkillCover showcase={showcase} />
+                <SkillClipGrid showcase={showcase} />
+              </div>
+            ) : (
+              <Preview skill={s} />
+            )}
             <div className="detail-copy">
-              <p className="lead">{s.description}</p>
-              <h2>ก่อนเริ่มใช้งาน</h2>
+              <p className="lead">{showcase?.detail ?? s.description}</p>
+              <h2>สิ่งที่ต้องมี</h2>
               <ul>
                 {s.requirements.map((r) => (
                   <li key={r}>{r}</li>
                 ))}
               </ul>
-              <h2>วิธีใช้ในขอบเขตนี้</h2>
-              <p>
-                ดูตัวอย่างและอ่านข้อกำหนดก่อนเลือก pipeline จากนั้นอ่าน STYLE.md
-                หรือคำแนะนำ shared workflow ในชุดต้นทาง อย่าคัดลอก renderer
-                ข้ามชุดโดยไม่ตรวจ dependency และ source ที่คู่กัน
-              </p>
-              <p>
-                ต้นแบบเว็บนี้ไม่ได้แนบ source kit และไม่ได้ยืนยันการติดตั้งหรือ
-                render จาก clean clone ใช้ metadata เพื่อช่วยเลือก
-                ไม่ใช่คำสั่งผลิตงานที่ผ่านการรับรอง
-              </p>
-              <h2>สถานะและสิทธิ์</h2>
-              <p>{s.approvalScope}</p>
-              <p>{PUBLICATION_NOTICE}</p>
-              <small className="rights-code">{PREVIEW_NOTICE}</small>
+              <h2>ใช้ยังไง</h2>
+              <ol className="steps">
+                <li>ดูคลิปตัวอย่าง แล้วเช็คว่าเป็นแนวที่อยากทำ</li>
+                <li>เตรียมเครื่องมือตามรายการ “สิ่งที่ต้องมี” ด้านบน</li>
+                <li>ดาวน์โหลดชุด skill (ต้องเข้าสู่ระบบ) แล้วสั่ง AI agent ของคุณเป็นภาษาไทยได้เลย</li>
+              </ol>
               <DownloadAction slug={s.slug} />
               <Link href="/articles/install-with-permissions">
                 อ่านรายการตรวจสอบก่อนติดตั้ง
@@ -89,6 +91,22 @@ export default async function Detail({
                 items={related(getContent(), { kind: "skill", slug: s.slug })}
                 headings={{ tool: "เครื่องมือที่ใช้", article: "ใช้ในบทความ" }}
               />
+              <details className="rights-details">
+                <summary>สถานะและสิทธิ์</summary>
+                <p>{s.approvalScope}</p>
+                <p>
+                  ดูตัวอย่างและอ่านข้อกำหนดก่อนเลือก pipeline จากนั้นอ่าน STYLE.md
+                  หรือคำแนะนำ shared workflow ในชุดต้นทาง อย่าคัดลอก renderer
+                  ข้ามชุดโดยไม่ตรวจ dependency และ source ที่คู่กัน
+                </p>
+                <p>
+                  ต้นแบบเว็บนี้ไม่ได้แนบ source kit และไม่ได้ยืนยันการติดตั้งหรือ
+                  render จาก clean clone ใช้ metadata เพื่อช่วยเลือก
+                  ไม่ใช่คำสั่งผลิตงานที่ผ่านการรับรอง
+                </p>
+                <p>{PUBLICATION_NOTICE}</p>
+                <small className="rights-code">{PREVIEW_NOTICE}</small>
+              </details>
             </div>
           </div>
         </div>
