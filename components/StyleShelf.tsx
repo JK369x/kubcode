@@ -125,7 +125,7 @@ function Card({
   copy: boolean;
 }) {
   const { clip, count } = entry;
-  const style = SHOWCASE_STYLES[entry.style] ?? { name: entry.style, detail: "", tools: [] };
+  const style = SHOWCASE_STYLES[entry.style] ?? { name: entry.style, en: entry.style, detail: "", tools: [] };
   return (
     <li
       className={styles.card}
@@ -165,7 +165,11 @@ function Card({
         {style.detail && <p className={styles.detail}>{style.detail}</p>}
       </div>
       <p className={styles.name}>{style.name}</p>
-      <p className={styles.meta}>{count} คลิป</p>
+      <p className={styles.meta}>
+        <span lang="en">{style.en}</span>
+        <br />
+        {count} คลิป
+      </p>
       <CardActions entry={entry} signedIn={signedIn} />
     </li>
   );
