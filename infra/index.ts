@@ -11,8 +11,9 @@ const secretsKeyUserArns: pulumi.Input<string>[] = [];
 
 // HOOK: kubcode-lambda-* roles that may Decrypt with alias/kubcode-secrets-wrap
 // (RSAES_OAEP_SHA_256 only). Step 5 appends the oauth-connect and token-refresh
-// roles here. KMS rejects a key policy naming a role that does not exist yet,
-// and the boundary denies Decrypt on this key to any other principal.
+// roles here. KMS rejects a key policy naming a role that does not exist yet.
+// CI is denied kms:PutKeyPolicy on this key, so changing this list is an
+// admin apply (like the boundary): create the roles via CI first, then apply.
 const wrapKeyDecryptArns: pulumi.Input<string>[] = [];
 
 const outputs = createStack({

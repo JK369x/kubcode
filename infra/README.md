@@ -52,9 +52,11 @@ other work.
   its own role policy could not reach beyond `kubcode-*` resources.
 - The boundary allows S3 on `kubcode-*` buckets, KMS aliases `alias/kubcode-*`,
   and **only the three kubcode keys by ARN** (state, secrets, secrets-wrap).
-  `kms:Decrypt` on the wrap key is **denied** to every principal whose ARN is
-  not `role/kubcode-lambda-*`, so CI cannot grant itself decryption through the
-  key policy it administers. Parameters under `parameter/kubcode/*` can be read
+  `kms:Decrypt` and `kms:ReEncrypt*` on the wrap key are **denied** to every
+  principal whose ARN is not `role/kubcode-lambda-*`, and `kms:PutKeyPolicy` /
+  `kms:CreateGrant` on it are denied to every kubcode role. So CI can neither
+  grant itself decryption nor name an outside principal (another account) in
+  the key policy or a grant: the wrap key policy is admin-only. Parameters under `parameter/kubcode/*` can be read
   (`ssm:GetParameter(s)`, for the step-5 Lambdas) but not written. It also allows IAM
   roles and policies named `kubcode-*`, budgets `kubcode-*`, Lambda functions
   `kubcode-*` (create, update, delete, tags, Function URL config, resource
@@ -105,10 +107,13 @@ policy on the key itself would create a dependency cycle.
 | `RootUserRecovery` | account root user only (`aws:PrincipalArn = …:root`) | same admin actions, for recovery |
 | `PublicKeyRead` | admins + `kubcode-github-preview` | `GetPublicKey`, `DescribeKey`, `GetKeyPolicy`, `ListResourceTags` |
 | `KeyDecrypt` | the `wrapKeyDecryptArns` hook in `index.ts`, which must match `role/kubcode-lambda-*` | `Decrypt` with `kms:EncryptionAlgorithm = RSAES_OAEP_SHA_256` only. Absent until step 5 adds the Lambda roles (KMS rejects a policy naming a role that does not exist) |
+| `DenyDecryptOutsideLambdaRoles` | `*` unless `aws:PrincipalArn` is `role/kubcode-lambda-*` | **Deny** `Decrypt`, `ReEncrypt*`: covers admins, root and other accounts |
+| `DenyGrants` | `*` | **Deny** `CreateGrant` |
 
 Nobody encrypts through KMS: the web host uses the committed public key
-(`lib/keys/secrets-wrap-v1.pub.pem`). The boundary's Deny stops any other
-kubcode role from decrypting, even if the key policy were widened by CI.
+(`lib/keys/secrets-wrap-v1.pub.pem`). CI is denied `PutKeyPolicy` and
+`CreateGrant` on this key by the boundary, so **any change to this key policy
+(including adding the step-5 Lambda roles to the hook) is an admin apply**.
 
 ## Day to day
 
@@ -278,8 +283,10 @@ The admin sets them with the CLI at step 5 instead.
    ```
    The HMAC key also goes into the web host env (`KUBCODE_CONNECT_HMAC_KEY`),
    so copy it from the file before `rm`. Add `--overwrite` to change a value later. Values never go in git, chat or
-   Pulumi state. Then run `npm run keys:wrap-key -- interop` with a Lambda
-   role's credentials (or inside the Lambda) for the end-to-end interop check.
+   Pulumi state. When step 5 adds the Lambda roles to `wrapKeyDecryptArns`,
+   that key-policy change is an admin apply too (CI cannot change this key
+   policy). Then run `npm run keys:wrap-key -- interop` with a Lambda role's
+   credentials (or inside the Lambda) for the end-to-end interop check.
 
 ## Tests
 

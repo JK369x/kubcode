@@ -346,11 +346,14 @@ test("package signer role rejects a log group outside /aws/lambda/kubcode-*", ()
 
 // ------------------------------------------------ settings keys (design §1, §5)
 
-test("wrap key boundary: Decrypt on the wrap key is denied to every principal but kubcode-lambda-* roles", () => {
-  const deny = boundary().Statement.filter((s) => s.Effect === "Deny" && resourcesOf(s).includes(WRAP_KEY_ARN));
-  assert.equal(deny.length, 1);
-  assert.deepEqual(actionsOf(deny[0]), ["kms:Decrypt"]);
-  assert.deepEqual(deny[0].Condition, { ArnNotLike: { "aws:PrincipalArn": `arn:aws:iam::${ACCOUNT_ID}:role/kubcode-lambda-*` } });
+test("wrap key boundary: plaintext-producing calls are denied to every principal but kubcode-lambda-* roles", () => {
+  const deny = boundary().Statement.find((s) => s.Sid === "DenyWrapKeyDecryptOutsideLambdaRoles")!;
+  assert.deepEqual(resourcesOf(deny), [WRAP_KEY_ARN]);
+  assert.equal(deny.Effect, "Deny");
+  // ReEncrypt decrypts inside KMS and re-encrypts under a key the caller may
+  // be able to decrypt (the state key), so it must be denied like Decrypt.
+  for (const a of ["kms:Decrypt", "kms:ReEncryptFrom", "kms:ReEncryptTo"]) assert.ok(grants(deny, a), a);
+  assert.deepEqual(deny.Condition, { ArnNotLike: { "aws:PrincipalArn": `arn:aws:iam::${ACCOUNT_ID}:role/kubcode-lambda-*` } });
   // Ceiling only: the boundary allows kms on the key so a key-policy grant can apply.
   assert.ok(allows(boundary()).some((s) => s.Sid === "KubcodeKeysCeiling" && resourcesOf(s).includes(WRAP_KEY_ARN)));
   // The deploy role itself never reaches the wrap key through IAM.
@@ -407,4 +410,27 @@ test("secrets key: SSM SecureString writes for the listed writers, only via SSM 
   assert.ok(!grants(w, "kms:Decrypt"), "writing a parameter never needs Decrypt");
   const none = secretsKeyPolicy({ adminArns: [DEPLOY_ROLE], readerArns: [], userArns: [] });
   assert.equal(none.Statement.find((s) => s.Sid === "SsmParameterWrite"), undefined);
+});
+
+test("wrap key boundary: no kubcode role can rewrite the wrap key policy or create grants (admin-only)", () => {
+  // Otherwise CI could name a principal outside the boundary (another account,
+  // a client role) in the key policy or a grant and decrypt from there.
+  const deny = boundary().Statement.find((s) => s.Sid === "DenyWrapKeyPolicyAndGrants")!;
+  assert.equal(deny.Effect, "Deny");
+  assert.deepEqual(resourcesOf(deny), [WRAP_KEY_ARN]);
+  for (const a of ["kms:PutKeyPolicy", "kms:CreateGrant"]) assert.ok(grants(deny, a), a);
+  assert.equal(deny.Condition, undefined, "applies to every kubcode role, Lambda roles included");
+});
+
+test("wrap key policy: its own Deny covers every principal (admins, root, other accounts)", () => {
+  const doc = wrapKeyPolicy({ adminArns: [DEPLOY_ROLE, BREAK_GLASS], readerArns: [PREVIEW_ROLE], decryptArns: [LAMBDA_ROLE] });
+  const deny = doc.Statement.find((s) => s.Sid === "DenyDecryptOutsideLambdaRoles")!;
+  assert.equal(deny.Effect, "Deny");
+  assert.deepEqual(deny.Principal, { AWS: "*" });
+  for (const a of ["kms:Decrypt", "kms:ReEncryptFrom"]) assert.ok(grants(deny, a), a);
+  assert.deepEqual(deny.Condition, { ArnNotLike: { "aws:PrincipalArn": `arn:aws:iam::${ACCOUNT_ID}:role/kubcode-lambda-*` } });
+  const grantsDeny = doc.Statement.find((s) => s.Sid === "DenyGrants")!;
+  assert.equal(grantsDeny.Effect, "Deny");
+  assert.deepEqual(grantsDeny.Principal, { AWS: "*" });
+  assert.ok(grants(grantsDeny, "kms:CreateGrant"));
 });

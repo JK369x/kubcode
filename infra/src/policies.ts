@@ -134,13 +134,23 @@ export function deployBoundaryPolicy(opts: {
     // SSM. Nothing in this boundary can write parameters: the admin sets them.
     { Sid: "ReadKubcodeParameters", Effect: "Allow", Action: ["ssm:GetParameter", "ssm:GetParameters"], Resource: KUBCODE_PARAMETERS },
     {
-      // The deploy role administers the wrap key policy, so without this it
-      // could grant itself Decrypt. Only kubcode-lambda-* roles may unwrap DEKs.
+      // Only kubcode-lambda-* roles may unwrap DEKs. ReEncrypt is denied too:
+      // it decrypts inside KMS and re-encrypts under a key the caller might
+      // be able to decrypt (e.g. the deploy role and the state key).
       Sid: "DenyWrapKeyDecryptOutsideLambdaRoles",
       Effect: "Deny",
-      Action: "kms:Decrypt",
+      Action: ["kms:Decrypt", "kms:ReEncrypt*"],
       Resource: opts.wrapKeyArn,
       Condition: { ArnNotLike: { "aws:PrincipalArn": KUBCODE_LAMBDA_ROLES } },
+    },
+    {
+      // The wrap key policy and grants are admin-only. Otherwise CI could name
+      // a principal outside this boundary (another account, a client role)
+      // in the key policy or a grant and decrypt from there.
+      Sid: "DenyWrapKeyPolicyAndGrants",
+      Effect: "Deny",
+      Action: ["kms:PutKeyPolicy", "kms:CreateGrant"],
+      Resource: opts.wrapKeyArn,
     },
   ]);
 }
@@ -494,7 +504,9 @@ export function secretsKeyPolicy(opts: {
  * root-recovery model as the secrets key. Nobody encrypts through KMS (the web
  * host uses the committed public key); admins and the preview role may read
  * the public key; only the named kubcode-lambda-* roles may Decrypt, and only
- * with RSAES_OAEP_SHA_256. The boundary also denies Decrypt to everyone else.
+ * with RSAES_OAEP_SHA_256. Explicit Denies stop Decrypt/ReEncrypt by anyone
+ * else and all grants. CI cannot change this policy (boundary Deny), so a
+ * change here is an admin apply, like the boundary.
  */
 export function wrapKeyPolicy(opts: { adminArns: string[]; readerArns: string[]; decryptArns: string[] }): PolicyDocument {
   if (opts.adminArns.length === 0) throw new Error("the wrap key needs at least one admin (lockout safety)");
@@ -520,6 +532,19 @@ export function wrapKeyPolicy(opts: { adminArns: string[]; readerArns: string[];
       Resource: "*",
     },
   ];
+  statements.push(
+    {
+      // Holds for every principal (admins, root, other accounts), because the
+      // policy itself can only be changed by an admin (boundary Deny on CI).
+      Sid: "DenyDecryptOutsideLambdaRoles",
+      Effect: "Deny",
+      Principal: { AWS: "*" },
+      Action: ["kms:Decrypt", "kms:ReEncrypt*"],
+      Resource: "*",
+      Condition: { ArnNotLike: { "aws:PrincipalArn": `arn:aws:iam::${ACCOUNT_ID}:role/${LAMBDA_ROLE_PREFIX}*` } },
+    },
+    { Sid: "DenyGrants", Effect: "Deny", Principal: { AWS: "*" }, Action: "kms:CreateGrant", Resource: "*" },
+  );
   if (opts.decryptArns.length > 0)
     statements.push({
       Sid: "KeyDecrypt",

@@ -181,17 +181,20 @@ them, unless the user confirms, which also disconnects them.
   `wrapKeyDecryptArns` hook, which must match `role/kubcode-lambda-*`. Nobody encrypts through KMS.
 - **Lambda roles are not created yet.** KMS rejects a key policy that names a role that does not
   exist, and roles without functions would be guesses at step 5's inline policies. Step 5 creates
-  `kubcode-lambda-oauth-connect` and `kubcode-lambda-token-refresh` and appends them to the hook
-  through normal CI: the deploy role administers the key policy, and the boundary below already
-  caps Decrypt to `kubcode-lambda-*`.
+  `kubcode-lambda-oauth-connect` and `kubcode-lambda-token-refresh` through CI, then an admin apply
+  adds them to the `wrapKeyDecryptArns` hook (CI cannot change the wrap key policy).
 - Boundary (`deployBoundaryPolicy`), only what was missing on main (Lambda functions, their log
   groups and `iam:PassRole` to Lambda already came with ADR 0002):
   - the wrap key ARN in `KubcodeKeysCeiling`;
   - `ReadKubcodeParameters`: `ssm:GetParameter`/`GetParameters` on `parameter/kubcode/*` (ceiling
     for the step-5 Lambdas; nothing in the boundary can write parameters);
-  - `DenyWrapKeyDecryptOutsideLambdaRoles`: Deny `kms:Decrypt` on the wrap key unless
-    `aws:PrincipalArn` is `role/kubcode-lambda-*`, so CI cannot grant itself Decrypt through the key
-    policy it administers.
+  - `DenyWrapKeyDecryptOutsideLambdaRoles`: Deny `kms:Decrypt` and `kms:ReEncrypt*` on the wrap
+    key unless `aws:PrincipalArn` is `role/kubcode-lambda-*` (ReEncrypt would let CI move a wrapped
+    DEK under the state key, which it can decrypt);
+  - `DenyWrapKeyPolicyAndGrants`: Deny `kms:PutKeyPolicy` and `kms:CreateGrant` on the wrap key to
+    every kubcode role, so CI cannot name an outside principal (another account) in the policy or a
+    grant. The wrap key policy is therefore admin-only, like the boundary, and the key policy carries
+    its own Deny of Decrypt/ReEncrypt outside `kubcode-lambda-*` and of all grants.
   - **Not added:** EventBridge Scheduler, `lambda:InvokeFunction` and `iam:PassRole` to
     `scheduler.amazonaws.com` (step 6). They would loosen two rules the infra tests pin ("no invoke",
     "PassRole to Lambda only"), and ADR 0003 may change the refresh design. Step 6 adds them with
