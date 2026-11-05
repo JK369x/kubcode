@@ -8,6 +8,7 @@
     "build": "next build",
     "start": "next start --hostname 127.0.0.1 --port 3040",
     "typecheck": "tsc --noEmit",
+    "showcase": "tsx scripts/showcase-media.ts",
     "test": "tsx --test tests/*.test.ts",
     "test:local-media": "tsx --test tests/local-media/*.test.ts",
     "test:accounts": "tsx --test tests/accounts.test.ts",

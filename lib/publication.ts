@@ -1,4 +1,5 @@
 import type { Example, Skill } from "./catalog";
+import { SHOWCASE_MANIFEST, showcaseMediaPaths } from "./showcase-manifest";
 
 /**
  * Media publication policy.
@@ -49,9 +50,14 @@ export const MEDIA_POLICY: MediaPolicy = resolveMediaPolicy({
  * case, query or filename inference. A video and a poster derived from it are
  * separate entries; approving one never approves the other.
  *
- * Intentionally empty: no preview's publication rights are verified yet.
+ * Today it holds only the homepage showcase files. Each one comes from a line
+ * in lib/showcase-allowlist.ts carrying its rights note, and lib/showcase.json
+ * records its source and hash (checked by tests/showcase.test.ts). Catalog
+ * previews under /previews/ stay withheld.
  */
-export const PUBLISHED_MEDIA: ReadonlySet<string> = new Set<string>([]);
+export const PUBLISHED_MEDIA: ReadonlySet<string> = new Set<string>(
+  showcaseMediaPaths(SHOWCASE_MANIFEST),
+);
 
 export function isPublishable(
   url: string | null | undefined,
