@@ -249,10 +249,11 @@ try {
   check(
     "account link and real unavailable connection state; persistent theme across navigation",
   );
-  for (const [method, path] of [
-    ["get", "/api/download/growkaz-stickman"],
-    ["post", "/api/account"],
-  ]) {
+  // A skill without a licence is never downloadable, whatever the server config.
+  const unlicensed = await page.request.get(base + "/api/download/growkaz-stickman");
+  assert.equal(unlicensed.status(), 200);
+  assert.deepEqual(await unlicensed.json(), { available: false });
+  for (const [method, path] of [["post", "/api/account"]]) {
     const response = await page.request[method](base + path);
     assert.equal(response.status(), 503);
     assert.equal((await response.json()).code, "BACKEND_NOT_CONFIGURED");

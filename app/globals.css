@@ -965,6 +965,54 @@ footer small {
   padding-left: 20px;
   color: var(--muted);
 }
+/* "ใช้ยังไง": three numbered steps, the main path through the page. */
+.detail-copy .steps {
+  display: grid;
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  counter-reset: step;
+}
+.detail-copy .steps li {
+  position: relative;
+  padding-left: 40px;
+  line-height: 1.6;
+  counter-increment: step;
+}
+.detail-copy .steps li::before {
+  content: counter(step);
+  position: absolute;
+  left: 0;
+  top: -2px;
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 999px;
+  background: var(--selected);
+  color: var(--selected-ink);
+  font-size: 14px;
+  font-weight: 600;
+}
+/* Rights and internal notes: kept on the page, folded under one summary. */
+.rights-details {
+  margin-top: 32px;
+  padding-top: 16px;
+  border-top: 1px solid var(--line);
+  color: var(--muted);
+  font-size: 14px;
+}
+.rights-details summary {
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  color: var(--ink);
+  cursor: pointer;
+}
+.rights-details p {
+  margin: 10px 0;
+}
 .rights-code {
   display: block;
   font-size: 10px;
@@ -2438,4 +2486,98 @@ html[data-theme="light"] .shiki span {
 }
 .reading-tools {
   margin-top: 14px;
+}
+
+/* Homepage "start with the first skill": steps, copyable prompts, FAQ. */
+.get-started {
+  margin-top: clamp(56px, 7vw, 96px);
+  scroll-margin-top: 24px;
+}
+.get-started-head {
+  max-width: 68ch;
+}
+.get-started-head h2 {
+  font-size: clamp(27px, 2.35vw, 34px);
+  margin: 0 0 10px;
+}
+.get-started-head p {
+  color: var(--muted);
+}
+.get-started-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.1fr) minmax(0, 0.9fr);
+  gap: clamp(28px, 4vw, 64px);
+  margin-top: 28px;
+}
+.get-started h3 {
+  margin: 0 0 14px;
+  font-size: 19px;
+}
+.get-started-steps {
+  display: grid;
+  gap: 12px;
+  margin: 0 0 32px;
+  padding: 0;
+  list-style: none;
+  counter-reset: step;
+}
+.get-started-steps li {
+  position: relative;
+  padding-left: 40px;
+  line-height: 1.65;
+  counter-increment: step;
+}
+.get-started-steps li::before {
+  content: counter(step);
+  position: absolute;
+  left: 0;
+  top: -1px;
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 999px;
+  background: var(--selected);
+  color: var(--selected-ink);
+  font-size: 14px;
+  font-weight: 600;
+}
+.get-started-steps code {
+  overflow-wrap: anywhere;
+}
+.get-started-note {
+  margin: -6px 0 12px;
+  color: var(--muted);
+  font-size: 14px;
+}
+.get-started-prompt {
+  margin-bottom: 10px;
+}
+/* Prompts are one sentence: wrap them so the whole line is readable on phones. */
+.get-started-prompt pre {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.get-started-faq {
+  border-top: 1px solid var(--line);
+}
+.get-started-faq details {
+  border-bottom: 1px solid var(--line);
+}
+.get-started-faq summary {
+  display: flex;
+  align-items: center;
+  min-height: 52px;
+  font-weight: 500;
+  cursor: pointer;
+}
+.get-started-faq details p {
+  margin: 0 0 16px;
+  color: var(--muted);
+  line-height: 1.7;
+}
+@media (max-width: 899px) {
+  .get-started-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
 }

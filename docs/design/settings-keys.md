@@ -116,7 +116,7 @@ The Lambda `kubcode-token-refresh` is run by an EventBridge Scheduler schedule
 - Rows are processed one at a time with `FOR UPDATE SKIP LOCKED`. Errors are saved as a fixed
   `last_error_code` (never the provider's text). The UI shows "ต้องเชื่อมใหม่".
 
-## 4. Data model — migration `0003_settings_keys` (additive only)
+## 4. Data model — migration `0004_settings_keys` (additive only)
 
 Schema `kubcode_accounts` (the runner and ledger already exist). No DROP, UPDATE or RENAME, so it
 passes the destructive gate. Grants and policies are inside the file, as in 0002.
@@ -143,13 +143,13 @@ columns**: never `envelope` or `verifier_envelope`, which Vercel never needs bac
 `kubcode_worker`, used by the Lambdas, gets SELECT on the envelopes, UPDATE on the connection,
 token and intent columns, and INSERT on audit, with a policy `USING(true)` (the refresh job is
 cross-user). Neither role has BYPASSRLS, DDL or DELETE on audit. The operator creates
-`kubcode_worker`'s password once and stores the DB URL in SSM (§5); 0003 grants are skipped when
+`kubcode_worker`'s password once and stores the DB URL in SSM (§5); 0004 grants are skipped when
 the role is absent.
 
 Deletion: deleting the user cascades. Deleting app credentials is blocked while connections use
 them, unless the user confirms, which also disconnects them.
 
-**As built (step 2, 2026-11-05).** `db/migrations/0003_settings_keys.sql` + `lib/keys/store.ts`.
+**As built (step 2, 2026-11-05).** `db/migrations/0004_settings_keys.sql` + `lib/keys/store.ts`.
 - Sealed plaintext is JSON with one field per kind, which the Rust Lambdas must read the same way:
   `youtube_oauth_client` → `{"client_secret"}`, `instagram_app` → `{"app_secret"}`,
   `elevenlabs_api_key` → `{"api_key"}`. `public_value` holds the Google client id / Instagram app id.
@@ -159,10 +159,10 @@ them, unless the user confirms, which also disconnects them.
   no INSERT (only the Lambda creates connections) and may UPDATE only `status`/`updated_at` (to mark
   `revoking`), plus DELETE. No access at all to `connect_request_nonces`.
 - The store enforces the phase-1 owner gate (`users.is_owner`) itself, not only the route.
-- **Order matters in production.** 0003 grants `kubcode_worker` only if the role already exists, and
+- **Order matters in production.** 0004 grants `kubcode_worker` only if the role already exists, and
   the ledger never re-runs an applied migration. So the operator must create `kubcode_worker`
-  (NOLOGIN is enough; the password comes with step 4) in Supabase **before** 0003 reaches `main`.
-  If 0003 was applied first, re-run its second `DO $$ … $$` block (worker grants, idempotent) by hand.
+  (NOLOGIN is enough; the password comes with step 4) in Supabase **before** 0004 reaches `main`.
+  If 0004 was applied first, re-run its second `DO $$ … $$` block (worker grants, idempotent) by hand.
 
 ## 5. Infra (Pulumi, `infra/`) — what needs an admin local apply
 
@@ -236,7 +236,7 @@ Every write uses the existing CSRF/Origin guards.
 
 1. Envelope v1: TS + Rust crates (`services/crates/kubcode-envelope`) with shared test vectors, and
    the KMS interop test (needs the wrap key, so it comes after the infra apply).
-2. Migration 0003 + store (per-user RLS, column grants), integration tests on a local Postgres 17.
+2. Migration 0004 + store (per-user RLS, column grants), integration tests on a local Postgres 17.
 3. Save/replace/delete keys API + `/account/keys` UI (`next start` locally).
 4. Infra PR: wrap key, boundary, SSM, roles. Admin apply.
 5. `kubcode-oauth-connect` Lambda + start/callback routes (cargo-lambda locally, then a live

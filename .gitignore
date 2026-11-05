@@ -34,6 +34,9 @@ supabase/.temp/
 *.tar.gz
 *.tgz
 *.mp4
+# Approved homepage preview loops (3.5 s, muted): written only by
+# `npm run showcase` from lib/showcase-allowlist.ts, checked by tests/showcase.test.ts.
+!public/showcase/*/preview.mp4
 *.mov
 *.webm
 *.mkv

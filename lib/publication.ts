@@ -1,4 +1,5 @@
 import type { Example, Skill } from "./catalog";
+import { SHOWCASE_MANIFEST, showcaseMediaPaths } from "./showcase-manifest";
 
 /**
  * Media publication policy.
@@ -49,9 +50,14 @@ export const MEDIA_POLICY: MediaPolicy = resolveMediaPolicy({
  * case, query or filename inference. A video and a poster derived from it are
  * separate entries; approving one never approves the other.
  *
- * Intentionally empty: no preview's publication rights are verified yet.
+ * Today it holds only the homepage showcase files. Each one comes from a line
+ * in lib/showcase-allowlist.ts carrying its rights note, and lib/showcase.json
+ * records its source and hash (checked by tests/showcase.test.ts). Catalog
+ * previews under /previews/ stay withheld.
  */
-export const PUBLISHED_MEDIA: ReadonlySet<string> = new Set<string>([]);
+export const PUBLISHED_MEDIA: ReadonlySet<string> = new Set<string>(
+  showcaseMediaPaths(SHOWCASE_MANIFEST),
+);
 
 export function isPublishable(
   url: string | null | undefined,
@@ -82,8 +88,8 @@ export const RIGHTS_PENDING_LABEL = "สื่อรอยืนยันสิ�
 export const RIGHTS_PENDING_NOTE =
   "สื่อตัวอย่างของผู้เขียนนี้ยังไม่แสดงบนเว็บสาธารณะ ระหว่างรอยืนยันสิทธิ์เผยแพร่";
 export const PUBLICATION_NOTICE = MEDIA_POLICY === "licensed-only"
-  ? "สื่อตัวอย่างรอยืนยันสิทธิ์เผยแพร่ · ยังไม่มีชุดดาวน์โหลด"
-  : "ตัวอย่างสำหรับศึกษาในเครื่อง · สิทธิ์เผยแพร่ยังไม่ยืนยัน · ยังไม่มีชุดดาวน์โหลด";
+  ? "สื่อตัวอย่างรอยืนยันสิทธิ์เผยแพร่"
+  : "ตัวอย่างสำหรับศึกษาในเครื่อง · สิทธิ์เผยแพร่ยังไม่ยืนยัน";
 export const VIDEO_WITHHELD_NOTE =
   "วิดีโอตัวอย่างยังไม่แสดงบนเว็บสาธารณะ ระหว่างรอยืนยันสิทธิ์เผยแพร่";
 export const POSTER_WITHHELD_NOTE =

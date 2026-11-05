@@ -14,6 +14,8 @@ const outputs = createStack({
   budgetEmail: config.getSecret("budgetEmail"),
   breakGlassAdminArns: config.requireObject<string[]>("breakGlassAdminArns"),
   secretsKeyUserArns,
+  // openssl rand -hex 32; the Lambda, its role, log group and URL appear once set.
+  packageSignerKey: config.getSecret("packageSignerKey"),
 });
 
 export const mediaBucket = outputs.mediaBucket;
@@ -22,3 +24,4 @@ export const secretsKeyAlias = outputs.secretsKeyAlias;
 export const deployRoleArn = outputs.deployRoleArn;
 export const previewRoleArn = outputs.previewRoleArn;
 export const boundaryPolicyArn = outputs.boundaryPolicyArn;
+export const packageSignerUrl = outputs.packageSignerUrl;

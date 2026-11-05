@@ -27,7 +27,7 @@ export type ThrowawayDb = {
   pool: Pool;
   /** Every query runs as the runtime role kubcode_app: grants + RLS apply. */
   appPool: Pool;
-  /** Every query runs as the Lambda role kubcode_worker (0003). */
+  /** Every query runs as the Lambda role kubcode_worker (0004). */
   workerPool: Pool;
   cleanup: () => Promise<void>;
 };

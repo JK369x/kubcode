@@ -1,4 +1,4 @@
--- 0003_settings_keys: per-user API keys and OAuth connections for the
+-- 0004_settings_keys: per-user API keys and OAuth connections for the
 -- scheduler (docs/design/settings-keys.md §4). Same rules as 0001/0002:
 -- schema-qualified, idempotent, purely additive, RLS on, nothing for PUBLIC
 -- or the Supabase API roles, applied only by the explicit migration runner.
@@ -115,7 +115,7 @@ DECLARE
   tab text;
 BEGIN
   IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'kubcode_app') THEN
-    RAISE NOTICE 'kubcode_app role not found; runtime grants for 0003 skipped';
+    RAISE NOTICE 'kubcode_app role not found; runtime grants for 0004 skipped';
     RETURN;
   END IF;
   GRANT USAGE ON SCHEMA kubcode_accounts TO kubcode_app;
@@ -161,7 +161,7 @@ DECLARE
   tab text;
 BEGIN
   IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'kubcode_worker') THEN
-    RAISE NOTICE 'kubcode_worker role not found; worker grants for 0003 skipped';
+    RAISE NOTICE 'kubcode_worker role not found; worker grants for 0004 skipped';
     RETURN;
   END IF;
   GRANT USAGE ON SCHEMA kubcode_accounts TO kubcode_worker;

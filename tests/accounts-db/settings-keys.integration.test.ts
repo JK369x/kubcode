@@ -1,4 +1,4 @@
-// Real-PostgreSQL tests for migration 0003 (settings keys) and the key store.
+// Real-PostgreSQL tests for migration 0004 (settings keys) and the key store.
 // Run: KUBCODE_TEST_DATABASE_URL=postgres://...@127.0.0.1/..._test npm run test:accounts-db
 // Design: docs/design/settings-keys.md §4 (data model, RLS, column grants).
 import test, { after, before } from "node:test";
@@ -107,7 +107,7 @@ async function fixtureIntent(uid: string, extra: { phase?: string; status?: stri
 
 // ------------------------------------------------------------ schema
 
-test("0003 adds the five settings tables, RLS on, nothing for PUBLIC or API roles", async () => {
+test("0004 adds the five settings tables, RLS on, nothing for PUBLIC or API roles", async () => {
   const { rows } = await pool.query<{ relname: string; relrowsecurity: boolean }>(
     `SELECT c.relname, c.relrowsecurity FROM pg_class c JOIN pg_namespace n ON n.oid = c.relnamespace
       WHERE n.nspname = $1 AND c.relname = ANY($2)`,

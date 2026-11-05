@@ -29,6 +29,10 @@ const KUBCODE_BUCKETS = s3("kubcode-*");
 const KUBCODE_OBJECTS = s3("kubcode-*", "*");
 const KUBCODE_ALIASES = `arn:aws:kms:${REGION}:${ACCOUNT_ID}:alias/kubcode-*`;
 const KUBCODE_BUDGETS = `arn:aws:budgets::${ACCOUNT_ID}:budget/kubcode-*`;
+const KUBCODE_FUNCTIONS = `arn:aws:lambda:${REGION}:${ACCOUNT_ID}:function:kubcode-*`;
+const KUBCODE_LAMBDA_LOG_GROUPS = `arn:aws:logs:${REGION}:${ACCOUNT_ID}:log-group:/aws/lambda/kubcode-*`;
+// DescribeLogGroups is authorized against this ARN rather than the group's own.
+const LOG_GROUPS_DESCRIBE = `arn:aws:logs:${REGION}:${ACCOUNT_ID}:log-group::log-stream:`;
 const OIDC_PROVIDERS = `arn:aws:iam::${ACCOUNT_ID}:oidc-provider/*`;
 
 const IAM_READ = [
@@ -43,6 +47,40 @@ const IAM_READ = [
   "iam:ListPolicyVersions",
   "iam:ListPolicyTags",
 ];
+
+const LAMBDA_READ = [
+  "lambda:GetFunction",
+  "lambda:GetFunctionCodeSigningConfig",
+  "lambda:GetRuntimeManagementConfig",
+  "lambda:GetFunctionUrlConfig",
+  "lambda:GetPolicy",
+  "lambda:ListVersionsByFunction",
+  "lambda:ListTags",
+];
+
+/** Trust policy for a role assumed by the Lambda service. */
+export function lambdaTrustPolicy(): PolicyDocument {
+  return doc([{ Effect: "Allow", Action: "sts:AssumeRole", Principal: { Service: "lambda.amazonaws.com" } }]);
+}
+
+/**
+ * Inline policy of the package signer Lambda: read package objects (SSE-S3, so
+ * no KMS) and write its own log streams. No list, no other bucket; the log
+ * group is created by the stack, so no CreateLogGroup either.
+ */
+export function packageSignerPolicy(opts: { bucket: string; logGroupName: string }): PolicyDocument {
+  if (!opts.bucket.startsWith("kubcode-")) throw new Error(`bucket must be a kubcode-* bucket: ${opts.bucket}`);
+  if (!opts.logGroupName.startsWith("/aws/lambda/kubcode-")) throw new Error(`log group must be /aws/lambda/kubcode-*: ${opts.logGroupName}`);
+  return doc([
+    { Sid: "ReadPackages", Effect: "Allow", Action: "s3:GetObject", Resource: s3(opts.bucket, "packages/*") },
+    {
+      Sid: "WriteOwnLogStreams",
+      Effect: "Allow",
+      Action: ["logs:CreateLogStream", "logs:PutLogEvents"],
+      Resource: `arn:aws:logs:${REGION}:${ACCOUNT_ID}:log-group:${opts.logGroupName}:*`,
+    },
+  ]);
+}
 
 /** Trust policy for a role assumed from GitHub Actions via the shared OIDC provider. */
 export function githubTrustPolicy(oidcProviderArn: string, subjects: readonly string[]): PolicyDocument {
@@ -68,9 +106,10 @@ export function githubTrustPolicy(oidcProviderArn: string, subjects: readonly st
 
 /**
  * The permissions boundary (ceiling) for every kubcode-* role. Covers what
- * slice 1 manages (S3, KMS aliases, IAM roles/policies, budget) plus the
- * Pulumi state. New services (Lambda, Scheduler, SSM) and new KMS keys are
- * added here by an admin-run `pulumi up`; CI is denied from changing it.
+ * the stack manages (S3, KMS aliases, IAM roles/policies, budget, Lambda
+ * functions and their log groups, all kubcode-*) plus the Pulumi state. New
+ * services (Scheduler, SSM) and new KMS keys are added here by an admin-run
+ * `pulumi up`; CI is denied from changing it.
  */
 export function deployBoundaryPolicy(opts: { stateKeyArn: string; secretsKeyArn: string; boundaryArn: string }): PolicyDocument {
   return doc([
@@ -168,6 +207,56 @@ function sharedDeployStatements(boundaryArn: string): Statement[] {
     },
 
     {
+      Sid: "ManageKubcodeFunctions",
+      Effect: "Allow",
+      Action: [
+        ...LAMBDA_READ,
+        "lambda:CreateFunction",
+        "lambda:DeleteFunction",
+        "lambda:UpdateFunctionCode",
+        "lambda:UpdateFunctionConfiguration",
+        "lambda:TagResource",
+        "lambda:UntagResource",
+        "lambda:CreateFunctionUrlConfig",
+        "lambda:UpdateFunctionUrlConfig",
+        "lambda:DeleteFunctionUrlConfig",
+        "lambda:AddPermission",
+        "lambda:RemovePermission",
+      ],
+      Resource: KUBCODE_FUNCTIONS,
+    },
+    {
+      // Log groups are created by the stack (with retention) and the Lambda
+      // roles only write streams, so the ceiling covers both.
+      Sid: "ManageKubcodeLambdaLogGroups",
+      Effect: "Allow",
+      Action: [
+        "logs:CreateLogGroup",
+        "logs:DeleteLogGroup",
+        "logs:PutRetentionPolicy",
+        "logs:DeleteRetentionPolicy",
+        "logs:TagResource",
+        "logs:UntagResource",
+        "logs:ListTagsForResource",
+        "logs:TagLogGroup",
+        "logs:UntagLogGroup",
+        "logs:ListTagsLogGroup",
+        "logs:CreateLogStream",
+        "logs:PutLogEvents",
+      ],
+      Resource: KUBCODE_LAMBDA_LOG_GROUPS,
+    },
+    { Sid: "DescribeLogGroups", Effect: "Allow", Action: "logs:DescribeLogGroups", Resource: LOG_GROUPS_DESCRIBE },
+    {
+      // A function may only be given a kubcode-* role, and only Lambda may receive it.
+      Sid: "PassKubcodeRolesToLambda",
+      Effect: "Allow",
+      Action: "iam:PassRole",
+      Resource: KUBCODE_ROLES,
+      Condition: { StringEquals: { "iam:PassedToService": "lambda.amazonaws.com" } },
+    },
+
+    {
       Sid: "DenyBoundaryTampering",
       Effect: "Deny",
       Action: [
@@ -250,6 +339,21 @@ export function previewPolicy(opts: { stateKeyArn: string }): PolicyDocument {
       Action: ["s3:GetBucket*", "s3:GetLifecycleConfiguration", "s3:GetEncryptionConfiguration", "s3:GetAccelerateConfiguration", "s3:GetReplicationConfiguration"],
       Resource: KUBCODE_BUCKETS,
     },
+    {
+      // Package objects are Pulumi-managed; a refresh reads them back.
+      Sid: "ReadPackageObjects",
+      Effect: "Allow",
+      Action: ["s3:GetObject", "s3:GetObjectTagging"],
+      Resource: s3(NAMES.mediaBucket, "packages/*"),
+    },
+    {
+      // Only under packages/: the rest of the bucket holds private originals.
+      Sid: "ListPackageObjects",
+      Effect: "Allow",
+      Action: "s3:ListBucket",
+      Resource: s3(NAMES.mediaBucket),
+      Condition: { StringLike: { "s3:prefix": ["packages/*"] } },
+    },
     { Sid: "ReadIam", Effect: "Allow", Action: IAM_READ, Resource: [KUBCODE_ROLES, KUBCODE_POLICIES] },
     {
       Sid: "ReadSharedGithubOidc",
@@ -257,6 +361,14 @@ export function previewPolicy(opts: { stateKeyArn: string }): PolicyDocument {
       Action: ["iam:GetOpenIDConnectProvider"],
       Resource: `arn:aws:iam::${ACCOUNT_ID}:oidc-provider/token.actions.githubusercontent.com`,
     },
+    { Sid: "ReadKubcodeFunctions", Effect: "Allow", Action: LAMBDA_READ, Resource: KUBCODE_FUNCTIONS },
+    {
+      Sid: "ReadKubcodeLambdaLogGroups",
+      Effect: "Allow",
+      Action: ["logs:ListTagsForResource", "logs:ListTagsLogGroup"],
+      Resource: KUBCODE_LAMBDA_LOG_GROUPS,
+    },
+    { Sid: "DescribeLogGroups", Effect: "Allow", Action: "logs:DescribeLogGroups", Resource: LOG_GROUPS_DESCRIBE },
     { Sid: "ListKms", Effect: "Allow", Action: ["kms:ListAliases"], Resource: "*" },
     { Sid: "ReadBudgets", Effect: "Allow", Action: ["budgets:ViewBudget", "budgets:ListTagsForResource"], Resource: KUBCODE_BUDGETS },
   ]);

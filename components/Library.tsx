@@ -1,5 +1,4 @@
 "use client";
-import { PUBLICATION_NOTICE } from "@/lib/publication";
 import { TitleTransition } from "@/components/TitleTransition";
 import { useRef, useState } from "react";
 import Link from "next/link";
@@ -8,26 +7,41 @@ import {
   ArrowUpRight,
   ArrowRight,
   RotateCcw,
-  LockKeyhole,
 } from "lucide-react";
 import { skills, categories, filterSkills, styles } from "@/lib/catalog";
 import { Preview } from "./Preview";
 import { ToolChips } from "./ToolChips";
 import { MediaSkillCard } from "./MediaSkillCard";
+import { GetStarted } from "./GetStarted";
 import { statusLabel } from "@/lib/status-labels";
+import { showcaseForSkill, type StyleTool } from "@/lib/showcase";
 import { KineticHero } from "./KineticHero";
 import heroStyles from "./KineticHero.module.css";
 
 /** Article teaser data passed from the server page (content loads from disk). */
 export type ArticleTeaser = { slug: string; title: string; description: string };
 
-export function Library({ articles }: { articles: ArticleTeaser[] }) {
+/** Stable order with skills that have approved showcase clips first. */
+export function rankByClips<T extends { slug: string }>(items: readonly T[]): T[] {
+  const has = (s: T) => (showcaseForSkill(s.slug) ? 0 : 1);
+  return [...items].sort((a, b) => has(a) - has(b));
+}
+
+export function Library({
+  articles,
+  styleTools,
+}: {
+  articles: ArticleTeaser[];
+  /** Homepage style cards' tools with logos (see lib/showcase styleToolsFrom). */
+  styleTools?: Readonly<Record<string, readonly StyleTool[]>>;
+}) {
   const [query, setQuery] = useState("");
   const [category, setCategory] = useState("all");
   const [selected, setSelected] = useState<string | null>(null);
   const [previewOpen, setPreviewOpen] = useState(false);
   const previewOrigin = useRef<HTMLElement | null>(null);
-  const results = filterSkills(skills, query, category);
+  // Skills with approved clips lead: they have real covers and pages.
+  const results = rankByClips(filterSkills(skills, query, category));
   const active = skills.find((skill) => skill.slug === selected) || skills[0];
   function selectSkill(slug: string) {
     previewOrigin.current = document.activeElement instanceof HTMLElement
@@ -52,6 +66,7 @@ export function Library({ articles }: { articles: ArticleTeaser[] }) {
   return (
     <main id="main" className="library-page">
       <KineticHero
+        styleTools={styleTools}
         skills={skills}
         activeSlug={selected ?? ""}
         onSelectSkill={selectSkill}
@@ -117,10 +132,6 @@ export function Library({ articles }: { articles: ArticleTeaser[] }) {
           </Preview>
         </div>
       </div>
-      <p className="local-notice">
-        <LockKeyhole size={14} />
-        {PUBLICATION_NOTICE}
-      </p>
       <section
         className="catalog-section"
         id="skill-index"
@@ -181,6 +192,7 @@ export function Library({ articles }: { articles: ArticleTeaser[] }) {
           </div>
         )}
       </section>
+      <GetStarted />
       <section className="article-teasers">
         <div>
           <h2>อ่านก่อนลงมือทำ</h2>

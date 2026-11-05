@@ -60,3 +60,54 @@ test("has no interactive element nested inside the button", () => {
   assert.ok(inner.length > 0);
   assert.doesNotMatch(inner, /<(a|button|input|select|textarea)\b/);
 });
+
+// --- Skills with an approved package (ADR 0002) ---
+
+const { downloadPhase } = require("../lib/downloads/view") as typeof import("../lib/downloads/view");
+
+test("phase: no package stays locked whatever the session", () => {
+  for (const signedIn of [undefined, false, true])
+    assert.equal(downloadPhase({ hasPackage: false, signedIn, available: true, working: false }), "none");
+});
+
+test("phase: a packaged skill checks first, then locks, asks to sign in, or is ready", () => {
+  const p = (signedIn: boolean | undefined, available: boolean | undefined, working = false) =>
+    downloadPhase({ hasPackage: true, signedIn, available, working });
+  assert.equal(p(undefined, undefined), "checking");
+  assert.equal(p(true, undefined), "checking");
+  assert.equal(p(undefined, true), "checking");
+  assert.equal(p(true, false), "closed");
+  assert.equal(p(false, false), "closed");
+  assert.equal(p(false, true), "signin");
+  assert.equal(p(true, true), "ready");
+  assert.equal(p(true, true, true), "working");
+});
+
+test("a packaged skill renders a disabled checking state on the server, never a file link", () => {
+  const html = render("freshstack-what-if");
+  const button = html.match(/<button\b[^>]*>/)?.[0] ?? "";
+  assert.match(button, /\sdisabled(=""|\s|>)/);
+  assert.match(html, /ดาวน์โหลด skill/);
+  assert.match(html, /กำลังตรวจสอบ/);
+  assert.doesNotMatch(html, /\/api\/download|\.zip|amazonaws/i);
+  const hrefs = [...html.matchAll(/href="([^"]*)"/g)].map((m) => m[1]);
+  assert.deepEqual(hrefs, ["/skills/freshstack-what-if#download"]);
+});
+
+const { DownloadAction } = require("../components/DownloadAction") as typeof import("../components/DownloadAction");
+
+test("detail: a packaged skill states its licence, credit, contents and limit", () => {
+  const html = renderToStaticMarkup(createElement(DownloadAction, { slug: "freshstack-what-if" }));
+  assert.match(html, /id="download"/);
+  assert.match(html, /MIT/);
+  assert.match(html, /FreshStack/);
+  assert.match(html, /0\.1\.0/);
+  assert.match(html, /20 ครั้ง/);
+  assert.doesNotMatch(html, /ยังไม่มีชุดดาวน์โหลด/);
+});
+
+test("detail: a skill without a package still says there is nothing to download", () => {
+  const html = renderToStaticMarkup(createElement(DownloadAction, { slug: "growkaz-stickman" }));
+  assert.match(html, /ยังไม่มีชุดดาวน์โหลด/);
+  assert.doesNotMatch(html, /MIT|FreshStack/);
+});

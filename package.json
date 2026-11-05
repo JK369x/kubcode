@@ -8,6 +8,7 @@
     "build": "next build",
     "start": "next start --hostname 127.0.0.1 --port 3040",
     "typecheck": "tsc --noEmit",
+    "showcase": "tsx scripts/showcase-media.ts",
     "test": "tsx --test tests/*.test.ts",
     "test:local-media": "tsx --test tests/local-media/*.test.ts",
     "test:accounts": "tsx --test tests/accounts.test.ts",
@@ -16,6 +17,7 @@
     "test:accounts-browser": "tsx tests/accounts-settings-browser.ts",
     "test:browser": "node tests/project-visual-audit-browser.mjs && node tests/kinetic-hero-browser.mjs after && node tests/native-media-browser.mjs && node tests/shared-download-browser.mjs",
     "test:interactions-app": "tsx tests/interactions-actual-app.ts",
+    "test:downloads-app": "tsx tests/downloads-actual-app.ts",
     "test:reading-browser": "tsx tests/reading-browser.ts",
     "cover": "tsx scripts/cover-brief.ts"
   },
