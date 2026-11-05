@@ -50,6 +50,64 @@
   line-height: 1.7;
   color: var(--hero-muted);
 }
+/* Agents the skills work with: plain pills linking their tool pages. */
+.agents {
+  grid-column: 2;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-top: 14px;
+  color: var(--hero-muted);
+  font-size: 14px;
+}
+.agents ul {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.agents a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 32px;
+  padding: 0 12px;
+  border: 1px solid var(--hero-line);
+  border-radius: 999px;
+  color: var(--hero-ink);
+  font-size: 13px;
+  text-decoration: none;
+}
+.agents a:hover {
+  border-color: var(--purple);
+}
+/* The one primary action: start with the first downloadable skill. */
+.start {
+  grid-column: 2;
+  justify-self: start;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 48px;
+  margin-top: 18px;
+  padding: 0 22px;
+  border-radius: 999px;
+  background: var(--selected);
+  color: var(--selected-ink);
+  font-size: 15px;
+  font-weight: 600;
+  text-decoration: none;
+}
+.start:hover {
+  background: var(--purple);
+  color: var(--action-hover-ink);
+}
+:global(:root[data-theme="light"]) .start {
+  background: var(--purple);
+  color: var(--on-field);
+}
 .actions {
   grid-column: 2;
   margin-top: 20px;
@@ -75,9 +133,10 @@
   gap: 10px;
   min-height: 48px;
   padding: 0 20px 0 22px;
+  border: 1px solid var(--hero-line);
   border-radius: 999px;
-  background: var(--selected);
-  color: var(--selected-ink);
+  background: transparent;
+  color: var(--hero-ink);
   font-size: 15px;
   font-weight: 500;
   text-decoration: none;
@@ -85,10 +144,6 @@
   transition:
     background-color 180ms var(--ease-out),
     transform 180ms var(--ease-out);
-}
-.browse:hover {
-  background: var(--purple);
-  color: var(--action-hover-ink);
 }
 .browse:active {
   transform: scale(0.97);
@@ -99,12 +154,10 @@
 .browse:hover svg {
   transform: translateX(3px);
 }
-:global(:root[data-theme="light"]) .browse {
-  background: var(--purple);
-  color: var(--on-field);
-}
-:global(:root[data-theme="light"]) .browse:hover {
-  background: #5b2a99;
+.browse:hover {
+  border-color: var(--purple);
+  background: transparent;
+  color: var(--hero-ink);
 }
 .cue {
   display: inline-flex;

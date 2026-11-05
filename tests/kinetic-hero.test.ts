@@ -49,7 +49,9 @@ const renderHero = (activeSlug = skills[0].slug, children?: string, clips = CLIP
   );
 
 /** Top-level <li> cards of the shelf track (cards contain their own lists); loop copies carry data-copy. */
-function allItems(html: string) {
+function allItems(full: string) {
+  // Only the shelf track: the hero also has other lists (agent chips).
+  const html = full.slice(Math.max(0, full.indexOf('aria-label="ตัวอย่างคลิป สไตล์ละหนึ่งคลิป"')));
   const out: { attrs: string; body: string }[] = [];
   let depth = 0;
   let start = -1;

@@ -1,6 +1,6 @@
 "use client";
 import { useId, type ReactNode } from "react";
-import { Play } from "lucide-react";
+import { ArrowDown, Play } from "lucide-react";
 import type { Skill } from "@/lib/catalog";
 import { publishedShowcase, type ShowcaseItem, type StyleTool } from "@/lib/showcase";
 import { StyleShelf } from "./StyleShelf";
@@ -49,9 +49,24 @@ export function KineticHero({
               <span>ดูงานจริง</span> <span>แล้วลองทำเอง</span>
             </h1>
             <p className={styles.lead}>
-              ตัวอย่างงานจริงสไตล์ละหนึ่งคลิป เลือกสไตล์ที่ชอบ
-              แล้วดูว่าต้องใช้ skill และเครื่องมืออะไรบ้าง
+              skill ที่ให้ AI agent ทำคลิปแอนิเมชันในเครื่องของคุณ
+              ดูงานจริงสไตล์ละหนึ่งคลิป แล้วเอา skill ไปทำแนวเดียวกันเอง
             </p>
+            <div className={styles.agents}>
+              <span>ใช้กับ</span>
+              <ul aria-label="ใช้กับ">
+                <li>
+                  <a href="/tools/claude-code">Claude Code</a>
+                </li>
+                <li>
+                  <a href="/tools/opencode">OpenCode</a>
+                </li>
+              </ul>
+            </div>
+            <a className={styles.start} href="#get-started">
+              เริ่มใช้ skill แรก
+              <ArrowDown size={17} aria-hidden="true" />
+            </a>
           </>
         ) : (
           // No approved clips: no claim that real work is visible here.

@@ -22,7 +22,7 @@ export type ShowcaseCredit = { text: string; href?: string };
 
 /**
  * Styles the homepage shows, one card each.
- * - `name`: card title.
+ * - `name`: card title, in Thai; `en`: the English name, shown under it.
  * - `skill`: catalogue slug. With one, the card offers "ดู template"
  *   (/skills/<slug>) and a download locked behind sign-in; without one, it
  *   only links to its cover clip's published post.
@@ -31,38 +31,44 @@ export type ShowcaseCredit = { text: string; href?: string };
  * - `tools`: /tools page slugs the style really uses, most telling first
  *   (the card shows three). Tools without a page are left out.
  */
-export type ShowcaseStyle = { name: string; skill?: string; detail: string; tools: readonly string[] };
+export type ShowcaseStyle = { name: string; en: string; skill?: string; detail: string; tools: readonly string[] };
 
 export const SHOWCASE_STYLES: Readonly<Record<string, ShowcaseStyle>> = {
   "sitcom-toon": {
-    name: "Sitcom Toon",
+    name: "การ์ตูนซิตคอม",
+    en: "Sitcom Toon",
     detail: "การ์ตูนซิตคอมไซไฟ ตัวละครและฉากวาดด้วยโค้ด พากย์ไทยด้วยเสียงสังเคราะห์ เรนเดอร์ผ่าน Chromium และ FFmpeg",
     tools: ["ffmpeg"],
   },
   "low-poly": {
-    name: "Low-poly 3D",
+    name: "เมือง 3D โลว์โพลี",
+    en: "Low-poly 3D",
     skill: "low-poly-urban",
     detail: "เมืองและฉาก 3 มิติแบบ low-poly เขียนด้วย Three.js ขยับกล้องด้วย GSAP ซับไทยไฮไลต์คำสำคัญ",
     tools: [],
   },
   mystery: {
-    name: "Mystery Story",
+    name: "เรื่องลึกลับ",
+    en: "Mystery Story",
     detail: "เล่าเรื่องลึกลับด้วยภาพ SVG/HTML ที่เขียนด้วยโค้ด เน้นข้อความสำคัญบนจอ ไม่ใช้ภาพหรือฟุตเทจจากคลัง",
     tools: [],
   },
   "what-if": {
-    name: "What If Lab",
+    name: "ถ้าเกิดว่า…",
+    en: "What If Lab",
     skill: "freshstack-what-if",
     detail: "ตัวละครเส้นในโลก “ถ้าเกิดว่า…” ทุกฉากเป็น SVG ไม่ใช้โมเดลสร้างภาพ เรนเดอร์ด้วย Remotion",
     tools: ["what-if-animation", "remotion", "opencode", "glm-5-3-flash", "elevenlabs"],
   },
   "soft-story-motion": {
-    name: "Soft Story Motion",
+    name: "เรื่องเล่าแสงนุ่ม แบบขยับ",
+    en: "Soft Story Motion",
     detail: "เรื่องเล่า 2D แสงเงานุ่มที่ขยับได้ ฉาก SVG เคลื่อนด้วย GSAP ยังเป็นรุ่นทดลอง",
     tools: [],
   },
   "soft-story": {
-    name: "Soft Story",
+    name: "เรื่องเล่าแสงนุ่ม",
+    en: "Soft Story",
     skill: "jk-soft-story",
     detail: "ภาพ 2D แสงเงานุ่มสำหรับเล่าเรื่อง ฉากเป็น SVG ที่แก้ไขต่อได้",
     tools: [],

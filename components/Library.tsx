@@ -12,6 +12,7 @@ import { skills, categories, filterSkills, styles } from "@/lib/catalog";
 import { Preview } from "./Preview";
 import { ToolChips } from "./ToolChips";
 import { MediaSkillCard } from "./MediaSkillCard";
+import { GetStarted } from "./GetStarted";
 import { statusLabel } from "@/lib/status-labels";
 import { showcaseForSkill, type StyleTool } from "@/lib/showcase";
 import { KineticHero } from "./KineticHero";
@@ -191,6 +192,7 @@ export function Library({
           </div>
         )}
       </section>
+      <GetStarted />
       <section className="article-teasers">
         <div>
           <h2>อ่านก่อนลงมือทำ</h2>
