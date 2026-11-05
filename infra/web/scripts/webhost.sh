@@ -99,6 +99,21 @@ ask() {
   printf "%s='%s'\n" "$name" "$value"
 }
 
+# Optional skill downloads (docs/adr/0002). An empty signer URL leaves them
+# off; otherwise the URL (stack output packageSignerUrl) and the HMAC key
+# (the kubcode:packageSignerKey value) are written and the flag turned on.
+ask_downloads() {
+  local url key
+  read -r -p "KUBCODE_PACKAGE_SIGNER_URL (empty = downloads off): " url
+  [ -n "$url" ] || return 0
+  [[ "$url" =~ ^https://[a-z0-9.-]+/?$ ]] || die "KUBCODE_PACKAGE_SIGNER_URL must be https://<host>/ with no path or query"
+  read -r -s -p "KUBCODE_PACKAGE_SIGNER_KEY: " key
+  echo >&2
+  [ "${#key}" -ge 32 ] || die "KUBCODE_PACKAGE_SIGNER_KEY must be at least 32 characters"
+  case "$key" in *"'"* | *$'\n'*) die "KUBCODE_PACKAGE_SIGNER_KEY contains a quote or newline" ;; esac
+  printf "KUBCODE_PACKAGE_SIGNER_URL='%s'\nKUBCODE_PACKAGE_SIGNER_KEY='%s'\nKUBCODE_DOWNLOADS_ENABLED='true'\n" "$url" "$key"
+}
+
 set_env() {
   local env db
   echo "Type each value; nothing is shown or saved on this machine." >&2
@@ -107,6 +122,7 @@ set_env() {
     ask GOOGLE_CLIENT_SECRET 1
     ask LINE_CLIENT_SECRET 1
     ask DATABASE_URL 1
+    ask_downloads
   )
   # Same shape rule as lib/auth-policy.ts, to catch a paste error before the box does.
   grep -Eq "^GOOGLE_CLIENT_ID='[0-9]{6,}-[a-z0-9]{8,}[.]apps[.]googleusercontent[.]com'$" <<<"$env" ||

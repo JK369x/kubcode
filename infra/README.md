@@ -182,9 +182,11 @@ merging that PR is the approval.
    ```
    Keep `$KEY` for step 3. At least 32 bytes is enforced.
 3. **Wire the web host** once CI has applied: read the URL with
-   `pulumi -C infra stack output --stack prod packageSignerUrl` and set on the web
-   host `KUBCODE_PACKAGE_SIGNER_URL` (that URL), `KUBCODE_PACKAGE_SIGNER_KEY`
-   (the same `$KEY`) and `KUBCODE_DOWNLOADS_ENABLED=true`.
+   `pulumi -C infra stack output --stack prod packageSignerUrl`, then run
+   `infra/web/scripts/webhost.sh set-env`. After the usual secrets it asks for
+   `KUBCODE_PACKAGE_SIGNER_URL` (that URL) and `KUBCODE_PACKAGE_SIGNER_KEY`
+   (the same `$KEY`, hidden) and turns on `KUBCODE_DOWNLOADS_ENABLED`. Leaving
+   the URL empty keeps downloads off.
 
 To rotate the key, set a new secret, let CI apply, then update the web host.
 

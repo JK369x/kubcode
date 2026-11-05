@@ -89,7 +89,8 @@ Run each step from the repo root on the owner's machine with AWS profile `defaul
   it. Google login after `set-env` is the real check.
 - `set-env` rewrites the whole env file. Turning on a flag later (e.g.
   `KUBCODE_INTERACTIONS_ENABLED`) means re-typing the secrets until there is a
-  `set-flag` command.
+  `set-flag` command. Skill downloads are the exception: `set-env` asks for the
+  signer URL and key (empty URL = off), see `infra/README.md`.
 - There is no uptime alert yet.
 - Next logs harmless "Failed to update prerender cache" warnings if an ISR
   write is ever attempted: the release directory is read-only by design.
