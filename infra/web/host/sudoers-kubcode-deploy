@@ -1,0 +1,2 @@
+# The deploy user may restart the web service and nothing else.
+deploy ALL=(root) NOPASSWD: /usr/bin/systemctl restart kubcode-web.service

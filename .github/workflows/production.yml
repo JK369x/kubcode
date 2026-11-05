@@ -1,19 +1,37 @@
-# main only: checks -> build -> read-only migration plan + destructive gate ->
-# migrate (only if pending) -> production deploy (not yet on the domain) ->
-# smoke -> promote to kubcode.dev -> smoke (auto re-promote previous on fail).
+# main only: checks -> build + package -> read-only migration plan + destructive
+# gate -> migrate (only if pending) -> deploy to the Lightsail box over SSH (the
+# box smokes the release on localhost and puts the previous one back on fail)
+# -> smoke https://kubcode.dev once DNS points at the box (SSH rollback on fail).
 # Any failing step stops everything after it: no migration, no deploy.
+# Hosting: docs/adr/0001-host-web-on-lightsail.md, infra/web/README.md.
 #
 # Destructive pending migrations stop push runs. The owner approves by running
 # this workflow manually on main with the exact phrase the blocked run printed
 # (GitHub environment reviewers are not available for this private repo plan).
 # That phrase is a safety interlock against accidents, NOT an authorization
 # boundary: anyone with push access could edit a workflow to use the secrets.
+# LIGHTSAIL_DEPLOY_KEY is a repository secret too: any branch's workflow can
+# read it and install code that then runs next to every runtime secret on the
+# box. Only the owner has push access; keep it that way (HANDOFF.md 7a).
 name: Production
 
 on:
   push:
     branches:
       - main
+    # Infra/docs-only changes skip the release; no check is required on main,
+    # so a skipped run leaves nothing pending. infra/ has its own Infra
+    # workflow (infra/web is applied by an admin). docs/covers* still triggers because
+    # tests/cover-brief.test.ts reads it. Later patterns override earlier ones.
+    paths:
+      - "**"
+      - ".github/**"
+      - "!infra/**"
+      - "!.github/workflows/infra.yml"
+      - "!docs/**"
+      - "docs/covers.md"
+      - "docs/covers/**"
+      - "!*.md"
   workflow_dispatch:
     inputs:
       approval:
@@ -30,10 +48,8 @@ concurrency:
   cancel-in-progress: false
 
 env:
-  VERCEL_CLI_VERSION: "54.1.0"
-  VERCEL_ORG_ID: ${{ vars.VERCEL_ORG_ID }}
-  VERCEL_PROJECT_ID: ${{ vars.VERCEL_PROJECT_ID }}
   CANONICAL_ORIGIN: https://kubcode.dev
+  LIGHTSAIL_HOST: ${{ vars.LIGHTSAIL_HOST }}
 
 jobs:
   checks:
@@ -52,20 +68,20 @@ jobs:
           node-version: "22"
           cache: npm
       - run: npm ci --ignore-scripts
-      - run: npm install --global "vercel@${VERCEL_CLI_VERSION}"
 
       # Build before touching the database so a broken build never leaves a
-      # migrated schema without a matching deploy.
-      - name: Pull production project settings
-        env:
-          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
-        run: vercel pull --yes --environment=production --token "$VERCEL_TOKEN"
-
-      # Runs project code (next build): no token or DB URL in this step.
-      - name: Build production (prebuilt, licensed-only media)
+      # migrated schema without a matching deploy. Runs project code: no
+      # secrets in these steps. Runtime secrets live only on the box.
+      - name: Build production (standalone, licensed-only media)
         env:
           NEXT_PUBLIC_MEDIA_MODE: licensed-only
-        run: vercel build --prod
+        run: npm run build
+
+      - name: Package the release
+        id: package
+        run: |
+          scripts/package-release.sh "$RUNNER_TEMP/release.tar.gz"
+          echo "sha256=$(sha256sum "$RUNNER_TEMP/release.tar.gz" | cut -d' ' -f1)" >> "$GITHUB_OUTPUT"
 
       # Shape only (Session pooler host, port 5432, postgres.<ref> user); no
       # connection and no part of the secret is printed.
@@ -100,6 +116,32 @@ jobs:
           MIGRATION_APPROVAL: ${{ inputs.approval }}
         run: npx tsx scripts/ci-migration-gate.ts "$RUNNER_TEMP/plan.txt"
 
+      # Before migrating: if the box can't be reached (missing LIGHTSAIL_*
+      # settings, box down, key mid-rotation), stop with the schema untouched.
+      # The deploy key can only run infra/web/host/kubcode-deploy (forced
+      # command); the host key is pinned from the Lightsail API (webhost.sh).
+      - name: Prepare SSH to the box
+        if: steps.gate.outputs.deploy == 'true'
+        env:
+          DEPLOY_KEY: ${{ secrets.LIGHTSAIL_DEPLOY_KEY }}
+          KNOWN_HOSTS: ${{ vars.LIGHTSAIL_KNOWN_HOSTS }}
+        run: |
+          [ -n "$LIGHTSAIL_HOST" ] && [ -n "$KNOWN_HOSTS" ] && [ -n "$DEPLOY_KEY" ] || { echo "::error::LIGHTSAIL_HOST / LIGHTSAIL_KNOWN_HOSTS / LIGHTSAIL_DEPLOY_KEY not set"; exit 1; }
+          install -m 700 -d "$RUNNER_TEMP/ssh"
+          printf '%s\n' "$DEPLOY_KEY" > "$RUNNER_TEMP/ssh/key" && chmod 600 "$RUNNER_TEMP/ssh/key"
+          printf '%s\n' "$KNOWN_HOSTS" > "$RUNNER_TEMP/ssh/known_hosts"
+          cat > "$RUNNER_TEMP/ssh/config" <<EOF
+          Host box
+            HostName $LIGHTSAIL_HOST
+            User deploy
+            IdentityFile $RUNNER_TEMP/ssh/key
+            IdentitiesOnly yes
+            UserKnownHostsFile $RUNNER_TEMP/ssh/known_hosts
+            StrictHostKeyChecking yes
+            ConnectTimeout 15
+          EOF
+          ssh -F "$RUNNER_TEMP/ssh/config" box status | tee -a "$GITHUB_STEP_SUMMARY"
+
       - name: Migrate production database
         if: steps.gate.outputs.migrate == 'true'
         env:
@@ -107,67 +149,40 @@ jobs:
           NODE_ENV: production
         run: KUBCODE_DB_CA_CERT="$(cat db/certs/supabase-prod-ca.pem)" npx tsx scripts/accounts-migrate.ts --apply
 
-      - name: Record current production deployment
-        id: previous
-        env:
-          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
-        run: |
-          id=$(curl -fsS -H "Authorization: Bearer $VERCEL_TOKEN" \
-            "https://api.vercel.com/v13/deployments/kubcode.dev?teamId=${VERCEL_ORG_ID}" | jq -r '.id')
-          echo "id=$id" >> "$GITHUB_OUTPUT"
-          echo "Previous production deployment: $id" >> "$GITHUB_STEP_SUMMARY"
-
-      # Deploy the prebuilt output from outside the git checkout: Vercel Hobby
-      # BLOCKS deployments whose git commit author is not a team member.
-      - name: Deploy production (not yet on the domain)
+      # Exit 3 = this commit is already live (e.g. a manual run to approve a
+      # migration): nothing to deploy.
+      - name: Deploy to the box (smoke on the box, auto-restore on fail)
         id: deploy
         if: steps.gate.outputs.deploy == 'true'
         timeout-minutes: 10
         env:
-          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          SUM: ${{ steps.package.outputs.sha256 }}
         run: |
-          stage="$RUNNER_TEMP/deploy"
-          # Whole tree minus .git: prebuilt functions reference node_modules files.
-          mkdir -p "$stage" && rsync -a --exclude .git ./ "$stage/"
-          url=$(vercel deploy --prebuilt --prod --skip-domain --cwd "$stage" --token "$VERCEL_TOKEN")
-          host=${url#https://}
-          info=$(curl -fsS -H "Authorization: Bearer $VERCEL_TOKEN" \
-            "https://api.vercel.com/v13/deployments/${host}?teamId=${VERCEL_ORG_ID}")
-          [ "$(jq -r '.target' <<<"$info")" = "production" ] || { echo "::error::deploy target is not production"; exit 1; }
-          [ "$(jq -r '.readyState' <<<"$info")" = "READY" ] || { echo "::error::deployment not READY"; exit 1; }
-          echo "url=$url" >> "$GITHUB_OUTPUT"
-          echo "id=$(jq -r '.id' <<<"$info")" >> "$GITHUB_OUTPUT"
+          set +e
+          ssh -F "$RUNNER_TEMP/ssh/config" box "deploy $GITHUB_SHA $SUM" < "$RUNNER_TEMP/release.tar.gz"
+          rc=$?
+          set -e
+          if [ "$rc" -eq 3 ]; then echo "::notice::$GITHUB_SHA is already live (smoked earlier); nothing deployed"; exit 0; fi
+          [ "$rc" -eq 0 ] || { echo "::error::deploy failed (exit $rc); the box kept or restored the previous release"; exit 1; }
+          echo "deployed=true" >> "$GITHUB_OUTPUT"
+          echo "Deployed $GITHUB_SHA" >> "$GITHUB_STEP_SUMMARY"
 
-      # Runtime env (Vercel production secrets) must reach the prebuilt
-      # functions: the auth route only redirects to the canonical host when
-      # Google/LINE/NextAuth settings are present at runtime.
-      - name: Smoke test the new deployment URL
-        env:
-          URL: ${{ steps.deploy.outputs.url }}
+      # Until the DNS cutover kubcode.dev still serves the old Vercel
+      # deployment, so the public smoke only runs once it resolves to the box,
+      # and then goes to the box's IP (--resolve) over real TLS, so a stale
+      # resolver on the runner can't test the wrong server. Only after a deploy
+      # made by this run: never roll back a release this run didn't install.
+      - name: Smoke test kubcode.dev (roll back on the box on fail)
+        if: steps.deploy.outputs.deployed == 'true'
         run: |
-          code=$(curl -sS -o /dev/null -w '%{http_code}' --retry 3 "$URL/")
-          [ "$code" = "200" ] || { echo "::error::GET / returned $code"; exit 1; }
-          loc=$(curl -sS -o /dev/null -w '%{http_code} %{redirect_url}' "$URL/api/auth/providers")
-          [ "$loc" = "303 ${CANONICAL_ORIGIN}/account" ] || { echo "::error::auth runtime env check failed: $loc"; exit 1; }
-
-      # REST API instead of `vercel promote`: the CLI resolved the wrong team
-      # scope in CI ("Deployment belongs to a different team"). Waits until
-      # kubcode.dev really serves the new id (5 minute timeout).
-      - name: Promote to kubcode.dev
-        id: promote
-        env:
-          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
-          NEW_ID: ${{ steps.deploy.outputs.id }}
-        run: npx tsx scripts/ci-vercel-release.ts promote "$NEW_ID"
-
-      # Always runs after a successful deploy, even if promote failed:
-      #   live == previous -> promote never happened: fail, no action
-      #   live == new      -> smoke kubcode.dev; on failure re-promote previous
-      #   anything else    -> fail, no automatic action
-      - name: Smoke test kubcode.dev (re-promote previous on failure)
-        if: always() && steps.deploy.outcome == 'success'
-        env:
-          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
-          NEW_ID: ${{ steps.deploy.outputs.id }}
-          PREVIOUS_ID: ${{ steps.previous.outputs.id }}
-        run: npx tsx scripts/ci-vercel-release.ts post-promote "$NEW_ID" "$PREVIOUS_ID"
+          set -o pipefail
+          live=$(dig +short A kubcode.dev @1.1.1.1 | sort | tr '\n' ' ') || { echo "::error::DNS lookup failed"; exit 1; }
+          [ -n "$live" ] || { echo "::error::kubcode.dev has no A record answer"; exit 1; }
+          if [ "$live" != "$LIGHTSAIL_HOST " ]; then
+            echo "::notice::kubcode.dev resolves to [$live], not the box; skipped the public smoke" | tee -a "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+          if KUBCODE_SMOKE_BASE="$CANONICAL_ORIGIN" KUBCODE_SMOKE_RESOLVE="kubcode.dev:443:$LIGHTSAIL_HOST" infra/web/host/smoke; then exit 0; fi
+          echo "::error::kubcode.dev smoke failed; rolling back on the box"
+          ssh -F "$RUNNER_TEMP/ssh/config" box rollback
+          exit 1

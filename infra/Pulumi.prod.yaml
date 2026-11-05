@@ -5,3 +5,5 @@ config:
     - arn:aws:iam::955758449820:user/super_admin
   pulumi:disable-default-providers:
     - aws
+  kubcode:budgetEmail:
+    secure: v1:q7AM4EqAEpnlRJfL:4ViYa3SMRlgieyQMJlGuGA47n2HVOwHNSf857pdpLmW+AnbCPQ==

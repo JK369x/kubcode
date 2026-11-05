@@ -10,7 +10,8 @@ const config = new pulumi.Config("kubcode");
 const secretsKeyUserArns: pulumi.Input<string>[] = [];
 
 const outputs = createStack({
-  budgetEmail: config.get("budgetEmail"),
+  // Stored as a secret: the owner's personal address stays out of git as plaintext.
+  budgetEmail: config.getSecret("budgetEmail"),
   breakGlassAdminArns: config.requireObject<string[]>("breakGlassAdminArns"),
   secretsKeyUserArns,
 });

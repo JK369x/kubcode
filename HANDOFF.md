@@ -244,6 +244,7 @@ Vercel ไม่ได้ต่อ Git integration และ**ห้ามเป
 | `preview.yml` | push ทุก branch ที่ไม่ใช่ `main` | checks → `vercel pull/build/deploy --prebuilt --target=preview` → ตรวจว่า target ไม่ใช่ production → comment URL ใน PR ที่เปิดอยู่ ไม่ migrate ไม่แตะ production |
 | `production.yml` | push `main` / `workflow_dispatch` บน main | checks → build production → **plan migration แบบ read-only** → gate → migrate (ถ้ามี pending) → deploy `--prod --skip-domain` → smoke deployment URL → promote ผ่าน REST API แล้วรอจน kubcode.dev ชี้ id ใหม่ → smoke `kubcode.dev` (`if: always()` หลัง deploy สำเร็จ: live = ตัวเก่า → fail ไม่ทำอะไร; live = ตัวใหม่แต่ smoke ไม่ผ่าน → promote ตัวเก่ากลับ; อื่น ๆ → fail ไม่ทำอะไร) |
 
+- **Path filter (2026-11-04, หลังโดน Vercel upload limit `api-upload-free`):** `preview.yml`/`production.yml` ไม่รันเมื่อ push แตะแค่ `infra/**`, `.github/workflows/infra.yml`, `docs/**` (ยกเว้น `docs/covers*` ที่ test อ่าน) และ `*.md` ที่ root; ไฟล์อื่นทั้งหมด (รวม `production.yml` เอง, `db/migrations/**`) ยังรันตามเดิม main ไม่มี required checks จึงไม่มี check ค้าง "Expected"
 - ลำดับรับประกันโดย step ใน job เดียว: build พังหรือ migrate พัง = ไม่ deploy; migration ไม่รันถ้า build ยังไม่ผ่าน
 - Concurrency `production` ครั้งละหนึ่ง run และไม่ cancel กลางทาง; migration idempotent (checksum ledger + `pg_advisory_xact_lock` + transaction เดียว)
 - ก่อน plan มี `--check-url` ตรวจรูปแบบ `MIGRATION_DATABASE_URL` โดยไม่เชื่อมต่อและไม่พิมพ์ค่า: scheme postgres(ql), host `*.pooler.supabase.com` (ถ้าเป็น `db.<ref>.supabase.co` = Direct connection ซึ่งเป็น IPv6-only บน Free plan และ GitHub runner ต่อไม่ได้), port 5432, user `postgres.sgtyrndczwxijrubyyjw`
@@ -296,7 +297,7 @@ Rollback:
 - OIDC trust ใช้ **immutable subject** ของ repo นี้ (`repo:JK369x@104179568/kubcode@1444458364:…`) ไม่ใช่ `repo:JK369x/kubcode:…` (ถ้าใช้แบบชื่อจะได้ "Not authorized to perform sts:AssumeRoleWithWebIdentity" ซึ่งเกิดใน run แรกของ PR #10)
 - CI `.github/workflows/infra.yml`: PR ทำ preview แล้ว comment, main ทำ preview → gate → up ถ้ามี delete/replace จะหยุดรอเจ้าของรัน workflow_dispatch พร้อม `approve infra <digest>`
 - **Boundary แก้ได้เฉพาะ admin ที่รันจากเครื่อง** (CI ถูก Deny) งานที่เพิ่ม Lambda/Scheduler/SSM หรือ KMS key ใหม่จึงต้องให้ admin apply boundary ก่อน; การเพิ่ม Lambda role เข้า secrets key ให้ทำที่ hook `secretsKeyUserArns` ใน `infra/index.ts`
-- ยังค้าง: (1) email ของ budget `kubcode-monthly` ($5) รอเจ้าของเลือก (`kubcode:budgetEmail`) (2) activate cost allocation tag `project` ต้องรอ billing เห็น tag ก่อน (~24h) แล้วรัน `bootstrap.sh cost-tag` (3) Lambda concurrency (ตอนนี้ 10): API รับแค่ค่า > 1000 และ account ไม่มี Premium Support ให้เปิด case ผ่าน API เจ้าของต้องเลือกว่าจะขอ >1000 ผ่าน `bootstrap.sh quota N` หรือเปิด case ขอ 100 เองใน console
+- ยังค้าง: (1) budget `kubcode-monthly` ($5): เจ้าของให้ email แล้ว เก็บเป็น stack secret `kubcode:budgetEmail` และ CI สร้างให้ตอน merge PR budget (2) activate cost allocation tag `project` ต้องรอ billing เห็น tag ก่อน (~24h) แล้วรัน `bootstrap.sh cost-tag` (3) Lambda concurrency (ตอนนี้ 10; API รับแค่ค่า > 1000): เจ้าของเลือกยื่นขอ 1001 ผ่าน API ยื่นแล้วเมื่อ 2026-11-04 request id `7d531692100445c6bc46b50ae406edafAf4MtXOI` สถานะ PENDING ตรวจด้วย `aws service-quotas get-requested-service-quota-change --request-id <id>`
 
 ## 8. Pitfalls / ไม่ควรทำซ้ำ
 

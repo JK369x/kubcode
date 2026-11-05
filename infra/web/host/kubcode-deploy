@@ -1,0 +1,167 @@
+#!/usr/bin/env bash
+# kubcode-deploy: the SSH forced command for the CI deploy key (see
+# docs/adr/0001-host-web-on-lightsail.md). The key can run nothing else.
+#
+# Verbs, read from SSH_ORIGINAL_COMMAND:
+#   deploy <git sha, 40 hex> <sha256 of the upload, 64 hex>
+#       Release tarball (.tar.gz) on stdin. Installs it, switches `current`,
+#       restarts the app and smoke-tests it. If the smoke test fails, the
+#       previous release is put back and the deploy exits non-zero.
+#   rollback   switch back to the previous release
+#   status     print the live and previous git sha
+#
+# Exit codes: 0 ok, 1 refused or failed, 2 bad command, 3 that sha is already live.
+set -euo pipefail
+set -f # never glob anything that came over SSH
+umask 022
+
+ROOT="${KUBCODE_ROOT:-/srv/kubcode}"
+CACHE="${KUBCODE_CACHE:-/var/cache/kubcode-web}"
+SYSTEMCTL="${KUBCODE_SYSTEMCTL:-sudo -n /usr/bin/systemctl}"
+SMOKE="${KUBCODE_SMOKE:-/usr/local/lib/kubcode/smoke}"
+MAX_BYTES="${KUBCODE_MAX_BYTES:-314572800}" # 300 MB
+SERVICE=kubcode-web.service
+KEEP=5
+RELEASES="$ROOT/releases"
+LOG="$ROOT/releases.log"
+
+die() {
+  local code=$1
+  shift
+  echo "kubcode-deploy: $*" >&2
+  exit "$code"
+}
+usage() { die 2 "usage: deploy <40-hex git sha> <64-hex sha256> | rollback | status"; }
+
+sha256() {
+  if command -v sha256sum >/dev/null; then sha256sum "$1" | cut -d' ' -f1; else shasum -a 256 "$1" | cut -d' ' -f1; fi
+}
+link_of() { readlink "$ROOT/$1" 2>/dev/null || true; }
+restart() { $SYSTEMCTL restart "$SERVICE"; }
+
+# Points `current` at $1 and remembers the old target as `previous`.
+switch_to() {
+  local old
+  old=$(link_of current)
+  ln -sfn "$1" "$ROOT/current"
+  if [ -n "$old" ] && [ "$old" != "$1" ]; then ln -sfn "$old" "$ROOT/previous"; fi
+}
+
+# Keeps the KEEP most recently deployed releases, plus whatever is live or previous.
+prune() {
+  local keep cur prev d
+  keep=$(awk '{ line[NR] = $0 } END { n = 0; for (i = NR; i > 0 && n < '"$KEEP"'; i--) if (!(line[i] in seen)) { seen[line[i]] = 1; out[++n] = line[i] } for (i = n; i > 0; i--) print out[i] }' "$LOG")
+  printf '%s\n' "$keep" >"$LOG"
+  cur=$(basename "$(link_of current)")
+  prev=$(basename "$(link_of previous)")
+  # Globbing is off script-wide; this pattern holds no SSH input.
+  set +f
+  for d in "$RELEASES"/*; do
+    [ -d "$d" ] || continue
+    case "$(basename "$d")" in
+    "$cur" | "$prev") ;;
+    *) grep -qx "$(basename "$d")" "$LOG" || rm -rf "$d" ;;
+    esac
+  done
+  set -f
+}
+
+deploy() {
+  local sha=$1 sum=$2 dir="$RELEASES/$1" tmp size old_cur old_prev
+  # Already live = current AND it passed its smoke (logged). A release left
+  # current without that record is installed again and smoked.
+  if [ "$(link_of current)" = "$dir" ] && [ -f "$LOG" ] && grep -qx "$sha" "$LOG"; then die 3 "$sha is already live"; fi
+  mkdir -p "$RELEASES" "$CACHE"
+  tmp=$(mktemp -d "$ROOT/.incoming.XXXXXX")
+  INCOMING=$tmp
+  trap 'rm -rf "$INCOMING"' EXIT
+
+  head -c $((MAX_BYTES + 1)) >"$tmp/release.tar.gz"
+  size=$(wc -c <"$tmp/release.tar.gz" | tr -d ' ')
+  [ "$size" -le "$MAX_BYTES" ] || die 1 "upload too large (over $MAX_BYTES bytes)"
+  [ "$(sha256 "$tmp/release.tar.gz")" = "$sum" ] || die 1 "sha256 mismatch"
+
+  # Check member names and types before extracting anything: no absolute or
+  # parent paths, and no symlinks or hard links (the CI tarball has none).
+  if tar -tzf "$tmp/release.tar.gz" | grep -Eq '(^/|(^|/)\.\.(/|$))'; then die 1 "archive has unsafe paths"; fi
+  if tar -tvzf "$tmp/release.tar.gz" | grep -Eq '^[lh]| link to '; then die 1 "archive has links"; fi
+  mkdir "$tmp/x"
+  tar -xzf "$tmp/release.tar.gz" -C "$tmp/x" --no-same-owner
+  [ -f "$tmp/x/server.js" ] || die 1 "release has no server.js"
+  # The app runs as another user: whatever modes the archive carried (a
+  # mktemp -d stage makes "./" 0700), it must be able to read everything.
+  chmod -R u+rwX,go+rX,go-w "$tmp/x"
+
+  # Next writes its image cache under .next/cache; the release itself stays read-only.
+  rm -rf "$tmp/x/.next/cache"
+  mkdir -p "$tmp/x/.next"
+  ln -s "$CACHE" "$tmp/x/.next/cache"
+
+  old_cur=$(link_of current)
+  # Re-installing the unverified current release: there is nothing good to restore to.
+  [ "$old_cur" != "$dir" ] || old_cur=""
+  rm -rf "$dir" # leftover from an earlier failed attempt (never a verified live release)
+  mv "$tmp/x" "$dir"
+
+  old_prev=$(link_of previous)
+  # A restart that fails counts like a failed smoke: restore below.
+  switch_to "$dir"
+  if restart && "$SMOKE"; then
+    echo "$sha" >>"$LOG"
+    prune
+    echo "kubcode-deploy: $sha live"
+    return 0
+  fi
+
+  echo "kubcode-deploy: restart or smoke failed for $sha" >&2
+  if [ -n "$old_cur" ]; then
+    echo "kubcode-deploy: restoring $(basename "$old_cur")" >&2
+    ln -sfn "$old_cur" "$ROOT/current"
+    if [ -n "$old_prev" ]; then ln -sfn "$old_prev" "$ROOT/previous"; else rm -f "$ROOT/previous"; fi
+    { restart && "$SMOKE"; } || echo "kubcode-deploy: WARNING the restored release also fails to restart or smoke" >&2
+  else
+    rm -f "$ROOT/current"
+  fi
+  rm -rf "$dir"
+  exit 1
+}
+
+rollback() {
+  local prev
+  prev=$(link_of previous)
+  if [ -z "$prev" ] || [ ! -d "$prev" ]; then die 1 "no previous release to roll back to"; fi
+  switch_to "$prev"
+  restart
+  "$SMOKE" || die 1 "smoke failed after rollback to $(basename "$prev")"
+  echo "kubcode-deploy: rolled back to $(basename "$prev")"
+}
+
+status() {
+  echo "current=$(basename "$(link_of current)") previous=$(basename "$(link_of previous)")"
+}
+
+# Validate the whole command before touching the disk.
+read -r -a ARGS <<<"${SSH_ORIGINAL_COMMAND:-}"
+[ "${#ARGS[@]}" -gt 0 ] || usage
+case "${ARGS[0]}" in
+deploy)
+  [ "${#ARGS[@]}" -eq 3 ] || usage
+  [[ "${ARGS[1]}" =~ ^[0-9a-f]{40}$ ]] || usage
+  [[ "${ARGS[2]}" =~ ^[0-9a-f]{64}$ ]] || usage
+  ;;
+rollback | status) [ "${#ARGS[@]}" -eq 1 ] || usage ;;
+*) usage ;;
+esac
+
+INCOMING=""
+if command -v flock >/dev/null; then
+  mkdir -p "$ROOT"
+  exec 9>"$ROOT/.lock"
+  flock -n 9 || die 1 "another deploy is running"
+fi
+
+case "${ARGS[0]}" in
+deploy) deploy "${ARGS[1]}" "${ARGS[2]}" ;;
+rollback) rollback ;;
+status) status ;;
+esac

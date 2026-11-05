@@ -1,0 +1,25 @@
+#!/usr/bin/env bash
+# On-box smoke test of the release `current` points at. Proves the same as the
+# live check in lib/ci/vercel-release.ts: the page renders, the auth runtime
+# env is loaded (providers are exactly google+line), and /account renders.
+set -euo pipefail
+BASE="${KUBCODE_SMOKE_BASE:-http://127.0.0.1:3000}"
+H=(-H "Host: kubcode.dev" -H "X-Forwarded-Host: kubcode.dev" -H "X-Forwarded-Proto: https")
+# CI pins kubcode.dev to the box's IP so a stale resolver can't test Vercel.
+if [ -n "${KUBCODE_SMOKE_RESOLVE:-}" ]; then H+=(--resolve "$KUBCODE_SMOKE_RESOLVE"); fi
+
+code=000
+for _ in $(seq 1 45); do
+  code=$(curl -s -o /dev/null -w '%{http_code}' "${H[@]}" "$BASE/" || true)
+  [ "$code" = 200 ] && break
+  sleep 1
+done
+[ "$code" = 200 ] || { echo "smoke: GET / returned $code" >&2; exit 1; }
+
+keys=$(curl -fsS "${H[@]}" "$BASE/api/auth/providers" |
+  node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{try{console.log(Object.keys(JSON.parse(s)).sort().join(","))}catch{console.log("not-json")}})')
+[ "$keys" = "google,line" ] || { echo "smoke: providers are [$keys], expected [google,line]" >&2; exit 1; }
+
+code=$(curl -s -o /dev/null -w '%{http_code}' "${H[@]}" "$BASE/account")
+[ "$code" = 200 ] || { echo "smoke: GET /account returned $code" >&2; exit 1; }
+echo "smoke: ok"
