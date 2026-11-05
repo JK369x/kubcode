@@ -33,8 +33,16 @@ The most downloads one member may make in a rolling 24 hours.
 ### Accounts
 
 **Member**:
-A signed-in, active internal user. Being a member is enough to download; there is no separate member approval yet.
+A signed-in, active user. Being a member is enough to download; there is no separate member approval yet.
 _Avoid_: customer, approved member
+
+**Creator**:
+A member who publishes their own clips to their own YouTube or Instagram accounts through kubcode's posting tools. Any Thai creator may be one; no technical skill is assumed.
+_Avoid_: user (too broad), customer
+
+**Posting limit**:
+The most a creator may use the posting tools during the free beta: scheduled posts per month, clip size, and how many posts may run an auto-reply. Creators share the kubcode apps' platform quotas, so every creator has one, paid or not.
+_Avoid_: quota (that word is the platform's own limit on the kubcode app)
 
 **Owner**:
 The single account flagged as the site owner.
@@ -54,3 +62,4 @@ The single account flagged as the site owner.
 
 - "template" was used for both the skill page ("ดู template") and the downloadable kit — resolved: the downloadable thing is a **Skill package**; the page is the **Skill**.
 - HANDOFF P2 "member approval" — resolved for downloads: any **Member** may download; member approval stays a separate future feature.
+- "user" in the open-to-others plan meant two groups: technical people who run **Skill packages** with their own AI agent, and **Creators** who only post. Resolved (2026-11-05): the first outside audience is **Creators**, served by posting tools first; generating video for them is later.
