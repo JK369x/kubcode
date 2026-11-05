@@ -16,6 +16,8 @@ on:
   pull_request:
     paths:
       - "infra/**"
+      # The web host stack is admin-applied only (docs/adr/0001).
+      - "!infra/web/**"
       - "services/package-signer/**"
       - "packages/**"
       - ".github/workflows/infra.yml"
@@ -24,6 +26,8 @@ on:
       - main
     paths:
       - "infra/**"
+      # The web host stack is admin-applied only (docs/adr/0001).
+      - "!infra/web/**"
       - "services/package-signer/**"
       - "packages/**"
       - ".github/workflows/infra.yml"

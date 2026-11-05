@@ -1,0 +1,36 @@
+# Unit tests for the Lightsail web host (infra/web): stack shape, the deploy
+# forced command and write-env. No secrets, no AWS: the stack is applied by
+# an admin (docs/adr/0001-host-web-on-lightsail.md), and the app workflows and
+# infra.yml both skip infra/web, so without this nothing would test it.
+# The Docker end-to-end check (infra/web/tests/container-e2e.sh) runs locally.
+name: Web host
+
+on:
+  push:
+    paths:
+      - "infra/web/**"
+      - "scripts/package-release.sh"
+      - ".github/workflows/web-host.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    defaults:
+      run:
+        working-directory: infra/web
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: infra/web/package-lock.json
+      - run: npm ci --ignore-scripts
+      - run: npm run typecheck
+      - run: npm test
+      - name: shellcheck
+        run: shellcheck host/setup.sh host/kubcode-deploy host/smoke host/start-web host/write-env scripts/webhost.sh ../../scripts/package-release.sh

@@ -4,6 +4,8 @@ import { contentRedirects } from "./lib/seo";
 
 const config: NextConfig = {
   devIndicators: false,
+  // Self-hosted on Lightsail: CI ships .next/standalone (docs/adr/0001).
+  output: "standalone",
   images: { formats: ["image/avif", "image/webp"] },
   // Interaction routes check page slugs against content/ at request time.
   outputFileTracingIncludes: { "/api/interactions/**": ["./content/**"] },
