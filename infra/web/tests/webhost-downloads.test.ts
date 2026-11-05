@@ -49,3 +49,37 @@ test("refuses a non-https or odd URL, and a short or quoted key, without echoing
     assert.doesNotMatch(String(r.stdout) + String(r.stderr), new RegExp(key.replace(/'/g, "\\'")));
   }
 });
+
+// set-downloads: only the three download keys go to the box, merged into
+// the existing web.env (write-env --merge), so nothing else is retyped.
+const setDownloads = SCRIPT.match(/^set_downloads\(\) \{[\s\S]*?^\}$/m)?.[0] ?? "";
+
+function runSetDownloads(input: string) {
+  // admin_ssh stand-in: prints its args, then what it got on stdin.
+  const program = [
+    `die() { echo "webhost: $*" >&2; exit 1; }`,
+    `admin_ssh() { echo "ARGS $*"; cat; }`,
+    fn,
+    setDownloads,
+    "set_downloads",
+  ].join("\n");
+  return spawnSync("bash", ["-c", program], { input, env: { PATH: process.env.PATH } });
+}
+
+test("set-downloads sends only the download keys to write-env --merge", () => {
+  assert.ok(setDownloads, "set_downloads() exists");
+  assert.match(SCRIPT, /^set-downloads\) set_downloads ;;$/m);
+  const r = runSetDownloads(`${URL}\n${KEY}\n`);
+  assert.equal(r.status, 0, String(r.stderr));
+  assert.equal(
+    String(r.stdout),
+    `ARGS sudo /usr/local/lib/kubcode/write-env --merge\n` +
+      `KUBCODE_PACKAGE_SIGNER_URL='${URL}'\nKUBCODE_PACKAGE_SIGNER_KEY='${KEY}'\nKUBCODE_DOWNLOADS_ENABLED='true'\n`,
+  );
+});
+
+test("set-downloads with an empty URL changes nothing on the box", () => {
+  const r = runSetDownloads("\n");
+  assert.notEqual(r.status, 0);
+  assert.doesNotMatch(String(r.stdout), /ARGS/);
+});

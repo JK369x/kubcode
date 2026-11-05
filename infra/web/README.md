@@ -22,7 +22,7 @@ Why and what: [docs/adr/0001-host-web-on-lightsail.md](../../docs/adr/0001-host-
 | `host/smoke` | Smoke test: `/` 200, auth providers exactly google+line, `/account` 200. Run on the box after each deploy, and by CI against kubcode.dev |
 | `host/write-env` | Writes web.env from stdin; keeps or generates `NEXTAUTH_SECRET` on the box; restores the old file if the app then fails its smoke |
 | `host/start-web` | systemd `ExecStart`: exports the public DB CA from the release, starts `server.js` |
-| `scripts/webhost.sh` | Local admin/owner tool: `known-hosts`, `deploy-key`, `provision`, `set-env`, `smoke`, `tls`, `status`, `rollback`, `ssh` |
+| `scripts/webhost.sh` | Local admin/owner tool: `known-hosts`, `deploy-key`, `provision`, `set-env`, `set-downloads`, `smoke`, `tls`, `status`, `rollback`, `ssh` |
 | `tests/` | `npm test` (stack shape, deploy command, write-env); `tests/container-e2e.sh` (full box in Docker) |
 
 ## Cutover runbook
@@ -89,8 +89,9 @@ Run each step from the repo root on the owner's machine with AWS profile `defaul
   it. Google login after `set-env` is the real check.
 - `set-env` rewrites the whole env file. Turning on a flag later (e.g.
   `KUBCODE_INTERACTIONS_ENABLED`) means re-typing the secrets until there is a
-  `set-flag` command. Skill downloads are the exception: `set-env` asks for the
-  signer URL and key (empty URL = off), see `infra/README.md`.
+  `set-flag` command. Skill downloads are the exception: `set-downloads` merges
+  just the signer URL, key and flag into the file (`write-env --merge`), see
+  `infra/README.md`.
 - There is no uptime alert yet.
 - Next logs harmless "Failed to update prerender cache" warnings if an ISR
   write is ever attempted: the release directory is read-only by design.

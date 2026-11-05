@@ -178,15 +178,17 @@ merging that PR is the approval.
 2. **Set the signing key**, then open a PR so CI creates the Lambda:
    ```bash
    KEY=$(openssl rand -hex 32)
-   pulumi -C infra config set --stack prod --secret kubcode:packageSignerKey "$KEY"
+   printf %s "$KEY" | pulumi -C infra config set --stack prod --secret kubcode:packageSignerKey
    ```
-   Keep `$KEY` for step 3. At least 32 bytes is enforced.
+   Stdin keeps the key out of argv. Keep `$KEY` for step 3. At least 32 bytes is enforced.
 3. **Wire the web host** once CI has applied: read the URL with
    `pulumi -C infra stack output --stack prod packageSignerUrl`, then run
-   `infra/web/scripts/webhost.sh set-env`. After the usual secrets it asks for
+   `infra/web/scripts/webhost.sh set-downloads`. It asks for
    `KUBCODE_PACKAGE_SIGNER_URL` (that URL) and `KUBCODE_PACKAGE_SIGNER_KEY`
-   (the same `$KEY`, hidden) and turns on `KUBCODE_DOWNLOADS_ENABLED`. Leaving
-   the URL empty keeps downloads off.
+   (the same `$KEY`, hidden), turns on `KUBCODE_DOWNLOADS_ENABLED` and merges
+   just those keys into the box's env file (every other secret is kept). A box
+   provisioned before `--merge` existed needs `webhost.sh provision` first.
+   `set-env` asks for the same two values after the usual secrets.
 
 To rotate the key, set a new secret, let CI apply, then update the web host.
 
