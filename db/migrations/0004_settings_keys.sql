@@ -155,14 +155,16 @@ $$;
 -- cross-user), creates and updates connections, moves intents along, owns
 -- the nonce table and appends audit rows. No DDL, no audit rewrite, no
 -- writes to user_secrets (re-wrapping comes with its own migration).
--- Skipped until the operator creates the role.
+-- The role is created here, NOLOGIN and without a password, so its grants
+-- always apply. An existing role is left exactly as it is: the operator
+-- gives it LOGIN + a password when the Lambdas ship (the DB URL goes to SSM,
+-- never to git).
 DO $$
 DECLARE
   tab text;
 BEGIN
   IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'kubcode_worker') THEN
-    RAISE NOTICE 'kubcode_worker role not found; worker grants for 0004 skipped';
-    RETURN;
+    CREATE ROLE kubcode_worker NOLOGIN NOSUPERUSER NOCREATEDB NOCREATEROLE NOINHERIT NOREPLICATION NOBYPASSRLS;
   END IF;
   GRANT USAGE ON SCHEMA kubcode_accounts TO kubcode_worker;
   GRANT SELECT ON kubcode_accounts.user_secrets TO kubcode_worker;

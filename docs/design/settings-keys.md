@@ -139,12 +139,12 @@ with the pooler). This guards against a forgotten `WHERE`; it does **not** stop 
 URL, who can set any id.
 
 **Column grants.** `kubcode_app` can INSERT/UPDATE/DELETE, but may SELECT **only the metadata
-columns**: never `envelope` or `verifier_envelope`, which Vercel never needs back. A new LOGIN role
+columns**: never `envelope` or `verifier_envelope`, which Vercel never needs back. A new role
 `kubcode_worker`, used by the Lambdas, gets SELECT on the envelopes, UPDATE on the connection,
 token and intent columns, and INSERT on audit, with a policy `USING(true)` (the refresh job is
-cross-user). Neither role has BYPASSRLS, DDL or DELETE on audit. The operator creates
-`kubcode_worker`'s password once and stores the DB URL in SSM (§5); 0004 grants are skipped when
-the role is absent.
+cross-user). Neither role has BYPASSRLS, DDL or DELETE on audit. 0004 creates `kubcode_worker`
+itself (NOLOGIN, no password) so its grants always apply; the operator later gives it LOGIN and a
+password and stores the DB URL in SSM (§5).
 
 Deletion: deleting the user cascades. Deleting app credentials is blocked while connections use
 them, unless the user confirms, which also disconnects them.
@@ -159,10 +159,12 @@ them, unless the user confirms, which also disconnects them.
   no INSERT (only the Lambda creates connections) and may UPDATE only `status`/`updated_at` (to mark
   `revoking`), plus DELETE. No access at all to `connect_request_nonces`.
 - The store enforces the phase-1 owner gate (`users.is_owner`) itself, not only the route.
-- **Order matters in production.** 0004 grants `kubcode_worker` only if the role already exists, and
-  the ledger never re-runs an applied migration. So the operator must create `kubcode_worker`
-  (NOLOGIN is enough; the password comes with step 4) in Supabase **before** 0004 reaches `main`.
-  If 0004 was applied first, re-run its second `DO $$ … $$` block (worker grants, idempotent) by hand.
+- **0004 creates `kubcode_worker`** (owner decision 2026-11-05): `CREATE ROLE kubcode_worker NOLOGIN`
+  inside a `DO` block guarded by `IF NOT EXISTS`, then the grants, which therefore always apply. An
+  existing role is left untouched (a LOGIN set by the operator survives a re-run). No owner action is
+  needed before merge. Production migrations run as Supabase's `postgres` user (HANDOFF §7a), the
+  role Supabase uses for creating custom roles (CREATEROLE, not superuser). If CI ever reports
+  `42501` on that statement, create the role once as `postgres` in the SQL editor and re-run.
 
 ## 5. Infra (Pulumi, `infra/`) — what needs an admin local apply
 
@@ -176,7 +178,9 @@ New:
   Log groups `/aws/lambda/kubcode-*` with 14-day retention. No VPC.
 - Scheduler schedule `kubcode-token-refresh-daily` + role `kubcode-scheduler-invoke` (`lambda:InvokeFunction` on that one function).
 - SSM SecureString `/kubcode/prod/worker-db-url` and `/kubcode/prod/connect-hmac-key`, encrypted
-  with `alias/kubcode-secrets`. Pulumi creates them with `ignoreChanges: [value]`; the admin sets
+  with `alias/kubcode-secrets`. Before setting the worker URL, the operator runs
+  `ALTER ROLE kubcode_worker LOGIN PASSWORD '…'` once in the Supabase SQL editor (the role itself
+  already exists from 0004; the password never goes in git, chat or Pulumi state). Pulumi creates them with `ignoreChanges: [value]`; the admin sets
   the real values with the CLI. The kubcode-secrets key policy gains an `SsmParameterWrite`
   statement (Encrypt/GenerateDataKey, `kms:ViaService=ssm`, `PARAMETER_ARN` like `/kubcode/prod/*`)
   for the break-glass admin, and `KeyUse` for the Lambda roles (via the existing hook).
@@ -189,7 +193,8 @@ New:
    in `KubcodeKeysCeiling`; plus a Deny of `kms:Decrypt` on the wrap key for every principal not
    matching `role/kubcode-lambda-*`, so CI cannot grant itself decryption through the key policy.
 2. **Creating the wrap key and its alias** (`kms:CreateKey` is not allowed for CI).
-3. **SSM values**: `aws ssm put-parameter --type SecureString --key-id alias/kubcode-secrets`
+3. **Worker login**: `ALTER ROLE kubcode_worker LOGIN PASSWORD '…'` in the Supabase SQL editor.
+4. **SSM values**: `aws ssm put-parameter --type SecureString --key-id alias/kubcode-secrets`
    (values never go in Pulumi state, git or chat).
 
 Order: review the PR, then the admin runs `pulumi up` from the PR branch (only kubcode-* changes),

@@ -38,6 +38,11 @@
 4. [ ] แอปยังเป็น Development mode (ยังไม่ publish) ซึ่งใช้ได้ แต่ @story.grids และ @kube.code ต้องยังเป็น **Instagram tester** ที่กด accept แล้ว (ดูที่ App roles › Roles)
 5. [ ] พอหน้า kubcode พร้อม ให้กดเชื่อม Instagram ทีละบัญชี ถ้า browser จำบัญชี IG อื่นไว้ ให้ logout ใน instagram.com ก่อน
 
+## D. ฐานข้อมูล (role ของ Lambda)
+
+- ไม่ต้องสร้าง role `kubcode_worker` เอง migration 0004 สร้างให้ตอน merge (แบบ NOLOGIN ไม่มีรหัสผ่าน)
+- [ ] ตอนขั้นที่ 4/5 (Lambda พร้อม) ค่อยรันใน Supabase SQL editor: `ALTER ROLE kubcode_worker LOGIN PASSWORD '…'` แล้วเก็บ DB URL ไว้ใน SSM `/kubcode/prod/worker-db-url` เท่านั้น ห้ามวางรหัสผ่านในแชต ไฟล์ หรือ git
+
 ## C. หลังเชื่อมแล้ว
 
 - [ ] หน้า kubcode ต้องแสดงชื่อช่องหรือ @บัญชีถูกต้อง สถานะ "ใช้งานได้" และ secret แสดงแค่ 4 ตัวท้าย

@@ -58,12 +58,12 @@ export async function throwawayDb(): Promise<ThrowawayDb> {
     ALTER DEFAULT PRIVILEGES GRANT USAGE, CREATE ON SCHEMAS TO anon, authenticated;
     ALTER DEFAULT PRIVILEGES GRANT ALL ON TABLES TO anon, authenticated;
     ALTER DEFAULT PRIVILEGES GRANT ALL ON SEQUENCES TO anon, authenticated;`);
-  // The runtime roles exist before migrating, as in production, so the
-  // migrations' own grants are what the tests exercise.
-  for (const role of ["kubcode_app", "kubcode_worker"]) {
-    if ((await admin.query("SELECT 1 FROM pg_roles WHERE rolname = $1", [role])).rowCount) continue;
-    await admin.query(`CREATE ROLE ${role} NOLOGIN`);
-    createdRoles.push(role);
+  // The runtime role exists before migrating, as in production, so the
+  // migrations' own grants are what the tests exercise. kubcode_worker is
+  // not pre-created: 0004 creates it (see worker-role.integration.test.ts).
+  if (!(await admin.query("SELECT 1 FROM pg_roles WHERE rolname = 'kubcode_app'")).rowCount) {
+    await admin.query("CREATE ROLE kubcode_app NOLOGIN");
+    createdRoles.push("kubcode_app");
   }
   await migrate(pool);
   for (const file of GRANT_FILES) await pool.query(readFileSync(file, "utf8"));
