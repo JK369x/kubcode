@@ -43,8 +43,13 @@ const ACCOUNT_TABLES = [
   "page_comments",
   "comment_reports",
   "download_events",
+  "user_secrets",
+  "oauth_connections",
+  "oauth_connect_intents",
+  "connect_request_nonces",
+  "secret_audit_events",
 ];
-const ALL_VERSIONS = ["0001_accounts", "0002_interactions", "0003_downloads"];
+const ALL_VERSIONS = ["0001_accounts", "0002_interactions", "0003_downloads", "0004_settings_keys"];
 
 // Refuses anything that is not clearly a local test database BEFORE any
 // connection is attempted.
@@ -282,14 +287,25 @@ test("account data lives only in kubcode_accounts: no public objects, RLS on, po
   assert.deepEqual(rls.rows.map((r) => r.relname), [...ACCOUNT_TABLES].sort());
   assert.ok(rls.rows.every((r) => r.relrowsecurity), "RLS enabled on every account table");
   // 0001 tables have no policy here (their server policy is an operator step);
-  // 0002 and 0003 grant their own tables to the runtime role only, never to API roles.
+  // 0002-0004 grant their own tables to server roles only, never to API
+  // roles. 0004 scopes kubcode_app per user and gives the Lambda role
+  // kubcode_worker its own policy.
   const policies = await raw.query<{ tablename: string; policyname: string; roles: string[] }>(
     "SELECT tablename, policyname, roles::text[] AS roles FROM pg_policies WHERE schemaname = 'kubcode_accounts'",
   );
+  const allowed: Record<string, string[]> = {
+    kubcode_server_access: ["page_stars", "star_toggles", "page_comments", "comment_reports", "download_events"],
+    kubcode_user_scope: ["user_secrets", "oauth_connections", "oauth_connect_intents", "secret_audit_events"],
+    kubcode_worker_access: ["user_secrets", "oauth_connections", "oauth_connect_intents", "connect_request_nonces", "secret_audit_events"],
+  };
+  const roleOf: Record<string, string> = {
+    kubcode_server_access: "kubcode_app",
+    kubcode_user_scope: "kubcode_app",
+    kubcode_worker_access: "kubcode_worker",
+  };
   for (const p of policies.rows) {
-    assert.ok(["page_stars", "star_toggles", "page_comments", "comment_reports", "download_events"].includes(p.tablename), p.tablename);
-    assert.equal(p.policyname, "kubcode_server_access");
-    assert.deepEqual(p.roles, ["kubcode_app"]);
+    assert.ok(allowed[p.policyname]?.includes(p.tablename), `${p.policyname} on ${p.tablename}`);
+    assert.deepEqual(p.roles, [roleOf[p.policyname]]);
   }
   // The runtime pool does not have the private schema on its search_path.
   assert.doesNotMatch((await pool.query("SHOW search_path")).rows[0].search_path, /kubcode_accounts/);

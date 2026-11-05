@@ -17,6 +17,7 @@
     "test:accounts-browser": "tsx tests/accounts-settings-browser.ts",
     "test:browser": "node tests/project-visual-audit-browser.mjs && node tests/kinetic-hero-browser.mjs after && node tests/native-media-browser.mjs && node tests/shared-download-browser.mjs",
     "test:interactions-app": "tsx tests/interactions-actual-app.ts",
+    "test:keys-app": "tsx tests/keys-actual-app.ts",
     "test:downloads-app": "tsx tests/downloads-actual-app.ts",
     "test:reading-browser": "tsx tests/reading-browser.ts",
     "cover": "tsx scripts/cover-brief.ts"

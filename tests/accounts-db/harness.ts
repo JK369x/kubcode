@@ -27,6 +27,8 @@ export type ThrowawayDb = {
   pool: Pool;
   /** Every query runs as the runtime role kubcode_app: grants + RLS apply. */
   appPool: Pool;
+  /** Every query runs as the Lambda role kubcode_worker (0004). */
+  workerPool: Pool;
   cleanup: () => Promise<void>;
 };
 
@@ -57,7 +59,8 @@ export async function throwawayDb(): Promise<ThrowawayDb> {
     ALTER DEFAULT PRIVILEGES GRANT ALL ON TABLES TO anon, authenticated;
     ALTER DEFAULT PRIVILEGES GRANT ALL ON SEQUENCES TO anon, authenticated;`);
   // The runtime role exists before migrating, as in production, so the
-  // migrations' own grants are what the tests exercise.
+  // migrations' own grants are what the tests exercise. kubcode_worker is
+  // not pre-created: 0004 creates it (see worker-role.integration.test.ts).
   if (!(await admin.query("SELECT 1 FROM pg_roles WHERE rolname = 'kubcode_app'")).rowCount) {
     await admin.query("CREATE ROLE kubcode_app NOLOGIN");
     createdRoles.push("kubcode_app");
@@ -65,10 +68,13 @@ export async function throwawayDb(): Promise<ThrowawayDb> {
   await migrate(pool);
   for (const file of GRANT_FILES) await pool.query(readFileSync(file, "utf8"));
   const appPool = createPool(own.href, { max: 12, options: "-c role=kubcode_app" }, NO_ENV);
+  const workerPool = createPool(own.href, { max: 4, options: "-c role=kubcode_worker" }, NO_ENV);
   return {
     pool,
     appPool,
+    workerPool,
     async cleanup() {
+      await workerPool.end();
       await appPool.end();
       await pool.end();
       assert.match(dbName, DB_NAME_SHAPE);

@@ -1,0 +1,155 @@
+.page {
+  grid-template-columns: minmax(0, 760px);
+  justify-content: center;
+}
+.back {
+  margin-top: 28px;
+}
+.keys {
+  display: grid;
+  gap: 22px;
+  min-width: 0;
+}
+.lead {
+  color: var(--muted);
+  font-size: 15px;
+}
+.section {
+  display: grid;
+  gap: 16px;
+  min-width: 0;
+  padding: 24px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+}
+.section h2 {
+  font-size: 24px;
+}
+.section h3 {
+  font-size: 16px;
+  font-weight: 500;
+}
+.steps summary {
+  cursor: pointer;
+  color: var(--purple);
+  font-size: 14px;
+}
+.steps ol {
+  margin: 10px 0 0;
+  padding-left: 20px;
+  display: grid;
+  gap: 6px;
+  font-size: 14px;
+}
+.steps code {
+  overflow-wrap: anywhere;
+  font-size: 13px;
+}
+.form {
+  display: grid;
+  gap: 12px;
+  max-width: 480px;
+}
+.form label {
+  display: grid;
+  gap: 6px;
+  font-size: 14px;
+}
+.form input {
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--surface-soft);
+  min-width: 0;
+}
+.state {
+  font-size: 15px;
+}
+.hint {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  letter-spacing: 0.04em;
+}
+/* Doubled class outranks the global paragraph rules where needed. */
+.meta.meta {
+  display: block;
+  color: var(--muted);
+  font-size: 13px;
+  overflow-wrap: anywhere;
+}
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+.actions > * {
+  flex: 1 1 180px;
+}
+.actions button:not(:global(.primary)) {
+  border-radius: 12px;
+  padding: 12px;
+}
+.danger {
+  border-color: var(--purple);
+  color: var(--purple);
+}
+.status.status {
+  min-height: 1.5em;
+  color: var(--purple);
+  font-size: 14px;
+}
+.status:empty {
+  min-height: 0;
+}
+.connections {
+  display: grid;
+  gap: 10px;
+  padding-top: 14px;
+  border-top: 1px solid var(--line);
+}
+.connections ul,
+.history {
+  display: grid;
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.connections li {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px 12px;
+}
+.connections li strong {
+  font-weight: 500;
+  overflow-wrap: anywhere;
+}
+.connections li button,
+.soon button {
+  border-radius: 12px;
+  padding: 10px 14px;
+}
+.soon {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+}
+.history li {
+  display: grid;
+  gap: 2px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--line);
+  font-size: 14px;
+}
+.history li:last-child {
+  border-bottom: 0;
+  padding-bottom: 0;
+}
+@media (max-width: 640px) {
+  .section {
+    padding: 18px;
+  }
+}
