@@ -7,8 +7,25 @@ import { loadMigrations, planMigrations, type Migration } from "../lib/accounts/
 
 const keywords = (sql: string) => findDestructiveStatements(sql).map((f) => f.keyword);
 
-test("the applied 0001 migration is additive", () => {
-  for (const m of loadMigrations()) assert.deepEqual(findDestructiveStatements(m.sql), [], m.version);
+// Data migrations the owner approves through the gate, with what the gate must flag.
+const APPROVED_DATA_MIGRATIONS: Record<string, string[]> = {
+  "0005_owner_flag": ["UPDATE"],
+};
+
+test("every migration is additive except the listed data migrations", () => {
+  for (const m of loadMigrations()) {
+    if (m.version in APPROVED_DATA_MIGRATIONS) continue;
+    assert.deepEqual(findDestructiveStatements(m.sql), [], m.version);
+  }
+});
+
+test("each data migration is stopped by the gate for exactly its expected statements", () => {
+  const byVersion = new Map(loadMigrations().map((m) => [m.version, m.sql]));
+  for (const [version, expected] of Object.entries(APPROVED_DATA_MIGRATIONS)) {
+    const sql = byVersion.get(version);
+    assert.ok(sql, `${version} exists`);
+    assert.deepEqual(keywords(sql), expected, version);
+  }
 });
 
 test("additive patterns are not flagged: FK actions, comments, literals, privileges, policies, triggers", () => {
