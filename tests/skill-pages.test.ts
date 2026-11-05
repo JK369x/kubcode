@@ -74,6 +74,13 @@ test("step 3 and the folded note promise a download only where a package exists"
   assert.match(stick, /ไม่ได้แนบ source kit/);
 });
 
+test("a packaged skill page never says it has no download package", async () => {
+  const what = await renderSkillPage("freshstack-what-if");
+  assert.doesNotMatch(what, /ยังไม่มีชุดดาวน์โหลด/);
+  const stick = await renderSkillPage("growkaz-stickman");
+  assert.match(stick, /ยังไม่มีชุดดาวน์โหลด/);
+});
+
 test("a skill without clips keeps its existing preview and gets the same plain sections", async () => {
   const html = await renderSkillPage("thai-jk-voice");
   assert.doesNotMatch(html, /คลิปที่ทำด้วยสกิลนี้/);
