@@ -26,6 +26,7 @@ const render = (node: Parameters<typeof renderReactMarkup>[0]) =>
 const fs = require("node:fs") as typeof import("node:fs");
 const path = require("node:path") as typeof import("node:path");
 const { skills } = require("../lib/catalog") as typeof import("../lib/catalog");
+const { approvedPackageFor } = require("../lib/packages") as typeof import("../lib/packages");
 const { publishedShowcase } = require("../lib/showcase") as typeof import("../lib/showcase");
 const hero =
   require("../components/KineticHero") as typeof import("../components/KineticHero");
@@ -98,7 +99,13 @@ test("skill styles: see the template, download locked behind sign-in", () => {
     const card = cardFor(html, entry.clip.poster.src)!;
     const skill = SHOWCASE_STYLES[entry.style].skill!;
     assert.match(card.body, new RegExp(`<a[^>]*href="/skills/${skill}"[^>]*>[\\s\\S]*?ดู template`), entry.style);
-    assert.match(card.body, /<a[^>]*href="\/account"[^>]*>[\s\S]*?เข้าสู่ระบบเพื่อดาวน์โหลด/, entry.style);
+    if (approvedPackageFor(skill)) {
+      assert.match(card.body, /<a[^>]*href="\/account"[^>]*>[\s\S]*?เข้าสู่ระบบเพื่อดาวน์โหลด/, entry.style);
+    } else {
+      // Signing in would not help: no package is approved for this skill yet.
+      assert.match(card.body, /<button[^>]*disabled=""[^>]*>[\s\S]*?ดาวน์โหลดเร็วๆ นี้/, entry.style);
+      assert.doesNotMatch(card.body, /href="\/account"/, entry.style);
+    }
     assert.doesNotMatch(card.body, /ดูคลิป/, entry.style);
   }
 });
@@ -119,12 +126,36 @@ test("styles without a skill: only a link to the clip, no template or download",
   }
 });
 
-test("signed in: the download button says it is coming, and is disabled", () => {
+const actions = (style: string, props: { signedIn: boolean | undefined; available?: boolean }) => {
   const { CardActions } = require("../components/StyleShelf") as typeof import("../components/StyleShelf");
-  const entry = SHELF.find((e) => SHOWCASE_STYLES[e.style].skill)!;
-  const html = render(createElement(CardActions, { entry, signedIn: true }));
+  const entry = SHELF.find((e) => e.style === style)!;
+  return render(createElement(CardActions, { entry, ...props }));
+};
+const PACKAGED = Object.entries(SHOWCASE_STYLES).find(([, s]) => s.skill && approvedPackageFor(s.skill))![0];
+const UNPACKAGED = Object.entries(SHOWCASE_STYLES).find(([, s]) => s.skill && !approvedPackageFor(s.skill))![0];
+
+test("packaged skill, signed in and downloads on: a real download button", () => {
+  const html = actions(PACKAGED, { signedIn: true, available: true });
+  assert.match(html, /<button(?![^>]*disabled)[^>]*>[\s\S]*?ดาวน์โหลด/);
+  assert.doesNotMatch(html, /เร็วๆ นี้|href="\/account"/);
+});
+
+test("packaged skill, signed out: the download links to sign-in", () => {
+  const html = actions(PACKAGED, { signedIn: false, available: true });
+  assert.match(html, /<a[^>]*href="\/account"[^>]*>[\s\S]*?เข้าสู่ระบบเพื่อดาวน์โหลด/);
+});
+
+test("packaged skill, downloads switched off on the server: coming soon, disabled", () => {
+  const html = actions(PACKAGED, { signedIn: true, available: false });
   assert.match(html, /<button[^>]*disabled=""[^>]*>[\s\S]*?ดาวน์โหลดเร็วๆ นี้/);
-  assert.doesNotMatch(html, /href="\/account"/);
+});
+
+test("skill without a package: coming soon for everyone, never a sign-in link", () => {
+  for (const signedIn of [true, false]) {
+    const html = actions(UNPACKAGED, { signedIn, available: undefined });
+    assert.match(html, /<button[^>]*disabled=""[^>]*>[\s\S]*?ดาวน์โหลดเร็วๆ นี้/, String(signedIn));
+    assert.doesNotMatch(html, /href="\/account"/, String(signedIn));
+  }
 });
 
 test("tool icons: up to three, named, not links; more shows +N", () => {
@@ -236,13 +267,15 @@ test("selected-work cue hands off to the native preview anchor", () => {
   assert.doesNotMatch(html, /id="(selected-example|skill-index)"/);
 });
 
-test("downloads stay locked: no download link or file, only sign-in; action slot renders", () => {
+test("server render: no download link or file, only sign-in or a disabled control; action slot renders", () => {
   const html = renderHero(skills[0].slug, "ACTION-SLOT");
   assert.doesNotMatch(html, /\/api\/download|\sdownload(=|\s|>)|\.zip"/);
+  const count = (re: RegExp) =>
+    [...html.matchAll(re)].reduce((n, m) => n + (m[0].match(/ดาวน์โหลด/g) || []).length, 0);
   const total = (html.match(/ดาวน์โหลด/g) || []).length;
-  const onSignIn = [...html.matchAll(/<a[^>]*href="\/account"[^>]*>[\s\S]*?<\/a>/g)]
-    .reduce((n, m) => n + (m[0].match(/ดาวน์โหลด/g) || []).length, 0);
-  assert.equal(onSignIn, total, "download is only ever offered through the sign-in link");
+  const onSignIn = count(/<a[^>]*href="\/account"[^>]*>[\s\S]*?<\/a>/g);
+  const disabled = count(/<button[^>]*disabled=""[^>]*>[\s\S]*?<\/button>/g);
+  assert.equal(onSignIn + disabled, total, "before the session is known, download is offered only through sign-in");
   assert.match(html, /ACTION-SLOT/);
 });
 
