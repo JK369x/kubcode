@@ -1,6 +1,6 @@
 # 0003 — Open the posting tools to creators through kubcode's own apps
 
-Status: accepted (2026-11-05, owner, grill session) · Extends the scheduler PRD (phase 1 = owner only)
+Status: accepted (2026-11-05, owner, grill session); amended 2026-11-06 (Google project, see "Amendment") · Extends the scheduler PRD (phase 1 = owner only)
 
 ## Context
 
@@ -25,7 +25,7 @@ Status: accepted (2026-11-05, owner, grill session) · Extends the scheduler PRD
 |---|---|
 | First outside users | **Creators**: any Thai creator, no technical skill assumed. |
 | What they get first | **Posting tools** (scheduler, later comment → DM). Creators make clips with their own tools. Generating video on our servers is later. Skill packages stay for technical members. |
-| Whose apps | **kubcode's own apps**: a new Meta app "kubcode" and a new Google project "kubcode", verified on `kubcode.dev`. BYOK stays for the owner and technical members. |
+| Whose apps | **kubcode's own apps**: a new Meta app "kubcode", and the existing Google project `pure-album-512910-d0` with its consent screen renamed "kubcode" (amended 2026-11-06), verified on `kubcode.dev`. BYOK stays for technical members. |
 | Legal entity | The owner registers a **sole proprietorship named "kubcode"** (ทะเบียนพาณิชย์, about 50 THB) and uses it for Meta Business Verification. If Meta rejects it, register a company. |
 | Pricing | **Free beta with a posting limit** per creator (posts per month, clip size, posts with auto-reply). |
 | Launch order | **YouTube first**: open the beta when Google verification passes. Instagram publishing and comment → DM follow once Meta's App Review passes. |
@@ -34,7 +34,7 @@ Status: accepted (2026-11-05, owner, grill session) · Extends the scheduler PRD
 
 - Owner actions (no code): register the business, create a Meta Business
   portfolio with the exact registered name, submit Business Verification, create
-  the kubcode Meta app under it, create the kubcode Google project.
+  the kubcode Meta app under it, rename the Google consent screen to "kubcode".
 - Google verification needs a privacy policy, terms, a data-deletion page on
   `kubcode.dev` and a demo video. Meta App Review needs a working flow, a screencast
   per permission, and the same pages.
@@ -58,3 +58,31 @@ Status: accepted (2026-11-05, owner, grill session) · Extends the scheduler PRD
 - **Charge from day one**: needs payments, receipts and tax work while Instagram
   is still waiting on Meta.
 - **Wait for Google and Meta together**: delays a usable YouTube scheduler by weeks.
+- **A new Google project "kubcode"** (the original choice): see the amendment.
+
+## Amendment (2026-11-06, owner): reuse the existing Google project
+
+YouTube locks videos uploaded through the API to private for API projects created
+after 2020-07-28 that have not passed the YouTube API audit. A new project would
+start under that lock, so scheduled posts could never go public until the audit
+passes, which usually takes weeks.
+
+The existing project `pure-album-512910-d0` ("YouTube Channel Uploader", set up
+2026-10-27 for the STORY GRID uploader) is not affected. On 2026-11-06 all 8 videos
+it uploaded were public, checked without credentials through YouTube's oEmbed
+endpoint. Two were uploaded public and six were uploaded private with `publishAt`
+on 28 and 30 October, which is exactly the scheduler's YouTube path.
+
+So that project becomes kubcode's shared Google app:
+- Its consent screen is renamed "kubcode", and `kubcode.dev` becomes an authorized
+  domain.
+- The Web client "kubcode web connect" (already created there, redirect
+  `https://kubcode.dev/api/keys/oauth/callback/youtube`) is the shared client.
+  Its secret is held for the Lambda only.
+- The old Desktop client stays for the existing uploader script until the scheduler
+  replaces it.
+
+Still true: the project's free quota (about 10,000 units a day; an upload costs about
+1,600) is shared by every creator, so the posting limit applies. Raising the quota,
+and removing the unverified-app warning and its 100-user cap, still need the YouTube
+API audit and Google verification.
