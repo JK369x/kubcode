@@ -4,6 +4,7 @@ import { statusLabel } from "@/lib/status-labels";
 import { notFound } from "next/navigation";
 import { Preview } from "@/components/Preview";
 import { DownloadAction } from "@/components/DownloadAction";
+import { approvedPackageFor } from "@/lib/packages";
 import Link from "next/link";
 import type { Metadata } from "next";
 import { getContent } from "@/lib/content";
@@ -73,9 +74,10 @@ export default async function Detail({
                 ข้ามชุดโดยไม่ตรวจ dependency และ source ที่คู่กัน
               </p>
               <p>
-                ต้นแบบเว็บนี้ไม่ได้แนบ source kit และไม่ได้ยืนยันการติดตั้งหรือ
-                render จาก clean clone ใช้ metadata เพื่อช่วยเลือก
-                ไม่ใช่คำสั่งผลิตงานที่ผ่านการรับรอง
+                {approvedPackageFor(s.slug)
+                  ? "ชุดดาวน์โหลดด้านล่างคือ skill kit จากผู้สร้างต้นทาง เว็บนี้ยังไม่ได้ยืนยันการติดตั้งหรือ render จาก clean clone"
+                  : "ต้นแบบเว็บนี้ไม่ได้แนบ source kit และไม่ได้ยืนยันการติดตั้งหรือ render จาก clean clone"}{" "}
+                ใช้ metadata เพื่อช่วยเลือก ไม่ใช่คำสั่งผลิตงานที่ผ่านการรับรอง
               </p>
               <h2>สถานะและสิทธิ์</h2>
               <p>{s.approvalScope}</p>
