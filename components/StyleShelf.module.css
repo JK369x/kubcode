@@ -117,18 +117,20 @@
   font-weight: 600;
 }
 
-/* Style details: over the bottom of the media on hover or focus. The scrim
- * keeps the text readable on any frame; the preview stays visible above. */
-.detail {
+/* Style details and the card's actions: over the bottom of the media, shown
+ * on hover or focus. The scrim keeps them readable on any frame; the preview
+ * stays visible above. Touch screens have no hover, so they always show the
+ * actions (not the details, which would cover the clip). */
+.overlay {
   position: absolute;
   inset: auto 0 0;
   z-index: 1;
-  margin: 0;
-  padding: 48px 14px 14px;
-  background: linear-gradient(to top, rgb(8 6 12 / 0.92) 55%, rgb(8 6 12 / 0));
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 48px 10px 10px;
+  background: linear-gradient(to top, rgb(8 6 12 / 0.92) 60%, rgb(8 6 12 / 0));
   color: #fff;
-  font-size: 13px;
-  line-height: 1.55;
   opacity: 0;
   transform: translateY(8px);
   transition:
@@ -136,17 +138,38 @@
     transform 200ms ease-out;
   pointer-events: none;
 }
-.card:hover .detail,
-.card:focus-within .detail {
+.card:hover .overlay,
+.card:focus-within .overlay {
   opacity: 1;
   transform: none;
+  pointer-events: auto;
+}
+.detail {
+  margin: 0;
+  padding-inline: 4px;
+  font-size: 13px;
+  line-height: 1.55;
+}
+@media (hover: none) {
+  .overlay {
+    padding-top: 32px;
+    opacity: 1;
+    transform: none;
+    pointer-events: auto;
+  }
+  .detail {
+    display: none;
+  }
+  /* Nothing left to show: drop the scrim too. */
+  .overlay:not(:has(.actions)) {
+    display: none;
+  }
 }
 
 .actions {
   display: flex;
   flex-wrap: wrap;
   gap: 6px;
-  margin-top: 10px;
 }
 .action,
 .lock {
@@ -172,16 +195,18 @@
   background: var(--purple);
   color: var(--action-hover-ink);
 }
+/* Outline pills sit on the dark scrim in both themes, so their ink is light. */
 .lock {
-  border: 1px solid var(--line);
-  background: transparent;
-  color: var(--ink);
+  border: 1px solid rgb(255 255 255 / 0.45);
+  background: rgb(8 6 12 / 0.35);
+  color: #fff;
 }
 a.lock:hover {
-  border-color: var(--purple);
+  border-color: #fff;
 }
 .lock:disabled {
-  color: var(--muted);
+  border-color: rgb(255 255 255 / 0.25);
+  color: rgb(255 255 255 / 0.65);
   cursor: not-allowed;
 }
 .action:focus-visible,
@@ -259,7 +284,7 @@ a.lock:hover {
   .video {
     display: none;
   }
-  .detail {
+  .overlay {
     transition: none;
     transform: none;
   }
@@ -279,8 +304,8 @@ a.lock:hover {
   padding: 0 10px;
   border: 1px solid var(--purple);
   border-radius: 999px;
-  background: transparent;
-  color: var(--ink);
+  background: rgb(8 6 12 / 0.35);
+  color: #fff;
   font: inherit;
   font-size: 13px;
   font-weight: 500;
@@ -303,7 +328,7 @@ a.lock:hover {
 .error {
   flex-basis: 100%;
   margin: 0;
-  color: var(--muted);
+  color: rgb(255 255 255 / 0.8);
   font-size: 12px;
 }
 .error:empty {

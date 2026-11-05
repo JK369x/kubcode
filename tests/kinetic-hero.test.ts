@@ -110,6 +110,20 @@ test("skill styles: see the template, download locked behind sign-in", () => {
   }
 });
 
+test("card actions sit inside the clip frame, with the style details, above the name", () => {
+  const html = renderHero();
+  for (const entry of SHELF) {
+    const card = cardFor(html, entry.clip.poster.src)!;
+    const overlay = card.body.indexOf('class="overlay"');
+    const name = card.body.indexOf('class="name"');
+    assert.ok(overlay > 0 && overlay < name, `${entry.style}: overlay inside the media`);
+    for (const label of ["ดู template", "ดูคลิป", "ดาวน์โหลด"]) {
+      const at = card.body.indexOf(label);
+      if (at >= 0) assert.ok(at > overlay && at < name, `${entry.style}: ${label} inside the overlay`);
+    }
+  }
+});
+
 test("styles without a skill: only a link to the clip, no template or download", () => {
   const html = renderHero();
   for (const entry of SHELF.filter((e) => !SHOWCASE_STYLES[e.style].skill)) {
