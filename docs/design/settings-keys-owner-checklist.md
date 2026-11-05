@@ -2,6 +2,8 @@
 
 ใช้คู่กับ `docs/design/settings-keys.md` · 2026-11-04
 
+**สถานะ 2026-11-05:** เจ้าของแจ้งว่าทำแล้ว: สร้าง Google Web client + เปลี่ยนเป็น In production (A.4, A.5) และใส่ redirect URI ของ Meta (B.1, B.2) ข้ออื่นยังไม่ได้ยืนยัน
+
 > **ห้ามพิมพ์หรือวาง client secret / app secret ในแชต ใน issue หรือในไฟล์**
 > ให้กรอกที่หน้า `kubcode.dev/account/keys` เท่านั้น (หน้านี้จะเปิดเมื่อ slice 3 ขึ้นแล้ว)
 > ระหว่างนี้แค่สร้างค่าและจดว่าอยู่ตรงไหนก็พอ
@@ -14,13 +16,13 @@
 2. [ ] เช็กว่า **YouTube Data API v3** ยังเปิดอยู่ (ไปที่ APIs & Services › Enabled APIs)
 3. [ ] **Branding** (Google Auth Platform › Branding / OAuth consent screen)
    - [ ] ใส่ `kubcode.dev` ใน **Authorized domains**
-4. [ ] **สร้าง Web client** (Google Auth Platform › Clients › Create client)
+4. [x] **สร้าง Web client** (Google Auth Platform › Clients › Create client)
    - Application type: **Web application** (client เดิมเป็น *Desktop app* ใช้กับเว็บไม่ได้ **อย่าลบ** เพราะสคริปต์เดิมยังใช้อยู่)
    - Name: `kubcode web connect`
    - Authorized redirect URIs: `https://kubcode.dev/api/keys/oauth/callback/youtube` (ต้องตรงทุกตัวอักษร ไม่มี `/` ท้าย)
    - Authorized JavaScript origins: ไม่ต้องใส่
-   - [ ] กด Create แล้ว **Client ID** กับ **Client secret** จะเก็บไว้ใน console (ดูซ้ำได้ภายหลังที่ Clients) ไม่ต้อง download JSON ไปไว้ในเครื่อง
-5. [ ] **เปลี่ยนเป็น In production** (Google Auth Platform › Audience › Publishing status › **Publish app**)
+   - [x] กด Create แล้ว **Client ID** กับ **Client secret** จะเก็บไว้ใน console (ดูซ้ำได้ภายหลังที่ Clients) ไม่ต้อง download JSON ไปไว้ในเครื่อง
+5. [x] **เปลี่ยนเป็น In production** (Google Auth Platform › Audience › Publishing status › **Publish app**)
    - เหตุผล: ถ้ายังเป็น *Testing* refresh token จะหมดอายุทุก 7 วัน และการตั้งเวลาโพสต์จะพัง
    - หลัง publish ไม่ต้องยื่น verification (ใช้ส่วนตัว) ตอนเชื่อมจะเจอหน้า "Google hasn't verified this app" ให้กด **Advanced › Go to … (unsafe)** แอปแบบ unverified รับผู้ใช้ได้สูงสุด 100 คน
    - token เก่าที่ออกตอนยังเป็น Testing ยังจะหมดอายุตามเดิม จึงต้องกดเชื่อมใหม่ใน kubcode ทุกช่อง
@@ -30,8 +32,8 @@
 
 ทำที่ developers.facebook.com › My Apps › **Story Grids Studio**
 
-1. [ ] ไปที่ Instagram › **API setup with Instagram business login** › **Business login settings**
-2. [ ] ใส่ `https://kubcode.dev/api/keys/oauth/callback/instagram` ใน **OAuth redirect URIs** (เก็บ redirect เดิมไว้ได้) แล้วกด Save
+1. [x] ไปที่ Instagram › **API setup with Instagram business login** › **Business login settings**
+2. [x] ใส่ `https://kubcode.dev/api/keys/oauth/callback/instagram` ใน **OAuth redirect URIs** (เก็บ redirect เดิมไว้ได้) แล้วกด Save
 3. [ ] จดว่า **Instagram app ID** กับ **Instagram app secret** อยู่ในหน้านี้ เพราะต้องกรอกใน kubcode (ใช้ค่าของ *Instagram app* ซึ่งต่างจาก Meta app ID)
 4. [ ] แอปยังเป็น Development mode (ยังไม่ publish) ซึ่งใช้ได้ แต่ @story.grids และ @kube.code ต้องยังเป็น **Instagram tester** ที่กด accept แล้ว (ดูที่ App roles › Roles)
 5. [ ] พอหน้า kubcode พร้อม ให้กดเชื่อม Instagram ทีละบัญชี ถ้า browser จำบัญชี IG อื่นไว้ ให้ logout ใน instagram.com ก่อน

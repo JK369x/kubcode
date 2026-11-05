@@ -149,6 +149,21 @@ the role is absent.
 Deletion: deleting the user cascades. Deleting app credentials is blocked while connections use
 them, unless the user confirms, which also disconnects them.
 
+**As built (step 2, 2026-11-05).** `db/migrations/0003_settings_keys.sql` + `lib/keys/store.ts`.
+- Sealed plaintext is JSON with one field per kind, which the Rust Lambdas must read the same way:
+  `youtube_oauth_client` → `{"client_secret"}`, `instagram_app` → `{"app_secret"}`,
+  `elevenlabs_api_key` → `{"api_key"}`. `public_value` holds the Google client id / Instagram app id.
+- Secrets must be 16–512 printable ASCII characters with no spaces, so the last-4 hint never shows a
+  large share of a key.
+- `kubcode_app` is narrower than "INSERT/UPDATE/DELETE everywhere": on `oauth_connections` it has
+  no INSERT (only the Lambda creates connections) and may UPDATE only `status`/`updated_at` (to mark
+  `revoking`), plus DELETE. No access at all to `connect_request_nonces`.
+- The store enforces the phase-1 owner gate (`users.is_owner`) itself, not only the route.
+- **Order matters in production.** 0003 grants `kubcode_worker` only if the role already exists, and
+  the ledger never re-runs an applied migration. So the operator must create `kubcode_worker`
+  (NOLOGIN is enough; the password comes with step 4) in Supabase **before** 0003 reaches `main`.
+  If 0003 was applied first, re-run its second `DO $$ … $$` block (worker grants, idempotent) by hand.
+
 ## 5. Infra (Pulumi, `infra/`) — what needs an admin local apply
 
 New:
