@@ -3,7 +3,20 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import * as pulumi from "@pulumi/pulumi";
-import { ACCOUNT_ID, GITHUB_OIDC_PROVIDER_ARN, NAMES, REGION } from "../src/constants";
+import fs from "node:fs";
+import path from "node:path";
+import {
+  ACCOUNT_ID,
+  GITHUB_OIDC_PROVIDER_ARN,
+  NAMES,
+  PACKAGES,
+  PACKAGE_SIGNER_BINARY,
+  REGION,
+  packageObjectKey,
+  packageSourceDir,
+  validatePackageSignerKey,
+} from "../src/constants";
+import { lambdaTrustPolicy, packageSignerPolicy } from "../src/policies";
 
 type Recorded = { type: string; name: string; inputs: any; provider?: string };
 let resources: Recorded[] = [];
@@ -22,7 +35,8 @@ pulumi.runtime.setMocks(
             : args.type === "aws:kms/key:Key"
               ? `arn:aws:kms:${REGION}:${ACCOUNT_ID}:key/${args.name}-id`
               : `arn:mock:${args.type}:${physical}`;
-      return { id: `${physical}-id`, state: { ...args.inputs, arn, keyId: `${args.name}-id` } };
+      const extra = args.type === "aws:lambda/functionUrl:FunctionUrl" ? { functionUrl: "https://abc123.lambda-url.ap-southeast-1.on.aws/" } : {};
+      return { id: `${physical}-id`, state: { ...args.inputs, arn, keyId: `${args.name}-id`, ...extra } };
     },
     call(args) {
       invokes.push({ token: args.token, inputs: args.inputs });
@@ -38,16 +52,44 @@ pulumi.runtime.setMocks(
   true,
 );
 
+// Record asset constructor arguments: the Pulumi mock serializes assets lossily.
+type AssetCall = { kind: string; path?: string; entries?: string[] };
+let assetCalls: AssetCall[] = [];
+const assetNs = pulumi.asset as any;
+for (const kind of ["FileAsset", "FileArchive"] as const) {
+  const Orig = assetNs[kind];
+  assetNs[kind] = class extends Orig {
+    constructor(path: string) {
+      super(path);
+      assetCalls.push({ kind, path });
+    }
+  };
+}
+{
+  const Orig = assetNs.AssetArchive;
+  assetNs.AssetArchive = class extends Orig {
+    constructor(assets: Record<string, unknown>) {
+      super(assets);
+      assetCalls.push({ kind: "AssetArchive", entries: Object.keys(assets) });
+    }
+  };
+}
+// The runtime also re-creates assets when it deserializes mock results, so match by content.
+const seen = (call: AssetCall) => assetCalls.some((c) => JSON.stringify(c) === JSON.stringify(call));
+
+const SIGNER_KEY = "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef";
 const settle = (o: pulumi.Output<unknown>) => new Promise((resolve) => o.apply(resolve));
 
-async function build(opts: { budgetEmail?: pulumi.Input<string>; secretsKeyUserArns?: pulumi.Input<string>[] } = {}) {
+async function build(opts: { budgetEmail?: pulumi.Input<string>; secretsKeyUserArns?: pulumi.Input<string>[]; packageSignerKey?: pulumi.Input<string> } = {}) {
   resources = [];
   invokes = [];
+  assetCalls = [];
   const { createStack } = await import("../src/stack");
   const out = createStack({
     budgetEmail: opts.budgetEmail,
     breakGlassAdminArns: [`arn:aws:iam::${ACCOUNT_ID}:user/super_admin`],
     secretsKeyUserArns: opts.secretsKeyUserArns ?? [],
+    packageSignerKey: opts.packageSignerKey,
   });
   await Promise.all(Object.values(out).map((o) => settle(pulumi.output(o))));
   // Let dependent resources (policies built from other outputs) register.
@@ -74,13 +116,13 @@ test("one explicit AWS provider: pinned account, region and project=kubcode defa
 });
 
 test("every named resource is kubcode-*", async () => {
-  await build({ budgetEmail: "owner@example.com" });
+  await build({ budgetEmail: "owner@example.com", packageSignerKey: SIGNER_KEY });
   const named = resources.filter((r) => r.type.startsWith("aws:"));
   assert.ok(named.length >= 8);
   for (const r of named) {
     const physical = r.inputs.name ?? r.inputs.bucket ?? r.inputs.role;
     if (physical === undefined) continue; // sub-resources keyed by bucket/role are checked through those
-    assert.match(String(physical), /^(alias\/)?kubcode-/, `${r.type} ${r.name} => ${physical}`);
+    assert.match(String(physical), /^(alias\/|\/aws\/lambda\/)?kubcode-/, `${r.type} ${r.name} => ${physical}`);
     assert.doesNotMatch(String(physical), /igtest/);
   }
 });
@@ -183,4 +225,133 @@ test("budget email can be a stack secret (kept out of git as plaintext)", async 
   const SECRET_SIG = "4dabf18193072939515e22adb298388d";
   assert.equal(b.notifications[SECRET_SIG], "1b47061264138c4ac30d75fd1eb44270", "notifications must be marked secret");
   for (const n of b.notifications.value) assert.deepEqual(n.subscriberEmailAddresses, ["owner@example.com"]);
+});
+
+// --- Skill package downloads (ADR 0002)
+
+const BOUNDARY_ARN = `arn:aws:iam::${ACCOUNT_ID}:policy/${NAMES.deployBoundary}`;
+
+test("package signer: nothing is created until the secret key is set (previews work before the owner sets it)", async () => {
+  const out = await build();
+  for (const t of ["aws:lambda/function:Function", "aws:lambda/functionUrl:FunctionUrl", "aws:lambda/permission:Permission", "aws:cloudwatch/logGroup:LogGroup"])
+    assert.equal(byType(t).length, 0, t);
+  assert.deepEqual(byType("aws:iam/role:Role").map((r) => r.inputs.name).sort(), [NAMES.deployRole, NAMES.previewRole].sort());
+  assert.equal(await new Promise((r) => pulumi.output(out.packageSignerUrl).apply(r)), undefined);
+});
+
+test("package signer role: kubcode boundary, Lambda trust, exactly the signer inline policy", async () => {
+  await build({ packageSignerKey: SIGNER_KEY });
+  const role = byType("aws:iam/role:Role").find((r) => r.inputs.name === NAMES.packageSignerRole)!;
+  assert.ok(role, "role exists");
+  assert.equal(role.inputs.permissionsBoundary, BOUNDARY_ARN);
+  assert.deepEqual(JSON.parse(role.inputs.assumeRolePolicy), lambdaTrustPolicy());
+  const rp = byType("aws:iam/rolePolicy:RolePolicy").find((r) => r.inputs.name === NAMES.packageSignerRole)!;
+  assert.ok(rp, "inline policy exists");
+  assert.equal(rp.inputs.role, NAMES.packageSignerRole);
+  assert.deepEqual(JSON.parse(rp.inputs.policy), packageSignerPolicy({ bucket: NAMES.mediaBucket, logGroupName: NAMES.packageSignerLogGroup }));
+  // No managed policy attachments: the inline policy is the whole grant.
+  assert.equal(byType("aws:iam/rolePolicyAttachment:RolePolicyAttachment").length, 0);
+});
+
+test("package signer log group: /aws/lambda/kubcode-package-signer, 14 days, tagged", async () => {
+  await build({ packageSignerKey: SIGNER_KEY });
+  const lg = one("aws:cloudwatch/logGroup:LogGroup").inputs;
+  assert.equal(lg.name, "/aws/lambda/kubcode-package-signer");
+  assert.equal(lg.name, NAMES.packageSignerLogGroup);
+  assert.equal(lg.retentionInDays, 14);
+  assert.equal(lg.tags.service, "package-signer");
+});
+
+test("package signer function: Rust custom runtime, small, env from the media bucket and the secret", async () => {
+  await build({ packageSignerKey: SIGNER_KEY });
+  const fn = one("aws:lambda/function:Function").inputs;
+  assert.equal(fn.name, "kubcode-package-signer");
+  assert.equal(fn.runtime, "provided.al2023");
+  assert.deepEqual(fn.architectures, ["x86_64"]);
+  assert.equal(fn.handler, "bootstrap");
+  assert.equal(fn.memorySize, 128);
+  assert.equal(fn.timeout, 5);
+  assert.equal(fn.role, `arn:aws:iam::${ACCOUNT_ID}:role/${NAMES.packageSignerRole}`);
+  assert.equal(fn.reservedConcurrentExecutions, undefined, "quota may be tiny: no reserved concurrency");
+  assert.equal(fn.kmsKeyArn, undefined);
+  assert.equal(fn.tags.service, "package-signer");
+  // The log group exists first, so Lambda never auto-creates it with infinite retention.
+  assert.deepEqual(fn.loggingConfig, undefined);
+  // Code: the zip the build script makes, uploaded as-is so `bootstrap` keeps
+  // its exec bit (the mock serializes assets lossily, so the constructor calls
+  // are recorded instead).
+  assert.ok(seen({ kind: "FileArchive", path: "../services/package-signer/dist/bootstrap.zip" }));
+  assert.ok(!assetCalls.some((c) => c.kind === "AssetArchive" || c.kind === "FileAsset"), "no repacking of the binary");
+  assert.equal(PACKAGE_SIGNER_BINARY, "../services/package-signer/dist/bootstrap.zip");
+});
+
+test("package signer env: bucket name plus the key, and the key stays a secret", async () => {
+  await build({ packageSignerKey: pulumi.secret(SIGNER_KEY) });
+  const env = one("aws:lambda/function:Function").inputs.environment;
+  const SECRET_SIG = "4dabf18193072939515e22adb298388d";
+  assert.equal(env[SECRET_SIG], "1b47061264138c4ac30d75fd1eb44270", "environment must be marked secret");
+  assert.deepEqual(env.value.variables, { KUBCODE_PACKAGE_BUCKET: NAMES.mediaBucket, KUBCODE_PACKAGE_SIGNER_KEY: SIGNER_KEY });
+});
+
+test("package signer function URL: auth NONE (the HMAC is the auth), no CORS, permissions for the URL, output", async () => {
+  const out = await build({ packageSignerKey: SIGNER_KEY });
+  const url = one("aws:lambda/functionUrl:FunctionUrl").inputs;
+  assert.equal(url.authorizationType, "NONE");
+  assert.equal(url.cors, undefined, "server-to-server: no CORS");
+  assert.equal(url.functionName, "kubcode-package-signer");
+  // Since Oct 2025 a public URL needs both resource-policy statements.
+  const perms = byType("aws:lambda/permission:Permission").map((p) => p.inputs);
+  assert.equal(perms.length, 2);
+  const urlPerm = perms.find((p) => p.action === "lambda:InvokeFunctionUrl")!;
+  assert.equal(urlPerm.principal, "*");
+  assert.equal(urlPerm.functionUrlAuthType, "NONE");
+  const invokePerm = perms.find((p) => p.action === "lambda:InvokeFunction")!;
+  assert.equal(invokePerm.principal, "*");
+  assert.equal(invokePerm.invokedViaFunctionUrl, true);
+  for (const p of perms) assert.equal(p.function, "kubcode-package-signer");
+  assert.equal(await new Promise((r) => pulumi.output(out.packageSignerUrl).apply(r)), "https://abc123.lambda-url.ap-southeast-1.on.aws/");
+});
+
+test("package signer key must be at least 32 bytes (the Lambda rejects shorter keys)", () => {
+  assert.equal(validatePackageSignerKey(SIGNER_KEY), SIGNER_KEY);
+  assert.throws(() => validatePackageSignerKey("short"), /32/);
+  assert.throws(() => validatePackageSignerKey(""), /32/);
+});
+
+test("package objects: packages/<slug>/<version>.zip, SSE-S3, zipped from the package directory", async () => {
+  await build();
+  const objects = byType("aws:s3/bucketObjectv2:BucketObjectv2");
+  assert.equal(objects.length, PACKAGES.length);
+  const o = objects[0].inputs;
+  assert.equal(o.bucket, NAMES.mediaBucket);
+  assert.equal(o.key, "packages/freshstack-what-if/0.1.0.zip");
+  assert.equal(o.serverSideEncryption, "AES256");
+  assert.equal(o.contentType, "application/zip");
+  assert.equal(o.tags.package, "freshstack-what-if");
+  assert.equal(o.tags.version, "0.1.0");
+  assert.ok(seen({ kind: "FileArchive", path: "../packages/freshstack-what-if/0.1.0" }));
+  assert.ok(!assetCalls.some((c) => c.kind === "FileAsset"), "no signer binary without the secret");
+});
+
+test("package list: key format matches the signer contract, directories exist, denylisted skills absent", () => {
+  assert.ok(PACKAGES.length >= 1);
+  const keys = PACKAGES.map(packageObjectKey);
+  assert.equal(new Set(keys).size, keys.length, "no duplicates");
+  for (const p of PACKAGES) {
+    // Same pattern the Lambda enforces (docs/design/package-signer.md).
+    assert.match(packageObjectKey(p), /^packages\/[a-z0-9]+(-[a-z0-9]+)*\/[0-9]+\.[0-9]+\.[0-9]+\.zip$/);
+    const dir = path.resolve(__dirname, "..", packageSourceDir(p));
+    assert.ok(fs.statSync(dir).isDirectory(), `${dir} must exist`);
+    assert.ok(fs.existsSync(path.join(dir, "LICENSE")), `${p.slug} ships a LICENSE`);
+  }
+  const slugs = PACKAGES.map((p) => p.slug);
+  for (const never of ["growkaz-stickman", "thai-survival"]) assert.ok(!slugs.includes(never), `${never} must never be downloadable`);
+  assert.ok(!keys.some((k) => /growkaz|thai-survival/.test(k)));
+});
+
+test("package objects do not depend on the signer secret", async () => {
+  await build();
+  assert.equal(byType("aws:s3/bucketObjectv2:BucketObjectv2").length, PACKAGES.length);
+  await build({ packageSignerKey: SIGNER_KEY });
+  assert.equal(byType("aws:s3/bucketObjectv2:BucketObjectv2").length, PACKAGES.length);
 });

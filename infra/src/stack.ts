@@ -1,5 +1,7 @@
 // The kubcode `prod` stack: media bucket, BYOK secrets key, GitHub deploy and
-// preview roles (via the existing, shared GitHub OIDC provider) and the budget.
+// preview roles (via the existing, shared GitHub OIDC provider), the budget and
+// the skill package downloads (package objects, plus the presign Lambda once
+// its secret key is set; see docs/adr/0002-skill-package-downloads.md).
 // Every resource goes through one explicit provider pinned to the kubcode
 // account and region, which tags everything project=kubcode.
 import * as pulumi from "@pulumi/pulumi";
@@ -10,16 +12,35 @@ import {
   GITHUB_SUBJECTS,
   MEDIA_CORS_ORIGIN,
   NAMES,
+  PACKAGES,
+  PACKAGE_LOG_RETENTION_DAYS,
+  PACKAGE_SIGNER_BINARY,
   PROJECT_TAG,
   REGION,
+  packageObjectKey,
+  packageSourceDir,
+  validatePackageSignerKey,
 } from "./constants";
-import { deployBoundaryPolicy, deployPolicy, githubTrustPolicy, previewPolicy, secretsKeyPolicy } from "./policies";
+import {
+  deployBoundaryPolicy,
+  deployPolicy,
+  githubTrustPolicy,
+  lambdaTrustPolicy,
+  packageSignerPolicy,
+  previewPolicy,
+  secretsKeyPolicy,
+} from "./policies";
 
 export type StackConfig = {
   /** Budget alert recipient (a stack secret); the budget is skipped until the owner sets one. */
   budgetEmail?: pulumi.Input<string>;
   /** Humans who can administer the secrets key outside CI (lockout safety). */
   breakGlassAdminArns: string[];
+  /**
+   * HMAC key shared with the web host (a stack secret). The package signer
+   * Lambda, its role, log group and URL are created only once it is set.
+   */
+  packageSignerKey?: pulumi.Input<string>;
   /** Roles allowed to encrypt/decrypt with alias/kubcode-secrets (the Lambda roles). */
   secretsKeyUserArns: pulumi.Input<string>[];
 };
@@ -222,6 +243,103 @@ export function createStack(cfg: StackConfig) {
     );
   }
 
+  // --- Skill package objects: zipped from packages/<slug>/<version>/ and stored
+  // with SSE-S3 (not the bucket's SSE-KMS default) so the signer role needs no
+  // KMS access. Independent of the signer secret.
+  for (const pkg of PACKAGES) {
+    new aws.s3.BucketObjectv2(
+      `package-${pkg.slug}-${pkg.version}`,
+      {
+        bucket: media.bucket,
+        key: packageObjectKey(pkg),
+        source: new pulumi.asset.FileArchive(packageSourceDir(pkg)),
+        serverSideEncryption: "AES256",
+        contentType: "application/zip",
+        tags: { kind: "skill-package", package: pkg.slug, version: pkg.version },
+      },
+      opts,
+    );
+  }
+
+  // --- Package signer Lambda: presigns 60-second S3 GET URLs for the web app,
+  // which holds no AWS credentials. The HMAC in the request is its only auth.
+  let packageSignerUrl: pulumi.Output<string> | undefined;
+  if (cfg.packageSignerKey) {
+    const tags = { service: "package-signer" };
+    const signerKey = pulumi.output(cfg.packageSignerKey).apply(validatePackageSignerKey);
+
+    const role = new aws.iam.Role(
+      "package-signer-role",
+      {
+        name: NAMES.packageSignerRole,
+        description: "kubcode-package-signer Lambda: read packages/* in the media bucket and write its own logs",
+        assumeRolePolicy: json(lambdaTrustPolicy()),
+        permissionsBoundary: boundary.arn,
+        tags,
+      },
+      opts,
+    );
+    const rolePolicy = new aws.iam.RolePolicy(
+      "package-signer-policy",
+      {
+        name: NAMES.packageSignerRole,
+        role: role.name,
+        policy: media.bucket.apply((bucket) => json(packageSignerPolicy({ bucket, logGroupName: NAMES.packageSignerLogGroup }))),
+      },
+      opts,
+    );
+
+    // Created here so retention is set from the first invocation (Lambda
+    // would otherwise auto-create it with no expiry).
+    const logGroup = new aws.cloudwatch.LogGroup(
+      "package-signer-logs",
+      { name: NAMES.packageSignerLogGroup, retentionInDays: PACKAGE_LOG_RETENTION_DAYS, tags },
+      opts,
+    );
+
+    const fn = new aws.lambda.Function(
+      "package-signer",
+      {
+        name: NAMES.packageSignerFunction,
+        description: "Presigns 60-second S3 GET URLs for skill packages (HMAC-authenticated)",
+        role: role.arn,
+        runtime: "provided.al2023",
+        architectures: ["x86_64"],
+        handler: "bootstrap",
+        memorySize: 128,
+        timeout: 5,
+        code: new pulumi.asset.FileArchive(PACKAGE_SIGNER_BINARY),
+        environment: {
+          variables: {
+            KUBCODE_PACKAGE_BUCKET: media.bucket,
+            KUBCODE_PACKAGE_SIGNER_KEY: signerKey,
+          },
+        },
+        tags,
+      },
+      // The inline policy and log group must exist before the first invocation.
+      { ...opts, dependsOn: [rolePolicy, logGroup] },
+    );
+
+    const url = new aws.lambda.FunctionUrl(
+      "package-signer-url",
+      { functionName: fn.name, authorizationType: "NONE" },
+      opts,
+    );
+    // A public (auth NONE) URL needs both statements in the function's resource policy.
+    new aws.lambda.Permission(
+      "package-signer-url-access",
+      { function: fn.name, action: "lambda:InvokeFunctionUrl", principal: "*", functionUrlAuthType: "NONE" },
+      opts,
+    );
+    new aws.lambda.Permission(
+      "package-signer-url-invoke",
+      { function: fn.name, action: "lambda:InvokeFunction", principal: "*", invokedViaFunctionUrl: true },
+      opts,
+    );
+    packageSignerUrl = url.functionUrl;
+  }
+
   return {
     mediaBucket: media.bucket,
     secretsKeyArn: secretsKey.arn,
@@ -229,5 +347,6 @@ export function createStack(cfg: StackConfig) {
     deployRoleArn: deployRole.arn,
     previewRoleArn: previewRole.arn,
     boundaryPolicyArn: boundary.arn,
+    packageSignerUrl,
   };
 }

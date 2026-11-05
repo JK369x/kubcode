@@ -4,6 +4,8 @@
 #                   kubcode-github-preview -> PR comment with the diff summary
 #   main         -> unit tests -> preview with kubcode-github-deploy -> gate ->
 #                   `pulumi up`
+# Both build services/package-signer (musl binary) before Pulumi runs, and
+# packages/** (skill package sources, zipped by the stack) also triggers it.
 # Gate: a preview that deletes or replaces anything stops push runs. The owner
 # approves by running this workflow manually on main with the exact phrase the
 # blocked run printed (same pattern as production.yml). The phrase is a safety
@@ -14,12 +16,16 @@ on:
   pull_request:
     paths:
       - "infra/**"
+      - "services/package-signer/**"
+      - "packages/**"
       - ".github/workflows/infra.yml"
   push:
     branches:
       - main
     paths:
       - "infra/**"
+      - "services/package-signer/**"
+      - "packages/**"
       - ".github/workflows/infra.yml"
   workflow_dispatch:
     inputs:
@@ -81,6 +87,15 @@ jobs:
           cache: npm
           cache-dependency-path: infra/package-lock.json
       - run: npm ci --ignore-scripts
+      # The package signer Lambda's code is the static musl binary. Built before
+      # the AWS credentials step, so no build script runs with the role assumed.
+      # Pulumi reads dist/bootstrap.zip whenever kubcode:packageSignerKey is set.
+      - name: Build package signer (static musl binary)
+        working-directory: ${{ github.workspace }}
+        run: |
+          rustup target add x86_64-unknown-linux-musl
+          sudo apt-get install -y musl-tools
+          bash services/package-signer/build-lambda.sh
       - name: Install Pulumi CLI (pinned, checksum verified)
         run: |
           tgz="$RUNNER_TEMP/pulumi.tgz"
@@ -140,6 +155,15 @@ jobs:
           cache: npm
           cache-dependency-path: infra/package-lock.json
       - run: npm ci --ignore-scripts
+      # The package signer Lambda's code is the static musl binary. Built before
+      # the AWS credentials step, so no build script runs with the role assumed.
+      # Pulumi reads dist/bootstrap.zip whenever kubcode:packageSignerKey is set.
+      - name: Build package signer (static musl binary)
+        working-directory: ${{ github.workspace }}
+        run: |
+          rustup target add x86_64-unknown-linux-musl
+          sudo apt-get install -y musl-tools
+          bash services/package-signer/build-lambda.sh
       - name: Install Pulumi CLI (pinned, checksum verified)
         run: |
           tgz="$RUNNER_TEMP/pulumi.tgz"
