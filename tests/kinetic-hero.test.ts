@@ -304,7 +304,6 @@ test("Library: hero, selected example and catalog keep their contracts", () => {
   assert.equal((html.match(/<h1\b/g) || []).length, 1);
   assert.equal((html.match(/id="selected-example"/g) || []).length, 1);
   assert.equal((html.match(/id="skill-index"/g) || []).length, 1);
-  assert.match(html, /<a[^>]*href="#skill-index"/);
   // Rejected opening/showcase composition is gone.
   assert.doesNotMatch(html, /class="(opening|work-showcase|supporting-work)"/);
   // Order: hero → selected native preview → catalog.
@@ -314,9 +313,9 @@ test("Library: hero, selected example and catalog keep their contracts", () => {
   assert.ok(h1 < selected && selected < catalog);
   assert.match(html.slice(0, selected), /<div[^>]*hidden=""/,
     "the duplicated selected-player block is closed until an explicit selection");
-  // Searches stay editable inputs.
+  // The catalogue search stays an editable input (the hero has none since 2026-11-06).
   const inputs = [...html.matchAll(/<input\b[^>]*>/g)].map((m) => m[0]);
-  assert.ok(inputs.length >= 2);
+  assert.ok(inputs.length >= 1);
   for (const input of inputs) assert.doesNotMatch(input, /readonly|disabled/i);
   // Honest disabled downloads, one per catalog card.
   const disabled = [...html.matchAll(/<button\b[^>]*\sdisabled=""[^>]*>[\s\S]*?ดาวน์โหลด skill/g)];

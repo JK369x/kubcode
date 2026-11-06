@@ -46,12 +46,13 @@ export function KineticHero({
       <div className={styles.copy}>
         {hasClips ? (
           <>
+            {/* Plain Thai, outcome first: no skill/agent/template/render jargon (owner, 2026-11-06). */}
             <h1 id={headingId} className={styles.title}>
-              <span>ดูงานจริง</span> <span>แล้วลองทำเอง</span>
+              <span>คลิปแบบนี้</span> <span>ทำเองได้</span>
             </h1>
             <p className={styles.lead}>
-              skill ที่ให้ AI agent ทำคลิปแอนิเมชันในเครื่องของคุณ
-              ดูงานจริงสไตล์ละหนึ่งคลิป แล้วเอา skill ไปทำแนวเดียวกันเอง
+              เลือกสไตล์ที่ชอบจากคลิปจริงด้านล่าง
+              โหลดชุดคำสั่งฟรี แล้วทำคลิปแนวเดียวกันในคอมของคุณ
             </p>
             <div className={styles.agents}>
               <span>ใช้กับ</span>
@@ -65,7 +66,7 @@ export function KineticHero({
               </ul>
             </div>
             <a className={styles.start} href="#get-started">
-              เริ่มใช้ skill แรก
+              ดูวิธีทำคลิปแรก
               <ArrowDown size={17} aria-hidden="true" />
             </a>
           </>
@@ -73,11 +74,11 @@ export function KineticHero({
           // No approved clips: no claim that real work is visible here.
           <>
             <h1 id={headingId} className={styles.title}>
-              <span>คลัง skill</span> <span>สำหรับลองทำเอง</span>
+              <span>ทำคลิปสั้น</span> <span>ได้เองในคอม</span>
             </h1>
             <p className={styles.lead}>
               ตัวอย่างผลงานรอยืนยันสิทธิ์เผยแพร่ จึงยังไม่แสดงบนเว็บนี้
-              ค้นหา skill และดูเครื่องมือกับสิ่งที่ต้องมีของแต่ละรายการได้ด้านล่าง
+              ดูเครื่องมือและสิ่งที่ต้องมีของแต่ละสไตล์ได้ด้านล่าง
             </p>
           </>
         )}

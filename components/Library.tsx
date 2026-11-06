@@ -5,7 +5,6 @@ import Link from "next/link";
 import {
   Search,
   ArrowUpRight,
-  ArrowRight,
   RotateCcw,
 } from "lucide-react";
 import { skills, categories, filterSkills, styles } from "@/lib/catalog";
@@ -70,27 +69,7 @@ export function Library({
         skills={skills}
         activeSlug={selected ?? ""}
         onSelectSkill={selectSkill}
-      >
-        <label className="search">
-          <Search size={19} />
-          <span className="sr-only">ค้นหาทักษะหรือเครื่องมือ</span>
-          <input
-            value={query}
-            onChange={(event) => setQuery(event.target.value)}
-            placeholder="ค้นหา skill / เครื่องมือ"
-            onKeyDown={(event) => {
-              if (event.key === "Enter")
-                document
-                  .getElementById("skill-index")
-                  ?.scrollIntoView({ block: "start" });
-            }}
-          />
-        </label>
-        <a className={heroStyles.browse} href="#skill-index">
-          {query ? `${results.length} รายการ · ดูผลค้นหา` : "ดูคลังทั้งหมด"}
-          <ArrowRight size={18} aria-hidden="true" />
-        </a>
-      </KineticHero>
+      />
       <div className={heroStyles.selected} hidden={!previewOpen}>
         <button
           type="button"
