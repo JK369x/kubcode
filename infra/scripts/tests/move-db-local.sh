@@ -25,7 +25,12 @@ pass() { echo "ok - $*"; }
 start() {
   docker rm -f "$1" >/dev/null 2>&1 || true
   docker run -d --name "$1" -e POSTGRES_PASSWORD=$PW -p "127.0.0.1:$2:5432" postgres:17-alpine >/dev/null
-  for _ in $(seq 1 60); do docker exec "$1" pg_isready -U postgres -d postgres >/dev/null 2>&1 && return 0; sleep 1; done
+  # The image runs a temporary server for initdb, then restarts: wait for the
+  # second "ready" line, or an early connection is cut by that restart.
+  for _ in $(seq 1 60); do
+    [ "$(docker logs "$1" 2>&1 | grep -c 'database system is ready to accept connections')" -ge 2 ] && return 0
+    sleep 1
+  done
   fail "container $1 did not start"
 }
 q() { PGPASSWORD=$PW "$PSQL" -X -q -t -A -v ON_ERROR_STOP=1 -h 127.0.0.1 -p "$1" -U postgres -d postgres -c "$2"; }
