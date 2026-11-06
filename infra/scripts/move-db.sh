@@ -6,7 +6,7 @@
 #   infra/scripts/move-db.sh
 #
 # What it does, in order (it stops at the first problem):
-#   1. asks for the two postgres passwords (hidden) and the new pooler host
+#   1. asks for the old and new Session pooler connection strings (hidden)
 #   2. checks both databases, and that the new one is still empty
 #   3. creates kubcode_app on the new database, runs every migration there,
 #      applies db/runtime-role-grants.sql, and gives kubcode_worker a login
@@ -54,12 +54,41 @@ if [ "$TEST" = 1 ]; then
 else
   [ -s "$CA" ] || die "missing $CA"
   export PGSSLROOTCERT=$PWD/$CA
-  read -r -p "New project's Session pooler host (Supabase › kubcode-sg › Connect › Session pooler): " NEW_HOST
-  [[ "$NEW_HOST" =~ ^[a-z0-9-]+[.]pooler[.]supabase[.]com$ ]] || die "host must be <something>.pooler.supabase.com"
-  [[ "$NEW_HOST" == *ap-southeast-1* ]] || die "that host is not in ap-southeast-1"
-  read -r -s -p "OLD project (kubcode, us-east-1) postgres password: " OLD_PW; echo >&2
-  read -r -s -p "NEW project (kubcode-sg) postgres password: " NEW_PW; echo >&2
-  [ -n "$OLD_PW" ] && [ -n "$NEW_PW" ] || die "empty password"
+  # Paste the Session pooler connection string from Supabase › Connect (input
+  # is hidden). If it still says [YOUR-PASSWORD], the password is asked next.
+  # Prints "host<TAB>password"; checks the project ref and the pooler host.
+  parse_pooler() { # uri expected_ref
+    python3 - "$1" "$2" <<'PY'
+import sys, urllib.parse as u
+uri, ref = sys.argv[1].strip(), sys.argv[2]
+try:
+    p = u.urlsplit(uri)
+    host, user = p.hostname or "", u.unquote(p.username or "")
+    pw = u.unquote(p.password or "")
+except ValueError:
+    sys.exit("not a connection string")
+if p.scheme not in ("postgres", "postgresql"): sys.exit("must start with postgresql://")
+if not host.endswith(".pooler.supabase.com"): sys.exit("host must be <something>.pooler.supabase.com (use Connect › Session pooler)")
+if user != f"postgres.{ref}": sys.exit(f"user must be postgres.{ref} (wrong project?)")
+if (p.port or 5432) != 5432: sys.exit("use the Session pooler (port 5432)")
+if pw in ("[YOUR-PASSWORD]", "YOUR-PASSWORD"): pw = ""
+print(f"{host}\t{pw}")
+PY
+  }
+  ask_pooler() { # label ref -> sets HOST_OUT PW_OUT
+    local uri parsed
+    read -r -s -p "Paste the $1 Session pooler connection string (hidden): " uri; echo >&2
+    parsed=$(parse_pooler "$uri" "$2") || die "$1: connection string rejected"
+    HOST_OUT=${parsed%%$'\t'*}
+    PW_OUT=${parsed#*$'\t'}
+    if [ -z "$PW_OUT" ]; then read -r -s -p "$1 postgres password (hidden): " PW_OUT; echo >&2; fi
+    [ -n "$PW_OUT" ] || die "$1: empty password"
+  }
+  ask_pooler "OLD project (kubcode, us-east-1)" "$OLD_REF"
+  OLD_HOST=$HOST_OUT OLD_PW=$PW_OUT
+  ask_pooler "NEW project (kubcode-sg)" "$NEW_REF"
+  NEW_HOST=$HOST_OUT NEW_PW=$PW_OUT
+  [[ "$NEW_HOST" == *ap-southeast-1* ]] || die "the new project's host is not in ap-southeast-1"
   OLD_URL="postgresql://postgres.$OLD_REF@$OLD_HOST:5432/postgres?sslmode=verify-full"
   NEW_URL="postgresql://postgres.$NEW_REF@$NEW_HOST:5432/postgres?sslmode=verify-full"
 fi
@@ -185,6 +214,10 @@ say "web box now uses the new database (smoke ok)"
 with_user_pw "$NEW_URL" "postgres.$NEW_REF" "$NEW_PW" | sed 's/?sslmode=verify-full$//' | gh secret set MIGRATION_DATABASE_URL --repo "$REPO" >/dev/null
 say "GitHub secret MIGRATION_DATABASE_URL updated"
 
+# sslmode=require is fine here: the Lambda forces TLS in code and rustls always
+# verifies the server against the Supabase CA built into the binary
+# (services/crates/kubcode-oauth-connect/src/db.rs), and tokio-postgres does
+# not parse verify-full.
 printf "postgresql://kubcode_worker.%s:%s@%s:5432/postgres?sslmode=require" "$NEW_REF" "$WORKER_PW" "$NEW_HOST" >"$TMP/worker"
 aws ssm put-parameter --region "$REGION" --type SecureString --key-id alias/kubcode-secrets \
   --overwrite --name /kubcode/prod/worker-db-url --value "file://$TMP/worker" >/dev/null
