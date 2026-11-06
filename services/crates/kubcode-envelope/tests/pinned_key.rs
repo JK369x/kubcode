@@ -1,7 +1,9 @@
 //! Pins the production wrap public key (docs/design/settings-keys.md §1): the
 //! same SPKI SHA-256 as tests/wrap-key.test.ts, taken from
 //! `aws kms get-public-key` at creation. A key swapped in the repo fails here.
-use kubcode_envelope::keys::{kms_key_arn, WRAP_KEY_V1_ARN, WRAP_KEY_V1_PEM, WRAP_KEY_V1_SLOT, WRAP_KEY_V1_SPKI_SHA256};
+use kubcode_envelope::keys::{
+    kms_key_arn, WRAP_KEY_V1_ARN, WRAP_KEY_V1_PEM, WRAP_KEY_V1_SLOT, WRAP_KEY_V1_SPKI_SHA256,
+};
 use kubcode_envelope::WrapPublicKey;
 use rsa::pkcs8::{DecodePublicKey, EncodePublicKey};
 use sha2::{Digest, Sha256};

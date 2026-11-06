@@ -109,6 +109,30 @@ the client secret and the PKCE verifier, and only the Lambda can decrypt those.
    itself after a timeout). Every disconnect writes `oauth_disconnected`, plus
    `oauth_revoke_failed` with a fixed code when the revoke did not succeed.
 
+### 2a. Which app a connection uses (ADR 0003 amendment, 2026-11-06)
+
+A connection is made either through **kubcode's shared app** or through **the member's own app
+(BYOK)**. The choice is made once, by the web host when the member clicks Connect, and recorded as
+`app_source` (`'kubcode'` or `'member'`) on the intent and then on the connection:
+
+| Provider | `'member'` when | else `'kubcode'` when | else |
+|---|---|---|---|
+| YouTube | the member saved `youtube_oauth_client` | `KUBCODE_YOUTUBE_CLIENT_ID` is set (Google project `pure-album-512910-d0`, Web client "kubcode web connect") | `APP_NOT_CONFIGURED` |
+| Instagram | the member saved `instagram_app` | (later: kubcode's own Meta app, after Business Verification) | `APP_NOT_CONFIGURED` |
+
+The member's own app wins when present, so a technical member keeps full control.
+
+**The Lambda never guesses.** It reads `app_source` from the intent:
+- `'kubcode'`: client id + secret from the SSM SecureString `/kubcode/prod/google-connect-client`
+  (JSON `{"client_id","client_secret"}`, encrypted with `alias/kubcode-secrets`). They are not in
+  `user_secrets`, and no member ever sees them.
+- `'member'`: the member's `user_secrets` row of the matching kind (`public_value` = client/app id,
+  envelope opened through KMS).
+
+The connection keeps `app_source`, so refresh (step 6) uses the client that issued the token. Deleting
+a member's app credentials disconnects only that member's `'member'` connections for that provider.
+For a `'kubcode'` connection `app_secret_version` is 1.
+
 ## 3. Token refresh job
 
 The Lambda `kubcode-token-refresh` is run by an EventBridge Scheduler schedule
@@ -234,6 +258,29 @@ sets `CURRENT_WRAP_KEY` and pins that fingerprint in a TS test and in the Rust c
 only allowlisted slot). `interop --expect-denied` passed: the admin cannot Decrypt.
 `npm run keys:wrap-key -- interop --expect-denied` proves the admin cannot Decrypt; the same
 command without the flag, run with a step-5 Lambda role, is the Node ↔ KMS interop check.
+
+**As built (step 5, 2026-11-06)**, branch `feat/oauth-connect`:
+- Migration `0006_connect_app_source` (§2a). Web: `lib/keys/connect-{config,store,routes}.ts`,
+  routes `POST /api/keys/oauth/start`, `GET /api/keys/oauth/callback/{provider}`,
+  `POST /api/keys/connections/{id}/disconnect`.
+- Lambda `services/crates/kubcode-oauth-connect` (Rust, `provided.al2023` x86_64, static musl,
+  rustls with ring; KMS `Decrypt` and SSM `GetParameters` are two SigV4-signed JSON calls via
+  `aws-sigv4` rather than the full SDK). Routes `POST /oauth/exchange` and `/oauth/revoke`;
+  KUBCODE-HMAC-V1 with the path signed, ±300 s, nonce replay guard in `connect_request_nonces`.
+  Secrets come from SSM (`connect-hmac-key`, `worker-db-url`, `google-connect-client`), cached 5
+  minutes, so rotation needs no redeploy and the function starts before they exist (503 until then).
+  DB over TLS pinned to `db/certs/supabase-prod-ca.pem`, `sslmode=require` forced in code; the
+  worker URL is the Session pooler (5432).
+- Infra (behind `kubcode:oauthConnect`, set true): role `kubcode-lambda-oauth-connect` (logs +
+  `ssm:GetParameters` on the three exact ARNs), log group (14 days), function (256 MB, 20 s),
+  Function URL auth NONE; the role is added to the secrets key's `KeyUse` and the wrap key's
+  `KeyDecrypt`. The wrap key policy is admin-only (boundary Deny on CI), so **the whole change is an
+  admin apply from the branch before merge**.
+- Web host env (`web.env`, Lightsail): `KUBCODE_CONNECT_URL`, `KUBCODE_CONNECT_HMAC_KEY`,
+  `KUBCODE_YOUTUBE_CLIENT_ID`. Set by `webhost.sh set-connect`. The worker's first password and
+  `/kubcode/prod/worker-db-url` come from `infra/scripts/move-db.sh` (the move to Supabase
+  `kubcode-sg`, ap-southeast-1); `webhost.sh set-worker-db` rotates them later. No value passes
+  through chat, argv or the screen.
 
 ## 6. Rotation
 

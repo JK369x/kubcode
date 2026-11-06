@@ -291,6 +291,46 @@ The admin sets them with the CLI at step 5 instead.
    policy). Then run `npm run keys:wrap-key -- interop` with a Lambda role's
    credentials (or inside the Lambda) for the end-to-end interop check.
 
+## OAuth connect Lambda (docs/design/settings-keys.md §2, §5)
+
+`kubcode:oauthConnect: "true"` deploys `kubcode-oauth-connect` (role
+`kubcode-lambda-oauth-connect`, log group, Function URL) and adds the role to the
+secrets key's `KeyUse` and the wrap key's `KeyDecrypt`. CI cannot change the wrap
+key policy, so the admin applies this from the PR branch **before merging**.
+
+### Admin apply, in order (bash, repo root, admin profile)
+
+```bash
+git fetch origin && git switch feat/oauth-connect
+# Both Lambda binaries are static musl builds (Linux only): build them in Docker.
+# Mount the repo root: the crates embed files from lib/keys and db/certs.
+docker run --rm --platform linux/amd64 -v "$PWD:/repo" -w /repo rust:1-bookworm bash -c \
+  'rustup target add x86_64-unknown-linux-musl && apt-get update && apt-get install -y musl-tools zip &&
+   bash services/package-signer/build-lambda.sh &&
+   CARGO_TARGET_DIR=/tmp/target-linux bash services/crates/kubcode-oauth-connect/build-lambda.sh'
+cd infra && npm ci --ignore-scripts
+export AWS_PROFILE=default AWS_REGION=ap-southeast-1   # the default profile's region is ap-southeast-7
+aws sts get-caller-identity --query '[Account,Arn]' --output text   # 955758449820 … user/super_admin
+pulumi preview --stack prod --diff
+pulumi up --stack prod
+pulumi stack output --stack prod oauthConnectUrl
+```
+
+Expected preview: **create** `oauth-connect-role`, `oauth-connect-policy`,
+`oauth-connect-logs`, `oauth-connect`, `oauth-connect-url`,
+`oauth-connect-url-access`, `oauth-connect-url-invoke`; **update**
+`deploy-boundary` (`DenyRoleTrustChanges` now also covers `kubcode-lambda-*`:
+CI cannot change who may assume those roles or delete them; action lists
+shortened with exact wildcards to stay under IAM's 6,144-character limit), `secrets-key-policy` (KeyUse gains the role)
+and `secrets-wrap-key-policy` (KeyDecrypt gains the role); also
+`package-signer [~code]` (local build bytes).
+Nothing deleted or replaced, nothing outside `kubcode-*`.
+
+Then the owner runs `infra/web/scripts/webhost.sh set-connect`
+(docs/design/settings-keys-owner-checklist.md §E), then merge. The worker DB URL
+is already in SSM from the move to Supabase `kubcode-sg`
+(`infra/scripts/move-db.sh`); `webhost.sh set-worker-db` is only for rotating it.
+
 ## Tests
 
 `npm test` (in `infra/`) runs unit tests with Pulumi mocks. They cover policy

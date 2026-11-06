@@ -30,6 +30,11 @@ impl std::fmt::Debug for WrapPublicKey {
 }
 
 impl WrapPublicKey {
+    /// The envelope slot this key seals into.
+    pub fn slot(&self) -> u8 {
+        self.slot
+    }
+
     /// Accepts only an SPKI (`BEGIN PUBLIC KEY`) PEM of an RSA-4096 key, slot 1..=255.
     pub fn from_spki_pem(slot: u8, pem: &str) -> Result<Self, EnvelopeError> {
         if slot == 0 {

@@ -24,6 +24,8 @@ const outputs = createStack({
   wrapKeyDecryptArns,
   // openssl rand -hex 32; the Lambda, its role, log group and URL appear once set.
   packageSignerKey: config.getSecret("packageSignerKey"),
+  // The OAuth connect Lambda (design §2); its role joins both key policies.
+  oauthConnect: config.getBoolean("oauthConnect") ?? false,
 });
 
 export const mediaBucket = outputs.mediaBucket;
@@ -35,3 +37,4 @@ export const deployRoleArn = outputs.deployRoleArn;
 export const previewRoleArn = outputs.previewRoleArn;
 export const boundaryPolicyArn = outputs.boundaryPolicyArn;
 export const packageSignerUrl = outputs.packageSignerUrl;
+export const oauthConnectUrl = outputs.oauthConnectUrl;

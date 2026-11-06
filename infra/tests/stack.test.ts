@@ -16,7 +16,7 @@ import {
   packageSourceDir,
   validatePackageSignerKey,
 } from "../src/constants";
-import { lambdaTrustPolicy, packageSignerPolicy } from "../src/policies";
+import { lambdaTrustPolicy, oauthConnectPolicy, packageSignerPolicy } from "../src/policies";
 
 type Recorded = { type: string; name: string; inputs: any; provider?: string };
 let resources: Recorded[] = [];
@@ -86,6 +86,7 @@ async function build(
     secretsKeyUserArns?: pulumi.Input<string>[];
     wrapKeyDecryptArns?: pulumi.Input<string>[];
     packageSignerKey?: pulumi.Input<string>;
+    oauthConnect?: boolean;
   } = {},
 ) {
   resources = [];
@@ -98,6 +99,7 @@ async function build(
     secretsKeyUserArns: opts.secretsKeyUserArns ?? [],
     wrapKeyDecryptArns: opts.wrapKeyDecryptArns ?? [],
     packageSignerKey: opts.packageSignerKey,
+    oauthConnect: opts.oauthConnect ?? false,
   });
   await Promise.all(Object.values(out).map((o) => settle(pulumi.output(o))));
   // Let dependent resources (policies built from other outputs) register.
@@ -417,4 +419,55 @@ test("SSM parameters are not managed by the stack (values are set by the admin C
   // placeholder from state on any later update and overwrite the real secret.
   await build({ budgetEmail: "owner@example.com", packageSignerKey: SIGNER_KEY });
   assert.equal(byType("aws:ssm/parameter:Parameter").length, 0);
+});
+
+// --- OAuth connect Lambda (docs/design/settings-keys.md §2, §5)
+
+const CONNECT_ROLE_ARN = `arn:aws:iam::${ACCOUNT_ID}:role/kubcode-lambda-oauth-connect`;
+const byName = (type: string, name: string) => byType(type).find((r) => r.inputs.name === name);
+
+test("oauth connect: off unless kubcode:oauthConnect is true", async () => {
+  await build();
+  assert.equal(byName("aws:iam/role:Role", NAMES.oauthConnectRole), undefined);
+  assert.equal(byName("aws:lambda/function:Function", NAMES.oauthConnectFunction), undefined);
+});
+
+test("oauth connect role: kubcode-lambda-* name, boundary, Lambda trust, logs + exact SSM reads only", async () => {
+  await build({ oauthConnect: true });
+  assert.equal(NAMES.oauthConnectRole, "kubcode-lambda-oauth-connect");
+  const role = byName("aws:iam/role:Role", NAMES.oauthConnectRole)!;
+  assert.ok(role);
+  assert.equal(role.inputs.permissionsBoundary, BOUNDARY_ARN);
+  assert.deepEqual(JSON.parse(role.inputs.assumeRolePolicy), lambdaTrustPolicy());
+  const rp = byName("aws:iam/rolePolicy:RolePolicy", NAMES.oauthConnectRole)!;
+  assert.deepEqual(JSON.parse(rp.inputs.policy), oauthConnectPolicy({ logGroupName: NAMES.oauthConnectLogGroup }));
+});
+
+test("oauth connect function: Rust custom runtime, its own log group, URL with auth NONE (the HMAC is the auth)", async () => {
+  const out = await build({ oauthConnect: true });
+  const fn = byName("aws:lambda/function:Function", NAMES.oauthConnectFunction)!.inputs;
+  assert.equal(fn.name, "kubcode-oauth-connect");
+  assert.equal(fn.runtime, "provided.al2023");
+  assert.deepEqual(fn.architectures, ["x86_64"]);
+  assert.equal(fn.handler, "bootstrap");
+  assert.equal(fn.timeout, 20);
+  assert.equal(fn.role, CONNECT_ROLE_ARN);
+  assert.equal(fn.environment, undefined, "no secrets in env: they are read from SSM");
+  assert.ok(seen({ kind: "FileArchive", path: "../services/crates/kubcode-oauth-connect/dist/bootstrap.zip" }));
+  const lg = byName("aws:cloudwatch/logGroup:LogGroup", NAMES.oauthConnectLogGroup)!.inputs;
+  assert.equal(lg.retentionInDays, 14);
+  const url = byType("aws:lambda/functionUrl:FunctionUrl").find((u) => u.inputs.functionName === "kubcode-oauth-connect")!.inputs;
+  assert.equal(url.authorizationType, "NONE");
+  assert.equal(url.cors, undefined);
+  const perms = byType("aws:lambda/permission:Permission").filter((p) => p.inputs.function === "kubcode-oauth-connect");
+  assert.deepEqual(perms.map((p) => p.inputs.action).sort(), ["lambda:InvokeFunction", "lambda:InvokeFunctionUrl"]);
+  assert.equal(await new Promise((r) => pulumi.output(out.oauthConnectUrl).apply(r)), "https://abc123.lambda-url.ap-southeast-1.on.aws/");
+});
+
+test("oauth connect role may decrypt: wrap key (DEKs) and secrets key (its SSM SecureStrings)", async () => {
+  await build({ oauthConnect: true });
+  const wrap = JSON.parse(byType("aws:kms/keyPolicy:KeyPolicy").find((p) => p.name === "secrets-wrap-key-policy")!.inputs.policy);
+  assert.deepEqual(wrap.Statement.find((s: any) => s.Sid === "KeyDecrypt").Principal.AWS, [CONNECT_ROLE_ARN]);
+  const secrets = JSON.parse(byType("aws:kms/keyPolicy:KeyPolicy").find((p) => p.name === "secrets-key-policy")!.inputs.policy);
+  assert.deepEqual(secrets.Statement.find((s: any) => s.Sid === "KeyUse").Principal.AWS, [CONNECT_ROLE_ARN]);
 });

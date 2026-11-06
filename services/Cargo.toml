@@ -1,9 +1,16 @@
 [workspace]
 resolver = "2"
-members = ["crates/kubcode-envelope"]
+members = ["crates/kubcode-envelope", "crates/kubcode-oauth-connect"]
 
 [workspace.package]
 edition = "2021"
 rust-version = "1.80"
 license = "UNLICENSED"
 publish = false
+
+[profile.release]
+opt-level = "s"
+lto = true
+strip = true
+panic = "abort"
+codegen-units = 1

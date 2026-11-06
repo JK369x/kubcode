@@ -49,7 +49,7 @@ const ACCOUNT_TABLES = [
   "connect_request_nonces",
   "secret_audit_events",
 ];
-const ALL_VERSIONS = ["0001_accounts", "0002_interactions", "0003_downloads", "0004_settings_keys", "0005_owner_flag"];
+const ALL_VERSIONS = ["0001_accounts", "0002_interactions", "0003_downloads", "0004_settings_keys", "0005_owner_flag", "0006_connect_app_source"];
 
 // Refuses anything that is not clearly a local test database BEFORE any
 // connection is attempted.

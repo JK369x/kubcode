@@ -12,6 +12,7 @@ import {
   GITHUB_SUBJECTS,
   MEDIA_CORS_ORIGIN,
   NAMES,
+  OAUTH_CONNECT_BINARY,
   PACKAGES,
   PACKAGE_LOG_RETENTION_DAYS,
   PACKAGE_SIGNER_BINARY,
@@ -26,6 +27,7 @@ import {
   deployPolicy,
   githubTrustPolicy,
   lambdaTrustPolicy,
+  oauthConnectPolicy,
   packageSignerPolicy,
   previewPolicy,
   secretsKeyPolicy,
@@ -46,6 +48,8 @@ export type StackConfig = {
   secretsKeyUserArns: pulumi.Input<string>[];
   /** kubcode-lambda-* roles allowed to Decrypt with alias/kubcode-secrets-wrap (step 5). */
   wrapKeyDecryptArns: pulumi.Input<string>[];
+  /** Deploy the OAuth connect Lambda (kubcode:oauthConnect). Its role joins both key policies. */
+  oauthConnect: boolean;
 };
 
 const json = (v: unknown) => JSON.stringify(v);
@@ -153,12 +157,32 @@ export function createStack(cfg: StackConfig) {
     opts,
   );
 
+  // --- OAuth connect Lambda role (docs/design/settings-keys.md §2). Created
+  // before the key policies, which name it: KMS rejects a policy naming a
+  // role that does not exist.
+  const connectTags = { service: "oauth-connect" };
+  const connectRole = cfg.oauthConnect
+    ? new aws.iam.Role(
+        "oauth-connect-role",
+        {
+          name: NAMES.oauthConnectRole,
+          description: "kubcode-oauth-connect Lambda: OAuth code exchange, token sealing and revoke",
+          assumeRolePolicy: json(lambdaTrustPolicy()),
+          permissionsBoundary: boundary.arn,
+          tags: connectTags,
+        },
+        opts,
+      )
+    : undefined;
+  const secretsKeyUsers = [...cfg.secretsKeyUserArns, ...(connectRole ? [connectRole.arn] : [])];
+  const wrapKeyDecrypters = [...cfg.wrapKeyDecryptArns, ...(connectRole ? [connectRole.arn] : [])];
+
   new aws.kms.KeyPolicy(
     "secrets-key-policy",
     {
       keyId: secretsKey.keyId,
       policy: pulumi
-        .all([deployRole.arn, previewRole.arn, pulumi.all(cfg.secretsKeyUserArns)])
+        .all([deployRole.arn, previewRole.arn, pulumi.all(secretsKeyUsers)])
         .apply(([deployArn, previewArn, userArns]) =>
           json(
             secretsKeyPolicy({
@@ -179,7 +203,7 @@ export function createStack(cfg: StackConfig) {
     {
       keyId: wrapKey.keyId,
       policy: pulumi
-        .all([deployRole.arn, previewRole.arn, pulumi.all(cfg.wrapKeyDecryptArns)])
+        .all([deployRole.arn, previewRole.arn, pulumi.all(wrapKeyDecrypters)])
         .apply(([deployArn, previewArn, decryptArns]) =>
           json(wrapKeyPolicy({ adminArns: [deployArn, ...cfg.breakGlassAdminArns], readerArns: [previewArn], decryptArns })),
         ),
@@ -377,6 +401,51 @@ export function createStack(cfg: StackConfig) {
     packageSignerUrl = url.functionUrl;
   }
 
+  // --- OAuth connect Lambda: secrets come from SSM at cold start (never env),
+  // the Function URL's only auth is the HMAC shared with the web host.
+  let oauthConnectUrl: pulumi.Output<string> | undefined;
+  if (connectRole) {
+    const rolePolicy = new aws.iam.RolePolicy(
+      "oauth-connect-policy",
+      { name: NAMES.oauthConnectRole, role: connectRole.name, policy: json(oauthConnectPolicy({ logGroupName: NAMES.oauthConnectLogGroup })) },
+      opts,
+    );
+    const logGroup = new aws.cloudwatch.LogGroup(
+      "oauth-connect-logs",
+      { name: NAMES.oauthConnectLogGroup, retentionInDays: PACKAGE_LOG_RETENTION_DAYS, tags: connectTags },
+      opts,
+    );
+    const fn = new aws.lambda.Function(
+      "oauth-connect",
+      {
+        name: NAMES.oauthConnectFunction,
+        description: "OAuth connect for YouTube/Instagram: code exchange, token sealing, revoke (HMAC-authenticated)",
+        role: connectRole.arn,
+        runtime: "provided.al2023",
+        architectures: ["x86_64"],
+        handler: "bootstrap",
+        memorySize: 256,
+        // Provider calls (token, channel/profile) plus the DB, cold start included.
+        timeout: 20,
+        code: new pulumi.asset.FileArchive(OAUTH_CONNECT_BINARY),
+        tags: connectTags,
+      },
+      { ...opts, dependsOn: [rolePolicy, logGroup] },
+    );
+    const url = new aws.lambda.FunctionUrl("oauth-connect-url", { functionName: fn.name, authorizationType: "NONE" }, opts);
+    new aws.lambda.Permission(
+      "oauth-connect-url-access",
+      { function: fn.name, action: "lambda:InvokeFunctionUrl", principal: "*", functionUrlAuthType: "NONE" },
+      opts,
+    );
+    new aws.lambda.Permission(
+      "oauth-connect-url-invoke",
+      { function: fn.name, action: "lambda:InvokeFunction", principal: "*", invokedViaFunctionUrl: true },
+      opts,
+    );
+    oauthConnectUrl = url.functionUrl;
+  }
+
   return {
     mediaBucket: media.bucket,
     secretsKeyArn: secretsKey.arn,
@@ -387,5 +456,6 @@ export function createStack(cfg: StackConfig) {
     previewRoleArn: previewRole.arn,
     boundaryPolicyArn: boundary.arn,
     packageSignerUrl,
+    oauthConnectUrl,
   };
 }

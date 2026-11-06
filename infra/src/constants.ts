@@ -25,6 +25,11 @@ export const NAMES = {
   packageSignerFunction: "kubcode-package-signer",
   packageSignerRole: "kubcode-package-signer",
   packageSignerLogGroup: "/aws/lambda/kubcode-package-signer",
+  // OAuth connect Lambda (docs/design/settings-keys.md §2). The role name must
+  // match kubcode-lambda-* to ever decrypt with the wrap key.
+  oauthConnectFunction: "kubcode-oauth-connect",
+  oauthConnectRole: "kubcode-lambda-oauth-connect",
+  oauthConnectLogGroup: "/aws/lambda/kubcode-oauth-connect",
   // Spike resources that predate this stack; denied to every kubcode role.
   outOfScopePrefix: "kubcode-igtest-",
 } as const;
@@ -82,4 +87,10 @@ export const LAMBDA_ROLE_PREFIX = "kubcode-lambda-";
 export const SSM_PARAMETERS = {
   workerDbUrl: "/kubcode/prod/worker-db-url",
   connectHmacKey: "/kubcode/prod/connect-hmac-key",
+  // kubcode's shared Google client, JSON {client_id, client_secret} (design §2a).
+  googleConnectClient: "/kubcode/prod/google-connect-client",
 } as const;
+
+// Zip with the static musl `bootstrap` from
+// services/crates/kubcode-oauth-connect/build-lambda.sh. Relative to infra/.
+export const OAUTH_CONNECT_BINARY = "../services/crates/kubcode-oauth-connect/dist/bootstrap.zip";

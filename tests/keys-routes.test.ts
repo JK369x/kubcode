@@ -190,5 +190,27 @@ test("the page view: disabled, signed out, forbidden, then ready with the overvi
     state: "ready",
     overview: OVERVIEW,
     canSave: false,
+    connect: { youtube: false, instagram: false },
   });
+});
+
+test("the page view: Connect works when the Lambda is configured and an app is available", async () => {
+  const store = (overview: Overview) => () => ({ sealing: true, overview: async () => overview }) as unknown as KeyStore;
+  const CONNECT_ENV = {
+    ...ON_ENV,
+    KUBCODE_CONNECT_URL: "https://abc123.lambda-url.ap-southeast-1.on.aws/",
+    KUBCODE_CONNECT_HMAC_KEY: "FIXTURE-ONLY-connect-hmac-key-0000000000000000",
+  };
+  const meta = (kind: string) => ({ kind, publicValue: null, hint: "abcd", version: 1, updatedAt: "2026-11-06T00:00:00.000Z" }) as never;
+  const view = async (env: Record<string, string>, overview: Overview) => {
+    const v = await getKeysView(env, () => cookieJar(true), store(overview));
+    assert.equal(v.state, "ready");
+    return v.state === "ready" ? v.connect : null;
+  };
+  // No Lambda configured: nothing can connect.
+  assert.deepEqual(await view(ON_ENV, { ...OVERVIEW, secrets: [meta("instagram_app")] }), { youtube: false, instagram: false });
+  // kubcode's shared YouTube app needs no member setup; Instagram needs the member's app.
+  assert.deepEqual(await view({ ...CONNECT_ENV, KUBCODE_YOUTUBE_CLIENT_ID: "111111111111-kubcodesharedapp.apps.googleusercontent.com" }, OVERVIEW), { youtube: true, instagram: false });
+  assert.deepEqual(await view(CONNECT_ENV, { ...OVERVIEW, secrets: [meta("instagram_app")] }), { youtube: false, instagram: true });
+  assert.deepEqual(await view(CONNECT_ENV, { ...OVERVIEW, secrets: [meta("youtube_oauth_client")] }), { youtube: true, instagram: false });
 });
