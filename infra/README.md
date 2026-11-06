@@ -331,6 +331,23 @@ Then the owner runs `infra/web/scripts/webhost.sh set-connect`
 is already in SSM from the move to Supabase `kubcode-sg`
 (`infra/scripts/move-db.sh`); `webhost.sh set-worker-db` is only for rotating it.
 
+## Owner secrets in the Keychain vault
+
+`infra/scripts/secret.sh` keeps the owner's secrets in the macOS login keychain
+(service `kubcode/<name>`), each created with an empty trusted-app list so macOS
+asks for the login password on every read. Store a value once:
+
+```sh
+infra/scripts/secret.sh put google-connect-client-secret   # typed hidden
+infra/scripts/secret.sh list                               # names only
+```
+
+`webhost.sh set-env` and `set-connect` look up each value there first
+(`GOOGLE_CLIENT_SECRET` → `google-client-secret`; the connect client is
+`google-connect-client-id` / `google-connect-client-secret`) and only ask when it
+is missing, offering to save what you type. Nothing prints a value; there is no
+`get` command.
+
 ## Tests
 
 `npm test` (in `infra/`) runs unit tests with Pulumi mocks. They cover policy

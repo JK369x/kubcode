@@ -1,0 +1,56 @@
+#!/usr/bin/env bash
+# Test double for macOS `security`: generic passwords live as files under
+# $FAKE_KC_DIR, and every call's arguments are appended to $FAKE_KC_DIR/args.log
+# (values passed with -w are replaced by <value> there). Only the subcommands
+# and flags infra/scripts/lib/keychain.sh uses are supported.
+set -euo pipefail
+dir=${FAKE_KC_DIR:?FAKE_KC_DIR not set}
+cmd=$1
+shift
+logged=() prev=""
+for a in "$@"; do
+  if [ "$prev" = "-w" ]; then logged+=("<value>"); else logged+=("$a"); fi
+  prev=$a
+done
+echo "$cmd ${logged[*]+"${logged[*]}"}" >>"$dir/args.log"
+
+svc="" acct="" want_value=0 value="" have_value=0 trusted_flag=0
+while [ $# -gt 0 ]; do
+  case "$1" in
+  -s) svc=$2; shift 2 ;;
+  -a) acct=$2; shift 2 ;;
+  -l) shift 2 ;;
+  -T) trusted_flag=1; shift 2 ;;
+  -U) shift ;;
+  -w)
+    if [ "$cmd" = add-generic-password ]; then value=$2; have_value=1; shift 2; else want_value=1; shift; fi ;;
+  *) shift ;; # keychain path
+  esac
+done
+f="$dir/item.$(printf %s "$svc|$acct" | od -An -tx1 | tr -d ' \n')"
+
+case "$cmd" in
+add-generic-password)
+  [ "$have_value" = 1 ] || { echo "fake-security: -w value required" >&2; exit 2; }
+  printf %s "$value" >"$f"
+  printf '%s\n' "$svc" >"$f.svc"
+  echo "$trusted_flag" >"$f.trusted"
+  ;;
+find-generic-password)
+  [ -f "$f" ] || { echo "security: SecKeychainSearchCopyNext: The specified item could not be found in the keychain." >&2; exit 44; }
+  if [ "$want_value" = 1 ]; then cat "$f"; echo; fi
+  ;;
+delete-generic-password)
+  [ -f "$f" ] || exit 44
+  rm -f "$f" "$f.svc" "$f.trusted"
+  ;;
+dump-keychain)
+  for s in "$dir"/item.*.svc; do
+    [ -e "$s" ] || continue
+    echo "keychain: \"fake\""
+    echo "class: \"genp\""
+    echo "    \"svce\"<blob>=\"$(cat "$s")\""
+  done
+  ;;
+*) echo "fake-security: unsupported $cmd" >&2; exit 2 ;;
+esac
