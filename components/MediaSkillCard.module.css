@@ -94,9 +94,6 @@
 
 /* This landscape source's face is one third from the left. A centred cover
    cuts it off; preserve the real subject while filling the portrait card. */
-.card[data-skill="jk-soft-story"] .poster.poster {
-  object-position: 25% center;
-}
 
 /* ---------- honest no-media cover ---------- */
 

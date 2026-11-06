@@ -32,22 +32,6 @@
     "tags": ["stickman", "cinematic", "canvas", "claude", "codex", "portrait"]
   },
   {
-    "id": "jk-soft-story",
-    "name": "Soft Story",
-    "status": "selected",
-    "version": "2",
-    "approvalScope": "เลือกแนวภาพนิ่ง v2 แล้ว · animation และเสียงรอตรวจแยก",
-    "tags": ["2d", "soft-shading", "storytelling"]
-  },
-  {
-    "id": "jk-soft-story-motion-v2",
-    "name": "Soft Story Motion",
-    "status": "draft",
-    "version": "0.1",
-    "approvalScope": "ทดลองจังหวะเล่าและกล้องจาก motion study เดิม · ยังรอตรวจ",
-    "tags": ["2d", "storytelling", "motion-pilot"]
-  },
-  {
     "id": "low-poly-urban",
     "name": "Low-poly Urban",
     "status": "selected",

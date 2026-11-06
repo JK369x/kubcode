@@ -347,37 +347,6 @@
     }
   },
   {
-    "id": "2026-10-25_us-antarctica_ep01_mystery-short",
-    "title": "สหรัฐกับแอนตาร์กติกา — Short (v4)",
-    "aspect": "portrait",
-    "poster": {
-      "src": "/showcase/2026-10-25_us-antarctica_ep01_mystery-short/poster.jpg",
-      "width": 480,
-      "height": 854,
-      "bytes": 20106,
-      "sha256": "88736e2cb690d3dc5358307fee62ccda3501cf41d0dac19d21efa3d65ef4fa54"
-    },
-    "preview": {
-      "src": "/showcase/2026-10-25_us-antarctica_ep01_mystery-short/preview.mp4",
-      "width": 360,
-      "height": 640,
-      "seconds": 3.5,
-      "bytes": 19968,
-      "sha256": "894110e1abcbf521469f88bccb8488a178efc9550cf7fe4ebbb1f0997cf8099f"
-    },
-    "link": null,
-    "madeWith": {
-      "music": "no music; HyperFrames media-use SFX only (ASSETS.md)",
-      "renderer": "hyperframes",
-      "style": "mystery adventure, highlight text only",
-      "voice": "thai-jk (VoxCPM2-4bit approved calm male)"
-    },
-    "source": {
-      "path": "~/Studio/clips/2026-10-25_us-antarctica_ep01_mystery-short/video.mp4",
-      "sha256": "84f048415e4f6a992fa2b112be904f0ca9d751557f00c81ae8c92317a9fb1e6e"
-    }
-  },
-  {
     "id": "2026-11-01_freshstack-what-if_ep03_internet-gone-week",
     "title": "ถ้าอินเทอร์เน็ตหายไปทั้งโลก 1 สัปดาห์",
     "aspect": "portrait",
@@ -472,37 +441,6 @@
     }
   },
   {
-    "id": "2026-11-01_jk-soft-story-motion-v2_ep02_friends-drifting-apart",
-    "title": "เพื่อนสนิทที่ห่างกันไปโดยไม่เคยทะเลาะ",
-    "aspect": "portrait",
-    "poster": {
-      "src": "/showcase/2026-11-01_jk-soft-story-motion-v2_ep02_friends-drifting-apart/poster.jpg",
-      "width": 480,
-      "height": 854,
-      "bytes": 20667,
-      "sha256": "de276858b8136dc6a397d695c20eadfdc39510911a46cbf20c64913eb1d40432"
-    },
-    "preview": {
-      "src": "/showcase/2026-11-01_jk-soft-story-motion-v2_ep02_friends-drifting-apart/preview.mp4",
-      "width": 360,
-      "height": 640,
-      "seconds": 3.5,
-      "bytes": 34036,
-      "sha256": "b6dda915a5b492c7a24e1ab834e7ccf798d16c8153b37d33fefb2d1ad8750bbf"
-    },
-    "link": null,
-    "madeWith": {
-      "music": "unknown",
-      "renderer": "hyperframes",
-      "style": "jk-soft-story-motion-v2",
-      "voice": "thai-jk (approved-calm-male-v1)"
-    },
-    "source": {
-      "path": "~/Studio/clips/2026-11-01_jk-soft-story-motion-v2_ep02_friends-drifting-apart/video.mp4",
-      "sha256": "1c9c6e7fa70a3f353de7f4b177a4eaef0df7174b4587d548df3da1f442ac3405"
-    }
-  },
-  {
     "id": "low-poly-urban-study",
     "title": "Low-poly Urban — ตัวอย่างสไตล์ 8 วินาที",
     "aspect": "portrait",
@@ -530,29 +468,6 @@
     "source": {
       "path": "~/work/ai-video/jk-animation-studio/styles/low-poly-urban/examples/city/demo.mp4",
       "sha256": "3957961cde8bf0d96a11a4712fbc0e58285c1725e35cc2ab8bbae8a1fe203e68"
-    }
-  },
-  {
-    "id": "jk-soft-story-still",
-    "title": "Soft Story — ภาพนิ่ง v2 ที่เลือกแล้ว",
-    "aspect": "landscape",
-    "poster": {
-      "src": "/showcase/jk-soft-story-still/poster.jpg",
-      "width": 640,
-      "height": 360,
-      "bytes": 26569,
-      "sha256": "423a5bf79c40cddd414ddadce2b62b80aa68739cd5da2b81d8b44b8de614d4ca"
-    },
-    "preview": null,
-    "link": null,
-    "madeWith": {
-      "renderer": "Editable SVG",
-      "style": "jk-soft-story",
-      "voice": "silent"
-    },
-    "source": {
-      "path": "~/work/ai-video/jk-animation-studio/styles/jk-soft-story/assets/selected-v2.png",
-      "sha256": "6627ec8249019ba60b44a857f5a5e8b13fb233263ba5e8b9c7ce3a88c354dbcd"
     }
   }
 ]

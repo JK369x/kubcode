@@ -78,7 +78,7 @@ test("author chips come only from real example authors", () => {
   assert.deepEqual(chipNames(render(bySlug("freshstack-what-if"), true)), [
     "OpenCode",
   ]);
-  assert.deepEqual(chipNames(render(bySlug("jk-soft-story"), true)), [
+  assert.deepEqual(chipNames(render(bySlug("low-poly-urban"), true)), [
     "JK local study",
   ]);
 });
@@ -115,7 +115,6 @@ test("runtime grouping follows renderer and requirements", () => {
     "growkaz-stickman": ["Canvas 2D", "FFmpeg"],
     "thai-survival": ["GSAP", "HyperFrames"],
     "freshstack-what-if": ["React", "Remotion"],
-    "jk-soft-story": ["Editable SVG"],
     "low-poly-urban": ["Three.js", "HyperFrames"],
     "thai-jk-voice": ["VoxCPM2 / MLX"],
     "captions-overlay": ["Renderer adapter"],
@@ -255,7 +254,7 @@ test("local study and unknown names are not labelled as AI tools", () => {
     assert.deepEqual(resolveToolMark(odd), { key: "unknown", kind: "unknown" });
     assert.deepEqual(toolMarkSource(odd), { source: "symbol" });
   }
-  const html = render(bySlug("jk-soft-story"), true);
+  const html = render(bySlug("low-poly-urban"), true);
   assert.match(html, /data-tool-kind="local"/);
   assert.match(html, /data-mark-source="symbol"/);
   assert.ok(!html.includes('data-tool-kind="coding-agent"'));
