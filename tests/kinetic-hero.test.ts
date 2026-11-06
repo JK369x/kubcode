@@ -317,7 +317,8 @@ test("Library: hero, selected example and catalog keep their contracts", () => {
   const inputs = [...html.matchAll(/<input\b[^>]*>/g)].map((m) => m[0]);
   assert.ok(inputs.length >= 1);
   for (const input of inputs) assert.doesNotMatch(input, /readonly|disabled/i);
-  // Honest disabled downloads, one per catalog card.
+  // Honest disabled downloads, one per full catalogue card (skills with a clip).
+  const { showcaseForSkill } = require("../lib/showcase") as typeof import("../lib/showcase");
   const disabled = [...html.matchAll(/<button\b[^>]*\sdisabled=""[^>]*>[\s\S]*?ดาวน์โหลด skill/g)];
-  assert.equal(disabled.length, skills.length);
+  assert.equal(disabled.length, skills.filter((s) => showcaseForSkill(s.slug)).length);
 });

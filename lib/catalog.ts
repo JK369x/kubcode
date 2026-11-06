@@ -28,7 +28,23 @@ export type Skill = {
   requirements: string[];
   rights: "uncleared";
   examples: Example[];
+  /** What a creator can make with it; drives the homepage filters. */
+  useCases: UseCase[];
+  /**
+   * "external": running it costs money outside kubcode (named in costNote).
+   * "no-key": its requirements need no paid API key.
+   */
+  cost: "no-key" | "external";
+  costNote?: string;
 };
+/** Homepage filters: what the creator wants to make (owner, 2026-11-06). */
+export type UseCase = "story" | "podcast" | "voice-captions";
+export const useCases: { id: "all" | UseCase; label: string }[] = [
+  { id: "all", label: "ทั้งหมด" },
+  { id: "story", label: "การ์ตูนเล่าเรื่อง" },
+  { id: "podcast", label: "คลิปสั้นจากพอดแคสต์" },
+  { id: "voice-captions", label: "เสียงพากย์และซับไทย" },
+];
 export const categories = [
   { id: "all", label: "ทั้งหมด" },
   { id: "video", label: "วิดีโอ / ภาพ" },
@@ -58,6 +74,8 @@ export const rawSkills: readonly Skill[] = [
       "Playwright / Chromium · FFmpeg",
       "ยังไม่ทดสอบติดตั้งจากเครื่องใหม่",
     ],
+    useCases: ["story"],
+    cost: "no-key",
     rights: "uncleared",
     examples: [
       {
@@ -101,6 +119,8 @@ export const rawSkills: readonly Skill[] = [
       "HyperFrames 0.8.192 · GSAP · FFmpeg",
       "ต้องจัดฟอนต์ไทยเอง",
     ],
+    useCases: ["story"],
+    cost: "no-key",
     rights: "uncleared",
     examples: [
       {
@@ -143,6 +163,9 @@ export const rawSkills: readonly Skill[] = [
       "Remotion 4.0.530 · FFmpeg",
       "Remotion และเสียงมีเงื่อนไขสิทธิ์แยก",
     ],
+    useCases: ["story"],
+    cost: "external",
+    costNote: "ElevenLabs (เสียงพากย์และเสียงประกอบ) ราว 150–240 เครดิตต่อตอน",
     rights: "uncleared",
     examples: [
       {
@@ -174,6 +197,8 @@ export const rawSkills: readonly Skill[] = [
       "HyperFrames · Node",
       "ซับรุ่นปัจจุบันต่างจากตัวอย่างเดิม",
     ],
+    useCases: ["story"],
+    cost: "no-key",
     rights: "uncleared",
     examples: [
       {
@@ -205,6 +230,8 @@ export const rawSkills: readonly Skill[] = [
       "FFmpeg · VoxCPM2 / MLX",
       "ดาวน์โหลด weights และตรวจ upstream terms ก่อนใช้",
     ],
+    useCases: ["voice-captions"],
+    cost: "no-key",
     rights: "uncleared",
     examples: [],
   },
@@ -222,6 +249,8 @@ export const rawSkills: readonly Skill[] = [
       "ฟอนต์ไทยที่มีสิทธิ์ใช้งาน",
       "adapter สำหรับ renderer ที่เลือก",
     ],
+    useCases: ["voice-captions"],
+    cost: "no-key",
     rights: "uncleared",
     examples: [],
   },
@@ -240,17 +269,19 @@ export const rawSkills: readonly Skill[] = [
       "whisper.cpp (ถอดเสียงในเครื่อง)",
       "ตรวจสิทธิ์และเครดิตของพอดแคสต์ต้นทางทุกครั้ง",
     ],
+    useCases: ["podcast"],
+    cost: "no-key",
     rights: "uncleared",
     examples: [],
   },
 ];
 /** Catalog as published by this build (see lib/publication.ts). */
 export const skills: Skill[] = publishSkills(rawSkills);
-export function filterSkills(items: Skill[], query: string, category: string) {
+export function filterSkills(items: Skill[], query: string, useCase: string) {
   const q = query.trim().toLocaleLowerCase();
   return items.filter(
     (s) =>
-      (category === "all" || s.category === category) &&
+      (useCase === "all" || s.useCases.includes(useCase as UseCase)) &&
       JSON.stringify(s).toLocaleLowerCase().includes(q),
   );
 }

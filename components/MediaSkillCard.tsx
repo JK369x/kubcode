@@ -4,7 +4,8 @@ import { categories, type Skill } from "@/lib/catalog";
 import { coverFor } from "@/lib/media-covers";
 import { showcaseForSkill } from "@/lib/showcase";
 import { hasWithheldMedia } from "@/lib/publication";
-import { statusLabel } from "@/lib/status-labels";
+import { skillBadges } from "@/lib/skill-badges";
+import { playPreview, stopPreview } from "./hoverPreview";
 import { CardDownloadAction } from "./CardDownloadAction";
 import { SkillIcon, getSkillTools } from "./ToolChips";
 import { ToolMark, resolveToolMark } from "./ToolMark";
@@ -53,7 +54,9 @@ export function MediaSkillCard({
   const tools = getSkillTools(skill);
   const authors = getSkillTools(skill, true);
   const detailHref = "/skills/" + encodeURIComponent(skill.slug);
-  const status = statusLabel(skill.status);
+  const badges = skillBadges(skill);
+  // The style's muted preview loop; plays on hover or focus only (hoverPreview).
+  const preview = showcase?.cover.preview ?? null;
 
   return (
     <article
@@ -61,6 +64,12 @@ export function MediaSkillCard({
       data-media={poster ? "poster" : "none"}
       data-category={skill.category}
       data-skill={skill.slug}
+      onPointerEnter={(e) => e.pointerType !== "touch" && playPreview(e.currentTarget)}
+      onPointerLeave={(e) => stopPreview(e.currentTarget)}
+      onFocus={(e) => playPreview(e.currentTarget)}
+      onBlur={(e) => {
+        if (!e.currentTarget.contains(e.relatedTarget as Node | null)) stopPreview(e.currentTarget);
+      }}
     >
       {showcase && poster ? (
         <Link className={"card-preview " + styles.hit} href={detailHref} aria-label={"ดูคลิปตัวอย่าง " + skill.name}>
@@ -72,6 +81,18 @@ export function MediaSkillCard({
             decoding="async"
             draggable={false}
           />
+          {preview && (
+            <video
+              className={styles.video}
+              data-src={preview.src}
+              muted
+              loop
+              playsInline
+              preload="none"
+              aria-hidden="true"
+              tabIndex={-1}
+            />
+          )}
         </Link>
       ) : (
         <button
@@ -110,7 +131,6 @@ export function MediaSkillCard({
       )}
 
       <div className={styles.top}>
-        <span className={styles.status}>{status}</span>
         {tools.length > 0 && (
           <ul className={styles.tools} aria-label="เครื่องมือที่ต้องใช้">
             {tools.map(({ name }) => (
@@ -141,6 +161,13 @@ export function MediaSkillCard({
       )}
 
       <div className={styles.bottom}>
+        <ul className={styles.badges} aria-label="ข้อมูลสำคัญ">
+          {badges.map((b) => (
+            <li key={b.key} className={styles.badge} data-badge={b.key} title={b.title}>
+              {b.label}
+            </li>
+          ))}
+        </ul>
         <h3 className={styles.title}>
           <Link className={styles.titleLink} href={detailHref}>
             <span>{skill.name}</span>

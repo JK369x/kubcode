@@ -557,6 +557,90 @@ header.header {
   grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 24px 20px;
 }
+/* Skills without an approved clip: a small text group after the clip cards. */
+.no-clip {
+  margin-top: 40px;
+  padding-top: 24px;
+  border-top: 1px solid var(--line);
+}
+.no-clip h3 {
+  font-size: 17px;
+  font-weight: 600;
+}
+.no-clip > p {
+  margin-top: 4px;
+  color: var(--muted);
+  font-size: 13px;
+}
+.no-clip ul {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+  margin: 16px 0 0;
+  padding: 0;
+  list-style: none;
+}
+.no-clip-item {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  height: 100%;
+  padding: 14px 16px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: var(--surface);
+  color: var(--ink);
+  text-decoration: none;
+}
+.no-clip-item:hover {
+  border-color: var(--purple);
+}
+.no-clip-item strong {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 15px;
+}
+.no-clip-desc {
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.5;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.no-clip-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  margin-top: auto;
+}
+.skill-badge {
+  display: inline-flex;
+  align-items: center;
+  min-height: 24px;
+  padding: 0 9px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  color: var(--muted);
+  font-size: 12px;
+  white-space: nowrap;
+}
+.skill-badge[data-badge="free"] {
+  color: var(--ink);
+  border-color: var(--purple);
+}
+@media (max-width: 1100px) {
+  .no-clip ul {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+@media (max-width: 560px) {
+  .no-clip ul {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
 .skill-card {
   overflow: hidden;
   min-width: 0;

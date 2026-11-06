@@ -14,6 +14,14 @@ export type SkillPackage = {
   licence: string;
   credit: string;
   approval: { by: string; date: string };
+  /** Agents the package README names; the only source for "ใช้กับ" badges. */
+  agents: readonly PackageAgent[];
+};
+
+export type PackageAgent = "claude-code" | "opencode";
+export const AGENT_NAMES: Readonly<Record<PackageAgent, string>> = {
+  "claude-code": "Claude Code",
+  opencode: "OpenCode",
 };
 
 /** Skills with no licence to redistribute. Tests keep them out of PACKAGES. */
@@ -32,6 +40,7 @@ export const PACKAGES: readonly SkillPackage[] = [
     licence: "MIT",
     credit: "FreshStack (freshstack.ai)",
     approval: { by: "owner", date: "2026-11-05" },
+    agents: ["claude-code", "opencode"],
   }),
   pkg({
     slug: "podcast-tool-short",
@@ -39,6 +48,7 @@ export const PACKAGES: readonly SkillPackage[] = [
     licence: "MIT",
     credit: "kubcode.dev; yt-package and yt-seo helpers by Jake Schincariol (MIT)",
     approval: { by: "owner", date: "2026-11-06" },
+    agents: ["claude-code"],
   }),
 ];
 

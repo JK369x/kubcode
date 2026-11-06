@@ -7,12 +7,13 @@ import {
   ArrowUpRight,
   RotateCcw,
 } from "lucide-react";
-import { skills, categories, filterSkills, styles } from "@/lib/catalog";
+import { skills, useCases, filterSkills, styles, type Skill } from "@/lib/catalog";
 import { Preview } from "./Preview";
 import { ToolChips } from "./ToolChips";
 import { MediaSkillCard } from "./MediaSkillCard";
 import { GetStarted } from "./GetStarted";
 import { statusLabel } from "@/lib/status-labels";
+import { skillBadges } from "@/lib/skill-badges";
 import { showcaseForSkill, type StyleTool } from "@/lib/showcase";
 import { KineticHero } from "./KineticHero";
 import heroStyles from "./KineticHero.module.css";
@@ -20,10 +21,34 @@ import heroStyles from "./KineticHero.module.css";
 /** Article teaser data passed from the server page (content loads from disk). */
 export type ArticleTeaser = { slug: string; title: string; description: string };
 
-/** Stable order with skills that have approved showcase clips first. */
-export function rankByClips<T extends { slug: string }>(items: readonly T[]): T[] {
-  const has = (s: T) => (showcaseForSkill(s.slug) ? 0 : 1);
-  return [...items].sort((a, b) => has(a) - has(b));
+/**
+ * Splits skills into those with an approved clip (full cards that play it)
+ * and those without (a small text group at the end), keeping catalogue order.
+ */
+export function splitByClips<T extends { slug: string }>(items: readonly T[]): { withClip: T[]; without: T[] } {
+  const withClip = items.filter((s) => showcaseForSkill(s.slug));
+  return { withClip, without: items.filter((s) => !withClip.includes(s)) };
+}
+
+/** A skill without a clip: name, one line and its badges, linking its page. */
+function NoClipItem({ skill }: { skill: Skill }) {
+  return (
+    <li>
+      <Link className="no-clip-item" href={"/skills/" + encodeURIComponent(skill.slug)}>
+        <strong>
+          {skill.name} <ArrowUpRight size={16} aria-hidden="true" />
+        </strong>
+        <span className="no-clip-desc">{skill.description}</span>
+        <span className="no-clip-badges">
+          {skillBadges(skill).map((b) => (
+            <span key={b.key} className="skill-badge" data-badge={b.key}>
+              {b.label}
+            </span>
+          ))}
+        </span>
+      </Link>
+    </li>
+  );
 }
 
 export function Library({
@@ -35,12 +60,13 @@ export function Library({
   styleTools?: Readonly<Record<string, readonly StyleTool[]>>;
 }) {
   const [query, setQuery] = useState("");
-  const [category, setCategory] = useState("all");
+  const [useCase, setUseCase] = useState("all");
   const [selected, setSelected] = useState<string | null>(null);
   const [previewOpen, setPreviewOpen] = useState(false);
   const previewOrigin = useRef<HTMLElement | null>(null);
-  // Skills with approved clips lead: they have real covers and pages.
-  const results = rankByClips(filterSkills(skills, query, category));
+  // Only skills with an approved clip get a full card; the rest go last.
+  const results = filterSkills(skills, query, useCase);
+  const { withClip, without } = splitByClips(results);
   const active = skills.find((skill) => skill.slug === selected) || skills[0];
   function selectSkill(slug: string) {
     previewOrigin.current = document.activeElement instanceof HTMLElement
@@ -60,7 +86,7 @@ export function Library({
   }
   function reset() {
     setQuery("");
-    setCategory("all");
+    setUseCase("all");
   }
   return (
     <main id="main" className="library-page">
@@ -133,12 +159,12 @@ export function Library({
           </label>
         </div>
         <div className="filter-bar">
-          <nav className="categories" aria-label="หมวดทักษะ">
-            {categories.map((item) => (
+          <nav className="categories" aria-label="อยากทำคลิปแบบไหน">
+            {useCases.map((item) => (
               <button
                 key={item.id}
-                aria-pressed={category === item.id}
-                onClick={() => setCategory(item.id)}
+                aria-pressed={useCase === item.id}
+                onClick={() => setUseCase(item.id)}
               >
                 {item.label}
                 <span>{filterSkills(skills, "", item.id).length}</span>
@@ -150,11 +176,26 @@ export function Library({
           </span>
         </div>
         {results.length ? (
-          <div className="skill-grid">
-            {results.map((skill, index) => (
-              <MediaSkillCard key={skill.slug} skill={skill} eager={index < 4} onSelectSkill={selectSkill} />
-            ))}
-          </div>
+          <>
+            {withClip.length > 0 && (
+              <div className="skill-grid">
+                {withClip.map((skill, index) => (
+                  <MediaSkillCard key={skill.slug} skill={skill} eager={index < 4} onSelectSkill={selectSkill} />
+                ))}
+              </div>
+            )}
+            {without.length > 0 && (
+              <section className="no-clip" aria-labelledby="no-clip-heading">
+                <h3 id="no-clip-heading">ยังไม่มีคลิปตัวอย่าง</h3>
+                <p>ดูสิ่งที่ต้องมีและรายละเอียดได้ที่หน้าของแต่ละรายการ</p>
+                <ul>
+                  {without.map((skill) => (
+                    <NoClipItem key={skill.slug} skill={skill} />
+                  ))}
+                </ul>
+              </section>
+            )}
+          </>
         ) : (
           <div className="empty">
             <Search size={32} />
