@@ -63,6 +63,8 @@ export type SecretMeta = {
 export type ConnectionMeta = {
   id: string;
   provider: "youtube" | "instagram";
+  /** kubcode's shared app or the member's own app (design §2a). */
+  appSource: "kubcode" | "member";
   accountLabel: string | null;
   status: "active" | "needs_reconnect" | "revoking";
   tokenExpiresAt: string | null;
@@ -115,10 +117,12 @@ function validate(input: SaveSecretInput): Validated | Failure {
 
 // Session check + row lock on the member, then the per-user RLS scope.
 // Who may use keys is decided by canUseKeys alone (owner-only in phase 1).
-async function enter(c: PoolClient, s: SessionClaims): Promise<string | Failure> {
+export type EnterFailure = { ok: false; code: "NOT_SIGNED_IN" | "FORBIDDEN" };
+
+export async function enter(c: PoolClient, s: SessionClaims): Promise<string | EnterFailure> {
   const member = await lockMember(c, s);
-  if (!member) return fail("NOT_SIGNED_IN");
-  if (!canUseKeys(member)) return fail("FORBIDDEN");
+  if (!member) return { ok: false, code: "NOT_SIGNED_IN" };
+  if (!canUseKeys(member)) return { ok: false, code: "FORBIDDEN" };
   await c.query("SELECT set_config('kubcode.user_id', $1, true)", [member.id]);
   return member.id;
 }
@@ -156,13 +160,14 @@ export function createPgKeyStore(pool: Pool, wrapKey: WrapKey | null): KeyStore 
         const connections = await c.query<{
           id: string;
           provider: ConnectionMeta["provider"];
+          app_source: ConnectionMeta["appSource"];
           account_label: string | null;
           status: ConnectionMeta["status"];
           token_expires_at: Date | null;
           last_checked_at: Date | null;
           last_error_code: string | null;
         }>(
-          `SELECT id, provider, account_label, status, token_expires_at, last_checked_at, last_error_code
+          `SELECT id, provider, app_source, account_label, status, token_expires_at, last_checked_at, last_error_code
              FROM kubcode_accounts.oauth_connections WHERE user_id = $1 ORDER BY provider, created_at`,
           [uid],
         );
@@ -177,6 +182,7 @@ export function createPgKeyStore(pool: Pool, wrapKey: WrapKey | null): KeyStore 
           connections: connections.rows.map((r) => ({
             id: r.id,
             provider: r.provider,
+            appSource: r.app_source,
             accountLabel: r.account_label,
             status: r.status,
             tokenExpiresAt: iso(r.token_expires_at),
@@ -241,7 +247,8 @@ export function createPgKeyStore(pool: Pool, wrapKey: WrapKey | null): KeyStore 
         let disconnected = 0;
         if (provider) {
           const using = await c.query<{ id: string }>(
-            "SELECT id FROM kubcode_accounts.oauth_connections WHERE user_id = $1 AND provider = $2 FOR UPDATE",
+            // Only connections made through the member's own app depend on these credentials.
+            "SELECT id FROM kubcode_accounts.oauth_connections WHERE user_id = $1 AND provider = $2 AND app_source = 'member' FOR UPDATE",
             [uid, provider],
           );
           if (using.rowCount && !options.confirmDisconnect) return fail("IN_USE");
