@@ -37,17 +37,17 @@ const OIDC_PROVIDERS = `arn:aws:iam::${ACCOUNT_ID}:oidc-provider/*`;
 const KUBCODE_PARAMETERS = `arn:aws:ssm:${REGION}:${ACCOUNT_ID}:parameter/kubcode/*`;
 const KUBCODE_LAMBDA_ROLES = iam("role", `${LAMBDA_ROLE_PREFIX}*`);
 
+// Wildcards keep the boundary under IAM's 6,144-character limit. On role and
+// policy ARNs each one matches exactly the listed reads: GetRole* = GetRole,
+// GetRolePolicy; ListRole* = ListRolePolicies, ListRoleTags; GetPolicy* =
+// GetPolicy, GetPolicyVersion; ListPolicy* = ListPolicyVersions, ListPolicyTags.
 const IAM_READ = [
-  "iam:GetRole",
-  "iam:GetRolePolicy",
-  "iam:ListRolePolicies",
+  "iam:GetRole*",
+  "iam:ListRole*",
   "iam:ListAttachedRolePolicies",
-  "iam:ListRoleTags",
   "iam:ListInstanceProfilesForRole",
-  "iam:GetPolicy",
-  "iam:GetPolicyVersion",
-  "iam:ListPolicyVersions",
-  "iam:ListPolicyTags",
+  "iam:GetPolicy*",
+  "iam:ListPolicy*",
 ];
 
 const LAMBDA_READ = [
@@ -169,15 +169,6 @@ export function deployBoundaryPolicy(opts: {
       Condition: { ArnNotLike: { "aws:PrincipalArn": KUBCODE_LAMBDA_ROLES } },
     },
     {
-      // kubcode-lambda-* roles are the only ones that can decrypt with the
-      // wrap key: who may assume them is fixed at creation (Lambda only) and
-      // admin-only afterwards, as for the GitHub roles.
-      Sid: "DenyLambdaRoleTrustChanges",
-      Effect: "Deny",
-      Action: "iam:UpdateAssumeRolePolicy",
-      Resource: KUBCODE_LAMBDA_ROLES,
-    },
-    {
       // The wrap key policy and grants are admin-only. Otherwise CI could name
       // a principal outside this boundary (another account, a client role)
       // in the key policy or a grant and decrypt from there.
@@ -277,19 +268,23 @@ function sharedDeployStatements(boundaryArn: string): Statement[] {
     {
       Sid: "ManageKubcodeFunctions",
       Effect: "Allow",
+      // Same set as LAMBDA_READ plus the writes, shortened for the size limit:
+      // *FunctionUrlConfig = Create/Get/Update/Delete, *Permission = Add/Remove,
+      // *Resource = Tag/Untag. None of these matches an Invoke action.
       Action: [
-        ...LAMBDA_READ,
+        "lambda:GetFunction",
+        "lambda:GetFunctionCodeSigningConfig",
+        "lambda:GetRuntimeManagementConfig",
+        "lambda:GetPolicy",
+        "lambda:ListVersionsByFunction",
+        "lambda:ListTags",
         "lambda:CreateFunction",
         "lambda:DeleteFunction",
         "lambda:UpdateFunctionCode",
         "lambda:UpdateFunctionConfiguration",
-        "lambda:TagResource",
-        "lambda:UntagResource",
-        "lambda:CreateFunctionUrlConfig",
-        "lambda:UpdateFunctionUrlConfig",
-        "lambda:DeleteFunctionUrlConfig",
-        "lambda:AddPermission",
-        "lambda:RemovePermission",
+        "lambda:*FunctionUrlConfig",
+        "lambda:*Permission",
+        "lambda:*Resource",
       ],
       Resource: KUBCODE_FUNCTIONS,
     },
@@ -298,20 +293,9 @@ function sharedDeployStatements(boundaryArn: string): Statement[] {
       // roles only write streams, so the ceiling covers both.
       Sid: "ManageKubcodeLambdaLogGroups",
       Effect: "Allow",
-      Action: [
-        "logs:CreateLogGroup",
-        "logs:DeleteLogGroup",
-        "logs:PutRetentionPolicy",
-        "logs:DeleteRetentionPolicy",
-        "logs:TagResource",
-        "logs:UntagResource",
-        "logs:ListTagsForResource",
-        "logs:TagLogGroup",
-        "logs:UntagLogGroup",
-        "logs:ListTagsLogGroup",
-        "logs:CreateLogStream",
-        "logs:PutLogEvents",
-      ],
+      // *LogGroup = Create/Delete/Tag/Untag/ListTags LogGroup,
+      // *RetentionPolicy = Put/Delete, *Resource = Tag/Untag/ListTagsFor.
+      Action: ["logs:*LogGroup", "logs:*RetentionPolicy", "logs:*Resource", "logs:CreateLogStream", "logs:PutLogEvents"],
       Resource: KUBCODE_LAMBDA_LOG_GROUPS,
     },
     { Sid: "DescribeLogGroups", Effect: "Allow", Action: "logs:DescribeLogGroups", Resource: LOG_GROUPS_DESCRIBE },
@@ -339,12 +323,13 @@ function sharedDeployStatements(boundaryArn: string): Statement[] {
     },
     { Sid: "DenyBoundaryRemoval", Effect: "Deny", Action: "iam:DeleteRolePermissionsBoundary", Resource: KUBCODE_ROLES },
     {
-      // Who may assume the GitHub roles is admin-only: CI must not widen
-      // their trust (e.g. to another repo or account) or delete them.
-      Sid: "DenyGithubRoleTrustChanges",
+      // Who may assume the GitHub roles and the kubcode-lambda-* roles (the
+      // only ones that can decrypt with the wrap key) is admin-only: CI must
+      // not widen their trust (e.g. to another account) or delete them.
+      Sid: "DenyRoleTrustChanges",
       Effect: "Deny",
       Action: ["iam:UpdateAssumeRolePolicy", "iam:DeleteRole"],
-      Resource: [iam("role", NAMES.deployRole), iam("role", NAMES.previewRole)],
+      Resource: [iam("role", NAMES.deployRole), iam("role", NAMES.previewRole), iam("role", `${LAMBDA_ROLE_PREFIX}*`)],
     },
     {
       Sid: "DenySharedOidcWrites",

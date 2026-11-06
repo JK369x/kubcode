@@ -464,11 +464,42 @@ test("oauth connect role fits inside the boundary", () => {
       }
 });
 
-test("deploy boundary: CI cannot change who may assume a kubcode-lambda-* role (the roles that can decrypt)", () => {
-  const deny = boundary().Statement.find((s) => s.Sid === "DenyLambdaRoleTrustChanges")!;
+test("deploy boundary: CI cannot change trust of, or delete, the GitHub roles and the kubcode-lambda-* roles", () => {
+  const deny = boundary().Statement.find((s) => s.Sid === "DenyRoleTrustChanges")!;
   assert.ok(deny, "statement exists");
   assert.equal(deny.Effect, "Deny");
-  assert.ok(grants(deny, "iam:UpdateAssumeRolePolicy"));
-  assert.deepEqual(resourcesOf(deny), [`arn:aws:iam::${ACCOUNT_ID}:role/kubcode-lambda-*`]);
+  for (const a of ["iam:UpdateAssumeRolePolicy", "iam:DeleteRole"]) assert.ok(grants(deny, a), a);
+  assert.deepEqual(resourcesOf(deny), [DEPLOY_ROLE, PREVIEW_ROLE, `arn:aws:iam::${ACCOUNT_ID}:role/kubcode-lambda-*`]);
   assert.equal(deny.Condition, undefined);
+});
+
+test("boundary wildcards grant exactly the intended actions and never an Invoke", () => {
+  const b = boundary();
+  const allowed = (a: string) => allows(b).some((s) => grants(s, a));
+  for (const a of [
+    "iam:GetRole", "iam:GetRolePolicy", "iam:ListRolePolicies", "iam:ListRoleTags", "iam:GetPolicy", "iam:GetPolicyVersion",
+    "iam:ListPolicyVersions", "iam:ListPolicyTags", "lambda:CreateFunctionUrlConfig", "lambda:GetFunctionUrlConfig",
+    "lambda:UpdateFunctionUrlConfig", "lambda:DeleteFunctionUrlConfig", "lambda:AddPermission", "lambda:RemovePermission",
+    "lambda:TagResource", "lambda:UntagResource", "logs:CreateLogGroup", "logs:DeleteLogGroup", "logs:TagLogGroup",
+    "logs:UntagLogGroup", "logs:ListTagsLogGroup", "logs:PutRetentionPolicy", "logs:DeleteRetentionPolicy",
+    "logs:TagResource", "logs:UntagResource", "logs:ListTagsForResource",
+  ])
+    assert.ok(allowed(a), a);
+  // Actions next to the wildcards that must stay out.
+  for (const a of ["lambda:InvokeFunction", "lambda:InvokeFunctionUrl", "lambda:InvokeAsync", "iam:ListPolicies", "logs:DeleteResourcePolicy", "logs:PutResourcePolicy"])
+    assert.ok(!allowed(a), a);
+});
+
+test("boundary size: the minified boundary stays well under IAM's 6,144-character managed-policy limit", () => {
+  // Real key ARNs end in a 36-character key id; the fixtures above are shorter.
+  const key = (id: string) => `arn:aws:kms:${REGION}:${ACCOUNT_ID}:key/${id}`;
+  const real = deployBoundaryPolicy({
+    stateKeyArn: key("11111111-1111-1111-1111-111111111111"),
+    secretsKeyArn: key("22222222-2222-2222-2222-222222222222"),
+    wrapKeyArn: key("39320743-1ef2-4627-b212-df76db143dc3"),
+    boundaryArn: BOUNDARY_ARN,
+  });
+  // IAM counts characters without whitespace, which is JSON.stringify's output.
+  const size = JSON.stringify(real).length;
+  assert.ok(size <= 5800, `boundary is ${size} characters; IAM rejects more than 6144 (keep a margin for the next change)`);
 });
