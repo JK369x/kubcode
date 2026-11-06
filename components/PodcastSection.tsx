@@ -12,8 +12,9 @@ const PODCAST = podcastShowcase(publishedShowcase());
 
 /**
  * The homepage podcast section: podcast shorts are their own category, kept
- * apart from the cartoon styles' shelf. One card per clip, each crediting its
- * source episode and licence, with the skill's template and download actions.
+ * apart from the cartoon styles' shelf. The clips are use-case examples, one
+ * card each crediting its source episode and licence; the skill's template
+ * link and download appear once, next to the heading.
  */
 export function PodcastSection({ items = PODCAST }: { items?: readonly ShowcaseItem[] }) {
   const signedIn = useSignedIn();
@@ -31,8 +32,18 @@ export function PodcastSection({ items = PODCAST }: { items?: readonly ShowcaseI
   return (
     <section className={styles.section} aria-labelledby="podcast-heading">
       <div className={styles.heading}>
-        <h2 id="podcast-heading">พอดแคสต์</h2>
-        {style?.detail && <p>{style.detail}</p>}
+        <div>
+          <h2 id="podcast-heading">พอดแคสต์</h2>
+          {style?.detail && <p>{style.detail}</p>}
+        </div>
+        {/* One skill, so one template link and one download for the section. */}
+        <div className={styles.headingActions}>
+          <CardActions
+            entry={{ style: items[0].style, clip: items[0], count: items.length }}
+            signedIn={signedIn}
+            available={available[style?.skill ?? ""]}
+          />
+        </div>
       </div>
       <ul className={styles.grid}>
         {items.map((clip, i) => (
@@ -70,13 +81,6 @@ export function PodcastSection({ items = PODCAST }: { items?: readonly ShowcaseI
                   tabIndex={-1}
                 />
               )}
-              <div className={shelf.overlay}>
-                <CardActions
-                  entry={{ style: clip.style, clip, count: 1 }}
-                  signedIn={signedIn}
-                  available={available[style?.skill ?? ""]}
-                />
-              </div>
             </div>
             <p className={shelf.name}>{clip.label}</p>
             {clip.credits.length > 0 && (
