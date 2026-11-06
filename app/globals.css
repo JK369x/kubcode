@@ -557,6 +557,90 @@ header.header {
   grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 24px 20px;
 }
+/* Skills without an approved clip: a small text group after the clip cards. */
+.no-clip {
+  margin-top: 40px;
+  padding-top: 24px;
+  border-top: 1px solid var(--line);
+}
+.no-clip h3 {
+  font-size: 17px;
+  font-weight: 600;
+}
+.no-clip > p {
+  margin-top: 4px;
+  color: var(--muted);
+  font-size: 13px;
+}
+.no-clip ul {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+  margin: 16px 0 0;
+  padding: 0;
+  list-style: none;
+}
+.no-clip-item {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  height: 100%;
+  padding: 14px 16px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: var(--surface);
+  color: var(--ink);
+  text-decoration: none;
+}
+.no-clip-item:hover {
+  border-color: var(--purple);
+}
+.no-clip-item strong {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 15px;
+}
+.no-clip-desc {
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.5;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.no-clip-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  margin-top: auto;
+}
+.skill-badge {
+  display: inline-flex;
+  align-items: center;
+  min-height: 24px;
+  padding: 0 9px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  color: var(--muted);
+  font-size: 12px;
+  white-space: nowrap;
+}
+.skill-badge[data-badge="free"] {
+  color: var(--ink);
+  border-color: var(--purple);
+}
+@media (max-width: 1100px) {
+  .no-clip ul {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+@media (max-width: 560px) {
+  .no-clip ul {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
 .skill-card {
   overflow: hidden;
   min-width: 0;
@@ -767,9 +851,9 @@ footer {
   display: flex;
   align-items: start;
   flex-wrap: wrap;
-  gap: 14px 28px;
+  gap: 18px 28px;
   color: var(--muted);
-  font-size: 11px;
+  font-size: 13px;
 }
 footer strong {
   color: var(--ink);
@@ -777,12 +861,24 @@ footer strong {
     600 19px Archivo,
     sans-serif;
 }
-footer p {
-  margin-left: auto;
+.site-footer-about p {
+  margin-top: 6px;
+  max-width: 34em;
+  line-height: 1.6;
 }
-footer small {
-  flex-basis: 100%;
-  font-size: 10px;
+.site-footer-links {
+  margin-left: auto;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 22px;
+}
+.site-footer-links a {
+  color: var(--ink);
+  text-decoration: none;
+}
+.site-footer-links a:hover {
+  color: var(--purple);
+  text-decoration: underline;
 }
 .reading,
 .reading-index {
@@ -965,7 +1061,7 @@ footer small {
   padding-left: 20px;
   color: var(--muted);
 }
-/* "ใช้ยังไง": three numbered steps, the main path through the page. */
+/* "ใช้ยังไง": numbered steps, the main path through the page. */
 .detail-copy .steps {
   display: grid;
   gap: 10px;
@@ -994,6 +1090,117 @@ footer small {
   color: var(--selected-ink);
   font-size: 14px;
   font-weight: 600;
+}
+/* Skill page: clips and steps on the left; on the right a panel with the
+   download and requirements that stays on screen while the page scrolls. */
+.detail-grid:has(> .skill-panel) {
+  grid-template-columns: minmax(0, 1fr) minmax(280px, 340px);
+  grid-template-areas: "media panel" "copy panel";
+  gap: 32px 48px;
+}
+.detail-grid > :first-child {
+  grid-area: media;
+}
+.detail-grid > .detail-copy {
+  grid-area: copy;
+  min-width: 0;
+}
+.skill-panel {
+  grid-area: panel;
+  align-self: start;
+  position: sticky;
+  top: 24px;
+  max-height: calc(100vh - 48px);
+  overflow-y: auto;
+  padding: 20px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface);
+}
+.skill-panel h2 {
+  margin: 22px 0 10px;
+  font-size: 17px;
+}
+.skill-panel > a {
+  display: inline-block;
+  margin-top: 14px;
+  font-size: 14px;
+}
+.skill-panel-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.skill-panel-cost {
+  margin-top: 10px;
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.5;
+}
+.skill-panel .download {
+  margin: 16px 0 0;
+  max-width: none;
+}
+.download-facts {
+  display: grid;
+  gap: 6px;
+  margin: 14px 0 10px;
+  font-size: 14px;
+}
+.download-facts > div {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid var(--line);
+}
+.download-facts dt {
+  color: var(--muted);
+}
+.download-facts dd {
+  margin: 0;
+  text-align: right;
+  overflow-wrap: anywhere;
+}
+.checklist {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: 14px;
+  line-height: 1.5;
+}
+.checklist li {
+  display: flex;
+  gap: 8px;
+  align-items: start;
+}
+.checklist svg {
+  flex: none;
+  margin-top: 3px;
+  color: var(--purple);
+}
+.detail-copy .steps .step-code {
+  display: block;
+  width: fit-content;
+  max-width: 100%;
+  margin-top: 6px;
+  padding: 2px 8px;
+  border-radius: 6px;
+  background: var(--surface);
+  font-size: 13px;
+  overflow-wrap: anywhere;
+}
+.detail-copy .steps .step-prompt {
+  margin-top: 8px;
+}
+.detail-copy .steps .step-prompt pre {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
 }
 /* Rights and internal notes: kept on the page, folded under one summary. */
 .rights-details {
@@ -1517,15 +1724,9 @@ p[role="status"]:empty {
     display: block;
     padding: 28px 5%;
   }
-  footer > span {
-    display: block;
-    margin-top: 8px;
-  }
-  footer p {
-    margin: 18px 0;
-  }
-  footer small {
-    display: block;
+  .site-footer-links {
+    margin-top: 18px;
+    flex-direction: column;
   }
   .reading,
   .reading-index {
@@ -1558,6 +1759,12 @@ p[role="status"]:empty {
   }
   .detail-grid .media-stage {
     height: 450px;
+  }
+  /* Phones: the panel follows the clips in normal flow. */
+  .skill-panel {
+    position: static;
+    max-height: none;
+    margin-top: 24px;
   }
   .detail-copy {
     padding-top: 28px;

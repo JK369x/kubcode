@@ -27,7 +27,7 @@ test("hero says which agents the skills work with, linking their tool pages", ()
 });
 
 test("hero has one primary action that starts the first skill", () => {
-  assert.match(hero, /<a[^>]*href="#get-started"[^>]*>[\s\S]*?เริ่มใช้ skill แรก/);
+  assert.match(hero, /<a[^>]*href="#get-started"[^>]*>[\s\S]*?ดูวิธีทำคลิปแรก/);
 });
 
 test("first-skill section: numbered install steps with the real skills path", () => {

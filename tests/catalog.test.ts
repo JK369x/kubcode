@@ -1,22 +1,22 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { filterSkills, skills, styles } from "../lib/catalog";
-test("search uses actual style and renderer metadata with category intersection", () => {
+test("search uses actual style and renderer metadata with use-case intersection", () => {
   assert.equal(styles.length, 6);
   assert.equal(
     styles.find((s) => s.id === "growkaz-stickman")?.status,
     "draft",
   );
   assert.equal(
-    filterSkills(skills, "canvas", "video")[0]?.slug,
+    filterSkills(skills, "canvas", "story")[0]?.slug,
     "growkaz-stickman",
   );
   assert.equal(
-    filterSkills(skills, "เสียง", "audio")[0]?.slug,
+    filterSkills(skills, "เสียง", "voice-captions")[0]?.slug,
     "thai-jk-voice",
   );
-  assert.equal(filterSkills(skills, "canvas", "audio").length, 0);
-  assert.equal(filterSkills(skills, "", "code").length, 0);
+  assert.equal(filterSkills(skills, "canvas", "voice-captions").length, 0);
+  assert.equal(filterSkills(skills, "", "no-such-use-case").length, 0);
   assert.equal(filterSkills(skills, "nothing-matches", "all").length, 0);
   assert.ok(skills.every((s) => s.rights === "uncleared"));
 });

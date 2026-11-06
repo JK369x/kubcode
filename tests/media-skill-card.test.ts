@@ -187,10 +187,12 @@ test("captions no-media card names its own workflow", () => {
   assert.match(html, /ยังไม่มีสื่อพรีวิว/);
 });
 
-test("status label is the catalog's own status, never upgraded", () => {
-  assert.match(render(withPoster), />ฉบับทดลอง</);
-  assert.match(render(bySlug("low-poly-urban")), />เลือกแนวภาพแล้ว</);
-  assert.match(render(noMedia), />เวิร์กโฟลว์ในเครื่อง</);
+test("cards show the badges people care about, not the internal status (2026-11-06)", () => {
+  // The catalogue status stays on the skill page.
+  assert.doesNotMatch(render(withPoster), />ฉบับทดลอง</);
+  assert.match(render(bySlug("freshstack-what-if")), />โหลดฟรี</);
+  assert.match(render(bySlug("low-poly-urban")), />ยังไม่เปิดโหลด</);
+  assert.match(render(noMedia), />ไม่ต้องใช้ API key</);
 });
 
 test("preview button calls onSelectSkill with the stable slug", () => {

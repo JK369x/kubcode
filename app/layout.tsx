@@ -1,5 +1,6 @@
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { AccountMenu } from "@/components/AccountMenu";
+import { SiteFooter } from "@/components/SiteFooter";
 import type { Metadata } from "next";
 import Link from "next/link";
 import "@fontsource/anuphan/400.css";
@@ -13,7 +14,7 @@ export const metadata: Metadata = {
   metadataBase: new URL(CANONICAL_ORIGIN),
   title: "kubcode — คลังทักษะและงานทดลอง",
   description:
-    "ดูตัวอย่างจริง เข้าใจเครื่องมือ และอ่านก่อนใช้งาน คลังส่วนตัวต้นแบบในเครื่อง",
+    "ดูคลิปจริงของแต่ละสไตล์ โหลดชุดคำสั่งฟรี แล้วทำคลิปแนวเดียวกันในคอมของคุณ พร้อมบทความและข้อมูลเครื่องมือ",
 };
 export default function Layout({ children }: { children: React.ReactNode }) {
   return (
@@ -48,15 +49,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
           </nav>
         </header>
         {children}
-        <footer>
-          <strong>kubcode</strong>
-          <span>Personal library / Local prototype</span>
-          <p>
-            ตัวอย่างสำหรับตรวจในเครื่องเท่านั้น · ยังไม่อนุญาตเผยแพร่ซ้ำ
-            <br />
-            สมาชิกและดาวน์โหลดยังไม่เปิดใช้งาน
-          </p>
-        </footer>
+        <SiteFooter />
       </body>
     </html>
   );

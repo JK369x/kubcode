@@ -135,7 +135,7 @@ test("hero without approved clips shows a rights-pending notice, no dead motion 
   assert.match(html, /รอยืนยันสิทธิ์เผยแพร่/);
   assert.doesNotMatch(html, /aria-label="ผลงานจริงในคลัง"/);
   assert.doesNotMatch(html, /เลื่อนไปงาน|data-motion-toggle|ปัดเพื่อดูงานอื่น/);
-  assert.doesNotMatch(html, /ดูงานจริง|ผลงานจริง/, "no claim of visible real work");
+  assert.doesNotMatch(html, /ดูงานจริง|ผลงานจริง|คลิปแบบนี้|คลิปจริง/, "no claim of visible real work");
   assert.doesNotMatch(html, /<img\b|<video\b/);
 });
 
@@ -298,7 +298,7 @@ test("hero shows the approved clips as one card per style", () => {
   const html = render(
     createElement(KineticHero, { skills, activeSlug: "", onSelectSkill: () => {} }),
   );
-  assert.match(html, /ดูงานจริง/);
+  assert.match(html, /คลิปแบบนี้/);
   assert.match(html, /aria-label="ตัวอย่างคลิป สไตล์ละหนึ่งคลิป"/);
   assert.match(html, /data-motion-toggle/);
   assert.doesNotMatch(html, /data-media="none"|รอยืนยันสิทธิ์/);
