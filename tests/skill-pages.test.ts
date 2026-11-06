@@ -55,7 +55,8 @@ test("skill page reads as plain steps; internal rights wording is folded away", 
   const html = await renderSkillPage("freshstack-what-if");
   for (const heading of ["สิ่งที่ต้องมี", "ใช้ยังไง"]) assert.match(html, new RegExp(`<h2[^>]*>${heading}</h2>`));
   const steps = html.match(/<ol[^>]*>([\s\S]*?)<\/ol>/)?.[1] ?? "";
-  assert.equal((steps.match(/<li\b/g) || []).length, 3);
+  // Packaged skills get their install steps (tests/skill-page-panel.test.ts).
+  assert.ok((steps.match(/<li\b/g) || []).length >= 4);
   const folded = html.match(/<details[^>]*>([\s\S]*?)<\/details>/)?.[1] ?? "";
   assert.match(folded, /<summary[^>]*>สถานะและสิทธิ์<\/summary>/);
   const outside = html.replace(/<details[\s\S]*?<\/details>/g, "");
@@ -66,10 +67,10 @@ test("skill page reads as plain steps; internal rights wording is folded away", 
 test("step 3 and the folded note promise a download only where a package exists", async () => {
   const stepsOf = (html: string) => html.match(/<ol[^>]*>([\s\S]*?)<\/ol>/)?.[1] ?? "";
   const what = await renderSkillPage("freshstack-what-if");
-  assert.match(stepsOf(what), /ดาวน์โหลดชุด skill \(ต้องเข้าสู่ระบบ\)/);
+  assert.match(stepsOf(what), /เข้าสู่ระบบ แล้วกด “ดาวน์โหลด skill”/);
   assert.doesNotMatch(what, /ไม่ได้แนบ source kit/);
   const stick = await renderSkillPage("growkaz-stickman");
-  assert.doesNotMatch(stepsOf(stick), /ดาวน์โหลดชุด skill/);
+  assert.doesNotMatch(stepsOf(stick), /ดาวน์โหลด skill/);
   assert.match(stepsOf(stick), /ยังไม่มีชุดให้ดาวน์โหลด/);
   assert.match(stick, /ไม่ได้แนบ source kit/);
 });

@@ -15,6 +15,10 @@ import { RelatedLinks } from "@/components/RelatedLinks";
 import { PageRail } from "@/components/PageRail";
 import { SkillClipGrid, SkillCover } from "@/components/SkillClips";
 import { showcaseForSkill } from "@/lib/showcase";
+import { skillBadges } from "@/lib/skill-badges";
+import { guideFor } from "@/lib/skill-guides";
+import { CopyButton } from "@/components/CopyButton";
+import { Check } from "lucide-react";
 export function generateStaticParams() {
   return skills.map((s) => ({ slug: s.slug }));
 }
@@ -70,28 +74,51 @@ export default async function Detail({
             ) : (
               <Preview skill={s} />
             )}
-            <div className="detail-copy">
-              <p className="lead">{showcase?.detail ?? s.description}</p>
-              <h2>สิ่งที่ต้องมี</h2>
-              <ul>
-                {s.requirements.map((r) => (
-                  <li key={r}>{r}</li>
+            <aside className="skill-panel" aria-labelledby="skill-panel-heading">
+              <h2 id="skill-panel-heading" className="sr-only">ดาวน์โหลดและสิ่งที่ต้องมี</h2>
+              <ul className="skill-panel-badges" aria-label="ข้อมูลสำคัญ">
+                {skillBadges(s).map((b) => (
+                  <li key={b.key} className="skill-badge" data-badge={b.key} title={b.title}>
+                    {b.label}
+                  </li>
                 ))}
               </ul>
-              <h2>ใช้ยังไง</h2>
-              <ol className="steps">
-                <li>ดูคลิปตัวอย่าง แล้วเช็คว่าเป็นแนวที่อยากทำ</li>
-                <li>เตรียมเครื่องมือตามรายการ “สิ่งที่ต้องมี” ด้านบน</li>
-                <li>
-                  {approvedPackageFor(s.slug)
-                    ? "ดาวน์โหลดชุด skill (ต้องเข้าสู่ระบบ) แล้วสั่ง AI agent ของคุณเป็นภาษาไทยได้เลย"
-                    : "skill นี้ยังไม่มีชุดให้ดาวน์โหลด ระหว่างนี้ใช้คลิปและรายการด้านบนเป็นแนวทาง"}
-                </li>
-              </ol>
+              {s.cost === "external" && s.costNote && (
+                <p className="skill-panel-cost">ค่าใช้จ่ายภายนอก: {s.costNote}</p>
+              )}
               <DownloadAction slug={s.slug} />
+              <h2>สิ่งที่ต้องมี</h2>
+              <ul className="checklist">
+                {s.requirements.map((r) => (
+                  <li key={r}>
+                    <Check size={16} aria-hidden="true" />
+                    <span>{r}</span>
+                  </li>
+                ))}
+              </ul>
               <Link href="/articles/install-with-permissions">
                 อ่านรายการตรวจสอบก่อนติดตั้ง
               </Link>
+            </aside>
+            <div className="detail-copy">
+              <p className="lead">{showcase?.detail ?? s.description}</p>
+              <h2>ใช้ยังไง</h2>
+              <ol className="steps">
+                {guideFor(s.slug).map((step) => (
+                  <li key={step.text}>
+                    <span>{step.text}</span>
+                    {step.code && <code className="step-code">{step.code}</code>}
+                    {step.prompt && (
+                      <div className="code-block step-prompt">
+                        <pre>
+                          <code>{step.prompt}</code>
+                        </pre>
+                        <CopyButton />
+                      </div>
+                    )}
+                  </li>
+                ))}
+              </ol>
               <RelatedLinks
                 items={related(getContent(), { kind: "skill", slug: s.slug })}
                 headings={{ tool: "เครื่องมือที่ใช้", article: "ใช้ในบทความ" }}
