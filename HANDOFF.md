@@ -141,8 +141,8 @@ Fresh readback ล่าสุด (UTC): `2026-11-03T17:48:02Z` (read-only aggre
 | Vercel project ID | `prj_xgaKmMr2dvFXaw7GE0X6qmFd2fBA` / `kubcode` |
 | Isolated Vercel config | `/Users/jakkarin69/.config/vercel-kubcode-personal` — ห้ามอ่าน/พิมพ์ค่า auth |
 | Supabase org | `cafxsuiwpiceggfkzsjx` / `JK369x's Org` — Free ณ release verification |
-| Supabase project ref | `sgtyrndczwxijrubyyjw` / `kubcode` |
-| DB / functions region | us-east-1 / Vercel iad1 |
+| Supabase project ref | `pdoszbllzpgbspthcxis` / `kubcode-sg` (ap-southeast-1, since 2026-11-06 via `infra/scripts/move-db.sh`); old `sgtyrndczwxijrubyyjw` / `kubcode` (us-east-1) kept paused as a backup |
+| DB / web / Lambda region | ap-southeast-1 (Supabase kubcode-sg / Lightsail / Lambda) |
 | Isolated Supabase profile | `/Users/jakkarin69/.config/supabase-kubcode-personal/profile.json` |
 | Supabase state home | `/Users/jakkarin69/.config/supabase-kubcode-personal/state` |
 | Runtime DB role | `kubcode_app` |
