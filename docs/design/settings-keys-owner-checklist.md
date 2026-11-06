@@ -41,7 +41,8 @@
 ## D. ฐานข้อมูล (role ของ Lambda)
 
 - ไม่ต้องสร้าง role `kubcode_worker` เอง migration 0004 สร้างให้ตอน merge (แบบ NOLOGIN ไม่มีรหัสผ่าน)
-- รหัสผ่านตั้งด้วยคำสั่ง `webhost.sh set-worker-db` ในหัวข้อ E (ไม่ต้องพิมพ์หรือดูรหัสผ่านเอง)
+- ฐานข้อมูลย้ายไป Supabase `kubcode-sg` (ap-southeast-1) แล้ว และ `infra/scripts/move-db.sh` ตั้งรหัสผ่าน LOGIN ของ `kubcode_worker` กับเก็บ URL ลง SSM ให้ตอนย้าย
+- ภายหลังถ้าจะเปลี่ยนรหัสผ่าน ใช้ `webhost.sh set-worker-db` (ไม่ต้องพิมพ์หรือดูรหัสผ่านเอง)
 
 ## E. ขั้นที่ 5: ปุ่ม "เชื่อมช่อง" / "เชื่อมบัญชี" (หลัง orchestrator รัน `pulumi up`)
 
@@ -51,9 +52,8 @@
 3. [ ] เช็กว่า Web client **"kubcode web connect"** มี redirect `https://kubcode.dev/api/keys/oauth/callback/youtube` (ไม่มี `/` ท้าย)
 
 **หลัง orchestrator รัน `pulumi up` แล้ว (ที่ root ของ repo, ใน bash, AWS profile ของ admin):**
-4. [ ] `infra/web/scripts/webhost.sh set-worker-db`: ใส่ host ของ Session pooler (ไม่ใช่ความลับ) แล้วคำสั่งจะ
-   ใส่ SQL ตั้งรหัสผ่านไว้ใน clipboard ให้วางใน Supabase SQL editor แล้วกด Run จากนั้นกด Enter ในเทอร์มินัล
-   URL จะไปอยู่ใน SSM เองและ clipboard ถูกล้าง
+4. [ ] เช็กว่าย้ายฐานข้อมูลไป `kubcode-sg` เสร็จแล้ว (`infra/scripts/move-db.sh` ตั้ง `kubcode_worker` และ
+   `/kubcode/prod/worker-db-url` ให้แล้ว) ไม่ต้องรัน `webhost.sh set-worker-db` อีก
 5. [ ] `infra/web/scripts/webhost.sh set-connect`: วาง Client ID (เห็นได้) และ Client secret (ซ่อน) ของ
    "kubcode web connect" จาก Google console คำสั่งสร้าง HMAC key เอง ใส่ SSM และ `web.env` ให้ แล้ว restart เว็บ
 6. [ ] รอ 5 นาที (Lambda โหลด secret ใหม่) แล้วเปิด `kubcode.dev/account/keys` › YouTube › **เชื่อมช่อง**

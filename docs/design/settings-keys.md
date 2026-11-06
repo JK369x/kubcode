@@ -277,8 +277,10 @@ command without the flag, run with a step-5 Lambda role, is the Node ↔ KMS int
   `KeyDecrypt`. The wrap key policy is admin-only (boundary Deny on CI), so **the whole change is an
   admin apply from the branch before merge**.
 - Web host env (`web.env`, Lightsail): `KUBCODE_CONNECT_URL`, `KUBCODE_CONNECT_HMAC_KEY`,
-  `KUBCODE_YOUTUBE_CLIENT_ID`. Set by `webhost.sh set-connect`; the worker password and URL by
-  `webhost.sh set-worker-db`. No value passes through chat, argv or the screen.
+  `KUBCODE_YOUTUBE_CLIENT_ID`. Set by `webhost.sh set-connect`. The worker's first password and
+  `/kubcode/prod/worker-db-url` come from `infra/scripts/move-db.sh` (the move to Supabase
+  `kubcode-sg`, ap-southeast-1); `webhost.sh set-worker-db` rotates them later. No value passes
+  through chat, argv or the screen.
 
 ## 6. Rotation
 

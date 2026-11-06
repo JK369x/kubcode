@@ -11,9 +11,10 @@
 #                            to /etc/kubcode/web.env over SSH stdin and nowhere else
 #   webhost.sh set-downloads only the skill-download settings (signer URL + key),
 #                            merged into web.env; every other value is kept
-#   webhost.sh set-worker-db new LOGIN password for the DB role kubcode_worker: the SQL
-#                            goes to the clipboard for the Supabase SQL editor, the
-#                            URL straight into SSM (/kubcode/prod/worker-db-url)
+#   webhost.sh set-worker-db rotate the LOGIN password of the DB role kubcode_worker:
+#                            the SQL goes to the clipboard for the Supabase SQL editor,
+#                            the URL straight into SSM (/kubcode/prod/worker-db-url).
+#                            The first password comes from infra/scripts/move-db.sh
 #   webhost.sh set-connect   OAuth connect (docs/design/settings-keys.md §2): a new
 #                            HMAC key and the Google "kubcode web connect" client go
 #                            to SSM; the Lambda URL, HMAC key and client id are merged
@@ -159,7 +160,8 @@ set_downloads() {
 # --- OAuth connect (docs/design/settings-keys.md §2, §5). SecureStrings use
 # alias/kubcode-secrets; values are written from a 0600 temp file (file://),
 # never passed on the command line.
-SUPABASE_REF=sgtyrndczwxijrubyyjw
+# Supabase project kubcode-sg (ap-southeast-1), next to the Lambdas and the web host.
+SUPABASE_REF=pdoszbllzpgbspthcxis
 ssm_put() { # name, file
   aws ssm put-parameter --region "$REGION" --type SecureString --key-id alias/kubcode-secrets \
     --overwrite --name "$1" --value "file://$2" >/dev/null

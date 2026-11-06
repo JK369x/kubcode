@@ -326,8 +326,10 @@ and `secrets-wrap-key-policy` (KeyDecrypt gains the role); also
 `package-signer [~code]` (local build bytes).
 Nothing deleted or replaced, nothing outside `kubcode-*`.
 
-Then the owner runs `infra/web/scripts/webhost.sh set-worker-db` and
-`webhost.sh set-connect` (docs/design/settings-keys-owner-checklist.md §E), then merge.
+Then the owner runs `infra/web/scripts/webhost.sh set-connect`
+(docs/design/settings-keys-owner-checklist.md §E), then merge. The worker DB URL
+is already in SSM from the move to Supabase `kubcode-sg`
+(`infra/scripts/move-db.sh`); `webhost.sh set-worker-db` is only for rotating it.
 
 ## Tests
 
