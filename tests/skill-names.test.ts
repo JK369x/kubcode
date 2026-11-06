@@ -7,7 +7,6 @@ const catalogNames: Record<string, string> = {
   "growkaz-stickman": "Stickman Cinema",
   "thai-survival": "Survival Stories",
   "freshstack-what-if": "What If Lab",
-  "jk-soft-story": "Soft Story",
   "low-poly-urban": "Low-poly Urban",
   "thai-jk-voice": "Thai Voice",
   "captions-overlay": "Captions Overlay",
@@ -18,8 +17,6 @@ const styleNames: Record<string, string> = {
   "genhaha-horror-story": "Midnight Stories",
   "genhaha-map-story": "Map Stories",
   "growkaz-stickman": "Stickman Cinema",
-  "jk-soft-story": "Soft Story",
-  "jk-soft-story-motion-v2": "Soft Story Motion",
   "low-poly-urban": "Low-poly Urban",
   "thai-survival": "Survival Stories",
 };
@@ -104,7 +101,6 @@ test("genuine author and model attribution is preserved", () => {
     ex("freshstack-what-if", "glm").model,
     "opencode/glm-5.3-flash-free",
   );
-  assert.equal(ex("jk-soft-story", "study").author, "JK local study");
   assert.equal(ex("low-poly-urban", "study").author, "JK local study");
 });
 

@@ -159,35 +159,6 @@ export const rawSkills: readonly Skill[] = [
     ],
   },
   {
-    slug: "jk-soft-story",
-    name: "Soft Story",
-    category: "video",
-    description:
-      "ฉากเล่าเรื่อง 2D แสงนุ่ม ภาพนิ่ง v2 ที่เลือกแล้ว ไม่ใช่การอนุมัติเสียงหรือ animation",
-    version: "2",
-    status: "selected",
-    approvalScope: "เลือกแนวภาพนิ่ง v2 แล้ว · animation และเสียงรอตรวจแยก",
-    requirements: [
-      "Editable SVG",
-      "อ่าน STYLE.md ก่อนปรับภาพ",
-      "animation และเสียงต้องตรวจแยก",
-    ],
-    rights: "uncleared",
-    examples: [
-      {
-        id: "study",
-        label: "ตัวอย่างในเครื่อง",
-        video: null,
-        poster: "/previews/jk-soft-story.png",
-        author: "JK local study",
-        model: "ไม่ระบุ",
-        renderer: "Editable SVG",
-        voice: "ตัวอย่างเงียบ",
-        notes: "เลือกแนวภาพนิ่ง v2 แล้ว · animation และเสียงรอตรวจแยก",
-      },
-    ],
-  },
-  {
     slug: "low-poly-urban",
     name: "Low-poly Urban",
     category: "video",

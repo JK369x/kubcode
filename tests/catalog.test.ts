@@ -2,14 +2,10 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { filterSkills, skills, styles } from "../lib/catalog";
 test("search uses actual style and renderer metadata with category intersection", () => {
-  assert.equal(styles.length, 8);
+  assert.equal(styles.length, 6);
   assert.equal(
     styles.find((s) => s.id === "growkaz-stickman")?.status,
     "draft",
-  );
-  assert.equal(
-    styles.find((s) => s.id === "jk-soft-story")?.status,
-    "selected",
   );
   assert.equal(
     filterSkills(skills, "canvas", "video")[0]?.slug,

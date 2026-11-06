@@ -47,31 +47,12 @@ export const SHOWCASE_STYLES: Readonly<Record<string, ShowcaseStyle>> = {
     detail: "เมืองและฉาก 3 มิติแบบ low-poly เขียนด้วย Three.js ขยับกล้องด้วย GSAP ซับไทยไฮไลต์คำสำคัญ",
     tools: [],
   },
-  mystery: {
-    name: "เรื่องลึกลับ",
-    en: "Mystery Story",
-    detail: "เล่าเรื่องลึกลับด้วยภาพ SVG/HTML ที่เขียนด้วยโค้ด เน้นข้อความสำคัญบนจอ ไม่ใช้ภาพหรือฟุตเทจจากคลัง",
-    tools: [],
-  },
   "what-if": {
     name: "ถ้าเกิดว่า…",
     en: "What If Lab",
     skill: "freshstack-what-if",
     detail: "ตัวละครเส้นในโลก “ถ้าเกิดว่า…” ทุกฉากเป็น SVG ไม่ใช้โมเดลสร้างภาพ เรนเดอร์ด้วย Remotion",
     tools: ["what-if-animation", "remotion", "opencode", "glm-5-3-flash", "elevenlabs"],
-  },
-  "soft-story-motion": {
-    name: "เรื่องเล่าแสงนุ่ม แบบขยับ",
-    en: "Soft Story Motion",
-    detail: "เรื่องเล่า 2D แสงเงานุ่มที่ขยับได้ ฉาก SVG เคลื่อนด้วย GSAP ยังเป็นรุ่นทดลอง",
-    tools: [],
-  },
-  "soft-story": {
-    name: "เรื่องเล่าแสงนุ่ม",
-    en: "Soft Story",
-    skill: "jk-soft-story",
-    detail: "ภาพ 2D แสงเงานุ่มสำหรับเล่าเรื่อง ฉากเป็น SVG ที่แก้ไขต่อได้",
-    tools: [],
   },
 };
 
@@ -114,13 +95,10 @@ export const SHOWCASE_ALLOWLIST: readonly ShowcaseAllowEntry[] = [
   { id: "2026-10-29_mall-infection_ep01_first-night", source: "studio:2026-10-29_mall-infection_ep01_first-night", label: "ห้างติดเชื้อ EP.1", style: "low-poly", rights: LOW_POLY_RIGHTS, at: 79 },
   { id: "2026-10-30_mall-infection_ep02_stairs", source: "studio:2026-10-30_mall-infection_ep02_stairs", label: "ห้างติดเชื้อ EP.2", style: "low-poly", rights: LOW_POLY_RIGHTS, at: 27 },
   { id: "2026-10-28_satire-stories_ep01_elon-dream-low-poly", source: "studio:2026-10-28_satire-stories_ep01_elon-dream-low-poly", label: "เสียดสี: ถ้าโลกเป็นของ Elon", style: "low-poly", rights: `${LOW_POLY_RIGHTS} Labelled satire and fiction in the clip and its description.`, at: 23 },
-  { id: "2026-10-25_us-antarctica_ep01_mystery-short", source: "studio:2026-10-25_us-antarctica_ep01_mystery-short", label: "สหรัฐกับแอนตาร์กติกา", style: "mystery", cover: true, rights: "Own work: inline SVG/HTML art authored in code (ASSETS.md), synthetic voice VoxCPM2, HyperFrames library SFX. No archival images or footage.", at: 2.5 },
   { id: "2026-11-01_freshstack-what-if_ep03_internet-gone-week", source: "studio:2026-11-01_freshstack-what-if_ep03_internet-gone-week", label: "What If: อินเทอร์เน็ตหาย 1 สัปดาห์", style: "what-if", cover: true, rights: "Own episode made with FreshStack's What If Animation skill (MIT, kelano86/what-if-animation); synthetic voice VoxCPM2. Credit shown.", at: 2, credits: [WHAT_IF_CREDIT] },
   { id: "2026-11-01_freshstack-what-if_ep05_no-one-can-lie", source: "studio:2026-11-01_freshstack-what-if_ep05_no-one-can-lie", label: "What If: ไม่มีใครโกหกได้", style: "what-if", rights: "Own episode made with FreshStack's What If Animation skill (MIT, kelano86/what-if-animation); synthetic voice VoxCPM2. Credit shown.", at: 2.3, credits: [WHAT_IF_CREDIT] },
   { id: "2026-11-01_what-if-studio_ep01_mute-touch", source: "studio:2026-11-01_what-if-studio_ep01_mute-touch", label: "Mute Touch", style: "what-if", rights: "Own episode (OpenCode/GLM authored) made with FreshStack's What If Animation skill (MIT). Voice and music are ElevenLabs output: the preview is muted and the elevenlabs.io credit is shown.", at: 10.5, credits: [WHAT_IF_CREDIT, ELEVENLABS_CREDIT] },
-  { id: "2026-11-01_jk-soft-story-motion-v2_ep02_friends-drifting-apart", source: "studio:2026-11-01_jk-soft-story-motion-v2_ep02_friends-drifting-apart", label: "เพื่อนสนิทที่ห่างกันไป", style: "soft-story-motion", cover: true, rights: "Own work in the JK Soft Story style (own SVG/GSAP scenes; general ideas only from the Genhaha skills, no kit copied); synthetic voice.", at: 1.8 },
   { id: "low-poly-urban-study", source: "style:low-poly-urban/examples/city/demo.mp4", label: "Low-poly Urban", style: "low-poly", cover: true, title: "Low-poly Urban — ตัวอย่างสไตล์ 8 วินาที", rights: "Own style study: Three.js geometry authored in code, silent, no generated or stock media.", at: 1, madeWith: { renderer: "Three.js 0.170.0 + HyperFrames", style: "low-poly-urban", voice: "silent" } },
-  { id: "jk-soft-story-still", source: "style:jk-soft-story/assets/selected-v2.png", label: "Soft Story", style: "soft-story", cover: true, title: "Soft Story — ภาพนิ่ง v2 ที่เลือกแล้ว", rights: "Own style study: editable SVG scene authored for the style.", at: 0, madeWith: { renderer: "Editable SVG", style: "jk-soft-story", voice: "silent" } },
 
   // Not shown yet. Third-party footage or audio: waiting for the owner's
   // decision. To show one, uncomment its line, replace the rights note with
