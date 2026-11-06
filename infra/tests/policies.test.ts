@@ -6,6 +6,7 @@ import {
   deployPolicy,
   githubTrustPolicy,
   lambdaTrustPolicy,
+  oauthConnectPolicy,
   packageSignerPolicy,
   previewPolicy,
   secretsKeyPolicy,
@@ -433,4 +434,32 @@ test("wrap key policy: its own Deny covers every principal (admins, root, other 
   assert.equal(grantsDeny.Effect, "Deny");
   assert.deepEqual(grantsDeny.Principal, { AWS: "*" });
   assert.ok(grants(grantsDeny, "kms:CreateGrant"));
+});
+
+test("oauth connect role: writes its own log streams and reads exactly its three SSM parameters", () => {
+  const doc = oauthConnectPolicy({ logGroupName: "/aws/lambda/kubcode-oauth-connect" });
+  const [logs, ssm, ...rest] = doc.Statement;
+  assert.equal(rest.length, 0);
+  assert.deepEqual(actionsOf(logs).sort(), ["logs:CreateLogStream", "logs:PutLogEvents"]);
+  assert.deepEqual(resourcesOf(logs), [`arn:aws:logs:${REGION}:${ACCOUNT_ID}:log-group:/aws/lambda/kubcode-oauth-connect:*`]);
+  assert.deepEqual(actionsOf(ssm), ["ssm:GetParameters"]);
+  assert.deepEqual(resourcesOf(ssm).sort(), [
+    `arn:aws:ssm:${REGION}:${ACCOUNT_ID}:parameter/kubcode/prod/connect-hmac-key`,
+    `arn:aws:ssm:${REGION}:${ACCOUNT_ID}:parameter/kubcode/prod/google-connect-client`,
+    `arn:aws:ssm:${REGION}:${ACCOUNT_ID}:parameter/kubcode/prod/worker-db-url`,
+  ]);
+  // KMS comes only from the key policies (KeyUse / KeyDecrypt hooks), never IAM.
+  assert.ok(!doc.Statement.some((s) => actionsOf(s).some((a) => a.startsWith("kms:"))));
+  assert.throws(() => oauthConnectPolicy({ logGroupName: "/aws/lambda/other" }), /kubcode-/);
+});
+
+test("oauth connect role fits inside the boundary", () => {
+  const b = boundary();
+  const doc = oauthConnectPolicy({ logGroupName: "/aws/lambda/kubcode-oauth-connect" });
+  for (const s of doc.Statement)
+    for (const a of actionsOf(s))
+      for (const r of resourcesOf(s)) {
+        const covered = allows(b).some((bs) => grants(bs, a) && resourcesOf(bs).some((br) => br === r || (br.endsWith("*") && r.startsWith(br.slice(0, -1)))));
+        assert.ok(covered, `${a} on ${r}`);
+      }
 });

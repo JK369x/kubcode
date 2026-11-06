@@ -19,6 +19,8 @@ on:
       # The web host stack is admin-applied only (docs/adr/0001).
       - "!infra/web/**"
       - "services/package-signer/**"
+      - "services/crates/**"
+      - "services/Cargo.*"
       - "packages/**"
       - ".github/workflows/infra.yml"
   push:
@@ -29,6 +31,8 @@ on:
       # The web host stack is admin-applied only (docs/adr/0001).
       - "!infra/web/**"
       - "services/package-signer/**"
+      - "services/crates/**"
+      - "services/Cargo.*"
       - "packages/**"
       - ".github/workflows/infra.yml"
   workflow_dispatch:
@@ -100,6 +104,10 @@ jobs:
           rustup target add x86_64-unknown-linux-musl
           sudo apt-get install -y musl-tools
           bash services/package-signer/build-lambda.sh
+      # Same for the OAuth connect Lambda (kubcode:oauthConnect).
+      - name: Build OAuth connect Lambda (static musl binary)
+        working-directory: ${{ github.workspace }}
+        run: bash services/crates/kubcode-oauth-connect/build-lambda.sh
       - name: Install Pulumi CLI (pinned, checksum verified)
         run: |
           tgz="$RUNNER_TEMP/pulumi.tgz"
@@ -168,6 +176,10 @@ jobs:
           rustup target add x86_64-unknown-linux-musl
           sudo apt-get install -y musl-tools
           bash services/package-signer/build-lambda.sh
+      # Same for the OAuth connect Lambda (kubcode:oauthConnect).
+      - name: Build OAuth connect Lambda (static musl binary)
+        working-directory: ${{ github.workspace }}
+        run: bash services/crates/kubcode-oauth-connect/build-lambda.sh
       - name: Install Pulumi CLI (pinned, checksum verified)
         run: |
           tgz="$RUNNER_TEMP/pulumi.tgz"

@@ -7,7 +7,7 @@
 // boundary. So even if CI rewrote its own role policy, it could not reach
 // beyond kubcode-* resources (this account also holds client resources).
 // Changing the boundary is an admin-only, local `pulumi up` (see README).
-import { ACCOUNT_ID, GITHUB_SUB_PREFIX, LAMBDA_ROLE_PREFIX, NAMES, REGION } from "./constants";
+import { ACCOUNT_ID, GITHUB_SUB_PREFIX, LAMBDA_ROLE_PREFIX, NAMES, REGION, SSM_PARAMETERS } from "./constants";
 
 export type Statement = {
   Sid?: string;
@@ -80,6 +80,31 @@ export function packageSignerPolicy(opts: { bucket: string; logGroupName: string
       Effect: "Allow",
       Action: ["logs:CreateLogStream", "logs:PutLogEvents"],
       Resource: `arn:aws:logs:${REGION}:${ACCOUNT_ID}:log-group:${opts.logGroupName}:*`,
+    },
+  ]);
+}
+
+/**
+ * Inline policy of the OAuth connect Lambda: its own log streams and exactly
+ * its three SSM parameters. KMS is granted only by the key policies (the
+ * secrets key's KeyUse for the SecureStrings, the wrap key's KeyDecrypt for
+ * DEKs), never through IAM.
+ */
+export function oauthConnectPolicy(opts: { logGroupName: string }): PolicyDocument {
+  if (!opts.logGroupName.startsWith("/aws/lambda/kubcode-")) throw new Error(`log group must be /aws/lambda/kubcode-*: ${opts.logGroupName}`);
+  const param = (name: string) => `arn:aws:ssm:${REGION}:${ACCOUNT_ID}:parameter${name}`;
+  return doc([
+    {
+      Sid: "WriteOwnLogStreams",
+      Effect: "Allow",
+      Action: ["logs:CreateLogStream", "logs:PutLogEvents"],
+      Resource: `arn:aws:logs:${REGION}:${ACCOUNT_ID}:log-group:${opts.logGroupName}:*`,
+    },
+    {
+      Sid: "ReadOwnParameters",
+      Effect: "Allow",
+      Action: "ssm:GetParameters",
+      Resource: Object.values(SSM_PARAMETERS).map(param),
     },
   ]);
 }

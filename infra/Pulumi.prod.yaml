@@ -1,6 +1,7 @@
 secretsprovider: awskms://alias/kubcode-pulumi?region=ap-southeast-1
 encryptedkey: AQICAHg/qnhkdb+lGzfqTWldTMzjWH4VOnlPQ5apDFUq6eejTQF5y6B3NTTTAWXwse4CUTqTAAAAfjB8BgkqhkiG9w0BBwagbzBtAgEAMGgGCSqGSIb3DQEHATAeBglghkgBZQMEAS4wEQQM4TW7Z/S0IEe+sL01AgEQgDvD59da4ubDFf4msuPdjXyUtgGY+YfGZRNz7bXqcdNtW2vSRKLn1c/1E4EYxKaHNhiC0Ne9u/NhktuHIg==
 config:
+  kubcode:oauthConnect: "true"
   kubcode:breakGlassAdminArns:
     - arn:aws:iam::955758449820:user/super_admin
   pulumi:disable-default-providers:
