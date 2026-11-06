@@ -8,7 +8,7 @@ import styles from "./KineticHero.module.css";
 
 /* ------------------------------------------------------------- component */
 
-// Podcast clips have their own section (PodcastSection), never this shelf.
+// Podcast clips belong on their skill page, never on this shelf.
 const SHOWCASE = cartoonShowcase(publishedShowcase());
 
 export function KineticHero({

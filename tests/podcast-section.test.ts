@@ -1,12 +1,12 @@
-// Podcast shorts are their own category and homepage section, apart from every
-// cartoon style (owner, 2026-11-06), and the podcast-tool-short kit is a
+// Podcast shorts are their own category, apart from every cartoon style
+// (owner, 2026-11-06); their clips show on the skill page, not the homepage, and the podcast-tool-short kit is a
 // downloadable package under MIT with its MIT helper skills.
 import test from "node:test";
 import assert from "node:assert/strict";
 import { existsSync, readFileSync } from "node:fs";
 import { categories, rawSkills } from "../lib/catalog";
 import { SHOWCASE_ALLOWLIST, SHOWCASE_STYLES } from "../lib/showcase-allowlist";
-import { cartoonShowcase, podcastShowcase, publishedShowcase } from "../lib/showcase";
+import { cartoonShowcase, publishedShowcase, showcaseForSkill } from "../lib/showcase";
 import { approvedPackageFor } from "../lib/packages";
 
 const PODCAST_CLIPS = [
@@ -45,14 +45,19 @@ test("all four podcast clips are allowlisted with the source episode and CC BY-S
   assert.equal(SHOWCASE_ALLOWLIST.filter((a) => a.style === "podcast-short" && a.cover).length, 1);
 });
 
-test("the homepage splits clips: cartoon shelf never shows podcast, podcast section shows only podcast", () => {
-  const items = publishedShowcase("local-study");
-  const cartoon = cartoonShowcase(items);
-  const podcast = podcastShowcase(items);
+test("the homepage has no podcast section, and the cartoon shelf never shows podcast clips", () => {
+  // Owner, 2026-11-06: the podcast clips live on the skill page only.
+  assert.ok(!existsSync("components/PodcastSection.tsx"));
+  assert.doesNotMatch(readFileSync("components/Library.tsx", "utf8"), /PodcastSection/);
+  const cartoon = cartoonShowcase(publishedShowcase("local-study"));
   assert.ok(cartoon.length > 0);
   assert.ok(cartoon.every((i) => SHOWCASE_STYLES[i.style]?.section !== "podcast"));
-  assert.deepEqual(podcast.map((i) => i.id).sort(), [...PODCAST_CLIPS].sort());
-  assert.equal(cartoon.length + podcast.length, items.length);
+});
+
+test("the podcast skill page shows all four clips", () => {
+  const shown = showcaseForSkill("podcast-tool-short", publishedShowcase("local-study"));
+  assert.ok(shown);
+  assert.deepEqual(shown.clips.map((c) => c.id).sort(), [...PODCAST_CLIPS].sort());
 });
 
 test("podcast-tool-short is a downloadable MIT package with its MIT helpers and credits", () => {

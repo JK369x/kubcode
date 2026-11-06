@@ -17,9 +17,8 @@ NodeModule._extensions[".css"] = (m) => {
 
 const { SHOWCASE_ALLOWLIST, SHOWCASE_AGENTS } = require("../lib/showcase-allowlist") as typeof import("../lib/showcase-allowlist");
 const { SHOWCASE_MANIFEST } = require("../lib/showcase-manifest") as typeof import("../lib/showcase-manifest");
-const { publishedShowcase, cartoonShowcase, podcastShowcase, styleShelf } = require("../lib/showcase") as typeof import("../lib/showcase");
+const { publishedShowcase, cartoonShowcase, styleShelf } = require("../lib/showcase") as typeof import("../lib/showcase");
 const { StyleShelf } = require("../components/StyleShelf") as typeof import("../components/StyleShelf");
-const { PodcastSection } = require("../components/PodcastSection") as typeof import("../components/PodcastSection");
 
 const madeBy = (id: string) => SHOWCASE_ALLOWLIST.find((e) => e.id === id)?.madeBy;
 
@@ -70,11 +69,4 @@ test("shelf cards show the cover clip's agent and model", () => {
     assert.ok(html.includes(`>${SHOWCASE_AGENTS[by.agent]}<`), `${clip.id}: agent name`);
     assert.ok(html.includes(`>${by.model}<`), `${clip.id}: model id`);
   }
-});
-
-test("podcast cards show their agent and model", () => {
-  const items = podcastShowcase(publishedShowcase("local-study"));
-  const html = renderToStaticMarkup(createElement(PodcastSection, { items }));
-  assert.equal((html.match(/>gpt-6\.1-sol</g) ?? []).length, items.length);
-  assert.equal((html.match(/>Codex</g) ?? []).length, items.length);
 });

@@ -38,8 +38,8 @@ export type ShowcaseCredit = { text: string; href?: string };
  *   (the card shows three). Tools without a page are left out.
  */
 /**
- * - `section`: "podcast" puts the style's clips in the homepage podcast
- *   section (one card per clip) instead of the cartoon shelf.
+ * - `section`: "podcast" keeps the style's clips off the homepage cartoon
+ *   shelf; they show on their skill page only.
  */
 export type ShowcaseStyle = {
   name: string;
