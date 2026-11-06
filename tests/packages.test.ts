@@ -55,3 +55,14 @@ test("packages: lookup by slug returns the approved entry or null", () => {
   assert.equal(approvedPackageFor("../etc"), null);
   assert.equal(approvedPackageFor("constructor"), null);
 });
+
+test("packages: the infra stack uploads exactly the approved packages", async () => {
+  // infra/src/constants.ts keeps its own list (the infra package cannot import
+  // the web app); a package missing there is approved but never uploaded.
+  const { PACKAGES: INFRA } = await import("../infra/src/constants");
+  assert.deepEqual(
+    INFRA.map((p) => `${p.slug}@${p.version}`).sort(),
+    PACKAGES.map((p) => `${p.slug}@${p.version}`).sort(),
+  );
+  for (const p of INFRA) assert.ok(existsSync(join(root, "packages", p.slug, p.version)), `packages/${p.slug}/${p.version}`);
+});
