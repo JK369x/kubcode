@@ -11,6 +11,13 @@
 #                            to /etc/kubcode/web.env over SSH stdin and nowhere else
 #   webhost.sh set-downloads only the skill-download settings (signer URL + key),
 #                            merged into web.env; every other value is kept
+#   webhost.sh set-worker-db new LOGIN password for the DB role kubcode_worker: the SQL
+#                            goes to the clipboard for the Supabase SQL editor, the
+#                            URL straight into SSM (/kubcode/prod/worker-db-url)
+#   webhost.sh set-connect   OAuth connect (docs/design/settings-keys.md §2): a new
+#                            HMAC key and the Google "kubcode web connect" client go
+#                            to SSM; the Lambda URL, HMAC key and client id are merged
+#                            into web.env. No value is printed or put in argv
 #   webhost.sh smoke         run the on-box smoke test
 #   webhost.sh tls           right after the DNS flip: restart Caddy so it gets the
 #                            certificate now, and wait until the box serves it
@@ -149,6 +156,55 @@ set_downloads() {
   admin_ssh sudo /usr/local/lib/kubcode/write-env --merge <<<"$env"
 }
 
+# --- OAuth connect (docs/design/settings-keys.md §2, §5). SecureStrings use
+# alias/kubcode-secrets; values are written from a 0600 temp file (file://),
+# never passed on the command line.
+SUPABASE_REF=sgtyrndczwxijrubyyjw
+ssm_put() { # name, file
+  aws ssm put-parameter --region "$REGION" --type SecureString --key-id alias/kubcode-secrets \
+    --overwrite --name "$1" --value "file://$2" >/dev/null
+}
+
+set_worker_db() {
+  local host pw f
+  read -r -p "Supabase Session pooler host (Connect › Session pooler, e.g. aws-0-ap-southeast-1.pooler.supabase.com): " host
+  [[ "$host" =~ ^[a-z0-9.-]+[.]pooler[.]supabase[.]com$ ]] || die "host must be <something>.pooler.supabase.com"
+  pw=$(openssl rand -hex 24) # hex: nothing to URL-encode
+  printf "ALTER ROLE kubcode_worker LOGIN PASSWORD '%s';\nGRANT CONNECT ON DATABASE postgres TO kubcode_worker;\n" "$pw" | pbcopy
+  echo "The SQL is on the clipboard. Paste it into the Supabase SQL editor (project $SUPABASE_REF), run it," >&2
+  read -r -p "then press Enter here (Ctrl-C to stop; nothing has been stored yet): " _
+  printf '' | pbcopy
+  f="$TMP/worker"
+  (umask 077 && printf "postgresql://kubcode_worker.%s:%s@%s:5432/postgres?sslmode=require" "$SUPABASE_REF" "$pw" "$host" >"$f")
+  ssm_put /kubcode/prod/worker-db-url "$f"
+  rm -f "$f"
+  echo "webhost: /kubcode/prod/worker-db-url set; the Lambda picks it up within 5 minutes" >&2
+}
+
+set_connect() {
+  local url cid secret key f env
+  url=$(cd "$HERE/.." && pulumi stack output --stack prod oauthConnectUrl)
+  [[ "$url" =~ ^https://[a-z0-9]+[.]lambda-url[.]ap-southeast-1[.]on[.]aws/$ ]] || die "no oauthConnectUrl stack output (admin pulumi up first)"
+  read -r -p "Google Web client ID of \"kubcode web connect\": " cid
+  [[ "$cid" =~ ^[0-9]{6,}-[a-z0-9]{8,}[.]apps[.]googleusercontent[.]com$ ]] || die "client ID should look like 123456789-abc...xyz.apps.googleusercontent.com"
+  read -r -s -p "Its client secret (hidden): " secret
+  echo >&2
+  [ -n "$secret" ] || die "client secret is empty"
+  case "$secret" in *"'"* | *'"'* | *\\* | *$'\n'*) die "client secret contains a quote, backslash or newline" ;; esac
+  key=$(openssl rand -hex 32)
+  f="$TMP/connect"
+  (umask 077 && printf %s "$key" >"$f")
+  ssm_put /kubcode/prod/connect-hmac-key "$f"
+  (umask 077 && printf '{"client_id":"%s","client_secret":"%s"}' "$cid" "$secret" >"$f")
+  ssm_put /kubcode/prod/google-connect-client "$f"
+  rm -f "$f"
+  unset secret
+  env=$(printf "KUBCODE_CONNECT_URL='%s'\nKUBCODE_CONNECT_HMAC_KEY='%s'\nKUBCODE_YOUTUBE_CLIENT_ID='%s'\n" "$url" "$key" "$cid")
+  unset key
+  admin_ssh sudo /usr/local/lib/kubcode/write-env --merge <<<"$env"
+  echo "webhost: connect settings stored; the Lambda picks up the new key within 5 minutes" >&2
+}
+
 # Caddy tried for the certificate at provision time, while DNS still pointed
 # at Vercel, and is now backing off. A restart makes it try again at once.
 tls() {
@@ -172,6 +228,8 @@ deploy-key) deploy_key ;;
 provision) provision ;;
 set-env) set_env ;;
 set-downloads) set_downloads ;;
+set-worker-db) TMP=$(mktemp -d) && set_worker_db ;;
+set-connect) TMP=$(mktemp -d) && set_connect ;;
 smoke) admin_ssh /usr/local/lib/kubcode/smoke ;;
 tls) tls ;;
 status | rollback) admin_ssh sudo -u deploy env SSH_ORIGINAL_COMMAND="$1" /usr/local/bin/kubcode-deploy ;;
