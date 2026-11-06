@@ -10,6 +10,7 @@ const catalogNames: Record<string, string> = {
   "low-poly-urban": "Low-poly Urban",
   "thai-jk-voice": "Thai Voice",
   "captions-overlay": "Captions Overlay",
+  "podcast-tool-short": "Podcast Shorts",
 };
 
 const styleNames: Record<string, string> = {

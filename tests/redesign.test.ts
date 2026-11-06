@@ -38,7 +38,8 @@ test("catalog media references and distribution boundaries are explicit", () => 
     }
     assert.equal(skill.rights, "uncleared");
   }
-  assert.equal(skills.filter((skill) => !skill.examples.length).length, 2);
+  // Voice, captions and podcast shorts (whose clips come from the showcase).
+  assert.equal(skills.filter((skill) => !skill.examples.length).length, 3);
 });
 
 test("featured author switches have distinct real sources, not runtime labels", () => {

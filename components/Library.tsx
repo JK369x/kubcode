@@ -16,6 +16,7 @@ import { GetStarted } from "./GetStarted";
 import { statusLabel } from "@/lib/status-labels";
 import { showcaseForSkill, type StyleTool } from "@/lib/showcase";
 import { KineticHero } from "./KineticHero";
+import { PodcastSection } from "./PodcastSection";
 import heroStyles from "./KineticHero.module.css";
 
 /** Article teaser data passed from the server page (content loads from disk). */
@@ -132,6 +133,7 @@ export function Library({
           </Preview>
         </div>
       </div>
+      <PodcastSection />
       <section
         className="catalog-section"
         id="skill-index"

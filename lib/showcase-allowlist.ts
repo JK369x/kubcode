@@ -31,7 +31,18 @@ export type ShowcaseCredit = { text: string; href?: string };
  * - `tools`: /tools page slugs the style really uses, most telling first
  *   (the card shows three). Tools without a page are left out.
  */
-export type ShowcaseStyle = { name: string; en: string; skill?: string; detail: string; tools: readonly string[] };
+/**
+ * - `section`: "podcast" puts the style's clips in the homepage podcast
+ *   section (one card per clip) instead of the cartoon shelf.
+ */
+export type ShowcaseStyle = {
+  name: string;
+  en: string;
+  skill?: string;
+  detail: string;
+  tools: readonly string[];
+  section?: "podcast";
+};
 
 export const SHOWCASE_STYLES: Readonly<Record<string, ShowcaseStyle>> = {
   "sitcom-toon": {
@@ -53,6 +64,14 @@ export const SHOWCASE_STYLES: Readonly<Record<string, ShowcaseStyle>> = {
     skill: "freshstack-what-if",
     detail: "ตัวละครเส้นในโลก “ถ้าเกิดว่า…” ทุกฉากเป็น SVG ไม่ใช้โมเดลสร้างภาพ เรนเดอร์ด้วย Remotion",
     tools: ["what-if-animation", "remotion", "opencode", "glm-5-3-flash", "elevenlabs"],
+  },
+  "podcast-short": {
+    name: "พอดแคสต์เป็นคลิปสั้น",
+    en: "Podcast Shorts",
+    skill: "podcast-tool-short",
+    detail: "ตัดช่วงที่อธิบายเครื่องมือจากพอดแคสต์เป็นคลิปแนวตั้ง เสียงต้นฉบับ ซับไทย และฮุกเปิดเรื่อง เรนเดอร์ด้วย HyperFrames",
+    tools: ["ffmpeg"],
+    section: "podcast",
   },
 };
 
@@ -99,6 +118,10 @@ export const SHOWCASE_ALLOWLIST: readonly ShowcaseAllowEntry[] = [
   { id: "2026-11-01_freshstack-what-if_ep05_no-one-can-lie", source: "studio:2026-11-01_freshstack-what-if_ep05_no-one-can-lie", label: "What If: ไม่มีใครโกหกได้", style: "what-if", rights: "Own episode made with FreshStack's What If Animation skill (MIT, kelano86/what-if-animation); synthetic voice VoxCPM2. Credit shown.", at: 2.3, credits: [WHAT_IF_CREDIT] },
   { id: "2026-11-01_what-if-studio_ep01_mute-touch", source: "studio:2026-11-01_what-if-studio_ep01_mute-touch", label: "Mute Touch", style: "what-if", rights: "Own episode (OpenCode/GLM authored) made with FreshStack's What If Animation skill (MIT). Voice and music are ElevenLabs output: the preview is muted and the elevenlabs.io credit is shown.", at: 10.5, credits: [WHAT_IF_CREDIT, ELEVENLABS_CREDIT] },
   { id: "low-poly-urban-study", source: "style:low-poly-urban/examples/city/demo.mp4", label: "Low-poly Urban", style: "low-poly", cover: true, title: "Low-poly Urban — ตัวอย่างสไตล์ 8 วินาที", rights: "Own style study: Three.js geometry authored in code, silent, no generated or stock media.", at: 1, madeWith: { renderer: "Three.js 0.170.0 + HyperFrames", style: "low-poly-urban", voice: "silent" } },
+  { id: "2026-10-25_tech-podcast_ep01_cliparr", source: "studio:2026-10-25_tech-podcast_ep01_cliparr", label: "Cliparr: ตัดคลิปจาก Plex / Jellyfin", style: "podcast-short", cover: true, rights: "Jupiter Broadcasting episode under CC BY-SA 4.0 (current episode page); a BY-NC note on legacy pages is unresolved. Owner 2026-11-06: show on the free site as non-commercial display with credit; recheck before kubcode earns money.", credits: [{ text: "LINUX Unplugged 686 · Jupiter Broadcasting", href: "https://www.jupiterbroadcasting.com/show/linux-unplugged/686/" }, { text: "CC BY-SA 4.0", href: "https://creativecommons.org/licenses/by-sa/4.0/" }], at: 2 },
+  { id: "2026-10-26_tech-podcast_ep02_clean-your-tv", source: "studio:2026-10-26_tech-podcast_ep02_clean-your-tv", label: "Clean Your TV: จัด Google TV ให้โล่ง", style: "podcast-short", rights: "Jupiter Broadcasting episode under CC BY-SA 4.0 (current episode page); a BY-NC note on legacy pages is unresolved. Owner 2026-11-06: show on the free site as non-commercial display with credit; recheck before kubcode earns money.", credits: [{ text: "LINUX Unplugged 690 · Jupiter Broadcasting", href: "https://linuxunplugged.com/690" }, { text: "CC BY-SA 4.0", href: "https://creativecommons.org/licenses/by-sa/4.0/" }], at: 2 },
+  { id: "2026-10-26_tech-podcast_ep03_amazon-bee", source: "studio:2026-10-26_tech-podcast_ep03_amazon-bee", label: "Bee ของ Amazon ช่วยจำบทสนทนา", style: "podcast-short", rights: "Jupiter Broadcasting episode under CC BY-SA 4.0 (current episode page); a BY-NC note on legacy pages is unresolved. Owner 2026-11-06: show on the free site as non-commercial display with credit; recheck before kubcode earns money.", credits: [{ text: "The Launch 89 · Jupiter Broadcasting", href: "https://www.jupiterbroadcasting.com/show/the-launch/89/" }, { text: "CC BY-SA 4.0", href: "https://creativecommons.org/licenses/by-sa/4.0/" }], at: 2 },
+  { id: "2026-10-26_tech-podcast_ep04_php-security", source: "studio:2026-10-26_tech-podcast_ep04_php-security", label: "PHP เจอช่องโหว่ร้ายแรง", style: "podcast-short", rights: "Jupiter Broadcasting episode under CC BY-SA 4.0 (current episode page); a BY-NC note on legacy pages is unresolved. Owner 2026-11-06: show on the free site as non-commercial display with credit; recheck before kubcode earns money.", credits: [{ text: "LINUX Unplugged 690 · Jupiter Broadcasting", href: "https://linuxunplugged.com/690" }, { text: "CC BY-SA 4.0", href: "https://creativecommons.org/licenses/by-sa/4.0/" }], at: 2 },
 
   // Not shown yet. Third-party footage or audio: waiting for the owner's
   // decision. To show one, uncomment its line, replace the rights note with

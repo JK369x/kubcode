@@ -469,5 +469,129 @@
       "path": "~/work/ai-video/jk-animation-studio/styles/low-poly-urban/examples/city/demo.mp4",
       "sha256": "3957961cde8bf0d96a11a4712fbc0e58285c1725e35cc2ab8bbae8a1fe203e68"
     }
+  },
+  {
+    "id": "2026-10-25_tech-podcast_ep01_cliparr",
+    "title": "แนะนำ Cliparr: ตัดคลิปจาก Plex / Jellyfin",
+    "aspect": "portrait",
+    "poster": {
+      "src": "/showcase/2026-10-25_tech-podcast_ep01_cliparr/poster.jpg",
+      "width": 480,
+      "height": 854,
+      "bytes": 52898,
+      "sha256": "76e8a54602132d87bce7f7e207b6f53b2727db57f3663bbfd57b27c688609f7e"
+    },
+    "preview": {
+      "src": "/showcase/2026-10-25_tech-podcast_ep01_cliparr/preview.mp4",
+      "width": 360,
+      "height": 640,
+      "seconds": 3.5,
+      "bytes": 91245,
+      "sha256": "a6a69688ac24c04467d6f967ce130978a9ae53825039502216c5a376372a1d62"
+    },
+    "link": null,
+    "madeWith": {
+      "music": "none known",
+      "renderer": "hyperframes",
+      "style": "podcast clip: original audio + reframed visuals + Thai captions",
+      "voice": "original speaker audio (LINUX Unplugged 686, CC BY-SA 4.0)"
+    },
+    "source": {
+      "path": "~/Studio/clips/2026-10-25_tech-podcast_ep01_cliparr/video.mp4",
+      "sha256": "8ae9dd018ac6a7678ab8f6a0c250ac01923b7ac97c79f204aa05ae5c38482969"
+    }
+  },
+  {
+    "id": "2026-10-26_tech-podcast_ep02_clean-your-tv",
+    "title": "Google TV รกไปไหม? ลอง Clean Your TV",
+    "aspect": "portrait",
+    "poster": {
+      "src": "/showcase/2026-10-26_tech-podcast_ep02_clean-your-tv/poster.jpg",
+      "width": 480,
+      "height": 854,
+      "bytes": 47021,
+      "sha256": "5d7679b12a7cfb5a43f233c8ec98477f4cbce16ceebfea5fdb7e601134e8995c"
+    },
+    "preview": {
+      "src": "/showcase/2026-10-26_tech-podcast_ep02_clean-your-tv/preview.mp4",
+      "width": 360,
+      "height": 640,
+      "seconds": 3.5,
+      "bytes": 59526,
+      "sha256": "173fdcb34862b1fbc2cd682ef51439e91c0fdbdda56d746c299b0afe912740f7"
+    },
+    "link": null,
+    "madeWith": {
+      "music": "none known",
+      "renderer": "hyperframes",
+      "style": "podcast clip: original audio + reframed visuals + Thai captions",
+      "voice": "original speaker audio (LINUX Unplugged 690, CC BY-SA 4.0)"
+    },
+    "source": {
+      "path": "~/Studio/clips/2026-10-26_tech-podcast_ep02_clean-your-tv/video.mp4",
+      "sha256": "296647b29c3b7405e89ec318838397f010cdbac911874fd458b7deb5ce1137c0"
+    }
+  },
+  {
+    "id": "2026-10-26_tech-podcast_ep03_amazon-bee",
+    "title": "Bee ของ Amazon ช่วยจำบทสนทนา แต่คนรอบตัวเลือกด้วยไหม?",
+    "aspect": "portrait",
+    "poster": {
+      "src": "/showcase/2026-10-26_tech-podcast_ep03_amazon-bee/poster.jpg",
+      "width": 480,
+      "height": 854,
+      "bytes": 44744,
+      "sha256": "ff3142d70a00f33bdabb8f1d4bf4a4b1aa8d6ce6c0db3a2587651ec6818f922d"
+    },
+    "preview": {
+      "src": "/showcase/2026-10-26_tech-podcast_ep03_amazon-bee/preview.mp4",
+      "width": 360,
+      "height": 640,
+      "seconds": 3.5,
+      "bytes": 99069,
+      "sha256": "f7837292e3d1c98640d1c9e0fc4d392d41326f39b214e1815df7dac99138f998"
+    },
+    "link": null,
+    "madeWith": {
+      "music": "none known",
+      "renderer": "hyperframes",
+      "style": "podcast clip: original audio + reframed visuals + Thai captions",
+      "voice": "original speaker audio (The Launch 89, CC BY-SA 4.0)"
+    },
+    "source": {
+      "path": "~/Studio/clips/2026-10-26_tech-podcast_ep03_amazon-bee/video.mp4",
+      "sha256": "5472d1b88933c0ca73aab75d2e3de2bd71110bc5c2f8f705ae98d31959100a84"
+    }
+  },
+  {
+    "id": "2026-10-26_tech-podcast_ep04_php-security",
+    "title": "PHP เจอช่องโหว่ร้ายแรง คนทำเว็บต้องเช็กอัปเดต",
+    "aspect": "portrait",
+    "poster": {
+      "src": "/showcase/2026-10-26_tech-podcast_ep04_php-security/poster.jpg",
+      "width": 480,
+      "height": 854,
+      "bytes": 48715,
+      "sha256": "842860f637e366004b89f7698714639d2d742ce7e63135fe49b61257dde53cb4"
+    },
+    "preview": {
+      "src": "/showcase/2026-10-26_tech-podcast_ep04_php-security/preview.mp4",
+      "width": 360,
+      "height": 640,
+      "seconds": 3.5,
+      "bytes": 57122,
+      "sha256": "4cbf859010367b7263b50c5ea46d94d92f7f2fa5532e735ebfe7be2d10688056"
+    },
+    "link": null,
+    "madeWith": {
+      "music": "none known",
+      "renderer": "hyperframes",
+      "style": "podcast clip: original audio + reframed visuals + Thai captions",
+      "voice": "original speaker audio (LINUX Unplugged 690, CC BY-SA 4.0)"
+    },
+    "source": {
+      "path": "~/Studio/clips/2026-10-26_tech-podcast_ep04_php-security/video.mp4",
+      "sha256": "a35a14a07009ca44500083b58fb6ad5162dc3b6620cda38bd2579860fffeffc2"
+    }
   }
 ]

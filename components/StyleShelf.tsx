@@ -35,7 +35,7 @@ export function creditsOf(items: readonly ShowcaseItem[]): ShowcaseCredit[] {
  * Whether someone is signed in: undefined until known. Read once from the
  * public session endpoint, like the header, so the page itself stays static.
  */
-function useSignedIn(): boolean | undefined {
+export function useSignedIn(): boolean | undefined {
   const [signedIn, setSignedIn] = useState<boolean | undefined>(undefined);
   useEffect(() => {
     let live = true;
@@ -48,7 +48,7 @@ function useSignedIn(): boolean | undefined {
 }
 
 /** Whether the server serves each packaged skill's download, asked once per shelf. */
-function useAvailable(skills: readonly string[]): Readonly<Record<string, boolean>> {
+export function useAvailable(skills: readonly string[]): Readonly<Record<string, boolean>> {
   const [available, setAvailable] = useState<Record<string, boolean>>({});
   const key = skills.join(",");
   useEffect(() => {

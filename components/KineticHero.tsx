@@ -2,13 +2,14 @@
 import { useId, type ReactNode } from "react";
 import { ArrowDown, Play } from "lucide-react";
 import type { Skill } from "@/lib/catalog";
-import { publishedShowcase, type ShowcaseItem, type StyleTool } from "@/lib/showcase";
+import { cartoonShowcase, publishedShowcase, type ShowcaseItem, type StyleTool } from "@/lib/showcase";
 import { StyleShelf } from "./StyleShelf";
 import styles from "./KineticHero.module.css";
 
 /* ------------------------------------------------------------- component */
 
-const SHOWCASE = publishedShowcase();
+// Podcast clips have their own section (PodcastSection), never this shelf.
+const SHOWCASE = cartoonShowcase(publishedShowcase());
 
 export function KineticHero({
   skills,
