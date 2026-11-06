@@ -33,6 +33,10 @@ REGION=ap-southeast-1
 export AWS_PROFILE="${AWS_PROFILE:-default}"
 HERE=$(cd "$(dirname "$0")/.." && pwd) # infra/web
 KNOWN_HOSTS="$HERE/.known_hosts"       # git-ignored; host keys change on rebuild
+# Owner secrets come from the Keychain vault when stored there
+# (infra/scripts/secret.sh); otherwise they are asked for and can be saved.
+# shellcheck source-path=SCRIPTDIR source=../../scripts/lib/keychain.sh
+source "$HERE/../scripts/lib/keychain.sh"
 # Admin login: by default a short-lived SSH certificate from the Lightsail
 # API (what Lightsail's browser SSH uses), so no passphrase or agent is
 # needed. Set KUBCODE_ADMIN_KEY to use your own key instead (it must be
@@ -103,7 +107,7 @@ provision() {
 # a systemd EnvironmentFile: no newline and no single quote.
 ask() {
   local name=$1 hidden=$2 value
-  if [ "$hidden" = 1 ]; then read -r -s -p "$name: " value; echo >&2; else read -r -p "$name: " value; fi
+  value=$(kc_or_ask "$(kc_name "$name")" "$hidden" "$name") || die "$name is empty"
   [ -n "$value" ] || die "$name is empty"
   case "$value" in *"'"* | *$'\n'*) die "$name contains a quote or newline" ;; esac
   printf "%s='%s'\n" "$name" "$value"
@@ -187,10 +191,9 @@ set_connect() {
   local url cid secret key f env
   url=$(cd "$HERE/.." && pulumi stack output --stack prod oauthConnectUrl)
   [[ "$url" =~ ^https://[a-z0-9]+[.]lambda-url[.]ap-southeast-1[.]on[.]aws/$ ]] || die "no oauthConnectUrl stack output (admin pulumi up first)"
-  read -r -p "Google Web client ID of \"kubcode web connect\": " cid
+  cid=$(kc_or_ask google-connect-client-id 0 "Google Web client ID of \"kubcode web connect\"") || die "client ID is empty"
   [[ "$cid" =~ ^[0-9]{6,}-[a-z0-9]{8,}[.]apps[.]googleusercontent[.]com$ ]] || die "client ID should look like 123456789-abc...xyz.apps.googleusercontent.com"
-  read -r -s -p "Its client secret (hidden): " secret
-  echo >&2
+  secret=$(kc_or_ask google-connect-client-secret 1 "Its client secret (hidden)") || die "client secret is empty"
   [ -n "$secret" ] || die "client secret is empty"
   case "$secret" in *"'"* | *'"'* | *\\* | *$'\n'*) die "client secret contains a quote, backslash or newline" ;; esac
   key=$(openssl rand -hex 32)
