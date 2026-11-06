@@ -14,7 +14,9 @@ export const metadata: Metadata = {
   robots: { index: false, follow: false },
 };
 
-export default async function KeysPage() {
+type Props = { searchParams: Promise<Record<string, string | string[] | undefined>> };
+
+export default async function KeysPage({ searchParams }: Props) {
   const env = process.env;
   const view = await getKeysView(env, async () => {
     if (readAuthConfig(env).ok) {
@@ -26,13 +28,19 @@ export default async function KeysPage() {
   if (view.state === "signed-out") redirect("/account");
   // Off, or not allowed: the page does not exist for this visitor.
   if (view.state === "disabled" || view.state === "forbidden") notFound();
+  const notice = (await searchParams).notice;
 
   return (
     <main id="main" className={`account-page ${styles.page}`}>
       <div>
         <h1>ตั้งค่าคีย์และบัญชีโพสต์</h1>
         {view.state === "ready" ? (
-          <KeysSettings overview={view.overview} canSave={view.canSave} />
+          <KeysSettings
+            overview={view.overview}
+            canSave={view.canSave}
+            connect={view.connect}
+            notice={typeof notice === "string" ? notice : null}
+          />
         ) : (
           <p className="setup-notice" role="status">
             ระบบคีย์ใช้งานไม่ได้ชั่วคราว ลองใหม่ภายหลัง

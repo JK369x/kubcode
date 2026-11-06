@@ -5,7 +5,20 @@ import { send } from "@/lib/interactions/client";
 import type { AuditEntry, ConnectionMeta, Overview, SecretKind, SecretMeta } from "@/lib/keys/store";
 import styles from "./KeysSettings.module.css";
 
-type Props = { overview: Overview; canSave: boolean };
+type Props = {
+  overview: Overview;
+  canSave: boolean;
+  connect: { youtube: boolean; instagram: boolean };
+  notice: string | null;
+};
+
+const NOTICES: Record<string, string> = {
+  connected: "เชื่อมบัญชีสำเร็จแล้ว",
+  connect_failed: "เชื่อมบัญชีไม่สำเร็จ ลองใหม่อีกครั้ง",
+  connect_denied: "คุณยกเลิกการให้สิทธิ์ จึงยังไม่ได้เชื่อมบัญชี",
+  connect_expired: "คำขอเชื่อมบัญชีหมดเวลา ลองใหม่อีกครั้ง",
+  connect_unavailable: "ระบบเชื่อมบัญชียังไม่พร้อม",
+};
 
 const CALLBACK = "https://kubcode.dev/api/keys/oauth/callback";
 
@@ -154,7 +167,53 @@ function KeyForm({ spec, saved, canSave }: { spec: FormSpec; saved: SecretMeta |
   );
 }
 
-function Connections({ items, provider, showExpiry }: { items: ConnectionMeta[]; provider: string; showExpiry?: boolean }) {
+const APP_SOURCE: Record<ConnectionMeta["appSource"], string> = { kubcode: "ผ่านแอปของ kubcode", member: "ผ่านแอปของคุณ" };
+
+function Connections({
+  items,
+  provider,
+  label,
+  canConnect,
+  hint,
+  showExpiry,
+}: {
+  items: ConnectionMeta[];
+  provider: "youtube" | "instagram";
+  label: string;
+  canConnect: boolean;
+  hint: string;
+  showExpiry?: boolean;
+}) {
+  const router = useRouter();
+  const [busy, setBusy] = useState(false);
+  const [status, setStatus] = useState("");
+
+  async function onConnect() {
+    setBusy(true);
+    const r = await send<{ authorizeUrl: string }>("/api/keys/oauth/start", "POST", { provider });
+    if (!r.ok) {
+      setBusy(false);
+      return setStatus(r.message);
+    }
+    // Leaves kubcode for the provider's consent page; it returns to the callback.
+    window.location.assign(r.authorizeUrl);
+  }
+
+  async function onDisconnect(id: string) {
+    setBusy(true);
+    const r = await send<{ revoked: boolean }>(`/api/keys/connections/${id}/disconnect`, "POST", {});
+    setBusy(false);
+    if (!r.ok) return setStatus(r.message);
+    setStatus(
+      provider === "instagram"
+        ? "ยกเลิกการเชื่อมแล้ว ลบ kubcode ออกจาก Instagram › แอปและเว็บไซต์ได้ด้วย"
+        : r.revoked
+          ? "ยกเลิกการเชื่อมและเพิกถอนสิทธิ์แล้ว"
+          : "ยกเลิกการเชื่อมแล้ว (เพิกถอนสิทธิ์ที่ Google ไม่สำเร็จ ลบได้ที่บัญชี Google › ความปลอดภัย)",
+    );
+    router.refresh();
+  }
+
   return (
     <div className={styles.connections}>
       <h3>บัญชีที่เชื่อมไว้</h3>
@@ -164,13 +223,13 @@ function Connections({ items, provider, showExpiry }: { items: ConnectionMeta[];
         <ul>
           {items.map((c) => (
             <li key={c.id}>
-              <strong>{c.accountLabel ?? provider}</strong>
+              <strong>{c.accountLabel ?? label}</strong>
               <span className={styles.meta}>
-                {CONNECTION_STATUS[c.status]}
+                {CONNECTION_STATUS[c.status]} · {APP_SOURCE[c.appSource]}
                 {c.lastCheckedAt && ` · ตรวจล่าสุด ${dateTime(c.lastCheckedAt)}`}
                 {showExpiry && c.tokenExpiresAt && ` · token หมดอายุ ${date(c.tokenExpiresAt)}`}
               </span>
-              <button type="button" disabled title="เร็วๆ นี้">
+              <button type="button" disabled={busy} onClick={() => onDisconnect(c.id)}>
                 ยกเลิกการเชื่อม
               </button>
             </li>
@@ -178,11 +237,14 @@ function Connections({ items, provider, showExpiry }: { items: ConnectionMeta[];
         </ul>
       )}
       <div className={styles.soon}>
-        <button type="button" disabled>
-          {provider === "YouTube" ? "เชื่อมช่อง" : "เชื่อมบัญชี"}
+        <button type="button" className="primary" disabled={busy || !canConnect} onClick={onConnect}>
+          {provider === "youtube" ? "เชื่อมช่อง" : "เชื่อมบัญชี"}
         </button>
-        <span className={styles.meta}>เร็วๆ นี้ ปุ่มเชื่อมจะเปิดเมื่อระบบเชื่อมบัญชีพร้อม</span>
+        {!canConnect && <span className={styles.meta}>{hint}</span>}
       </div>
+      <p role="status" aria-live="polite" className={styles.status}>
+        {status}
+      </p>
     </div>
   );
 }
@@ -206,7 +268,7 @@ function History({ audit }: { audit: AuditEntry[] }) {
   );
 }
 
-export function KeysSettings({ overview, canSave }: Props) {
+export function KeysSettings({ overview, canSave, connect, notice }: Props) {
   const secret = (kind: SecretKind) => overview.secrets.find((s) => s.kind === kind);
   const of = (provider: ConnectionMeta["provider"]) => overview.connections.filter((c) => c.provider === provider);
   return (
@@ -214,6 +276,11 @@ export function KeysSettings({ overview, canSave }: Props) {
       <p className={styles.lead}>
         คีย์ทุกตัวถูกเข้ารหัสก่อนบันทึก และจะไม่ถูกส่งกลับมาที่หน้าเว็บอีก หน้านี้แสดงแค่สถานะกับ 4 ตัวท้าย
       </p>
+      {notice && NOTICES[notice] && (
+        <p className="setup-notice" role="status">
+          {NOTICES[notice]}
+        </p>
+      )}
       {!canSave && (
         <p className="setup-notice" role="status">
           ยังบันทึกคีย์ไม่ได้ ระบบเข้ารหัสยังไม่พร้อม ดูสถานะและลบคีย์เดิมได้ตามปกติ
@@ -223,7 +290,7 @@ export function KeysSettings({ overview, canSave }: Props) {
       <section className={styles.section} aria-labelledby="keys-youtube">
         <h2 id="keys-youtube">YouTube</h2>
         <details className={styles.steps}>
-          <summary>ขั้นตอนตั้งค่าใน Google Cloud</summary>
+          <summary>ใช้ OAuth client ของคุณเอง (ไม่บังคับ: ไม่ใส่ก็เชื่อมผ่านแอปของ kubcode)</summary>
           <ol>
             <li>สร้าง OAuth client แบบ <strong>Web application</strong> (แบบ Desktop ใช้กับเว็บไม่ได้)</li>
             <li>
@@ -244,7 +311,13 @@ export function KeysSettings({ overview, canSave }: Props) {
           saved={secret("youtube_oauth_client")}
           canSave={canSave}
         />
-        <Connections items={of("youtube")} provider="YouTube" />
+        <Connections
+          items={of("youtube")}
+          provider="youtube"
+          label="YouTube"
+          canConnect={connect.youtube}
+          hint="ระบบเชื่อมช่องยังไม่พร้อม"
+        />
       </section>
 
       <section className={styles.section} aria-labelledby="keys-instagram">
@@ -264,7 +337,14 @@ export function KeysSettings({ overview, canSave }: Props) {
           saved={secret("instagram_app")}
           canSave={canSave}
         />
-        <Connections items={of("instagram")} provider="Instagram" showExpiry />
+        <Connections
+          items={of("instagram")}
+          provider="instagram"
+          label="Instagram"
+          canConnect={connect.instagram}
+          hint="บันทึก Instagram app ID และ secret ก่อน แล้วจึงเชื่อมบัญชี"
+          showExpiry
+        />
       </section>
 
       <section className={styles.section} aria-labelledby="keys-other">

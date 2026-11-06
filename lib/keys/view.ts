@@ -7,6 +7,7 @@ import { decodeAccountSession } from "../accounts/runtime";
 import { sessionClaims } from "../accounts/session";
 import type { CookieSource } from "../accounts/view";
 import { keysEnabled } from "./access";
+import { readConnectConfig } from "./connect-config";
 import { getKeyStore, type KeyStore, type Overview } from "./store";
 
 export type KeysView =
@@ -15,7 +16,13 @@ export type KeysView =
   | { state: "signed-out" }
   /** Signed in but not allowed (phase 1: not the owner). */
   | { state: "forbidden" }
-  | { state: "ready"; overview: Overview; canSave: boolean };
+  | {
+      state: "ready";
+      overview: Overview;
+      canSave: boolean;
+      /** Whether each Connect button can work now (design §2a). */
+      connect: { youtube: boolean; instagram: boolean };
+    };
 
 export async function getKeysView(
   env: AuthEnv,
@@ -33,7 +40,14 @@ export async function getKeysView(
     const store = storeFor(accounts.databaseUrl);
     const overview = await store.overview(sessionClaims(token));
     if (!overview.ok) return { state: overview.code === "FORBIDDEN" ? "forbidden" : "signed-out" };
-    return { state: "ready", overview, canSave: store.sealing };
+    const config = readConnectConfig(env);
+    const on = config.mode === "on" && store.sealing;
+    const saved = (kind: string) => overview.secrets.some((s) => s.kind === kind);
+    const connect = {
+      youtube: on && (saved("youtube_oauth_client") || (config.mode === "on" && config.youtubeClientId !== null)),
+      instagram: on && saved("instagram_app"),
+    };
+    return { state: "ready", overview, canSave: store.sealing, connect };
   } catch (error) {
     logDbFailure("KEYS_READ", error);
     return { state: "unavailable" };
