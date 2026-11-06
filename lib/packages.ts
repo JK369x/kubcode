@@ -33,6 +33,13 @@ export const PACKAGES: readonly SkillPackage[] = [
     credit: "FreshStack (freshstack.ai)",
     approval: { by: "owner", date: "2026-11-05" },
   }),
+  pkg({
+    slug: "podcast-tool-short",
+    version: "0.1.0",
+    licence: "MIT",
+    credit: "kubcode.dev; yt-package and yt-seo helpers by Jake Schincariol (MIT)",
+    approval: { by: "owner", date: "2026-11-06" },
+  }),
 ];
 
 /** The package members may download for a skill, or null. */

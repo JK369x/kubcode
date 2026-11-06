@@ -1,0 +1,4 @@
+interface:
+  display_name: "Podcast Tool Short"
+  short_description: "Make tool recommendation Shorts from real podcasts"
+  default_prompt: "Use $podcast-tool-short to make one Thai tool recommendation Short from this podcast, with a clear hook, accurate captions, and posting copy."

@@ -1,14 +1,22 @@
 # kubcode
 
-kubcode.dev is a Thai catalogue of AI animation styles ("skills"), the tools behind them, and articles.
+kubcode.dev is a Thai catalogue of AI video skills (animation styles and podcast shorts), the tools behind them, and articles.
 
 ## Language
 
 ### Catalogue
 
 **Skill**:
-One animation style in the catalogue, with its description, requirements and preview examples.
+One kit in the catalogue (an animation style, or a workflow such as cutting podcast shorts) with its description, requirements and preview examples.
 _Avoid_: style card, template (when you mean the catalogue entry)
+
+**Category**:
+The one group a skill is filed under. Podcast skills have their own category (พอดแคสต์) and their own homepage section, apart from every cartoon/animation style.
+_Avoid_: section, family (as a second grouping axis)
+
+**Podcast short**:
+A short vertical clip cut from someone else's podcast: the original speaker audio, reframed visuals and Thai captions, with credit to the source episode.
+_Avoid_: recut (that is a different, overlay-only skill)
 
 **Preview media**:
 Example clips and posters shown on a skill's page. Governed by the media policy, separately from downloads.

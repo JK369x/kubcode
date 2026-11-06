@@ -36,6 +36,7 @@ export const categories = [
   { id: "captions", label: "ซับไตเติล" },
   { id: "code", label: "โค้ด" },
   { id: "work", label: "การทำงาน" },
+  { id: "podcast", label: "พอดแคสต์" },
 ];
 /**
  * Raw local catalog: original definitions and local asset paths, never
@@ -220,6 +221,24 @@ export const rawSkills: readonly Skill[] = [
       "เวลาเสียงจริง / captions.json",
       "ฟอนต์ไทยที่มีสิทธิ์ใช้งาน",
       "adapter สำหรับ renderer ที่เลือก",
+    ],
+    rights: "uncleared",
+    examples: [],
+  },
+  {
+    slug: "podcast-tool-short",
+    name: "Podcast Shorts",
+    category: "podcast",
+    description:
+      "ตัดช่วงที่อธิบายเครื่องมือจากพอดแคสต์เป็นคลิปแนวตั้ง 30–60 วินาที ใช้เสียงต้นฉบับ ซับไทย ฮุกเปิดเรื่อง และคำโพสต์พร้อมเครดิตต้นทาง",
+    version: "0.1.0",
+    status: "selected",
+    approvalScope:
+      "ใช้ทำคลิปพอดแคสต์เทค 4 ตอนแล้ว · สิทธิ์ของพอดแคสต์ต้นทางต้องตรวจทุกตอนก่อนเผยแพร่",
+    requirements: [
+      "HyperFrames · FFmpeg",
+      "whisper.cpp (ถอดเสียงในเครื่อง)",
+      "ตรวจสิทธิ์และเครดิตของพอดแคสต์ต้นทางทุกครั้ง",
     ],
     rights: "uncleared",
     examples: [],

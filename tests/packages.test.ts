@@ -10,10 +10,10 @@ const root = join(__dirname, "..");
 const KEY = /^packages\/[a-z0-9]+(-[a-z0-9]+)*\/[0-9]+\.[0-9]+\.[0-9]+\.zip$/;
 const FILENAME = /^[a-z0-9]+(-[a-z0-9]+)*-[0-9]+\.[0-9]+\.[0-9]+\.zip$/;
 
-test("packages: only What If 0.1.0 is approved for the first release", () => {
+test("packages: the approved releases are What If 0.1.0 and Podcast Shorts 0.1.0", () => {
   assert.deepEqual(
     PACKAGES.map((p) => `${p.slug}@${p.version}`),
-    ["freshstack-what-if@0.1.0"],
+    ["freshstack-what-if@0.1.0", "podcast-tool-short@0.1.0"],
   );
 });
 
@@ -54,4 +54,15 @@ test("packages: lookup by slug returns the approved entry or null", () => {
   assert.equal(approvedPackageFor("low-poly-urban"), null);
   assert.equal(approvedPackageFor("../etc"), null);
   assert.equal(approvedPackageFor("constructor"), null);
+});
+
+test("packages: the infra stack uploads exactly the approved packages", async () => {
+  // infra/src/constants.ts keeps its own list (the infra package cannot import
+  // the web app); a package missing there is approved but never uploaded.
+  const { PACKAGES: INFRA } = await import("../infra/src/constants");
+  assert.deepEqual(
+    INFRA.map((p) => `${p.slug}@${p.version}`).sort(),
+    PACKAGES.map((p) => `${p.slug}@${p.version}`).sort(),
+  );
+  for (const p of INFRA) assert.ok(existsSync(join(root, "packages", p.slug, p.version)), `packages/${p.slug}/${p.version}`);
 });
