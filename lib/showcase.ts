@@ -53,11 +53,6 @@ export function cartoonShowcase(items: readonly ShowcaseItem[]): ShowcaseItem[] 
   return items.filter((i) => !isPodcast(i));
 }
 
-/** Clips for the homepage podcast section, one card each. */
-export function podcastShowcase(items: readonly ShowcaseItem[]): ShowcaseItem[] {
-  return items.filter(isPodcast);
-}
-
 /** One homepage card: a style, the clip that represents it, and how many clips it has. */
 export type ShelfEntry = { style: string; clip: ShowcaseItem; count: number };
 
