@@ -10,6 +10,8 @@ on:
     paths:
       - "infra/web/**"
       - "scripts/package-release.sh"
+      - "infra/scripts/secret.sh"
+      - "infra/scripts/lib/**"
       - ".github/workflows/web-host.yml"
 
 permissions:
@@ -33,4 +35,4 @@ jobs:
       - run: npm run typecheck
       - run: npm test
       - name: shellcheck
-        run: shellcheck host/setup.sh host/kubcode-deploy host/smoke host/start-web host/write-env scripts/webhost.sh ../../scripts/package-release.sh
+        run: shellcheck -x host/setup.sh host/kubcode-deploy host/smoke host/start-web host/write-env scripts/webhost.sh ../../scripts/package-release.sh ../scripts/secret.sh ../scripts/lib/keychain.sh tests/fixtures/fake-security
