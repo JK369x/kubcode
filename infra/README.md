@@ -319,8 +319,10 @@ pulumi stack output --stack prod oauthConnectUrl
 Expected preview: **create** `oauth-connect-role`, `oauth-connect-policy`,
 `oauth-connect-logs`, `oauth-connect`, `oauth-connect-url`,
 `oauth-connect-url-access`, `oauth-connect-url-invoke`; **update**
-`secrets-key-policy` (KeyUse gains the role) and `secrets-wrap-key-policy`
-(KeyDecrypt gains the role); also `package-signer [~code]` (local build bytes).
+`deploy-boundary` (new `DenyLambdaRoleTrustChanges`: CI cannot change who may
+assume a `kubcode-lambda-*` role), `secrets-key-policy` (KeyUse gains the role)
+and `secrets-wrap-key-policy` (KeyDecrypt gains the role); also
+`package-signer [~code]` (local build bytes).
 Nothing deleted or replaced, nothing outside `kubcode-*`.
 
 Then the owner runs `infra/web/scripts/webhost.sh set-worker-db` and

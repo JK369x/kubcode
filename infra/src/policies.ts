@@ -169,6 +169,15 @@ export function deployBoundaryPolicy(opts: {
       Condition: { ArnNotLike: { "aws:PrincipalArn": KUBCODE_LAMBDA_ROLES } },
     },
     {
+      // kubcode-lambda-* roles are the only ones that can decrypt with the
+      // wrap key: who may assume them is fixed at creation (Lambda only) and
+      // admin-only afterwards, as for the GitHub roles.
+      Sid: "DenyLambdaRoleTrustChanges",
+      Effect: "Deny",
+      Action: "iam:UpdateAssumeRolePolicy",
+      Resource: KUBCODE_LAMBDA_ROLES,
+    },
+    {
       // The wrap key policy and grants are admin-only. Otherwise CI could name
       // a principal outside this boundary (another account, a client role)
       // in the key policy or a grant and decrypt from there.

@@ -463,3 +463,12 @@ test("oauth connect role fits inside the boundary", () => {
         assert.ok(covered, `${a} on ${r}`);
       }
 });
+
+test("deploy boundary: CI cannot change who may assume a kubcode-lambda-* role (the roles that can decrypt)", () => {
+  const deny = boundary().Statement.find((s) => s.Sid === "DenyLambdaRoleTrustChanges")!;
+  assert.ok(deny, "statement exists");
+  assert.equal(deny.Effect, "Deny");
+  assert.ok(grants(deny, "iam:UpdateAssumeRolePolicy"));
+  assert.deepEqual(resourcesOf(deny), [`arn:aws:iam::${ACCOUNT_ID}:role/kubcode-lambda-*`]);
+  assert.equal(deny.Condition, undefined);
+});
