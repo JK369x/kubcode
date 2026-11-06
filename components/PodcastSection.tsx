@@ -3,7 +3,7 @@ import type { FocusEvent, PointerEvent } from "react";
 import { approvedPackageFor } from "@/lib/packages";
 import { podcastShowcase, publishedShowcase, type ShowcaseItem } from "@/lib/showcase";
 import { SHOWCASE_STYLES } from "@/lib/showcase-allowlist";
-import { CardActions, useAvailable, useSignedIn } from "./StyleShelf";
+import { CardActions, MadeByBadge, useAvailable, useSignedIn } from "./StyleShelf";
 import { playPreview as play, stopPreview as stop } from "./hoverPreview";
 import shelf from "./StyleShelf.module.css";
 import styles from "./PodcastSection.module.css";
@@ -81,6 +81,7 @@ export function PodcastSection({ items = PODCAST }: { items?: readonly ShowcaseI
                   tabIndex={-1}
                 />
               )}
+              <MadeByBadge madeBy={clip.madeBy} />
             </div>
             <p className={shelf.name}>{clip.label}</p>
             {clip.credits.length > 0 && (

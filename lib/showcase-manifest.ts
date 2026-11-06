@@ -5,7 +5,11 @@ export type ShowcaseManifestEntry = {
   id: string;
   title: string;
   aspect: "portrait" | "landscape";
-  poster: { src: string; width: number; height: number; bytes: number; sha256: string };
+  poster: {
+    src: string; width: number; height: number; bytes: number; sha256: string;
+    /** "cover": the clip's designed cover.jpg; "frame": the video frame at `at`. */
+    from: "cover" | "frame";
+  };
   preview: {
     src: string; width: number; height: number; seconds: number; bytes: number; sha256: string;
   } | null;

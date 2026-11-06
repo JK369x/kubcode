@@ -17,6 +17,12 @@
  * - `style`: key into SHOWCASE_STYLES. The homepage shows one card per style;
  *   a clip in a new style adds a card (add the style below first).
  * - `cover`: the one clip per style that represents it on the homepage.
+ * - `poster`: "cover" uses the clip's designed cover.jpg as the poster
+ *   instead of the frame at `at` (studio sources only). The swap to the
+ *   preview then changes picture, softened by the fade.
+ * - `madeBy`: the agent (a SHOWCASE_AGENTS key, also its /tools slug) and the
+ *   exact model that made the clip, shown on its card. Evidence: the Codex /
+ *   Claude Code session that built the clip's source folder, or clip.json.
  */
 export type ShowcaseCredit = { text: string; href?: string };
 
@@ -75,12 +81,23 @@ export const SHOWCASE_STYLES: Readonly<Record<string, ShowcaseStyle>> = {
   },
 };
 
+/** Agents that made showcase clips: /tools slug -> name shown on the card. */
+export const SHOWCASE_AGENTS: Readonly<Record<string, string>> = {
+  "codex-cli": "Codex",
+  "claude-code": "Claude",
+  opencode: "OpenCode",
+};
+
+export type ShowcaseMadeBy = { agent: string; model: string };
+
 export type ShowcaseAllowEntry = {
   id: string;
   source: string;
   label: string;
   style: string;
   cover?: true;
+  poster?: "cover";
+  madeBy: ShowcaseMadeBy;
   rights: string;
   at: number;
   credits?: readonly ShowcaseCredit[];
@@ -94,6 +111,10 @@ const ZOMBIE_RIGHTS =
 const LOW_POLY_RIGHTS =
   "Own work: Three.js scenes authored in code, synthetic voice VoxCPM2, music bed and SFX from the HyperFrames library.";
 
+const CODEX: ShowcaseMadeBy = { agent: "codex-cli", model: "gpt-6.1-sol" };
+const CLAUDE: ShowcaseMadeBy = { agent: "claude-code", model: "claude-opus-5-5" };
+const GLM: ShowcaseMadeBy = { agent: "opencode", model: "glm-5.3-flash-free" };
+
 const WHAT_IF_CREDIT: ShowcaseCredit = {
   text: "สไตล์จาก What If Animation ของ FreshStack (MIT)",
   href: "/tools/what-if-animation",
@@ -104,24 +125,24 @@ const ELEVENLABS_CREDIT: ShowcaseCredit = {
 };
 
 export const SHOWCASE_ALLOWLIST: readonly ShowcaseAllowEntry[] = [
-  { id: "2026-10-25_zombie-condo_ep01_tomorrow-invasion", source: "studio:2026-10-25_zombie-condo_ep01_tomorrow-invasion", label: "ซอมบี้คอนโด EP.1", style: "sitcom-toon", cover: true, rights: ZOMBIE_RIGHTS, at: 22 },
-  { id: "2026-10-25_zombie-condo_ep02_fridge-curry-paste", source: "studio:2026-10-25_zombie-condo_ep02_fridge-curry-paste", label: "ซอมบี้คอนโด EP.2", style: "sitcom-toon", rights: ZOMBIE_RIGHTS, at: 14.5 },
-  { id: "2026-10-25_zombie-condo_ep03_mop-camera", source: "studio:2026-10-25_zombie-condo_ep03_mop-camera", label: "ซอมบี้คอนโด EP.3", style: "sitcom-toon", rights: ZOMBIE_RIGHTS, at: 9 },
-  { id: "2026-10-25_zombie-condo_ep04_shopping-cart", source: "studio:2026-10-25_zombie-condo_ep04_shopping-cart", label: "ซอมบี้คอนโด EP.4", style: "sitcom-toon", rights: ZOMBIE_RIGHTS, at: 21 },
-  { id: "2026-10-26_zombie-condo_ep05_tap-water-stops", source: "studio:2026-10-26_zombie-condo_ep05_tap-water-stops", label: "ซอมบี้คอนโด EP.5", style: "sitcom-toon", rights: ZOMBIE_RIGHTS, at: 2 },
-  { id: "2026-10-26_zombie-condo_ep06_fire-stairs-voice", source: "studio:2026-10-26_zombie-condo_ep06_fire-stairs-voice", label: "ซอมบี้คอนโด EP.6", style: "sitcom-toon", rights: ZOMBIE_RIGHTS, at: 11 },
-  { id: "2026-10-26_zombie-condo_ep07_neighbor-wont-open", source: "studio:2026-10-26_zombie-condo_ep07_neighbor-wont-open", label: "ซอมบี้คอนโด EP.7", style: "sitcom-toon", rights: ZOMBIE_RIGHTS, at: 10.5 },
-  { id: "2026-10-29_mall-infection_ep01_first-night", source: "studio:2026-10-29_mall-infection_ep01_first-night", label: "ห้างติดเชื้อ EP.1", style: "low-poly", rights: LOW_POLY_RIGHTS, at: 79 },
-  { id: "2026-10-30_mall-infection_ep02_stairs", source: "studio:2026-10-30_mall-infection_ep02_stairs", label: "ห้างติดเชื้อ EP.2", style: "low-poly", rights: LOW_POLY_RIGHTS, at: 27 },
-  { id: "2026-10-28_satire-stories_ep01_elon-dream-low-poly", source: "studio:2026-10-28_satire-stories_ep01_elon-dream-low-poly", label: "เสียดสี: ถ้าโลกเป็นของ Elon", style: "low-poly", rights: `${LOW_POLY_RIGHTS} Labelled satire and fiction in the clip and its description.`, at: 23 },
-  { id: "2026-11-01_freshstack-what-if_ep03_internet-gone-week", source: "studio:2026-11-01_freshstack-what-if_ep03_internet-gone-week", label: "What If: อินเทอร์เน็ตหาย 1 สัปดาห์", style: "what-if", cover: true, rights: "Own episode made with FreshStack's What If Animation skill (MIT, kelano86/what-if-animation); synthetic voice VoxCPM2. Credit shown.", at: 2, credits: [WHAT_IF_CREDIT] },
-  { id: "2026-11-01_freshstack-what-if_ep05_no-one-can-lie", source: "studio:2026-11-01_freshstack-what-if_ep05_no-one-can-lie", label: "What If: ไม่มีใครโกหกได้", style: "what-if", rights: "Own episode made with FreshStack's What If Animation skill (MIT, kelano86/what-if-animation); synthetic voice VoxCPM2. Credit shown.", at: 2.3, credits: [WHAT_IF_CREDIT] },
-  { id: "2026-11-01_what-if-studio_ep01_mute-touch", source: "studio:2026-11-01_what-if-studio_ep01_mute-touch", label: "Mute Touch", style: "what-if", rights: "Own episode (OpenCode/GLM authored) made with FreshStack's What If Animation skill (MIT). Voice and music are ElevenLabs output: the preview is muted and the elevenlabs.io credit is shown.", at: 10.5, credits: [WHAT_IF_CREDIT, ELEVENLABS_CREDIT] },
-  { id: "low-poly-urban-study", source: "style:low-poly-urban/examples/city/demo.mp4", label: "Low-poly Urban", style: "low-poly", cover: true, title: "Low-poly Urban — ตัวอย่างสไตล์ 8 วินาที", rights: "Own style study: Three.js geometry authored in code, silent, no generated or stock media.", at: 1, madeWith: { renderer: "Three.js 0.170.0 + HyperFrames", style: "low-poly-urban", voice: "silent" } },
-  { id: "2026-10-25_tech-podcast_ep01_cliparr", source: "studio:2026-10-25_tech-podcast_ep01_cliparr", label: "Cliparr: ตัดคลิปจาก Plex / Jellyfin", style: "podcast-short", cover: true, rights: "Jupiter Broadcasting episode under CC BY-SA 4.0 (current episode page); a BY-NC note on legacy pages is unresolved. Owner 2026-11-06: show on the free site as non-commercial display with credit; recheck before kubcode earns money.", credits: [{ text: "LINUX Unplugged 686 · Jupiter Broadcasting", href: "https://www.jupiterbroadcasting.com/show/linux-unplugged/686/" }, { text: "CC BY-SA 4.0", href: "https://creativecommons.org/licenses/by-sa/4.0/" }], at: 2 },
-  { id: "2026-10-26_tech-podcast_ep02_clean-your-tv", source: "studio:2026-10-26_tech-podcast_ep02_clean-your-tv", label: "Clean Your TV: จัด Google TV ให้โล่ง", style: "podcast-short", rights: "Jupiter Broadcasting episode under CC BY-SA 4.0 (current episode page); a BY-NC note on legacy pages is unresolved. Owner 2026-11-06: show on the free site as non-commercial display with credit; recheck before kubcode earns money.", credits: [{ text: "LINUX Unplugged 690 · Jupiter Broadcasting", href: "https://linuxunplugged.com/690" }, { text: "CC BY-SA 4.0", href: "https://creativecommons.org/licenses/by-sa/4.0/" }], at: 2 },
-  { id: "2026-10-26_tech-podcast_ep03_amazon-bee", source: "studio:2026-10-26_tech-podcast_ep03_amazon-bee", label: "Bee ของ Amazon ช่วยจำบทสนทนา", style: "podcast-short", rights: "Jupiter Broadcasting episode under CC BY-SA 4.0 (current episode page); a BY-NC note on legacy pages is unresolved. Owner 2026-11-06: show on the free site as non-commercial display with credit; recheck before kubcode earns money.", credits: [{ text: "The Launch 89 · Jupiter Broadcasting", href: "https://www.jupiterbroadcasting.com/show/the-launch/89/" }, { text: "CC BY-SA 4.0", href: "https://creativecommons.org/licenses/by-sa/4.0/" }], at: 2 },
-  { id: "2026-10-26_tech-podcast_ep04_php-security", source: "studio:2026-10-26_tech-podcast_ep04_php-security", label: "PHP เจอช่องโหว่ร้ายแรง", style: "podcast-short", rights: "Jupiter Broadcasting episode under CC BY-SA 4.0 (current episode page); a BY-NC note on legacy pages is unresolved. Owner 2026-11-06: show on the free site as non-commercial display with credit; recheck before kubcode earns money.", credits: [{ text: "LINUX Unplugged 690 · Jupiter Broadcasting", href: "https://linuxunplugged.com/690" }, { text: "CC BY-SA 4.0", href: "https://creativecommons.org/licenses/by-sa/4.0/" }], at: 2 },
+  { id: "2026-10-25_zombie-condo_ep01_tomorrow-invasion", source: "studio:2026-10-25_zombie-condo_ep01_tomorrow-invasion", label: "ซอมบี้คอนโด EP.1", style: "sitcom-toon", poster: "cover", madeBy: CODEX, cover: true, rights: ZOMBIE_RIGHTS, at: 22 },
+  { id: "2026-10-25_zombie-condo_ep02_fridge-curry-paste", source: "studio:2026-10-25_zombie-condo_ep02_fridge-curry-paste", label: "ซอมบี้คอนโด EP.2", style: "sitcom-toon", poster: "cover", madeBy: CODEX, rights: ZOMBIE_RIGHTS, at: 14.5 },
+  { id: "2026-10-25_zombie-condo_ep03_mop-camera", source: "studio:2026-10-25_zombie-condo_ep03_mop-camera", label: "ซอมบี้คอนโด EP.3", style: "sitcom-toon", poster: "cover", madeBy: CODEX, rights: ZOMBIE_RIGHTS, at: 9 },
+  { id: "2026-10-25_zombie-condo_ep04_shopping-cart", source: "studio:2026-10-25_zombie-condo_ep04_shopping-cart", label: "ซอมบี้คอนโด EP.4", style: "sitcom-toon", poster: "cover", madeBy: CODEX, rights: ZOMBIE_RIGHTS, at: 21 },
+  { id: "2026-10-26_zombie-condo_ep05_tap-water-stops", source: "studio:2026-10-26_zombie-condo_ep05_tap-water-stops", label: "ซอมบี้คอนโด EP.5", style: "sitcom-toon", poster: "cover", madeBy: CODEX, rights: ZOMBIE_RIGHTS, at: 2 },
+  { id: "2026-10-26_zombie-condo_ep06_fire-stairs-voice", source: "studio:2026-10-26_zombie-condo_ep06_fire-stairs-voice", label: "ซอมบี้คอนโด EP.6", style: "sitcom-toon", poster: "cover", madeBy: CODEX, rights: ZOMBIE_RIGHTS, at: 11 },
+  { id: "2026-10-26_zombie-condo_ep07_neighbor-wont-open", source: "studio:2026-10-26_zombie-condo_ep07_neighbor-wont-open", label: "ซอมบี้คอนโด EP.7", style: "sitcom-toon", poster: "cover", madeBy: CODEX, rights: ZOMBIE_RIGHTS, at: 10.5 },
+  { id: "2026-10-29_mall-infection_ep01_first-night", source: "studio:2026-10-29_mall-infection_ep01_first-night", label: "ห้างติดเชื้อ EP.1", style: "low-poly", cover: true, madeBy: CODEX, rights: LOW_POLY_RIGHTS, at: 28.3 },
+  { id: "2026-10-30_mall-infection_ep02_stairs", source: "studio:2026-10-30_mall-infection_ep02_stairs", label: "ห้างติดเชื้อ EP.2", style: "low-poly", madeBy: CODEX, rights: LOW_POLY_RIGHTS, at: 27 },
+  { id: "2026-10-28_satire-stories_ep01_elon-dream-low-poly", source: "studio:2026-10-28_satire-stories_ep01_elon-dream-low-poly", label: "เสียดสี: ถ้าโลกเป็นของ Elon", style: "low-poly", poster: "cover", madeBy: CODEX, rights: `${LOW_POLY_RIGHTS} Labelled satire and fiction in the clip and its description.`, at: 23 },
+  { id: "2026-11-01_freshstack-what-if_ep03_internet-gone-week", source: "studio:2026-11-01_freshstack-what-if_ep03_internet-gone-week", label: "What If: อินเทอร์เน็ตหาย 1 สัปดาห์", style: "what-if", madeBy: CLAUDE, cover: true, rights: "Own episode made with FreshStack's What If Animation skill (MIT, kelano86/what-if-animation); synthetic voice VoxCPM2. Credit shown.", at: 2, credits: [WHAT_IF_CREDIT] },
+  { id: "2026-11-01_freshstack-what-if_ep05_no-one-can-lie", source: "studio:2026-11-01_freshstack-what-if_ep05_no-one-can-lie", label: "What If: ไม่มีใครโกหกได้", style: "what-if", madeBy: CLAUDE, rights: "Own episode made with FreshStack's What If Animation skill (MIT, kelano86/what-if-animation); synthetic voice VoxCPM2. Credit shown.", at: 2.3, credits: [WHAT_IF_CREDIT] },
+  { id: "2026-11-01_what-if-studio_ep01_mute-touch", source: "studio:2026-11-01_what-if-studio_ep01_mute-touch", label: "Mute Touch", style: "what-if", madeBy: GLM, rights: "Own episode (OpenCode/GLM authored) made with FreshStack's What If Animation skill (MIT). Voice and music are ElevenLabs output: the preview is muted and the elevenlabs.io credit is shown.", at: 10.5, credits: [WHAT_IF_CREDIT, ELEVENLABS_CREDIT] },
+  { id: "low-poly-urban-study", source: "style:low-poly-urban/examples/city/demo.mp4", label: "Low-poly Urban", style: "low-poly", madeBy: CODEX, title: "Low-poly Urban — ตัวอย่างสไตล์ 8 วินาที", rights: "Own style study: Three.js geometry authored in code, silent, no generated or stock media.", at: 1, madeWith: { renderer: "Three.js 0.170.0 + HyperFrames", style: "low-poly-urban", voice: "silent" } },
+  { id: "2026-10-25_tech-podcast_ep01_cliparr", source: "studio:2026-10-25_tech-podcast_ep01_cliparr", label: "Cliparr: ตัดคลิปจาก Plex / Jellyfin", style: "podcast-short", madeBy: CODEX, cover: true, rights: "Jupiter Broadcasting episode under CC BY-SA 4.0 (current episode page); a BY-NC note on legacy pages is unresolved. Owner 2026-11-06: show on the free site as non-commercial display with credit; recheck before kubcode earns money.", credits: [{ text: "LINUX Unplugged 686 · Jupiter Broadcasting", href: "https://www.jupiterbroadcasting.com/show/linux-unplugged/686/" }, { text: "CC BY-SA 4.0", href: "https://creativecommons.org/licenses/by-sa/4.0/" }], at: 2 },
+  { id: "2026-10-26_tech-podcast_ep02_clean-your-tv", source: "studio:2026-10-26_tech-podcast_ep02_clean-your-tv", label: "Clean Your TV: จัด Google TV ให้โล่ง", style: "podcast-short", madeBy: CODEX, rights: "Jupiter Broadcasting episode under CC BY-SA 4.0 (current episode page); a BY-NC note on legacy pages is unresolved. Owner 2026-11-06: show on the free site as non-commercial display with credit; recheck before kubcode earns money.", credits: [{ text: "LINUX Unplugged 690 · Jupiter Broadcasting", href: "https://linuxunplugged.com/690" }, { text: "CC BY-SA 4.0", href: "https://creativecommons.org/licenses/by-sa/4.0/" }], at: 2 },
+  { id: "2026-10-26_tech-podcast_ep03_amazon-bee", source: "studio:2026-10-26_tech-podcast_ep03_amazon-bee", label: "Bee ของ Amazon ช่วยจำบทสนทนา", style: "podcast-short", madeBy: CODEX, rights: "Jupiter Broadcasting episode under CC BY-SA 4.0 (current episode page); a BY-NC note on legacy pages is unresolved. Owner 2026-11-06: show on the free site as non-commercial display with credit; recheck before kubcode earns money.", credits: [{ text: "The Launch 89 · Jupiter Broadcasting", href: "https://www.jupiterbroadcasting.com/show/the-launch/89/" }, { text: "CC BY-SA 4.0", href: "https://creativecommons.org/licenses/by-sa/4.0/" }], at: 2 },
+  { id: "2026-10-26_tech-podcast_ep04_php-security", source: "studio:2026-10-26_tech-podcast_ep04_php-security", label: "PHP เจอช่องโหว่ร้ายแรง", style: "podcast-short", madeBy: CODEX, rights: "Jupiter Broadcasting episode under CC BY-SA 4.0 (current episode page); a BY-NC note on legacy pages is unresolved. Owner 2026-11-06: show on the free site as non-commercial display with credit; recheck before kubcode earns money.", credits: [{ text: "LINUX Unplugged 690 · Jupiter Broadcasting", href: "https://linuxunplugged.com/690" }, { text: "CC BY-SA 4.0", href: "https://creativecommons.org/licenses/by-sa/4.0/" }], at: 2 },
 
   // Not shown yet. Third-party footage or audio: waiting for the owner's
   // decision. To show one, uncomment its line, replace the rights note with

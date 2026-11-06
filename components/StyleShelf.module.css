@@ -117,6 +117,44 @@
   font-weight: 600;
 }
 
+/* Who made the clip: agent over model, bottom-left of the poster. The hover
+ * overlay covers it; on touch screens it sits above the always-shown actions. */
+.madeBy {
+  position: absolute;
+  bottom: 10px;
+  left: 10px;
+  z-index: 0;
+  display: flex;
+  flex-direction: column;
+  max-width: calc(100% - 20px);
+  margin: 0;
+  padding: 5px 9px 6px;
+  border-radius: 8px;
+  background: rgb(12 11 16 / 0.72);
+  box-shadow: 0 2px 8px rgb(0 0 0 / 0.35);
+  color: #fff;
+  line-height: 1.25;
+  pointer-events: none;
+}
+.agent {
+  font-size: 12px;
+  font-weight: 600;
+}
+.model {
+  overflow: hidden;
+  color: rgb(255 255 255 / 0.78);
+  font: 500 10.5px / 1.3 ui-monospace, SFMono-Regular, Menlo, monospace;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.card:has(.overlay) .madeBy {
+  transition: opacity 200ms ease-out;
+}
+.card:hover .madeBy:has(~ .overlay),
+.card:focus-within .madeBy:has(~ .overlay) {
+  opacity: 0;
+}
+
 /* Style details and the card's actions: over the bottom of the media, shown
  * on hover or focus. The scrim keeps them readable on any frame; the preview
  * stays visible above. Touch screens have no hover, so they always show the
@@ -159,6 +197,27 @@
   }
   .detail {
     display: none;
+  }
+  /* The actions take the bottom and may wrap to two rows, so the badge and
+   * the overlay stack in flow at the bottom: badge first, actions under it. */
+  .media:has(.overlay .actions) {
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+  }
+  .madeBy:has(~ .overlay .actions) {
+    position: relative;
+    inset: auto;
+    z-index: 2;
+    align-self: flex-start;
+    margin: 0 10px -22px;
+  }
+  .madeBy:has(~ .overlay .actions) ~ .overlay {
+    position: relative;
+  }
+  .card:hover .madeBy,
+  .card:focus-within .madeBy {
+    opacity: 1;
   }
   /* Nothing left to show: drop the scrim too. */
   .overlay:not(:has(.actions)) {

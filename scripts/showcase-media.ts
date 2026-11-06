@@ -46,6 +46,8 @@ function probe(file: string): { width: number; height: number; seconds: number }
 
 type Clip = {
   src: string;
+  /** The clip's designed cover image, when it has one. */
+  cover: string | null;
   still: boolean;
   title: string;
   madeWith: Record<string, string>;
@@ -67,8 +69,10 @@ function readClip(entry: ShowcaseAllowEntry): Clip {
       : ig?.permalink
         ? { url: ig.permalink, platform: "instagram", evidence: `clip.json platforms.instagram.published (${ig.timestamp ?? "n/a"})` }
         : null;
+    const cover = clip.cover?.file ? path.join(dir, clip.cover.file) : null;
     return {
       src: path.join(dir, clip.video.file),
+      cover: cover && fs.existsSync(cover) ? cover : null,
       still: false,
       title: clip.title_th,
       madeWith,
@@ -81,6 +85,7 @@ function readClip(entry: ShowcaseAllowEntry): Clip {
     if (!entry.title || !entry.madeWith) throw new Error(`${entry.id}: style sources need title and madeWith`);
     return {
       src,
+      cover: null,
       still: /\.(png|jpe?g)$/i.test(src),
       title: entry.title,
       madeWith: { ...entry.madeWith },
@@ -101,11 +106,23 @@ function build(entry: ShowcaseAllowEntry): ShowcaseManifestEntry {
 
   const posterFile = path.join(dir, "poster.jpg");
   const posterWidth = portrait ? 480 : 640;
-  ffmpeg([
-    ...(clip.still ? [] : ["-ss", String(entry.at)]),
-    "-i", clip.src, "-frames:v", "1",
-    "-vf", `scale=${posterWidth}:-2:flags=lanczos`, "-q:v", "5", posterFile,
-  ]);
+  const fromCover = entry.poster === "cover";
+  if (fromCover && !clip.cover) throw new Error(`${entry.id}: poster "cover" but the clip has no cover image`);
+  if (fromCover) {
+    // Fill the video's frame shape so the card crops cover and preview alike.
+    const height = Math.round((posterWidth * size.height) / size.width / 2) * 2;
+    ffmpeg([
+      "-i", clip.cover!, "-frames:v", "1",
+      "-vf", `scale=${posterWidth}:${height}:force_original_aspect_ratio=increase:flags=lanczos,crop=${posterWidth}:${height}`,
+      "-q:v", "5", posterFile,
+    ]);
+  } else {
+    ffmpeg([
+      ...(clip.still ? [] : ["-ss", String(entry.at)]),
+      "-i", clip.src, "-frames:v", "1",
+      "-vf", `scale=${posterWidth}:-2:flags=lanczos`, "-q:v", "5", posterFile,
+    ]);
+  }
   const posterSize = probe(posterFile);
 
   let preview: ShowcaseManifestEntry["preview"] = null;
@@ -144,6 +161,7 @@ function build(entry: ShowcaseAllowEntry): ShowcaseManifestEntry {
       height: posterSize.height,
       bytes: fs.statSync(posterFile).size,
       sha256: sha256(posterFile),
+      from: fromCover ? "cover" : "frame",
     },
     preview,
     link: clip.link,
