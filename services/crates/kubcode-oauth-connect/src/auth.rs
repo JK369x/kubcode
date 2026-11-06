@@ -103,6 +103,16 @@ mod tests {
     }
 
     #[test]
+    fn matches_the_web_hosts_signature() {
+        // From lib/keys/connect-config.ts connectHeaders with these exact inputs;
+        // pinned here and in tests/connect-routes.test.ts.
+        assert_eq!(
+            sign(KEY, "/oauth/exchange", "1700000000", NONCE, BODY),
+            "116e567e07b1a37d5a5eb4c484c08d80ea0043ec7a95e2412d3f1507505492db"
+        );
+    }
+
+    #[test]
     fn the_path_is_part_of_the_signature() {
         let sig = sign(KEY, "/oauth/exchange", "1700000000", NONCE, BODY);
         let h = headers("1700000000", NONCE, &sig);

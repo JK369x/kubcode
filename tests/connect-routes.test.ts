@@ -102,6 +102,8 @@ test("Lambda requests use the KUBCODE-HMAC-V1 scheme over method, path, time, no
     .update(["KUBCODE-HMAC-V1", "POST", "/oauth/exchange", "1700000000", "00112233445566778899aabbccddeeff", bodyHash].join("\n"))
     .digest("hex");
   assert.equal(h["x-kubcode-signature"], expected);
+  // Same vector pinned in the Rust Lambda (src/auth.rs), so both sides agree.
+  assert.equal(h["x-kubcode-signature"], "116e567e07b1a37d5a5eb4c484c08d80ea0043ec7a95e2412d3f1507505492db");
   assert.equal(h["x-kubcode-timestamp"], "1700000000");
 });
 
