@@ -65,7 +65,8 @@ test("privacy copy routes deletion through the owner without inventing contacts 
   const text = privacyText();
   assert.match(text, /ยังไม่มีหน้าลบบัญชีหรือข้อมูลอัตโนมัติ/);
   assert.match(text, /ช่องทางส่วนตัวที่คุณใช้ติดต่อเจ้าของเว็บอยู่แล้ว/);
-  assert.doesNotMatch(html, /mailto:|tel:|https?:\/\//);
+  const withoutGoogleLinks = html.replace('href="https://myaccount.google.com/permissions"', "").replace('href="https://policies.google.com/privacy"', "");
+  assert.doesNotMatch(withoutGoogleLinks, /mailto:|tel:|https?:\/\//);
   assert.doesNotMatch(text, /[\w.+-]+@[\w-]+\.[\w.]+/);
   assert.doesNotMatch(text, /ภายใน \d+ (วัน|ชั่วโมง)|เก็บไว้ \d+|PDPA|GDPR|compliant|certified|ได้รับการรับรอง/i);
 });

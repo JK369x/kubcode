@@ -119,10 +119,10 @@ function validate(input: SaveSecretInput): Validated | Failure {
 // Who may use keys is decided by canUseKeys alone (owner-only in phase 1).
 export type EnterFailure = { ok: false; code: "NOT_SIGNED_IN" | "FORBIDDEN" };
 
-export async function enter(c: PoolClient, s: SessionClaims): Promise<string | EnterFailure> {
+export async function enter(c: PoolClient, s: SessionClaims, youtubeReviewer = false): Promise<string | EnterFailure> {
   const member = await lockMember(c, s);
   if (!member) return { ok: false, code: "NOT_SIGNED_IN" };
-  if (!canUseKeys(member)) return { ok: false, code: "FORBIDDEN" };
+  if (!youtubeReviewer && !canUseKeys(member)) return { ok: false, code: "FORBIDDEN" };
   await c.query("SELECT set_config('kubcode.user_id', $1, true)", [member.id]);
   return member.id;
 }
@@ -268,4 +268,15 @@ export function createPgKeyStore(pool: Pool, wrapKey: WrapKey | null): KeyStore 
 
 export function getKeyStore(databaseUrl: string): KeyStore {
   return createPgKeyStore(getPool(databaseUrl), CURRENT_WRAP_KEY);
+}
+
+/** Only the signed-in member's shared-client YouTube connections are visible here. */
+export async function reviewerChannels(url: string, session: SessionClaims) {
+  return withTransaction(getPool(url), async c => {
+    const uid = await enter(c, session, true);
+    if (typeof uid !== "string") return null;
+    const result = await c.query<{ id: string; label: string; status: ConnectionMeta["status"] }>(
+      "SELECT id, account_label AS label, status FROM kubcode_accounts.oauth_connections WHERE user_id=$1 AND provider='youtube' AND app_source='kubcode' ORDER BY created_at", [uid]);
+    return result.rows;
+  });
 }

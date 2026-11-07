@@ -1,4 +1,5 @@
 "use client";
+import { YouTubePrivateUpload } from "./YouTubePrivateUpload";
 import { useId, useState } from "react";
 import { useRouter } from "next/navigation";
 import { send } from "@/lib/interactions/client";
@@ -229,6 +230,7 @@ function Connections({
                 {c.lastCheckedAt && ` · ตรวจล่าสุด ${dateTime(c.lastCheckedAt)}`}
                 {showExpiry && c.tokenExpiresAt && ` · token หมดอายุ ${date(c.tokenExpiresAt)}`}
               </span>
+              {provider === "youtube" && c.status === "active" && c.appSource === "kubcode" && <YouTubePrivateUpload id={c.id} channel={c.accountLabel ?? label} />}
               <button type="button" disabled={busy} onClick={() => onDisconnect(c.id)}>
                 ยกเลิกการเชื่อม
               </button>

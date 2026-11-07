@@ -1,0 +1,262 @@
+.tt-studio {
+  width: min(1160px, 92%);
+  margin: 40px auto 80px;
+}
+.tt-heading,
+.tt-actions,
+.tt-toggles,
+.tt-editor-head p {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+.tt-heading {
+  justify-content: space-between;
+  margin-bottom: 24px;
+}
+.tt-heading h1 {
+  font-size: clamp(28px, 4vw, 44px);
+  font-weight: 650;
+}
+.tt-heading span {
+  font-size: 13px;
+  padding: 5px 12px;
+  border: 1px solid var(--line);
+  border-radius: 99px;
+  color: var(--muted);
+}
+.tt-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.45fr) minmax(270px, 0.85fr);
+  gap: 24px;
+  align-items: start;
+}
+.tt-panel {
+  min-width: 0;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 20px;
+  padding: clamp(18px, 3vw, 32px);
+}
+.tt-editor-head {
+  padding-bottom: 18px;
+  margin-bottom: 18px;
+  border-bottom: 1px solid var(--line);
+}
+.tt-editor-head h2,
+.tt-connect h2 {
+  font-size: 25px;
+  font-weight: 650;
+}
+.tt-editor-head p,
+.tt-profile p,
+.tt-help,
+.tt-upload small,
+.tt-connect p {
+  color: var(--muted);
+}
+.tt-editor-head p {
+  margin-top: 5px;
+  gap: 6px;
+  font-size: 14px;
+  overflow-wrap: anywhere;
+}
+.tt-editor-head strong {
+  color: var(--ink);
+}
+.tt-studio fieldset {
+  min-width: 0;
+  border: 0;
+  padding: 0;
+  margin: 0;
+  display: grid;
+  gap: 16px;
+}
+.tt-studio .tt-sr,
+.tt-upload input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+}
+.tt-upload {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 20px;
+  border: 1px dashed var(--purple);
+  border-radius: 14px;
+  background: var(--surface-soft);
+  cursor: pointer;
+}
+.tt-upload:focus-within {
+  outline: 3px solid var(--purple);
+  outline-offset: 3px;
+}
+.tt-upload svg {
+  color: var(--purple);
+}
+.tt-upload span {
+  min-width: 0;
+  flex: 1;
+  overflow-wrap: anywhere;
+}
+.tt-upload small,
+.tt-profile small {
+  display: block;
+  font-size: 13px;
+}
+.tt-studio video {
+  width: 100%;
+  background: var(--media);
+  border-radius: 12px;
+}
+.tt-studio textarea,
+.tt-studio select {
+  display: block;
+  width: 100%;
+  margin-top: 6px;
+  font: inherit;
+  color: var(--ink);
+  background: var(--bg);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 11px 14px;
+}
+.tt-studio textarea {
+  resize: vertical;
+  min-height: 86px;
+}
+.tt-studio :is(textarea, select):focus-visible {
+  outline: 2px solid var(--purple);
+}
+.tt-studio input[type="checkbox"] {
+  width: 17px;
+  height: 17px;
+  accent-color: var(--field);
+  vertical-align: middle;
+}
+.tt-toggles label {
+  border: 1px solid var(--line);
+  padding: 7px 12px;
+  border-radius: 9px;
+}
+.tt-toggles label:has(:disabled) {
+  color: var(--muted);
+}
+.tt-studio button,
+.tt-studio > a {
+  font: inherit;
+  border-radius: 10px;
+  min-height: 44px;
+  padding: 9px 16px;
+}
+.tt-studio .tt-primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background: var(--selected);
+  color: var(--selected-ink);
+  border: 0;
+  font-weight: 650;
+}
+.tt-help {
+  font-size: 13px;
+}
+.tt-studio h3 {
+  font-size: 15px;
+  font-weight: 650;
+}
+.tt-profile h2 {
+  margin-top: 12px;
+  font-size: 23px;
+  overflow-wrap: anywhere;
+  font-weight: 650;
+}
+.tt-profile dl {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1px;
+  background: var(--line);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  overflow: hidden;
+  margin: 20px 0;
+}
+.tt-profile dl div {
+  background: var(--surface-soft);
+  padding: 10px 14px;
+}
+.tt-profile dt,
+.tt-profile small {
+  color: var(--muted);
+  font-size: 13px;
+}
+.tt-profile dd {
+  margin: 0;
+  font:
+    600 25px/1.45 Archivo,
+    sans-serif;
+  font-variant-numeric: tabular-nums;
+}
+.tt-profile ul {
+  margin: 8px 0 0;
+  padding: 0;
+  list-style: none;
+}
+.tt-profile li {
+  padding: 11px 0;
+  border-top: 1px solid var(--line);
+}
+.tt-profile li a {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  overflow-wrap: anywhere;
+  text-decoration: none;
+}
+.tt-profile li a:hover {
+  color: var(--purple);
+  text-decoration: underline;
+}
+.tt-connect {
+  max-width: 650px;
+  display: grid;
+  gap: 12px;
+}
+.tt-connect > svg {
+  color: var(--purple);
+}
+.tt-studio [role="status"]:not(:empty) {
+  margin-top: 14px;
+  background: var(--surface-soft);
+  border-left: 3px solid var(--purple);
+  padding: 10px 14px;
+}
+@media (max-width: 760px) {
+  .tt-studio {
+    margin-top: 22px;
+    width: 92%;
+  }
+  .tt-grid {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 16px;
+  }
+  .tt-panel {
+    padding: 18px;
+  }
+  .tt-heading {
+    margin-bottom: 16px;
+  }
+  .tt-upload {
+    padding: 14px;
+  }
+  .tt-actions button {
+    width: 100%;
+  }
+}

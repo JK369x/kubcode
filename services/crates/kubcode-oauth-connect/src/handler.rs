@@ -36,6 +36,7 @@ pub struct App<U: DekUnwrapper, P: Providers> {
 
 #[derive(Debug, PartialEq, Eq)]
 pub enum Call {
+    Upload(UploadBody),
     Exchange { state: String, code: String },
     Revoke { connection_id: Uuid, user_id: Uuid },
 }
@@ -54,9 +55,27 @@ struct RevokeBody {
     user_id: Uuid,
 }
 
+#[derive(Debug, Deserialize, PartialEq, Eq)]
+#[serde(deny_unknown_fields, rename_all = "camelCase")]
+pub struct UploadBody {
+    pub connection_id: Uuid,
+    pub user_id: Uuid,
+    pub title: String,
+    pub size: u64,
+    pub made_for_kids: bool,
+}
+
 /// Exact body shapes; anything else is a 400.
 pub fn parse_call(path: &str, body: &[u8]) -> Option<Call> {
     match path {
+        "/youtube/private-upload" => {
+            let b: UploadBody = serde_json::from_slice(body).ok()?;
+            let valid = !b.title.trim().is_empty()
+                && b.title.chars().count() <= 100
+                && !b.title.contains(['<', '>'])
+                && (1..=100 * 1024 * 1024).contains(&b.size);
+            valid.then_some(Call::Upload(b))
+        }
         "/oauth/exchange" => {
             let b: ExchangeBody = serde_json::from_slice(body).ok()?;
             let ok = (1..=128).contains(&b.state.len()) && (1..=2048).contains(&b.code.len());
@@ -99,7 +118,7 @@ pub async fn handle<U: DekUnwrapper + Sync, P: Providers>(
         return reject(StatusCode::METHOD_NOT_ALLOWED, "method_not_allowed");
     }
     let path = req.raw_http_path().to_owned();
-    if path != "/oauth/exchange" && path != "/oauth/revoke" {
+    if path != "/oauth/exchange" && path != "/oauth/revoke" && path != "/youtube/private-upload" {
         return reject(StatusCode::NOT_FOUND, "not_found");
     }
     let body: &[u8] = req.body().as_ref();
@@ -128,6 +147,13 @@ pub async fn handle<U: DekUnwrapper + Sync, P: Providers>(
         kubcode_google: secrets.google.as_ref(),
     };
     match call {
+        Call::Upload(b) => match flow::private_upload(&client, &deps, &b).await {
+            Ok((url, channel)) => reply(
+                StatusCode::OK,
+                json!({"ok":true,"sessionUrl":url,"channelId":channel}),
+            ),
+            Err(code) => reply(StatusCode::OK, json!({"ok":false,"code":code})),
+        },
         Call::Exchange { state, code } => match flow::exchange(&client, &deps, &state, &code).await
         {
             Ok(Exchange::Connected { label }) => {
@@ -157,6 +183,16 @@ pub async fn handle<U: DekUnwrapper + Sync, P: Providers>(
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn private_upload_body_cannot_override_visibility() {
+        let body = br#"{"connectionId":"0b0e8a1e-0000-4000-8000-0000000000c1","userId":"6f0f5e1c-0000-4000-8000-00000000f1a1","title":"hello","size":128,"madeForKids":false}"#;
+        assert!(parse_call("/youtube/private-upload", body).is_some());
+        let extra = String::from_utf8(body.to_vec())
+            .unwrap()
+            .replace("128,", "128,\"privacyStatus\":\"public\",");
+        assert!(parse_call("/youtube/private-upload", extra.as_bytes()).is_none());
+    }
 
     #[test]
     fn exchange_and_revoke_bodies_must_match_exactly() {
