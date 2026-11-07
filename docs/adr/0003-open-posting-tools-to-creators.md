@@ -86,3 +86,15 @@ Still true: the project's free quota (about 10,000 units a day; an upload costs 
 1,600) is shared by every creator, so the posting limit applies. Raising the quota,
 and removing the unverified-app warning and its 100-user cap, still need the YouTube
 API audit and Google verification.
+
+## Update (2026-11-06): YouTube changed the upload quota and the private lock
+
+Google's quota page (read 2026-11-06) now gives `videos.insert` its own bucket:
+**100 uploads a day per project, 1 unit each**. The 10,000 units cover the other
+endpoints. The "about 6 uploads a day" that the 1,600-unit figure implied no longer
+applies. On 2026-11-02 the revision history also dropped the private-only lock for
+unverified projects. The quota is still shared by every creator, so the posting limit
+stays. Separately, Google's own rules still cap an unverified app with sensitive scopes
+at 100 new users over the project's lifetime and show a warning screen. A consent
+screen left in Testing also lets only listed test users in and expires refresh tokens
+after 7 days.
