@@ -2,6 +2,7 @@
 # requests match nothing. The app's canonical-host check is the second layer.
 kubcode.dev {
 	encode zstd gzip
+	reverse_proxy /webhooks/tiktok 127.0.0.1:3051
 	reverse_proxy 127.0.0.1:3000
 	header {
 		-Server

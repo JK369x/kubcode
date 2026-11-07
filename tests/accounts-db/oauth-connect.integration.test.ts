@@ -205,3 +205,17 @@ test("the overview says which app each connection uses", async () => {
   assert.ok(view.ok);
   assert.equal(view.connections[0].appSource, "kubcode");
 });
+
+test("invited reviewer can connect their own YouTube and cannot revoke another member or use Instagram", async () => {
+  const reviewer = await member({owner:false});
+  const other = await member();
+  const invited = createPgConnectStore(db.appPool, WRAP, true);
+  const input = {provider:"youtube" as const, kubcodeClientId:KUBCODE_CLIENT, state:token(),cookieToken:token(),verifier:token()};
+  assert.equal((await invited.startConnect(reviewer,input)).ok,true);
+  assert.deepEqual(await invited.startConnect(reviewer,{...input,provider:"instagram"}),{ok:false,code:"FORBIDDEN"});
+  assert.deepEqual(await connect.startConnect(reviewer,input),{ok:false,code:"FORBIDDEN"});
+  const otherId = await fixtureConnection(other.uid,"youtube","kubcode");
+  assert.deepEqual(await invited.markRevoking(reviewer,otherId),{ok:false,code:"NOT_FOUND"});
+  const ownId = await fixtureConnection(reviewer.uid,"youtube","kubcode");
+  assert.deepEqual(await invited.markRevoking(reviewer,ownId),{ok:true,provider:"youtube"});
+});

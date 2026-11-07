@@ -8,6 +8,13 @@ Fresh readback ล่าสุด (UTC): `2026-11-03T17:48:02Z` (read-only aggre
 > งานที่ยังไม่ปิด: (1) P0 owner acceptance ของการ **เชื่อม LINE เข้าบัญชี Google** ด้วยลำดับที่ถูกต้อง (2) เปิดดาว/คอมเมนต์ตาม "เปิด interactions" ใน §3 ทั้งสองข้อไม่ใช่งานเขียนระบบใหม่
 > ไฟล์นี้มี operational metadata แต่ไม่มี secret; ตรวจความเหมาะสมก่อนนำไปเผยแพร่ใน public repository
 
+## ถึง Claude: งาน TikTok และ YouTube ที่ Codex ทำแล้ว (7 พ.ย. 2026)
+
+- **TikTok — ส่งแล้ว รอผล**: ผู้ใช้เชื่อมบัญชี ดูโปรไฟล์ สถิติและรายการคลิป เลือกคลิป ใส่แคปชั่นและกำหนดผู้ชมได้ ทดสอบโพสต์แบบเฉพาะฉันผ่านเว็บสำเร็จใน Sandbox แล้ว ถอด Data Portability ออก เก็บ Webhooks และทดสอบ Production callback ได้ 200 OK ก่อนส่งพร้อมเดโม 3 ไฟล์ เวลา 14:17 น. (ไทย) พอร์ทัลแสดง In review หลังส่ง ดู [รายละเอียด TikTok](docs/tiktok-app-review.md) หากรับช่วงให้ตรวจคำตอบจาก TikTok ก่อนส่งซ้ำ
+- **YouTube — อัปโหลดได้แล้ว รอ Branding ก่อนส่ง Google**: ทดสอบผ่าน kubcode ไปยังช่อง STORY GRID แล้ว ยืนยันใน YouTube Studio ว่าคลิป 4fQkPqi2pp4 เป็น Private ไม่ต้องอัปซ้ำ โปรเจกต์ pure-album-512910-d0 ตั้ง Audience เป็น In production แล้ว แต่ยังไม่ได้รับอนุมัติสิทธิ์ youtube.readonly และ youtube.upload
+- **งาน Google ที่เหลือ**: ยืนยันโดเมนแล้ว ให้ตรวจ Branding อีกครั้งหลัง 8 พ.ย. 2026 เวลา 14:55 น. (ไทย) เจ้าของอนุมัติ [เดโมภาษาอังกฤษ](docs/youtube-review-assets/kubcode-google-oauth-en.mp4) แล้ว เมื่อ Branding ผ่าน ให้ publish branding ตรวจ [ทางเข้า reviewer](https://kubcode.dev/review/youtube) ด้วยบัญชีแยก แล้วส่งคำขอทั้งสองสิทธิ์และแจ้งเมื่อมีใบรับคำขอ ดู [รายละเอียด YouTube](docs/youtube-app-review.md) ห้ามใส่รหัส reviewer ใน repo
+- **งานถัดไป**: Facebook Pages และ Instagram เป็นงานแยก ยังไม่ได้ส่ง Meta review ในรอบนี้
+
 ## 1. สรุปสั้น / เริ่มอ่านตรงนี้
 
 - เว็บ: `https://kubcode.dev` · เข้าสู่ระบบ: `https://kubcode.dev/account` · ตั้งค่าวิธีเข้าสู่ระบบ: `/account/settings`

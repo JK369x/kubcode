@@ -52,6 +52,7 @@ export default async function Account({ searchParams }: Props) {
           ดาวน์โหลดยังปิดอยู่สำหรับทุกคน
         </p>
         <AccountForm {...formProps} />
+        {view.state === "signed-in" && process.env.TIKTOK_SANDBOX_BRIDGE && process.env.TIKTOK_SANDBOX_ORIGIN && <p><Link href="/account/tiktok">โพสต์คลิปบน TikTok</Link></p>}
       </div>
       <section className="membership">
         <h2>สถานะที่ต้องแยกกัน</h2>

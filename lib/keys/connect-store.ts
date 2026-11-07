@@ -80,15 +80,16 @@ const audit = (c: PoolClient, userId: string, event: string, subject: string) =>
 
 const CLOSE = `phase = 'closed', closed_at = now(), verifier_envelope = NULL, key_slot = NULL`;
 
-export function createPgConnectStore(pool: Pool, wrapKey: WrapKey | null): ConnectStore {
+export function createPgConnectStore(pool: Pool, wrapKey: WrapKey | null, review = false): ConnectStore {
   const tx = <T>(work: (c: PoolClient) => Promise<T>) => withTransaction(pool, work);
 
   return {
     async startConnect(session, input) {
       return tx(async (c) => {
-        const uid = await enter(c, session);
+        const uid = await enter(c, session, review);
         if (typeof uid !== "string") return uid;
-        const own = (
+        if (review && input.provider !== "youtube") return fail("FORBIDDEN");
+        const own = review ? undefined : (
           await c.query<{ public_value: string | null }>(
             "SELECT public_value FROM kubcode_accounts.user_secrets WHERE user_id = $1 AND kind = $2",
             [uid, MEMBER_APP_KIND[input.provider]],
@@ -137,7 +138,7 @@ export function createPgConnectStore(pool: Pool, wrapKey: WrapKey | null): Conne
 
     async beginExchange(session, input) {
       return tx(async (c) => {
-        const uid = await enter(c, session);
+        const uid = await enter(c, session, review);
         if (typeof uid !== "string") return uid;
         // RLS limits this to the session's own intents.
         const row = (
@@ -167,7 +168,7 @@ export function createPgConnectStore(pool: Pool, wrapKey: WrapKey | null): Conne
 
     async failIntent(session, intentId) {
       return tx(async (c) => {
-        const uid = await enter(c, session);
+        const uid = await enter(c, session, review);
         if (typeof uid !== "string") return uid;
         const closed = await c.query<{ provider: string }>(
           `UPDATE kubcode_accounts.oauth_connect_intents SET ${CLOSE}, status = 'failed'
@@ -181,12 +182,12 @@ export function createPgConnectStore(pool: Pool, wrapKey: WrapKey | null): Conne
 
     async markRevoking(session, connectionId) {
       return tx(async (c) => {
-        const uid = await enter(c, session);
+        const uid = await enter(c, session, review);
         if (typeof uid !== "string") return uid;
         const r = await c.query<{ provider: Provider }>(
           `UPDATE kubcode_accounts.oauth_connections SET status = 'revoking', updated_at = now()
-            WHERE id = $1 AND user_id = $2 RETURNING provider`,
-          [connectionId, uid],
+            WHERE id = $1 AND user_id = $2 AND (NOT $3::boolean OR (provider = 'youtube' AND app_source = 'kubcode')) RETURNING provider`,
+          [connectionId, uid, review],
         );
         return r.rows[0] ? { ok: true as const, provider: r.rows[0].provider } : fail("NOT_FOUND");
       });
@@ -194,11 +195,11 @@ export function createPgConnectStore(pool: Pool, wrapKey: WrapKey | null): Conne
 
     async removeConnection(session, connectionId, result) {
       return tx(async (c) => {
-        const uid = await enter(c, session);
+        const uid = await enter(c, session, review);
         if (typeof uid !== "string") return uid;
         const r = await c.query<{ provider: string }>(
-          "DELETE FROM kubcode_accounts.oauth_connections WHERE id = $1 AND user_id = $2 RETURNING provider",
-          [connectionId, uid],
+          "DELETE FROM kubcode_accounts.oauth_connections WHERE id = $1 AND user_id = $2 AND (NOT $3::boolean OR (provider = 'youtube' AND app_source = 'kubcode')) RETURNING provider",
+          [connectionId, uid, review],
         );
         if (!r.rows[0]) return fail("NOT_FOUND");
         await audit(c, uid, "oauth_disconnected", r.rows[0].provider);
@@ -209,6 +210,6 @@ export function createPgConnectStore(pool: Pool, wrapKey: WrapKey | null): Conne
   };
 }
 
-export function getConnectStore(databaseUrl: string): ConnectStore {
-  return createPgConnectStore(getPool(databaseUrl), CURRENT_WRAP_KEY);
+export function getConnectStore(databaseUrl: string, review = false): ConnectStore {
+  return createPgConnectStore(getPool(databaseUrl), CURRENT_WRAP_KEY, review);
 }

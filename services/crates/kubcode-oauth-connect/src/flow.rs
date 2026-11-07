@@ -372,3 +372,80 @@ pub async fn revoke<U: DekUnwrapper, P: Providers>(
     db.batch_execute("COMMIT").await?;
     Ok(Revoke::Done { revoked })
 }
+
+/// Opens a Google upload session bound to the member's selected shared-app channel.
+pub async fn private_upload<U: DekUnwrapper, P: Providers>(
+    db: &Client,
+    deps: &Deps<'_, U, P>,
+    b: &crate::handler::UploadBody,
+) -> Result<(String, String), &'static str> {
+    let row = db.query_opt("SELECT envelope, version, external_account_id FROM kubcode_accounts.oauth_connections
+        WHERE id=$1 AND user_id=$2 AND provider='youtube' AND app_source='kubcode' AND status='active'",
+        &[&b.connection_id,&b.user_id]).await.map_err(|_| "db_error")?.ok_or("not_found")?;
+    let version: i32 = row.get(1);
+    let context = ctx(
+        "oauth_connections",
+        b.connection_id,
+        b.user_id,
+        "youtube",
+        version.try_into().map_err(|_| "bad_context")?,
+    )?;
+    let sealed: Vec<u8> = row.get(0);
+    let token_json = open_text(deps.unwrapper, &sealed, &context).await?;
+    let stored: Value = serde_json::from_str(&token_json).map_err(|_| "unwrap_failed")?;
+    let client = deps.kubcode_google.ok_or("app_not_configured")?;
+    let http = reqwest::Client::builder()
+        .timeout(std::time::Duration::from_secs(8))
+        .redirect(reqwest::redirect::Policy::none())
+        .build()
+        .map_err(|_| "unavailable")?;
+    let refresh = stored["refresh_token"].as_str().ok_or("reconnect")?;
+    let token = http
+        .post(crate::providers::GOOGLE_TOKEN_URL)
+        .form(&[
+            ("client_id", client.client_id.as_str()),
+            ("client_secret", client.client_secret.as_str()),
+            ("grant_type", "refresh_token"),
+            ("refresh_token", refresh),
+        ])
+        .send()
+        .await
+        .map_err(|_| "unavailable")?
+        .error_for_status()
+        .map_err(|_| "reconnect")?
+        .bytes()
+        .await
+        .map_err(|_| "unavailable")?;
+    let token: Value = serde_json::from_slice(&token).map_err(|_| "reconnect")?;
+    let access = token["access_token"].as_str().ok_or("reconnect")?;
+    let channel: String = row.get(2);
+    let identity = http
+        .get(crate::providers::YOUTUBE_CHANNELS_URL)
+        .bearer_auth(access)
+        .send()
+        .await
+        .map_err(|_| "unavailable")?
+        .error_for_status()
+        .map_err(|_| "reconnect")?
+        .bytes()
+        .await
+        .map_err(|_| "unavailable")?;
+    if crate::providers::parse_youtube_channel(&identity)
+        .map_err(|_| "channel_lookup_failed")?
+        .external_id
+        != channel
+    {
+        return Err("channel_mismatch");
+    }
+    let metadata = serde_json::json!({"snippet":{"title":b.title,"categoryId":"22"},"status":{"privacyStatus":"private","selfDeclaredMadeForKids":b.made_for_kids}});
+    let res = http.post("https://www.googleapis.com/upload/youtube/v3/videos?uploadType=resumable&part=snippet,status&notifySubscribers=false")
+        .bearer_auth(access).header("Origin","https://kubcode.dev").header("X-Upload-Content-Type","video/mp4")
+        .header("X-Upload-Content-Length", b.size).header("Content-Type","application/json").body(metadata.to_string())
+        .send().await.map_err(|_| "unavailable")?.error_for_status().map_err(|_| "upload_refused")?;
+    let location = res
+        .headers()
+        .get("location")
+        .and_then(|s| s.to_str().ok())
+        .ok_or("missing_session")?;
+    Ok((location.to_owned(), channel))
+}

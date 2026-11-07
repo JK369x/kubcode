@@ -1,0 +1,1 @@
+import {test} from "node:test";import assert from "node:assert/strict";import * as page from "../app/account/tiktok/page";test("sandbox member page reads runtime configuration on every request",()=>assert.equal(Reflect.get(page,"dynamic"),"force-dynamic"));

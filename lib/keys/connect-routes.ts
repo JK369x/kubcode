@@ -16,6 +16,8 @@ import { jsonNoStore, readCookie, readOpaqueCookie } from "../accounts/http";
 import { decodeAccountSession } from "../accounts/runtime";
 import { sessionClaims, type SessionClaims } from "../accounts/session";
 import { guardWrite } from "../interactions/http";
+import { validReviewCode, REVIEW_COOKIE } from "./reviewer";
+import { getKeyStore, reviewerChannels } from "./store";
 import { keysEnabled } from "./access";
 import { connectHeaders, readConnectConfig, type ConnectConfig } from "./connect-config";
 import { INTENT_TTL_SECONDS, getConnectStore, isProvider, type ConnectErrorCode, type ConnectStore, type Provider } from "./connect-store";
@@ -58,7 +60,7 @@ function errorResponse(code: RouteErrorCode): Response {
 
 const oauthCookie = (value: string, maxAge: number) => `${OAUTH_COOKIE}=${value}; Path=/; Max-Age=${maxAge}; HttpOnly; Secure; SameSite=Lax`;
 
-async function sessionOf(request: Request, env: AuthEnv): Promise<SessionClaims | null> {
+export async function sessionOf(request: Request, env: AuthEnv): Promise<SessionClaims | null> {
   const auth = readAuthConfig(env);
   if (!auth.ok) return null;
   const token = await decodeAccountSession(readCookie(request, SESSION_COOKIE_NAME), auth.config.secret);
@@ -68,8 +70,8 @@ async function sessionOf(request: Request, env: AuthEnv): Promise<SessionClaims 
 /** Calls the Lambda; null on any failure (network, timeout, non-200, bad JSON). */
 async function callLambda(
   config: Extract<ConnectConfig, { mode: "on" }>,
-  path: "/oauth/exchange" | "/oauth/revoke",
-  payload: Record<string, string>,
+  path: "/oauth/exchange" | "/oauth/revoke" | "/youtube/private-upload",
+  payload: Record<string, string | number | boolean>,
   deps: ConnectRouteDeps,
   timeoutMs: number,
 ): Promise<Record<string, unknown> | null> {
@@ -93,13 +95,14 @@ async function callLambda(
   }
 }
 
-function authorizeUrl(provider: Provider, clientId: string, state: string, verifier: string | null): string {
+function authorizeUrl(provider: Provider, clientId: string, state: string, verifier: string | null, review = false): string {
   if (provider === "youtube") {
     const q = new URLSearchParams({
       client_id: clientId,
       redirect_uri: CALLBACK("youtube"),
       response_type: "code",
       scope: GOOGLE_SCOPES.join(" "),
+      ...(review ? { hl: "en" } : {}),
       access_type: "offline",
       prompt: "consent",
       state,
@@ -119,6 +122,8 @@ function authorizeUrl(provider: Provider, clientId: string, state: string, verif
 }
 
 /** Shared gate for both writes: accounts, the keys flag, Origin/CSRF/body, session. */
+function isReviewer(request: Request) { return validReviewCode(readCookie(request, REVIEW_COOKIE)); }
+
 async function writeContext(
   request: Request,
   deps: ConnectRouteDeps,
@@ -132,7 +137,7 @@ async function writeContext(
   if (!guarded.ok) return accountErrorResponse(guarded.code as AccountErrorCode);
   return {
     env,
-    store: (deps.storeFor ?? getConnectStore)(accounts.databaseUrl),
+    store: (deps.storeFor?.(accounts.databaseUrl) ?? getConnectStore(accounts.databaseUrl, isReviewer(request))),
     session: await sessionOf(request, env),
     body: guarded.body,
   };
@@ -155,7 +160,7 @@ export async function handleConnectStart(request: Request, deps: ConnectRouteDep
   try {
     const r = await ctx.store.startConnect(ctx.session, { provider, kubcodeClientId: config.youtubeClientId, state, cookieToken, verifier });
     if (!r.ok) return errorResponse(r.code);
-    return jsonNoStore({ ok: true, authorizeUrl: authorizeUrl(provider, r.clientId, state, verifier) }, [oauthCookie(cookieToken, INTENT_TTL_SECONDS)]);
+    return jsonNoStore({ ok: true, authorizeUrl: authorizeUrl(provider, r.clientId, state, verifier, isReviewer(request)) }, [oauthCookie(cookieToken, INTENT_TTL_SECONDS)]);
   } catch (error) {
     logDbFailure("CONNECT_START", error);
     return accountErrorResponse("ACCOUNTS_UNAVAILABLE");
@@ -164,9 +169,9 @@ export async function handleConnectStart(request: Request, deps: ConnectRouteDep
 
 type Notice = "connected" | "connect_failed" | "connect_denied" | "connect_expired" | "connect_unavailable";
 
-function backToKeys(notice: Notice): Response {
+function backToKeys(notice: Notice, review = false): Response {
   const headers = new Headers({
-    Location: `${CANONICAL_ORIGIN}/account/keys?notice=${notice}`,
+    Location: `${CANONICAL_ORIGIN}${review ? "/review/youtube" : "/account/keys"}?notice=${notice}`,
     "Cache-Control": "no-store",
     // The callback URL carries the authorization code: never leak it onward.
     "Referrer-Policy": "no-referrer",
@@ -176,30 +181,31 @@ function backToKeys(notice: Notice): Response {
 }
 
 export async function handleConnectCallback(request: Request, providerParam: string, deps: ConnectRouteDeps = {}): Promise<Response> {
+  const back = (notice: Notice) => backToKeys(notice, isReviewer(request));
   const env = deps.env ?? process.env;
-  if (canonicalHostRedirect(request.headers)) return backToKeys("connect_failed");
+  if (canonicalHostRedirect(request.headers)) return back("connect_failed");
   const accounts = readAccountsConfig(env);
   const config = readConnectConfig(env);
-  if (accounts.mode !== "on" || !keysEnabled(env) || config.mode !== "on") return backToKeys("connect_unavailable");
-  if (!isProvider(providerParam)) return backToKeys("connect_failed");
+  if (accounts.mode !== "on" || !keysEnabled(env) || config.mode !== "on") return back("connect_unavailable");
+  if (!isProvider(providerParam)) return back("connect_failed");
   const provider = providerParam;
   const params = new URL(request.url).searchParams;
   const state = params.get("state") ?? "";
-  if (!state || state.length > 128) return backToKeys("connect_failed");
+  if (!state || state.length > 128) return back("connect_failed");
   const session = await sessionOf(request, env);
   if (!session) {
     const headers = new Headers({ Location: `${CANONICAL_ORIGIN}/account`, "Cache-Control": "no-store", "Referrer-Policy": "no-referrer" });
     return new Response(null, { status: 303, headers });
   }
   const cookieToken = readOpaqueCookie(request, OAUTH_COOKIE);
-  if (!cookieToken) return backToKeys("connect_failed");
-  const store = (deps.storeFor ?? getConnectStore)(accounts.databaseUrl);
+  if (!cookieToken) return back("connect_failed");
+  const store = (deps.storeFor?.(accounts.databaseUrl) ?? getConnectStore(accounts.databaseUrl, isReviewer(request)));
   try {
     const begun = await store.beginExchange(session, { provider, state, cookieToken });
-    if (!begun.ok) return backToKeys(begun.code === "INTENT_EXPIRED" ? "connect_expired" : "connect_failed");
+    if (!begun.ok) return back(begun.code === "INTENT_EXPIRED" ? "connect_expired" : "connect_failed");
     const failWith = async (notice: Notice) => {
       await store.failIntent(session, begun.intentId);
-      return backToKeys(notice);
+      return back(notice);
     };
     const providerError = params.get("error");
     if (providerError !== null) return failWith(providerError === "access_denied" ? "connect_denied" : "connect_failed");
@@ -208,10 +214,10 @@ export async function handleConnectCallback(request: Request, providerParam: str
     const answer = await callLambda(config, "/oauth/exchange", { state, code }, deps, EXCHANGE_TIMEOUT_MS);
     // The Lambda closes the intent itself; closing again is a no-op.
     if (answer?.ok !== true) return failWith("connect_failed");
-    return backToKeys("connected");
+    return back("connected");
   } catch (error) {
     logDbFailure("CONNECT_CALLBACK", error);
-    return backToKeys("connect_failed");
+    return back("connect_failed");
   }
 }
 
@@ -241,6 +247,38 @@ export async function handleDisconnect(request: Request, connectionId: string, d
     return jsonNoStore({ ok: true, revoked: false });
   } catch (error) {
     logDbFailure("CONNECT_DISCONNECT", error);
+    return accountErrorResponse("ACCOUNTS_UNAVAILABLE");
+  }
+}
+
+export async function handlePrivateUpload(request: Request, connectionId: string): Promise<Response> {
+  const ctx = await writeContext(request, {}, 1024);
+  if (ctx instanceof Response) return ctx;
+  if (!ctx.session) return errorResponse("NOT_SIGNED_IN");
+  const { title, size, madeForKids } = ctx.body;
+  if (!UUID.test(connectionId) || Object.keys(ctx.body).length !== 3 || typeof title !== "string" || !title.trim() ||
+      [...title].length > 100 || /[<>]/.test(title) || typeof madeForKids !== "boolean" ||
+      typeof size !== "number" || !Number.isSafeInteger(size) || size < 1 || size > 100 * 1024 * 1024) {
+    return accountErrorResponse("BAD_REQUEST");
+  }
+  const config = readConnectConfig(ctx.env);
+  const db = readAccountsConfig(ctx.env);
+  if (config.mode !== "on" || db.mode !== "on") return errorResponse("CONNECT_UNAVAILABLE");
+  try {
+    if (isReviewer(request)) {
+      const channels = await reviewerChannels(db.databaseUrl, ctx.session);
+      if (!channels?.some(c => c.id === connectionId && c.status === "active")) return errorResponse("NOT_FOUND");
+    } else {
+    const overview = await getKeyStore(db.databaseUrl).overview(ctx.session);
+    if (!overview.ok) return errorResponse("FORBIDDEN");
+    if (!overview.connections.some(c => c.id === connectionId && c.provider === "youtube" && c.status === "active" && c.appSource === "kubcode")) return errorResponse("NOT_FOUND");
+    }
+    const result = await callLambda(config, "/youtube/private-upload", { connectionId, userId: ctx.session.uid, title: title.trim(), size, madeForKids }, {}, 30000);
+    if (result?.ok !== true || typeof result.sessionUrl !== "string" || typeof result.channelId !== "string") {
+      return Response.json({ code: "UPLOAD_UNAVAILABLE", message: result?.code === "reconnect" ? "กรุณาเชื่อมช่อง YouTube อีกครั้ง" : "เริ่มอัปโหลดไม่ได้ กรุณาตรวจการเชื่อมช่อง" }, {status: 502, headers: {"Cache-Control":"no-store"}});
+    }
+    return jsonNoStore({ok:true, sessionUrl:result.sessionUrl, channelId:result.channelId});
+  } catch {
     return accountErrorResponse("ACCOUNTS_UNAVAILABLE");
   }
 }
