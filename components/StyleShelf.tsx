@@ -7,7 +7,7 @@ import { downloadPhase } from "@/lib/downloads/view";
 import { styleShelf, type ShelfEntry, type ShowcaseItem, type StyleTool } from "@/lib/showcase";
 import { ToolLogo } from "./ToolLogo";
 import { playPreview as play, stopPreview as stop } from "./hoverPreview";
-import { SHOWCASE_STYLES, type ShowcaseCredit } from "@/lib/showcase-allowlist";
+import { SHOWCASE_AGENTS, SHOWCASE_STYLES, type ShowcaseCredit, type ShowcaseMadeBy } from "@/lib/showcase-allowlist";
 import styles from "./StyleShelf.module.css";
 
 const PLATFORM = { youtube: "YouTube", instagram: "Instagram" } as const;
@@ -156,6 +156,19 @@ function SkillDownload({ skill, signedIn, available }: { skill: string; signedIn
   );
 }
 
+/** Which agent and model made the clip: a small label on the poster. */
+function MadeByBadge({ madeBy }: { madeBy: ShowcaseMadeBy }) {
+  const agent = SHOWCASE_AGENTS[madeBy.agent] ?? madeBy.agent;
+  return (
+    <p className={styles.madeBy}>
+      <span className="sr-only">สร้างด้วย </span>
+      <span className={styles.agent}>{agent}</span>
+      <span className="sr-only"> โมเดล </span>
+      <span className={styles.model} lang="en">{madeBy.model}</span>
+    </p>
+  );
+}
+
 function ToolIcons({ tools }: { tools: readonly StyleTool[] }) {
   if (tools.length === 0) return null;
   const shown = tools.slice(0, 3);
@@ -231,6 +244,7 @@ function Card({
           />
         )}
         <ToolIcons tools={tools} />
+        <MadeByBadge madeBy={clip.madeBy} />
         <div className={styles.overlay}>
           {style.detail && <p className={styles.detail}>{style.detail}</p>}
           <CardActions entry={entry} signedIn={signedIn} available={available} />

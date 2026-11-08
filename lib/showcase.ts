@@ -1,5 +1,5 @@
 import { isPublishable, MEDIA_POLICY, PUBLISHED_MEDIA, type MediaPolicy } from "./publication";
-import { SHOWCASE_ALLOWLIST, SHOWCASE_STYLES, type ShowcaseCredit } from "./showcase-allowlist";
+import { SHOWCASE_ALLOWLIST, SHOWCASE_STYLES, type ShowcaseCredit, type ShowcaseMadeBy } from "./showcase-allowlist";
 import type { Logo, Tool } from "./content";
 import { SHOWCASE_MANIFEST } from "./showcase-manifest";
 
@@ -17,6 +17,8 @@ export type ShowcaseItem = {
   preview: { src: string } | null;
   link: { url: string; platform: "youtube" | "instagram" } | null;
   credits: readonly ShowcaseCredit[];
+  /** The agent and model that made the clip, shown on its card. */
+  madeBy: ShowcaseMadeBy;
 };
 
 /**
@@ -42,6 +44,7 @@ export function publishedShowcase(
       preview: m.preview && isPublishable(m.preview.src, policy, allowlist) ? { src: m.preview.src } : null,
       link: m.link ? { url: m.link.url, platform: m.link.platform } : null,
       credits: entry.credits ?? [],
+      madeBy: entry.madeBy,
     }];
   });
 }

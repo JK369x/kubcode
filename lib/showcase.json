@@ -7,8 +7,9 @@
       "src": "/showcase/2026-10-25_zombie-condo_ep01_tomorrow-invasion/poster.jpg",
       "width": 480,
       "height": 854,
-      "bytes": 46702,
-      "sha256": "f73cd4a08cbfab2931c49fb48a6280aac06a1d49f111ec27e6b167ba9917d2cb"
+      "bytes": 44316,
+      "sha256": "e1855650ab5551a563f43b65d078ad8c6211c5725d4a4a09d3f95a73a22cacdb",
+      "from": "cover"
     },
     "preview": {
       "src": "/showcase/2026-10-25_zombie-condo_ep01_tomorrow-invasion/preview.mp4",
@@ -42,8 +43,9 @@
       "src": "/showcase/2026-10-25_zombie-condo_ep02_fridge-curry-paste/poster.jpg",
       "width": 480,
       "height": 854,
-      "bytes": 44296,
-      "sha256": "8695c7deec299ce18062c441e8c6210fdb763199964f8448c91ed5b255894924"
+      "bytes": 39709,
+      "sha256": "a698a2e50667d111fee4fe3c9ae707ab017314a72d5f8f0687fb951038f1f036",
+      "from": "cover"
     },
     "preview": {
       "src": "/showcase/2026-10-25_zombie-condo_ep02_fridge-curry-paste/preview.mp4",
@@ -77,8 +79,9 @@
       "src": "/showcase/2026-10-25_zombie-condo_ep03_mop-camera/poster.jpg",
       "width": 480,
       "height": 854,
-      "bytes": 47069,
-      "sha256": "3c609b3d63219e8be49ba35547ff05b7953b2687d3144e3d52b7b12f71b7545a"
+      "bytes": 39464,
+      "sha256": "4991c761160109104bedc127c2668a1fb92de028a9af6271398c1450f33b35e3",
+      "from": "cover"
     },
     "preview": {
       "src": "/showcase/2026-10-25_zombie-condo_ep03_mop-camera/preview.mp4",
@@ -112,8 +115,9 @@
       "src": "/showcase/2026-10-25_zombie-condo_ep04_shopping-cart/poster.jpg",
       "width": 480,
       "height": 854,
-      "bytes": 44306,
-      "sha256": "f9dc998c56c653401647a0e5a5d312fdc4783247b58a14d844f2b3a91b6239fe"
+      "bytes": 37772,
+      "sha256": "af06665baa9532258a6b45cd18e251f426e658a8359f2783b5514eec882d3519",
+      "from": "cover"
     },
     "preview": {
       "src": "/showcase/2026-10-25_zombie-condo_ep04_shopping-cart/preview.mp4",
@@ -147,8 +151,9 @@
       "src": "/showcase/2026-10-26_zombie-condo_ep05_tap-water-stops/poster.jpg",
       "width": 480,
       "height": 854,
-      "bytes": 47843,
-      "sha256": "f69e7038444525136fb5ebb4a7ec4b879208e174b69c7930300d3511fd8b0023"
+      "bytes": 38805,
+      "sha256": "f6f364498f15609cf4429644388695a6a334d2717607e38001d7e45ca92b3766",
+      "from": "cover"
     },
     "preview": {
       "src": "/showcase/2026-10-26_zombie-condo_ep05_tap-water-stops/preview.mp4",
@@ -182,8 +187,9 @@
       "src": "/showcase/2026-10-26_zombie-condo_ep06_fire-stairs-voice/poster.jpg",
       "width": 480,
       "height": 854,
-      "bytes": 23791,
-      "sha256": "09407ce9aa679202461548ee657f4a2e47550d9eceb679a09ea5de6aeca450ec"
+      "bytes": 39272,
+      "sha256": "5efe473dc91beb58530fdfde83be9fb4dd1630b8ccb7fc9cc373d5f98d84083e",
+      "from": "cover"
     },
     "preview": {
       "src": "/showcase/2026-10-26_zombie-condo_ep06_fire-stairs-voice/preview.mp4",
@@ -217,8 +223,9 @@
       "src": "/showcase/2026-10-26_zombie-condo_ep07_neighbor-wont-open/poster.jpg",
       "width": 480,
       "height": 854,
-      "bytes": 34633,
-      "sha256": "d975efc96420d483586ee96ec7965d11eb83ded3fbeb74b08450ccc6bbcced00"
+      "bytes": 38635,
+      "sha256": "321924a10d1a64f6f8c6de45333484c596e105f2d79b90427320c8e5d318f5fe",
+      "from": "cover"
     },
     "preview": {
       "src": "/showcase/2026-10-26_zombie-condo_ep07_neighbor-wont-open/preview.mp4",
@@ -252,16 +259,17 @@
       "src": "/showcase/2026-10-29_mall-infection_ep01_first-night/poster.jpg",
       "width": 480,
       "height": 854,
-      "bytes": 13823,
-      "sha256": "b371b5d958847e7b43d74856c70fbb1463ee2786ab84342891c408c6f1110298"
+      "bytes": 26816,
+      "sha256": "dabfd57b8d3adb9ad532fee22a26aa4938eb1239343a3201b51270d8397dbce8",
+      "from": "frame"
     },
     "preview": {
       "src": "/showcase/2026-10-29_mall-infection_ep01_first-night/preview.mp4",
       "width": 360,
       "height": 640,
       "seconds": 3.5,
-      "bytes": 19386,
-      "sha256": "ddacc4340659d6265c8378cfb944b444d26389d7bfde0d6a8c2d2dd318ef27cc"
+      "bytes": 58278,
+      "sha256": "d45cffa1ee5b48da9cd8042e7cf120f6c621254c9f49d4a0feea6d2422925ac5"
     },
     "link": null,
     "madeWith": {
@@ -285,7 +293,8 @@
       "width": 480,
       "height": 854,
       "bytes": 21893,
-      "sha256": "1af931ee3ea91d1f3e4b5e681362cb93b0f02e2679b478b603944eaa469e6211"
+      "sha256": "1af931ee3ea91d1f3e4b5e681362cb93b0f02e2679b478b603944eaa469e6211",
+      "from": "frame"
     },
     "preview": {
       "src": "/showcase/2026-10-30_mall-infection_ep02_stairs/preview.mp4",
@@ -319,8 +328,9 @@
       "src": "/showcase/2026-10-28_satire-stories_ep01_elon-dream-low-poly/poster.jpg",
       "width": 480,
       "height": 854,
-      "bytes": 28513,
-      "sha256": "181e9f60560416f7ab936bf90772307eab85386238468bf5267e43102e1b40eb"
+      "bytes": 46834,
+      "sha256": "d0bbf7dc52c697f7bf45127f516644a881d6c479b1e1294d8f04407de11994ff",
+      "from": "cover"
     },
     "preview": {
       "src": "/showcase/2026-10-28_satire-stories_ep01_elon-dream-low-poly/preview.mp4",
@@ -355,7 +365,8 @@
       "width": 480,
       "height": 854,
       "bytes": 38888,
-      "sha256": "df8698982bad837982861f44dd06f00e8306bf3fef99b829a1cb0e451d56e1c4"
+      "sha256": "df8698982bad837982861f44dd06f00e8306bf3fef99b829a1cb0e451d56e1c4",
+      "from": "frame"
     },
     "preview": {
       "src": "/showcase/2026-11-01_freshstack-what-if_ep03_internet-gone-week/preview.mp4",
@@ -386,7 +397,8 @@
       "width": 480,
       "height": 854,
       "bytes": 44071,
-      "sha256": "73a84f1675ba77e718555f1178cffa8e12cdb2b8b1bc31bd1c47a7b0f4ac8ca1"
+      "sha256": "73a84f1675ba77e718555f1178cffa8e12cdb2b8b1bc31bd1c47a7b0f4ac8ca1",
+      "from": "frame"
     },
     "preview": {
       "src": "/showcase/2026-11-01_freshstack-what-if_ep05_no-one-can-lie/preview.mp4",
@@ -417,7 +429,8 @@
       "width": 640,
       "height": 360,
       "bytes": 26336,
-      "sha256": "42d222cde4270440eae24bcf08f833686f8edd9d76294379d470884dfa85f991"
+      "sha256": "42d222cde4270440eae24bcf08f833686f8edd9d76294379d470884dfa85f991",
+      "from": "frame"
     },
     "preview": {
       "src": "/showcase/2026-11-01_what-if-studio_ep01_mute-touch/preview.mp4",
@@ -449,7 +462,8 @@
       "width": 480,
       "height": 854,
       "bytes": 31371,
-      "sha256": "685e13b8b4b29a50256dc659ca7e5a26a3740ac99ed5e6d910c11e0c4d05b45a"
+      "sha256": "685e13b8b4b29a50256dc659ca7e5a26a3740ac99ed5e6d910c11e0c4d05b45a",
+      "from": "frame"
     },
     "preview": {
       "src": "/showcase/low-poly-urban-study/preview.mp4",
@@ -479,7 +493,8 @@
       "width": 480,
       "height": 854,
       "bytes": 52898,
-      "sha256": "76e8a54602132d87bce7f7e207b6f53b2727db57f3663bbfd57b27c688609f7e"
+      "sha256": "76e8a54602132d87bce7f7e207b6f53b2727db57f3663bbfd57b27c688609f7e",
+      "from": "frame"
     },
     "preview": {
       "src": "/showcase/2026-10-25_tech-podcast_ep01_cliparr/preview.mp4",
@@ -510,7 +525,8 @@
       "width": 480,
       "height": 854,
       "bytes": 47021,
-      "sha256": "5d7679b12a7cfb5a43f233c8ec98477f4cbce16ceebfea5fdb7e601134e8995c"
+      "sha256": "5d7679b12a7cfb5a43f233c8ec98477f4cbce16ceebfea5fdb7e601134e8995c",
+      "from": "frame"
     },
     "preview": {
       "src": "/showcase/2026-10-26_tech-podcast_ep02_clean-your-tv/preview.mp4",
@@ -541,7 +557,8 @@
       "width": 480,
       "height": 854,
       "bytes": 44744,
-      "sha256": "ff3142d70a00f33bdabb8f1d4bf4a4b1aa8d6ce6c0db3a2587651ec6818f922d"
+      "sha256": "ff3142d70a00f33bdabb8f1d4bf4a4b1aa8d6ce6c0db3a2587651ec6818f922d",
+      "from": "frame"
     },
     "preview": {
       "src": "/showcase/2026-10-26_tech-podcast_ep03_amazon-bee/preview.mp4",
@@ -572,7 +589,8 @@
       "width": 480,
       "height": 854,
       "bytes": 48715,
-      "sha256": "842860f637e366004b89f7698714639d2d742ce7e63135fe49b61257dde53cb4"
+      "sha256": "842860f637e366004b89f7698714639d2d742ce7e63135fe49b61257dde53cb4",
+      "from": "frame"
     },
     "preview": {
       "src": "/showcase/2026-10-26_tech-podcast_ep04_php-security/preview.mp4",

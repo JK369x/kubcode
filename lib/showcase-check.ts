@@ -51,6 +51,8 @@ export function validateShowcase(input: {
     if (e.poster.src !== `/showcase/${e.id}/poster.jpg`) out.push(`${e.id}: poster path must be /showcase/${e.id}/poster.jpg`);
     if (e.poster.bytes > SHOWCASE_LIMITS.posterBytes) out.push(`${e.id}: poster over ${SHOWCASE_LIMITS.posterBytes} bytes`);
     out.push(...checkFile(publicDir, e.id, "poster", e.poster));
+    const from = a.poster === "cover" ? "cover" : "frame";
+    if (e.poster.from !== from) out.push(`${e.id}: poster must come from the ${from} (run npm run showcase)`);
     if (e.preview) {
       if (e.preview.src !== `/showcase/${e.id}/preview.mp4`) out.push(`${e.id}: preview path must be /showcase/${e.id}/preview.mp4`);
       if (e.preview.bytes > SHOWCASE_LIMITS.previewBytes) out.push(`${e.id}: preview over ${SHOWCASE_LIMITS.previewBytes} bytes`);

@@ -17,6 +17,7 @@ const item = (id: string, style: string, aspect: "portrait" | "landscape" = "por
   preview: null,
   link: null,
   credits: [],
+  madeBy: { agent: "codex-cli", model: "gpt-6.1-sol" },
 });
 
 test("every allowlisted clip names a known style, and each style has exactly one cover", () => {

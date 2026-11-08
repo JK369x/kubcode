@@ -78,12 +78,13 @@ function fixture() {
     style: "fixture-style",
     rights: "Own work.",
     at: 1,
+    madeBy: { agent: "codex-cli", model: "gpt-6.1-sol" },
   };
   const entry: ShowcaseManifestEntry = {
     id,
     title: "Clip A title",
     aspect: "portrait",
-    poster: { src: `/showcase/${id}/poster.jpg`, width: 480, height: 854, bytes: poster.length, sha256: sha(poster) },
+    poster: { src: `/showcase/${id}/poster.jpg`, width: 480, height: 854, bytes: poster.length, sha256: sha(poster), from: "frame" },
     preview: { src: `/showcase/${id}/preview.mp4`, width: 360, height: 640, seconds: 3.5, bytes: preview.length, sha256: sha(preview) },
     link: { url: "https://www.youtube.com/watch?v=abc", platform: "youtube", evidence: "clip.json" },
     madeWith: { renderer: "hyperframes", voice: "thai-jk" },
@@ -123,6 +124,7 @@ const cases: [string, Parameters<typeof problems>[0], RegExp][] = [
   ["preview over budget", (f) => ({ manifest: [{ ...f.entry, preview: { ...f.entry.preview!, bytes: 400_001 } }] }), /preview.*400000/],
   ["extra file in a clip folder", (f) => { fs.writeFileSync(path.join(f.dir, "showcase", "clip-a", "full.mp4"), "x"); }, /unexpected file/],
   ["stray clip folder", (f) => { fs.mkdirSync(path.join(f.dir, "showcase", "old-clip")); }, /unexpected folder/],
+  ["cover poster cut from a frame", (f) => ({ allowlist: [{ ...f.allow, poster: "cover" }] }), /poster must come from the cover/],
   ["link to another host", (f) => ({ manifest: [{ ...f.entry, link: { ...f.entry.link!, url: "https://example.com/x" } }] }), /link/],
   ["What If style without its credit", (f) => ({ manifest: [{ ...f.entry, madeWith: { style: "freshstack-what-if (React SVG)" } }] }), /What If/],
   ["ElevenLabs voice without its credit", (f) => ({ manifest: [{ ...f.entry, madeWith: { voice: "ElevenLabs eleven_v3 Thai" } }] }), /elevenlabs\.io/],
