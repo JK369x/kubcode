@@ -19,6 +19,11 @@
 #                            HMAC key and the Google "kubcode web connect" client go
 #                            to SSM; the Lambda URL, HMAC key and client id are merged
 #                            into web.env. No value is printed or put in argv
+#   webhost.sh set-publishing publishing (docs/design/publishing-core.md §4): the
+#                            Function URL, the HMAC key from the vault
+#                            (kubcode/publishing-hmac-key, made by
+#                            infra/scripts/publishing-secrets.sh hmac) and the flag
+#                            are merged into web.env. No value is printed
 #   webhost.sh smoke         run the on-box smoke test
 #   webhost.sh tls           right after the DNS flip: restart Caddy so it gets the
 #                            certificate now, and wait until the box serves it
@@ -210,6 +215,19 @@ set_connect() {
   echo "webhost: connect settings stored; the Lambda picks up the new key within 5 minutes" >&2
 }
 
+set_publishing() {
+  local url key env
+  url=$(cd "$HERE/.." && pulumi stack output --stack prod publishingUrl)
+  [[ "$url" =~ ^https://[a-z0-9]+[.]lambda-url[.]ap-southeast-1[.]on[.]aws/$ ]] || die "no publishingUrl stack output (pulumi up with kubcode:publishing first)"
+  kc_has publishing-hmac-key || die "vault has no kubcode/publishing-hmac-key; run infra/scripts/publishing-secrets.sh hmac"
+  key=$(kc_get publishing-hmac-key)
+  [[ "$key" =~ ^[0-9a-f]{64}$ ]] || die "kubcode/publishing-hmac-key is not 64 hex characters"
+  env=$(printf "KUBCODE_PUBLISHING_URL='%s'\nKUBCODE_PUBLISHING_HMAC_KEY='%s'\nKUBCODE_PUBLISHING_ENABLED='true'\n" "$url" "$key")
+  unset key
+  admin_ssh sudo /usr/local/lib/kubcode/write-env --merge <<<"$env"
+  echo "webhost: publishing settings stored; /account/channels is on for the owner" >&2
+}
+
 # Caddy tried for the certificate at provision time, while DNS still pointed
 # at Vercel, and is now backing off. A restart makes it try again at once.
 tls() {
@@ -235,6 +253,7 @@ set-env) set_env ;;
 set-downloads) set_downloads ;;
 set-worker-db) TMP=$(mktemp -d) && set_worker_db ;;
 set-connect) TMP=$(mktemp -d) && set_connect ;;
+set-publishing) set_publishing ;;
 smoke) admin_ssh /usr/local/lib/kubcode/smoke ;;
 tls) tls ;;
 status | rollback) admin_ssh sudo -u deploy env SSH_ORIGINAL_COMMAND="$1" /usr/local/bin/kubcode-deploy ;;
