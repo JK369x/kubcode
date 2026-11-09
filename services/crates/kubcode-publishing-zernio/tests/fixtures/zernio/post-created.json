@@ -1,0 +1,5 @@
+{"_source": "https://docs.zernio.com/guides/media-uploads",
+ "message": "Post scheduled successfully",
+ "post": {"_id": "65f1c0a9e2b5af0012ab34cd", "status": "scheduled", "scheduledFor": "2027-01-01T17:00:00Z",
+  "mediaItems": [{"url": "https://media.zernio.com/temp/1234567890_abc123_photo.jpg", "type": "image"}],
+  "platforms": [{"platform": "linkedin", "status": "pending"}]}}

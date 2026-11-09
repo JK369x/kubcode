@@ -1,0 +1,2 @@
+{"_source": "https://docs.zernio.com/guides/post-lifecycle (fields from text, no JSON example)",
+ "error": "Published posts cannot be deleted", "type": "invalid_request_error", "code": "invalid_resource_state"}

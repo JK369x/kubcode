@@ -1,0 +1,4 @@
+{"_source": "https://docs.zernio.com/multi-tenant (example has no id or timestamp)",
+ "event": "account.connected",
+ "profiles": [{"id": "66a1f0c2a4b9d3e8f1a2b3c4", "externalId": "cus_8f3a2"}],
+ "account": {"accountId": "66b2e19d8c3f5a7e9d0b1c2d", "profileId": "66a1f0c2a4b9d3e8f1a2b3c4", "platform": "instagram", "username": "acmecorp"}}

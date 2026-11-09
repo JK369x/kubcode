@@ -1,0 +1,2 @@
+{"_source": "https://zernio.com/openapi.yaml (Unauthorized)",
+ "error": "Missing API key. Send it as Authorization: Bearer <your API key>.", "type": "authentication_error", "code": "missing_credentials", "docUrl": "https://docs.zernio.com"}

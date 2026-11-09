@@ -1,0 +1,7 @@
+{"_source": "built from the field list on https://docs.zernio.com/webhooks/social (no JSON example)",
+ "id": "evt_01", "event": "post.platform.published", "timestamp": "2026-11-11T12:00:03Z",
+ "post": {"id": "65f1c0a9e2b5af0012ab34cd", "status": "published", "scheduledFor": "2026-11-11T12:00:00Z", "publishedAt": "2026-11-11T12:00:02Z",
+  "platforms": [{"platform": "youtube", "status": "published", "accountId": "66b2e19d8c3f5a7e9d0b1c2d", "platformPostId": "y7AAfV8ABIo", "publishedUrl": "https://www.youtube.com/watch?v=y7AAfV8ABIo"}]},
+ "platform": {"name": "youtube", "status": "published", "platformPostId": "y7AAfV8ABIo", "publishedUrl": "https://www.youtube.com/watch?v=y7AAfV8ABIo"},
+ "account": {"accountId": "66b2e19d8c3f5a7e9d0b1c2d", "platform": "youtube", "username": "lokeekbaeb"},
+ "profiles": [{"id": "66a1f0c2a4b9d3e8f1a2b3c4", "externalId": "00000000-0000-4000-8000-000000000001"}]}

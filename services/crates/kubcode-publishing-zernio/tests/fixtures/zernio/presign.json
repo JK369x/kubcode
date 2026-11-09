@@ -1,0 +1,4 @@
+{"_source": "https://docs.zernio.com/media/get-media-presigned-url",
+ "uploadUrl": "https://bucket.r2.cloudflarestorage.com/temp/1234567890_abc123_photo.jpg?X-Amz-Signature=...",
+ "publicUrl": "https://media.zernio.com/temp/1234567890_abc123_photo.jpg",
+ "key": "temp/1234567890_abc123_photo.jpg", "expiresIn": 3600}
