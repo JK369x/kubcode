@@ -18,11 +18,11 @@
 import assert from "node:assert/strict";
 import { execFileSync, spawn, type ChildProcess } from "node:child_process";
 import { randomBytes } from "node:crypto";
-import { mkdirSync } from "node:fs";
+import { existsSync, mkdirSync } from "node:fs";
 import { createServer } from "node:net";
 import path from "node:path";
 import { encode } from "next-auth/jwt";
-import { chromium, type BrowserContext, type Route } from "@playwright/test";
+import { chromium, type Browser, type BrowserContext, type Route } from "@playwright/test";
 import { createPgAccountStore } from "../../lib/accounts/store";
 import { accountToken } from "../../lib/accounts/session";
 import { SESSION_COOKIE_NAME } from "../../lib/auth-policy";
@@ -43,11 +43,19 @@ const FAKE_LAMBDA = "https://localrunner0000000000000.lambda-url.ap-southeast-1.
 const ZERNIO = "https://zernio.com/api/v1";
 const OUT = ".qa/local-e2e";
 const WAIT_MINUTES = 15;
+// A normal Brave process (no automation flags) with its own profile; the
+// harness only listens to it over a loopback debugging port.
+const CONSENT_BROWSER = "/Applications/Brave Browser.app/Contents/MacOS/Brave Browser";
+const CONSENT_PROFILE = `${OUT}/consent-browser`;
 // Wiring check without consent: headless, clicks connect itself and stops at
 // Zernio's first answer (any key; a dummy one gets 401 from Zernio).
 const SMOKE = process.env.KUBCODE_LOCAL_E2E_SMOKE === "1";
 
 const log = (msg: string) => console.log(`[local-e2e] ${msg}`);
+
+// Ctrl+C or a kill ends the current wait, so cleanup still runs.
+let aborted = false;
+for (const sig of ["SIGINT", "SIGTERM"] as const) process.on(sig, () => (aborted = true));
 
 async function readKey(): Promise<string> {
   const chunks: Buffer[] = [];
@@ -68,6 +76,7 @@ async function freePort(): Promise<number> {
 async function waitFor<T>(what: string, ms: number, probe: () => Promise<T | undefined>): Promise<T> {
   const until = Date.now() + ms;
   for (;;) {
+    if (aborted) throw new Error(`aborted while waiting for ${what}`);
     const v = await probe().catch(() => undefined);
     if (v !== undefined) return v;
     if (Date.now() > until) throw new Error(`timed out waiting for ${what}`);
@@ -78,6 +87,33 @@ async function waitFor<T>(what: string, ms: number, probe: () => Promise<T | und
 async function zernio(key: string, method: string, p: string): Promise<{ status: number; body: any }> {
   const res = await fetch(`${ZERNIO}${p}`, { method, headers: { authorization: `Bearer ${key}` }, redirect: "error" });
   return { status: res.status, body: await res.json().catch(() => null) };
+}
+
+/**
+ * Starts Brave as a normal app process (no automation flags, so Google allows
+ * sign-in) with a scratch profile and a loopback debugging port, opens the
+ * consent URL, and reports every request URL it makes. Read-only: nothing is
+ * driven through the port.
+ */
+async function consentBrowser(url: string, kids: ChildProcess[], onRequest: (url: string) => void): Promise<Browser | undefined> {
+  const port = await freePort();
+  mkdirSync(CONSENT_PROFILE, { recursive: true });
+  const proc = spawn(
+    CONSENT_BROWSER,
+    [`--user-data-dir=${path.resolve(CONSENT_PROFILE)}`, `--remote-debugging-port=${port}`, "--remote-debugging-address=127.0.0.1", "--no-first-run", "--no-default-browser-check", url],
+    { stdio: "ignore" },
+  );
+  kids.push(proc);
+  try {
+    await waitFor("the consent browser", 20_000, async () => ((await fetch(`http://127.0.0.1:${port}/json/version`)).ok ? true : undefined));
+    const browser = await chromium.connectOverCDP(`http://127.0.0.1:${port}`);
+    const watch = (ctx: BrowserContext) => ctx.on("request", (r) => onRequest(r.url()));
+    browser.contexts().forEach(watch);
+    browser.on("disconnected", () => undefined);
+    return browser;
+  } catch {
+    return undefined;
+  }
 }
 
 /** The clipboard as text; empty when unreadable. Never printed. */
@@ -229,17 +265,21 @@ async function main() {
     const url = await waitFor("the consent URL", 30_000, async () => consentUrl);
     assert.match(url, /^https:\/\//, "consent URL is https");
     const before = clipboard();
-    spawn("open", [url], { stdio: "ignore" });
-    log(`READY: the ${label} consent page is open in your default browser.`);
-    log(`  1. Sign in and approve.`);
-    log(`  2. Zernio then shows a page that continues to kubcode.dev. Do NOT click continue:`);
-    log(`     copy the page address (Cmd+L, then Cmd+C). This script picks it up from the clipboard.`);
-    log(`     (Clicked it already? Cmd+Y → copy the kubcode.dev/api/channels/callback entry.)`);
-    log(`  (${WAIT_MINUTES} min max)`);
-    const callback = await waitFor("the callback URL on the clipboard", WAIT_MINUTES * 60_000, async () => {
+    let seen: string | undefined;
+    const listener = existsSync(CONSENT_BROWSER) ? await consentBrowser(url, kids, (u) => (seen ??= callbackFrom(u))) : undefined;
+    if (!listener) spawn("open", [url], { stdio: "ignore" });
+    log(`READY: the ${label} consent page is open in ${listener ? "a separate Brave window" : "your default browser"}.`);
+    log(`  1. Sign in and approve. The window ends on kubcode.dev with "connect_failed": production`);
+    log(`     refusing a callback it does not own; it changes nothing. This script catches the callback itself.`);
+    log(`  If it does not (e.g. Google refuses the window), use your normal browser instead: open the same`);
+    log(`  consent page there, Cmd+Opt+I → Network → "Preserve log" → filter "callback", approve, then`);
+    log(`  right-click the "callback?i=..." request → Copy → Copy URL. (${WAIT_MINUTES} min max)`);
+    const callback = await waitFor("the callback URL", WAIT_MINUTES * 60_000, async () => {
+      if (seen) return seen;
       const c = clipboard();
       return c !== before ? callbackFrom(c) : undefined;
     });
+    await listener?.close().catch(() => undefined);
     log("got the callback URL; replaying it into the local server");
     await page.goto(callback);
 

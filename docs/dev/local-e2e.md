@@ -12,7 +12,7 @@ Zernio API**. Production is for one smoke test after merge, never for debugging.
 | Database | throwaway DB on the local test Postgres, all migrations, a fictional owner | yes (migrations, grants, RLS) |
 | Publishing Lambda | `services/crates/kubcode-publishing-lambda/examples/publishing_local.rs` on 127.0.0.1 | yes: `http::handle`, `Service`, Zernio adapter, `Store`; only the HTTP server, secret source and a no-TLS DB connection differ |
 | Web host | `next start` with the production build | yes; `scripts/local-e2e/lambda-route.cjs` (preload) sends the fake Function URL to the runner |
-| Browser | headless Chromium for our pages, where `https://kubcode.dev/**` is answered by the local Next server; the platform consent in your own browser | yes: same origin, cookies, CSRF and callback URL as production |
+| Browser | headless Chromium for our pages, where `https://kubcode.dev/**` is answered by the local Next server; the platform consent in a separate, normal Brave window | yes: same origin, cookies, CSRF and callback URL as production |
 | Zernio, Google/Meta consent | real | real |
 
 The pinned guards (`https://kubcode.dev` callback, Function URL format, Origin
@@ -38,18 +38,28 @@ login password) and pipes it to the harness on stdin. The key never appears in
 argv, env, logs or files.
 
 The harness drives our pages in a headless browser, clicks **เชื่อม YouTube**
-itself and opens the platform's consent page in **your default browser**
-(Google refuses sign-in in an automated browser). When it prints `READY`:
+itself and opens the platform's consent page in a **separate Brave window**:
+a normal app process (no automation flags; Google refuses sign-in in an
+automated browser) with its own profile in `.qa/local-e2e/consent-browser` and
+a debugging port on 127.0.0.1 that the harness only listens to. When it prints
+`READY`:
 
-1. sign in and approve in your browser;
-2. Zernio then shows a page that continues to kubcode.dev. **Do not click it**:
-   copy the page address (Cmd+L, Cmd+C). The harness reads the clipboard,
-   accepts only `https://kubcode.dev/api/channels/callback?i=<64 hex>...`
-   (directly or inside Zernio's `?to=`), never prints it, and replays it into
-   the local server with this run's cookies.
-   Clicked continue already? Production rejects that callback before touching
-   the database or the Lambda (no intent cookie / unknown state), so nothing is
-   consumed: copy the callback entry from History (Cmd+Y) instead.
+1. sign in (the first time only; the profile keeps the login) and approve.
+   Zernio redirects to the production callback, which refuses it before
+   touching the database or the Lambda (no intent cookie for this state), so
+   the window ends on `kubcode.dev/account/channels?notice=connect_failed`.
+   Nothing is consumed. The harness has already seen the callback request and
+   replays it into the local server with this run's cookies.
+
+Fallback, if that window cannot sign in: open the same consent page in your
+normal browser, first **Cmd+Opt+I → Network → "Preserve log" → filter
+`callback`**, approve, then right-click the `callback?i=...` request → **Copy →
+Copy URL**. The harness also reads the clipboard and accepts only
+`https://kubcode.dev/api/channels/callback?i=<64 hex>...`; it never prints it.
+
+Delete the consent profile when you are done: `rm -rf .qa/local-e2e/consent-browser`.
+
+The intent behind it expires 10 minutes after the click (as in production).
 
 The harness then:
 
