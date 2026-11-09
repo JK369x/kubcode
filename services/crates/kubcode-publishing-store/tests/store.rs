@@ -522,3 +522,14 @@ async fn the_shared_rate_limiter() {
     );
     db.drop().await;
 }
+
+#[tokio::test]
+#[ignore = "needs KUBCODE_TEST_DATABASE_URL; run with --ignored"]
+async fn a_request_nonce_is_used_once() {
+    let db = db().await;
+    let s = db.worker().await;
+    assert!(s.use_nonce(&hash("n1")).await.unwrap());
+    assert!(!s.use_nonce(&hash("n1")).await.unwrap());
+    assert!(s.use_nonce(&hash("n2")).await.unwrap());
+    db.drop().await;
+}

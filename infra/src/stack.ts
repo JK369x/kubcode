@@ -13,6 +13,8 @@ import {
   MEDIA_CORS_ORIGIN,
   NAMES,
   OAUTH_CONNECT_BINARY,
+  PUBLISHING_BINARY,
+  PUBLISHING_PARAMETERS,
   PACKAGES,
   PACKAGE_LOG_RETENTION_DAYS,
   PACKAGE_SIGNER_BINARY,
@@ -30,6 +32,7 @@ import {
   oauthConnectPolicy,
   packageSignerPolicy,
   previewPolicy,
+  publishingPolicy,
   secretsKeyPolicy,
   wrapKeyPolicy,
 } from "./policies";
@@ -50,6 +53,8 @@ export type StackConfig = {
   wrapKeyDecryptArns: pulumi.Input<string>[];
   /** Deploy the OAuth connect Lambda (kubcode:oauthConnect). Its role joins both key policies. */
   oauthConnect: boolean;
+  /** Deploy the publishing Lambda pair (kubcode:publishing). Its role joins the secrets key's KeyUse. */
+  publishing?: boolean;
 };
 
 const json = (v: unknown) => JSON.stringify(v);
@@ -174,7 +179,27 @@ export function createStack(cfg: StackConfig) {
         opts,
       )
     : undefined;
+  // --- Publishing Lambda role (docs/design/publishing-core.md §4), shared by
+  // the URL function and the ops function. It reads SSM SecureStrings, so the
+  // secrets key policy names it; it never decrypts with the wrap key.
+  const publishingTags = { service: "publishing" };
+  const publishingRole = cfg.publishing
+    ? new aws.iam.Role(
+        "publishing-role",
+        {
+          name: NAMES.publishingRole,
+          description: "kubcode-publishing Lambdas: channel connect, publishing through Zernio, webhooks",
+          assumeRolePolicy: json(lambdaTrustPolicy()),
+          permissionsBoundary: boundary.arn,
+          tags: publishingTags,
+        },
+        opts,
+      )
+    : undefined;
   const secretsKeyUsers = [...cfg.secretsKeyUserArns, ...(connectRole ? [connectRole.arn] : [])];
+  // The publishing role only reads its own SecureStrings: a narrow statement,
+  // not KeyUse.
+  const ssmReaderArns = publishingRole ? [publishingRole.arn] : [];
   const wrapKeyDecrypters = [...cfg.wrapKeyDecryptArns, ...(connectRole ? [connectRole.arn] : [])];
 
   new aws.kms.KeyPolicy(
@@ -182,8 +207,8 @@ export function createStack(cfg: StackConfig) {
     {
       keyId: secretsKey.keyId,
       policy: pulumi
-        .all([deployRole.arn, previewRole.arn, pulumi.all(secretsKeyUsers)])
-        .apply(([deployArn, previewArn, userArns]) =>
+        .all([deployRole.arn, previewRole.arn, pulumi.all(secretsKeyUsers), pulumi.all(ssmReaderArns)])
+        .apply(([deployArn, previewArn, userArns, readerArns]) =>
           json(
             secretsKeyPolicy({
               adminArns: [deployArn, ...cfg.breakGlassAdminArns],
@@ -191,6 +216,7 @@ export function createStack(cfg: StackConfig) {
               userArns,
               // The admin sets the step-5 SSM SecureStrings with this key.
               ssmWriterArns: cfg.breakGlassAdminArns,
+              ssmReaders: { arns: readerArns, parameterNames: Object.values(PUBLISHING_PARAMETERS) },
             }),
           ),
         ),
@@ -446,6 +472,69 @@ export function createStack(cfg: StackConfig) {
     oauthConnectUrl = url.functionUrl;
   }
 
+  // --- Publishing Lambdas: same binary, mode by env. The URL function serves
+  // the web host (HMAC) and Zernio webhooks (signature); the ops function has
+  // no URL, so only IAM principals (the owner's CLI) can invoke it.
+  let publishingUrl: pulumi.Output<string> | undefined;
+  if (publishingRole) {
+    const rolePolicy = new aws.iam.RolePolicy(
+      "publishing-policy",
+      {
+        name: NAMES.publishingRole,
+        role: publishingRole.name,
+        policy: json(
+          publishingPolicy({
+            logGroupNames: [NAMES.publishingLogGroup, NAMES.publishingOpsLogGroup],
+            bucket: NAMES.mediaBucket,
+          }),
+        ),
+      },
+      opts,
+    );
+    const fns: Record<"url" | "ops", aws.lambda.Function> = {} as never;
+    for (const [mode, name, logGroupName, description] of [
+      ["url", NAMES.publishingFunction, NAMES.publishingLogGroup, "Publishing: web host API (HMAC) and Zernio webhooks"],
+      ["ops", NAMES.publishingOpsFunction, NAMES.publishingOpsLogGroup, "Publishing: owner CLI commands (IAM invoke only, no URL)"],
+    ] as const) {
+      const logGroup = new aws.cloudwatch.LogGroup(
+        `publishing-${mode}-logs`,
+        { name: logGroupName, retentionInDays: PACKAGE_LOG_RETENTION_DAYS, tags: publishingTags },
+        opts,
+      );
+      fns[mode] = new aws.lambda.Function(
+        `publishing-${mode}`,
+        {
+          name,
+          description,
+          role: publishingRole.arn,
+          runtime: "provided.al2023",
+          architectures: ["x86_64"],
+          handler: "bootstrap",
+          memorySize: 512,
+          // Streams a clip from S3 into Zernio's upload (up to ~300 MB).
+          timeout: 300,
+          code: new pulumi.asset.FileArchive(PUBLISHING_BINARY),
+          // Not secrets: the mode and the bucket name. Secrets come from SSM.
+          environment: { variables: { KUBCODE_PUBLISHING_MODE: mode, KUBCODE_MEDIA_BUCKET: NAMES.mediaBucket } },
+          tags: publishingTags,
+        },
+        { ...opts, dependsOn: [rolePolicy, logGroup] },
+      );
+    }
+    const url = new aws.lambda.FunctionUrl("publishing-url", { functionName: fns.url.name, authorizationType: "NONE" }, opts);
+    new aws.lambda.Permission(
+      "publishing-url-access",
+      { function: fns.url.name, action: "lambda:InvokeFunctionUrl", principal: "*", functionUrlAuthType: "NONE" },
+      opts,
+    );
+    new aws.lambda.Permission(
+      "publishing-url-invoke",
+      { function: fns.url.name, action: "lambda:InvokeFunction", principal: "*", invokedViaFunctionUrl: true },
+      opts,
+    );
+    publishingUrl = url.functionUrl;
+  }
+
   return {
     mediaBucket: media.bucket,
     secretsKeyArn: secretsKey.arn,
@@ -457,5 +546,6 @@ export function createStack(cfg: StackConfig) {
     boundaryPolicyArn: boundary.arn,
     packageSignerUrl,
     oauthConnectUrl,
+    publishingUrl,
   };
 }

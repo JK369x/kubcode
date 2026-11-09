@@ -97,6 +97,51 @@ pub struct Receipt {
     pub cover_check: String,
 }
 
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ChannelRow {
+    pub id: ChannelId,
+    pub workspace: WorkspaceId,
+    pub platform: Platform,
+    pub display_name: String,
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct AssetRow {
+    pub id: MediaAssetId,
+    pub workspace: WorkspaceId,
+    pub clip_ref: String,
+    pub kind: MediaKind,
+    pub s3_key: String,
+    pub meta: MediaMeta,
+}
+
+/// What an adapter needs to act on one delivery.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct DeliveryRow {
+    pub id: DeliveryId,
+    pub workspace: WorkspaceId,
+    pub post: PostId,
+    pub platform: Platform,
+    pub provider: ProviderKind,
+    pub provider_ref: Option<ProviderRef>,
+    pub status: DeliveryStatus,
+    pub profile: Option<ProviderRef>,
+    pub account: ProviderRef,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct DeliverySummary {
+    pub id: DeliveryId,
+    pub channel: ChannelId,
+    pub channel_name: String,
+    pub platform: Platform,
+    pub status: DeliveryStatus,
+    pub publish_at: OffsetDateTime,
+    pub last_error_code: Option<String>,
+    pub platform_url: Option<String>,
+    pub cover_check: Option<String>,
+}
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum ApplyOutcome {
     Applied,
@@ -625,6 +670,161 @@ impl Store {
         }))
     }
 
+    // ------------------------------------------------------------ lookups
+
+    /// The active site owner, if the flag is set (migration 0009).
+    pub async fn owner_user(&self) -> Result<Option<Uuid>> {
+        let row = self
+            .c
+            .query_opt(
+                "SELECT id FROM kubcode_accounts.users WHERE is_owner AND status = 'active'",
+                &[],
+            )
+            .await?;
+        Ok(row.map(|r| r.get(0)))
+    }
+
+    pub async fn channel(&self, id: ChannelId) -> Result<Option<ChannelRow>> {
+        let row = self
+            .c
+            .query_opt(
+                "SELECT id, workspace_id, platform, display_name FROM kubcode_accounts.channels WHERE id = $1",
+                &[&id.0],
+            )
+            .await?;
+        row.map(|r| {
+            Ok(ChannelRow {
+                id: ChannelId(r.get(0)),
+                workspace: WorkspaceId(r.get(1)),
+                platform: parse(Platform::parse(r.get(2)))?,
+                display_name: r.get(3),
+            })
+        })
+        .transpose()
+    }
+
+    pub async fn channels_of(&self, ws: WorkspaceId) -> Result<Vec<ChannelRow>> {
+        let rows = self
+            .c
+            .query(
+                "SELECT id, workspace_id, platform, display_name FROM kubcode_accounts.channels
+                  WHERE workspace_id = $1 ORDER BY created_at",
+                &[&ws.0],
+            )
+            .await?;
+        rows.iter()
+            .map(|r| {
+                Ok(ChannelRow {
+                    id: ChannelId(r.get(0)),
+                    workspace: WorkspaceId(r.get(1)),
+                    platform: parse(Platform::parse(r.get(2)))?,
+                    display_name: r.get(3),
+                })
+            })
+            .collect()
+    }
+
+    pub async fn asset(&self, id: MediaAssetId) -> Result<Option<AssetRow>> {
+        let row = self
+            .c
+            .query_opt(
+                "SELECT id, workspace_id, clip_ref, kind, s3_key, bytes, content_type, width, height,
+                        seconds::float8
+                   FROM kubcode_accounts.media_assets WHERE id = $1",
+                &[&id.0],
+            )
+            .await?;
+        row.map(|r| {
+            Ok(AssetRow {
+                id: MediaAssetId(r.get(0)),
+                workspace: WorkspaceId(r.get(1)),
+                clip_ref: r.get(2),
+                kind: parse(MediaKind::parse(r.get(3)))?,
+                s3_key: r.get(4),
+                meta: MediaMeta {
+                    bytes: r.get::<_, i64>(5) as u64,
+                    content_type: r.get(6),
+                    width: r.get::<_, i32>(7) as u32,
+                    height: r.get::<_, i32>(8) as u32,
+                    seconds: r.get(9),
+                },
+            })
+        })
+        .transpose()
+    }
+
+    pub async fn delivery(&self, id: DeliveryId) -> Result<Option<DeliveryRow>> {
+        let row = self
+            .c
+            .query_opt(
+                "SELECT d.id, p.workspace_id, d.post_id, d.platform, d.provider, d.provider_ref, d.status,
+                        pp.provider_ref, cc.provider_ref
+                   FROM kubcode_accounts.deliveries d
+                   JOIN kubcode_accounts.posts p ON p.id = d.post_id
+                   JOIN kubcode_accounts.channel_connections cc ON cc.id = d.connection_id
+                   LEFT JOIN kubcode_accounts.provider_profiles pp
+                          ON pp.workspace_id = p.workspace_id AND pp.provider = d.provider
+                  WHERE d.id = $1",
+                &[&id.0],
+            )
+            .await?;
+        row.map(|r| {
+            Ok(DeliveryRow {
+                id: DeliveryId(r.get(0)),
+                workspace: WorkspaceId(r.get(1)),
+                post: PostId(r.get(2)),
+                platform: parse(Platform::parse(r.get(3)))?,
+                provider: parse(ProviderKind::parse(r.get(4)))?,
+                provider_ref: r.get::<_, Option<String>>(5).map(ProviderRef),
+                status: parse(DeliveryStatus::parse(r.get(6)))?,
+                profile: r.get::<_, Option<String>>(7).map(ProviderRef),
+                account: ProviderRef(r.get(8)),
+            })
+        })
+        .transpose()
+    }
+
+    pub async fn post_workspace(&self, post: PostId) -> Result<Option<WorkspaceId>> {
+        let row = self
+            .c
+            .query_opt(
+                "SELECT workspace_id FROM kubcode_accounts.posts WHERE id = $1",
+                &[&post.0],
+            )
+            .await?;
+        Ok(row.map(|r| WorkspaceId(r.get(0))))
+    }
+
+    pub async fn post_deliveries(&self, post: PostId) -> Result<Vec<DeliverySummary>> {
+        let rows = self
+            .c
+            .query(
+                "SELECT d.id, d.channel_id, c.display_name, d.platform, d.status, d.publish_at,
+                        d.last_error_code, r.platform_url, r.cover_check
+                   FROM kubcode_accounts.deliveries d
+                   JOIN kubcode_accounts.channels c ON c.id = d.channel_id
+                   LEFT JOIN kubcode_accounts.receipts r ON r.delivery_id = d.id
+                  WHERE d.post_id = $1 ORDER BY d.publish_at, d.id",
+                &[&post.0],
+            )
+            .await?;
+        rows.iter()
+            .map(|r| {
+                Ok(DeliverySummary {
+                    id: DeliveryId(r.get(0)),
+                    channel: ChannelId(r.get(1)),
+                    channel_name: r.get(2),
+                    platform: parse(Platform::parse(r.get(3)))?,
+                    status: parse(DeliveryStatus::parse(r.get(4)))?,
+                    publish_at: r.get(5),
+                    last_error_code: r.get(6),
+                    platform_url: r.get(7),
+                    cover_check: r.get(8),
+                })
+            })
+            .collect()
+    }
+
     // ------------------------------------------------------------ webhooks
 
     /// Records the event id with its body hash and applies the events in one
@@ -723,6 +923,27 @@ impl Store {
         }
         tx.commit().await?;
         Ok(ApplyOutcome::Applied)
+    }
+
+    // ------------------------------------------------------------ requests
+
+    /// HMAC replay guard shared with the connect Lambda (table from 0004):
+    /// false when the nonce was already used. Old nonces are pruned.
+    pub async fn use_nonce(&self, nonce_hash: &[u8; 32]) -> Result<bool> {
+        self.c
+            .execute(
+                "DELETE FROM kubcode_accounts.connect_request_nonces WHERE created_at < now() - interval '20 minutes'",
+                &[],
+            )
+            .await?;
+        let n = self
+            .c
+            .execute(
+                "INSERT INTO kubcode_accounts.connect_request_nonces (nonce_hash) VALUES ($1) ON CONFLICT DO NOTHING",
+                &[&nonce_hash.as_slice()],
+            )
+            .await?;
+        Ok(n == 1)
     }
 
     // ------------------------------------------------------------ limiter

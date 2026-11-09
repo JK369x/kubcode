@@ -1,0 +1,572 @@
+//! The Lambda's use cases (design §4, §5). HTTP (web host), ops (owner CLI)
+//! and webhooks are thin wrappers around these. Every failure is a fixed
+//! code; provider or database text never leaves this module.
+
+use std::sync::Arc;
+
+use kubcode_publishing::config::PublishingConfig;
+use kubcode_publishing::domain::{
+    Capability, ChannelId, DeliveryId, DeliveryStatus, MediaAssetId, MediaKind, MediaMeta,
+    Platform, PostId, ProviderKind, ProviderRef, WorkspaceId,
+};
+use kubcode_publishing::errors::PublishError;
+use kubcode_publishing::events::{EventSource, Headers};
+use kubcode_publishing::ports::{
+    check, CallbackParams, ConnectProvider, ConnectionRef, DeliveryRequest, MediaSource, Publisher,
+    WorkspaceCtx,
+};
+use kubcode_publishing::routing::{resolve, ConnectionView, Resolution};
+use kubcode_publishing::validate::DeliveryDraft;
+use kubcode_publishing_store::{
+    ChannelRow, DeliverySummary, NewAsset, NewDelivery, NewIntent, NewPost, Store, StoreError,
+};
+use serde::{Deserialize, Serialize};
+use sha2::{Digest, Sha256};
+use time::{Duration, OffsetDateTime};
+use uuid::Uuid;
+
+use crate::summary::{digest, ScheduleRequest};
+
+/// Where the provider sends the creator back after consent.
+pub const CALLBACK_BASE: &str = "https://kubcode.dev/api/channels/callback?i=";
+pub const INTENT_TTL: Duration = Duration::minutes(10);
+
+pub struct ProviderSet {
+    pub connect: Arc<dyn ConnectProvider>,
+    pub publisher: Arc<dyn Publisher>,
+    pub events: Arc<dyn EventSource>,
+}
+
+/// The providers this build can use. Native adapters join here in phase 2.
+pub struct Registry {
+    pub zernio: Option<ProviderSet>,
+}
+
+impl Registry {
+    pub fn get(&self, kind: ProviderKind) -> Option<&ProviderSet> {
+        match kind {
+            ProviderKind::Zernio => self.zernio.as_ref(),
+            ProviderKind::Native => None,
+        }
+    }
+}
+
+/// Opens a delivery's files (S3 in production).
+pub trait MediaOpener: Send + Sync {
+    fn open(
+        &self,
+        video_key: &str,
+        video: &MediaMeta,
+        cover: Option<(&str, &MediaMeta)>,
+    ) -> Box<dyn MediaSource>;
+}
+
+/// A fixed `[a-z_]` code for the caller.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+pub struct Fail {
+    pub code: String,
+}
+
+impl Fail {
+    fn new(code: &str) -> Self {
+        Self { code: code.into() }
+    }
+}
+
+impl From<StoreError> for Fail {
+    fn from(e: StoreError) -> Self {
+        match e {
+            StoreError::IntentInvalid => Fail::new("intent_invalid"),
+            StoreError::Conflict => Fail::new("channel_conflict"),
+            StoreError::Db(_) | StoreError::Corrupt => Fail::new("store_unavailable"),
+        }
+    }
+}
+
+impl From<PublishError> for Fail {
+    fn from(e: PublishError) -> Self {
+        Fail::new(e.code.as_str())
+    }
+}
+
+pub type Result<T> = std::result::Result<T, Fail>;
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct AssetRequest {
+    pub clip_ref: String,
+    pub kind: MediaKind,
+    /// Lowercase hex SHA-256 of the file.
+    pub sha256: String,
+    pub ext: String,
+    pub meta: MediaMeta,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+pub struct DeliveryResult {
+    pub channel: Uuid,
+    pub delivery: Option<DeliveryId>,
+    pub status: DeliveryStatus,
+    pub codes: Vec<String>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+pub struct ScheduleResult {
+    pub post: PostId,
+    pub deliveries: Vec<DeliveryResult>,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum WebhookResult {
+    Accepted,
+    /// Bad signature or body: answer 401 (Zernio does not retry 4xx).
+    Unauthorized,
+    /// Our side failed: answer 500 so the provider retries.
+    Retry,
+}
+
+fn clip_ref_ok(c: &str) -> bool {
+    (1..=120).contains(&c.len())
+        && c.bytes()
+            .all(|b| b.is_ascii_alphanumeric() || b"._-".contains(&b))
+}
+
+pub struct Service<'a> {
+    pub store: &'a mut Store,
+    pub reg: &'a Registry,
+    pub cfg: &'a PublishingConfig,
+    pub media: &'a dyn MediaOpener,
+    pub now: OffsetDateTime,
+}
+
+impl Service<'_> {
+    fn providers(&self, kind: ProviderKind) -> Result<&ProviderSet> {
+        self.reg
+            .get(kind)
+            .ok_or_else(|| Fail::new("provider_not_configured"))
+    }
+
+    async fn own_channel(&self, ws: WorkspaceId, channel: ChannelId) -> Result<ChannelRow> {
+        match self.store.channel(channel).await? {
+            Some(c) if c.workspace == ws => Ok(c),
+            _ => Err(Fail::new("channel_not_found")),
+        }
+    }
+
+    async fn own_asset(
+        &self,
+        ws: WorkspaceId,
+        id: Uuid,
+        kind: MediaKind,
+        clip_ref: &str,
+    ) -> Result<kubcode_publishing_store::AssetRow> {
+        match self.store.asset(MediaAssetId(id)).await? {
+            Some(a) if a.workspace == ws && a.kind == kind && a.clip_ref == clip_ref => Ok(a),
+            _ => Err(Fail::new("asset_not_found")),
+        }
+    }
+
+    // ------------------------------------------------------------ connect
+
+    /// `state` is the raw random value the web host also keeps in its cookie
+    /// flow; only its hash is stored.
+    pub async fn connect_start(
+        &mut self,
+        user: Uuid,
+        platform: Platform,
+        state: &[u8; 32],
+        cookie_hash: &[u8; 32],
+        session_binding_hash: &[u8; 32],
+    ) -> Result<String> {
+        let ws = self.store.owner_workspace(user).await?;
+        let routes = self.store.routes().await?;
+        let kind = routes
+            .get(platform, Capability::Connect)
+            .ok_or_else(|| Fail::new("not_routed"))?
+            .provider;
+        let connect = Arc::clone(&self.providers(kind)?.connect);
+        let profile = self.store.profile(ws, kind).await?;
+        self.store
+            .open_intent(&NewIntent {
+                workspace: ws,
+                user,
+                platform,
+                provider: kind,
+                state_hash: Sha256::digest(state).into(),
+                cookie_hash: *cookie_hash,
+                session_binding_hash: *session_binding_hash,
+                ttl: INTENT_TTL,
+            })
+            .await?;
+        let callback = format!("{CALLBACK_BASE}{}", hex::encode(state));
+        let start = connect
+            .start(
+                &WorkspaceCtx {
+                    workspace: ws,
+                    profile: profile.clone(),
+                },
+                platform,
+                &callback,
+            )
+            .await?;
+        if profile.is_none() {
+            self.store.save_profile(ws, kind, &start.profile).await?;
+        }
+        Ok(start.auth_url)
+    }
+
+    pub async fn connect_complete(
+        &mut self,
+        state: &[u8; 32],
+        params: CallbackParams,
+    ) -> Result<ChannelId> {
+        let hash: [u8; 32] = Sha256::digest(state).into();
+        let intent = self.store.take_intent(&hash).await?;
+        let outcome = async {
+            let connect = Arc::clone(&self.providers(intent.provider)?.connect);
+            let profile = self
+                .store
+                .profile(intent.workspace, intent.provider)
+                .await?
+                .ok_or_else(|| Fail::new("profile_missing"))?;
+            Ok::<_, Fail>(connect.complete(&profile, intent.platform, &params).await?)
+        }
+        .await;
+        match outcome {
+            Ok(acct) => Ok(self.store.attach_connection(&intent, &acct).await?),
+            Err(f) => {
+                self.store.fail_intent(intent.id, &f.code).await?;
+                Err(f)
+            }
+        }
+    }
+
+    pub async fn disconnect(&mut self, user: Uuid, channel: ChannelId) -> Result<()> {
+        let ws = self.store.owner_workspace(user).await?;
+        let ch = self.own_channel(ws, channel).await?;
+        for c in self.store.connections(channel).await? {
+            if c.status == kubcode_publishing::domain::ConnectionStatus::Revoked {
+                continue;
+            }
+            let set = self.providers(c.provider)?;
+            let profile = self
+                .store
+                .profile(ws, c.provider)
+                .await?
+                .ok_or_else(|| Fail::new("profile_missing"))?;
+            set.connect
+                .disconnect(&ConnectionRef {
+                    platform: ch.platform,
+                    profile,
+                    account: c.provider_ref.clone(),
+                })
+                .await?;
+            self.store.revoke_connection(c.id).await?;
+        }
+        Ok(())
+    }
+
+    pub async fn channels(&mut self, user: Uuid) -> Result<Vec<ChannelRow>> {
+        let ws = self.store.owner_workspace(user).await?;
+        Ok(self.store.channels_of(ws).await?)
+    }
+
+    // ------------------------------------------------------------ media
+
+    /// Registers one file of a clip and returns where the CLI must upload it.
+    pub async fn register_asset(
+        &mut self,
+        user: Uuid,
+        a: AssetRequest,
+    ) -> Result<(MediaAssetId, String)> {
+        let sha: [u8; 32] = hex::decode(&a.sha256)
+            .ok()
+            .filter(|_| {
+                a.sha256
+                    .bytes()
+                    .all(|b| b.is_ascii_digit() || (b'a'..=b'f').contains(&b))
+            })
+            .and_then(|v| v.try_into().ok())
+            .ok_or_else(|| Fail::new("bad_sha256"))?;
+        let ext_ok = (2..=5).contains(&a.ext.len())
+            && a.ext
+                .bytes()
+                .all(|b| b.is_ascii_lowercase() || b.is_ascii_digit());
+        if !clip_ref_ok(&a.clip_ref) || !ext_ok {
+            return Err(Fail::new("bad_asset"));
+        }
+        let ws = self.store.owner_workspace(user).await?;
+        let key = format!("clips/{}/{}/{}.{}", ws.0, a.clip_ref, a.sha256, a.ext);
+        let id = self
+            .store
+            .register_asset(&NewAsset {
+                workspace: ws,
+                clip_ref: a.clip_ref,
+                kind: a.kind,
+                s3_key: key.clone(),
+                sha256: sha,
+                meta: a.meta,
+            })
+            .await
+            .map_err(|e| match e {
+                StoreError::Db(_) => Fail::new("bad_asset"),
+                other => other.into(),
+            })?;
+        Ok((id, key))
+    }
+
+    // ------------------------------------------------------------ publish
+
+    /// Creates the post, confirms it against the digest the creator saw, and
+    /// hands each target to its routed provider.
+    pub async fn schedule(
+        &mut self,
+        user: Uuid,
+        req: ScheduleRequest,
+        confirmed: [u8; 32],
+    ) -> Result<ScheduleResult> {
+        if digest(&req) != confirmed {
+            return Err(Fail::new("digest_mismatch"));
+        }
+        let ws = self.store.owner_workspace(user).await?;
+        let video = self
+            .own_asset(ws, req.video_asset, MediaKind::Video, &req.clip_ref)
+            .await?;
+        let cover = match req.cover_asset {
+            Some(id) => Some(
+                self.own_asset(ws, id, MediaKind::Cover, &req.clip_ref)
+                    .await?,
+            ),
+            None => None,
+        };
+        let post = self
+            .store
+            .create_post(&NewPost {
+                workspace: ws,
+                clip_ref: req.clip_ref.clone(),
+                video: video.id,
+                cover: cover.as_ref().map(|c| c.id),
+                title: req.title.clone(),
+                description: req.description.clone(),
+                tags: req.tags.clone(),
+            })
+            .await?;
+        self.store.confirm_post(post, &confirmed, user).await?;
+        let routes = self.store.routes().await?;
+
+        let mut out = Vec::new();
+        for t in &req.targets {
+            let fail = |codes: Vec<String>, status| DeliveryResult {
+                channel: t.channel,
+                delivery: None,
+                status,
+                codes,
+            };
+            let Ok(ch) = self.own_channel(ws, ChannelId(t.channel)).await else {
+                out.push(fail(
+                    vec!["channel_not_found".into()],
+                    DeliveryStatus::Rejected,
+                ));
+                continue;
+            };
+            let conns = self.store.connections(ch.id).await?;
+            let views: Vec<ConnectionView> = conns
+                .iter()
+                .map(|c| ConnectionView {
+                    id: c.id,
+                    provider: c.provider,
+                    status: c.status,
+                })
+                .collect();
+            let (connection, kind) =
+                match resolve(&routes, ch.platform, Capability::Publish, &views) {
+                    Resolution::Use {
+                        connection,
+                        provider,
+                    } => (connection, provider),
+                    Resolution::NeedsReconnect { .. } => {
+                        out.push(fail(
+                            vec!["needs_reconnect".into()],
+                            DeliveryStatus::Rejected,
+                        ));
+                        continue;
+                    }
+                    Resolution::NotRouted => {
+                        out.push(fail(vec!["not_routed".into()], DeliveryStatus::Rejected));
+                        continue;
+                    }
+                };
+            let account = conns
+                .iter()
+                .find(|c| c.id == connection)
+                .map(|c| c.provider_ref.clone())
+                .expect("resolved from this list");
+            let key = Uuid::new_v4();
+            let delivery = self
+                .store
+                .create_delivery(&NewDelivery {
+                    post,
+                    channel: ch.id,
+                    connection,
+                    provider: kind,
+                    platform: ch.platform,
+                    publish_at: t.publish_at,
+                    visibility: t.visibility,
+                    idempotency_key: key,
+                })
+                .await?;
+            let result = self
+                .hand_over(
+                    ws, &ch, kind, account, delivery, key, &req, t, &video, &cover,
+                )
+                .await?;
+            out.push(result);
+        }
+        Ok(ScheduleResult {
+            post,
+            deliveries: out,
+        })
+    }
+
+    #[allow(clippy::too_many_arguments)]
+    async fn hand_over(
+        &mut self,
+        ws: WorkspaceId,
+        ch: &ChannelRow,
+        kind: ProviderKind,
+        account: ProviderRef,
+        delivery: DeliveryId,
+        key: Uuid,
+        req: &ScheduleRequest,
+        t: &crate::summary::Target,
+        video: &kubcode_publishing_store::AssetRow,
+        cover: &Option<kubcode_publishing_store::AssetRow>,
+    ) -> Result<DeliveryResult> {
+        let result = |status, codes: Vec<String>| DeliveryResult {
+            channel: ch.id.0,
+            delivery: Some(delivery),
+            status,
+            codes,
+        };
+        let request = DeliveryRequest {
+            delivery,
+            idempotency_key: key,
+            draft: DeliveryDraft {
+                platform: ch.platform,
+                title: req.title.clone(),
+                description: req.description.clone(),
+                tags: req.tags.clone(),
+                video: video.meta.clone(),
+                cover: cover.as_ref().map(|c| c.meta.clone()),
+                publish_at: t.publish_at,
+                visibility: t.visibility,
+            },
+        };
+        let set = match self.providers(kind) {
+            Ok(s) => s,
+            Err(f) => {
+                self.store
+                    .transition(delivery, DeliveryStatus::Rejected, Some(&f.code))
+                    .await?;
+                return Ok(result(DeliveryStatus::Rejected, vec![f.code]));
+            }
+        };
+        let publisher = Arc::clone(&set.publisher);
+        let velocity = self.store.velocity(ch.id, t.publish_at).await?;
+        let checked = match check(request, self.now, velocity, self.cfg, publisher.as_ref()) {
+            Ok(c) => c,
+            Err(violations) => {
+                let codes: Vec<String> = violations.iter().map(|v| v.code.to_owned()).collect();
+                self.store
+                    .transition(delivery, DeliveryStatus::Rejected, Some(&codes[0]))
+                    .await?;
+                return Ok(result(DeliveryStatus::Rejected, codes));
+            }
+        };
+        let profile = self
+            .store
+            .profile(ws, kind)
+            .await?
+            .ok_or_else(|| Fail::new("profile_missing"))?;
+        let conn = ConnectionRef {
+            platform: ch.platform,
+            profile,
+            account,
+        };
+        let media = self.media.open(
+            &video.s3_key,
+            &video.meta,
+            cover.as_ref().map(|c| (c.s3_key.as_str(), &c.meta)),
+        );
+        match publisher.schedule(&conn, &checked, media.as_ref()).await {
+            Ok(post_ref) => {
+                self.store.mark_scheduled(delivery, &post_ref).await?;
+                Ok(result(DeliveryStatus::Scheduled, Vec::new()))
+            }
+            Err(e) => {
+                let code = e.code.as_str().to_owned();
+                self.store
+                    .transition(delivery, DeliveryStatus::Failed, Some(&code))
+                    .await?;
+                Ok(result(DeliveryStatus::Failed, vec![code]))
+            }
+        }
+    }
+
+    pub async fn status(&mut self, user: Uuid, post: PostId) -> Result<Vec<DeliverySummary>> {
+        let ws = self.store.owner_workspace(user).await?;
+        if self.store.post_workspace(post).await? != Some(ws) {
+            return Err(Fail::new("post_not_found"));
+        }
+        Ok(self.store.post_deliveries(post).await?)
+    }
+
+    pub async fn cancel(&mut self, user: Uuid, delivery: DeliveryId) -> Result<()> {
+        let ws = self.store.owner_workspace(user).await?;
+        let d = match self.store.delivery(delivery).await? {
+            Some(d) if d.workspace == ws => d,
+            _ => return Err(Fail::new("delivery_not_found")),
+        };
+        if d.status.is_final() || !d.status.can_move_to(DeliveryStatus::Cancelled) {
+            return Err(Fail::new("already_final"));
+        }
+        if let (Some(post_ref), Some(profile)) = (&d.provider_ref, &d.profile) {
+            let publisher = Arc::clone(&self.providers(d.provider)?.publisher);
+            publisher
+                .cancel(
+                    &ConnectionRef {
+                        platform: d.platform,
+                        profile: profile.clone(),
+                        account: d.account.clone(),
+                    },
+                    post_ref,
+                )
+                .await?;
+        }
+        self.store
+            .transition(delivery, DeliveryStatus::Cancelled, None)
+            .await?;
+        Ok(())
+    }
+
+    // ------------------------------------------------------------ webhooks
+
+    pub async fn webhook(
+        &mut self,
+        kind: ProviderKind,
+        headers: &Headers,
+        body: &[u8],
+    ) -> WebhookResult {
+        let Ok(set) = self.providers(kind) else {
+            return WebhookResult::Unauthorized;
+        };
+        let events = Arc::clone(&set.events);
+        let Ok(v) = events.verify(headers, body) else {
+            return WebhookResult::Unauthorized;
+        };
+        let translated = events.translate(&v);
+        match self.store.apply_event(kind, &v, &translated).await {
+            Ok(_) => WebhookResult::Accepted,
+            Err(_) => WebhookResult::Retry,
+        }
+    }
+}

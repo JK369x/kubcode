@@ -91,7 +91,7 @@ const PUBLISHING_WORKER_TABLES = [
   "provider_events",
   "rate_windows",
 ];
-const ALL_VERSIONS = ["0001_accounts", "0002_interactions", "0003_downloads", "0004_settings_keys", "0005_owner_flag", "0006_connect_app_source", "0007_publishing_channels", "0008_publishing_posts"];
+const ALL_VERSIONS = ["0001_accounts", "0002_interactions", "0003_downloads", "0004_settings_keys", "0005_owner_flag", "0006_connect_app_source", "0007_publishing_channels", "0008_publishing_posts", "0009_publishing_owner_lookup"];
 
 // Refuses anything that is not clearly a local test database BEFORE any
 // connection is attempted.
@@ -345,6 +345,8 @@ test("account data lives only in kubcode_accounts: no public objects, RLS on, po
     // 0007/0008: members read their own workspaces' rows; routes are readable by all.
     kubcode_member_scope: PUBLISHING_MEMBER_TABLES,
     kubcode_read_all: ["provider_routes"],
+    // 0009: the Lambda role may see only the active owner's row.
+    kubcode_worker_owner_lookup: ["users"],
   };
   const roleOf: Record<string, string> = {
     kubcode_server_access: "kubcode_app",
@@ -352,6 +354,7 @@ test("account data lives only in kubcode_accounts: no public objects, RLS on, po
     kubcode_worker_access: "kubcode_worker",
     kubcode_member_scope: "kubcode_app",
     kubcode_read_all: "kubcode_app",
+    kubcode_worker_owner_lookup: "kubcode_worker",
   };
   for (const p of policies.rows) {
     assert.ok(allowed[p.policyname]?.includes(p.tablename), `${p.policyname} on ${p.tablename}`);
