@@ -1,0 +1,27 @@
+[package]
+name = "kubcode-publishing"
+version = "0.1.0"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish.workspace = true
+description = "Publishing core: domain, ports per capability, routing, validation (docs/design/publishing-core.md)"
+
+[features]
+# The shared adapter contract suite and the in-memory fake provider. Adapter
+# crates enable it in their dev-dependencies.
+contract = []
+
+[dependencies]
+async-trait = "0.1"
+bytes = "1"
+futures = "0.3"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+thiserror = "2"
+time = { version = "0.3", features = ["serde", "parsing", "formatting", "macros"] }
+uuid = { version = "1", features = ["v4", "serde"] }
+
+[dev-dependencies]
+kubcode-publishing = { path = ".", features = ["contract"] }
+tokio = { version = "1", features = ["macros", "rt", "rt-multi-thread"] }
