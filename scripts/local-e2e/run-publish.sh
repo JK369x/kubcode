@@ -5,6 +5,8 @@
 #       dry run: push + the CLI's summary, then cancel (nothing sent to Zernio)
 #   ... KUBCODE_LOCAL_E2E_POST=<same clip-id> scripts/local-e2e/run-publish.sh
 #       posts it (private by default) to the production channel's account
+#   ... KUBCODE_LOCAL_E2E_REHEARSE=<same clip-id> scripts/local-e2e/run-publish.sh
+#       rehearsal: private, seven days out, checked at Zernio, then cancelled
 #
 # The Zernio key goes from the Keychain straight in on stdin (macOS asks for
 # the login password); it is never printed, logged or put in env or argv.
@@ -15,6 +17,7 @@ source "$ROOT/infra/scripts/lib/keychain.sh"
 
 : "${KUBCODE_TEST_DATABASE_URL:?set KUBCODE_TEST_DATABASE_URL to the local test database}"
 : "${KUBCODE_LOCAL_E2E_CLIP:?set KUBCODE_LOCAL_E2E_CLIP to the clip id}"
+: "${KUBCODE_STUDIO:=$HOME/Studio/clips}"; export KUBCODE_STUDIO
 kc_has zernio-api-key || { echo "local-e2e: vault has no kubcode/zernio-api-key" >&2; exit 2; }
 
 cd "$ROOT"

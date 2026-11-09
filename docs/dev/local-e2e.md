@@ -123,6 +123,13 @@ After a post the script follows it at Zernio until it is published (webhooks
 go to production, which ignores a post it does not know). Check the thumbnail
 in YouTube Studio: it must be the designed cover.
 
+Rehearsal, the real Zernio path with nothing visible: `KUBCODE_LOCAL_E2E_REHEARSE=<clip-id>`
+schedules **private seven days out**, checks the post at Zernio (scheduled,
+our cover as the thumbnail, private), cancels it with `kubcode cancel` and
+checks it is gone. It always cancels before judging. Zernio sends a scheduled
+YouTube video at most 15 minutes before its time (OpenAPI `publishedAt`), so
+a cancel minutes after scheduling leaves nothing on YouTube.
+
 Wiring check with no Zernio call and no key:
 `echo sk_dummy | KUBCODE_LOCAL_E2E_OFFLINE=1 KUBCODE_LOCAL_E2E_CLIP=<clip-id> npx tsx scripts/local-e2e/publish.ts`.
 

@@ -11,6 +11,12 @@
 // Default is a dry run: push, then the CLI's confirmation summary, answered
 // with Enter (cancel). It posts only when KUBCODE_LOCAL_E2E_POST equals the
 // clip id. The post is private unless KUBCODE_LOCAL_E2E_VISIBILITY says otherwise.
+//
+// Rehearsal (KUBCODE_LOCAL_E2E_REHEARSE = the clip id): the real Zernio path
+// without anything becoming visible. Schedules PRIVATE seven days out, checks
+// the post at Zernio (scheduled, our cover as the thumbnail), then cancels it
+// with `kubcode cancel` and checks it is gone. Should the cancel fail, the post
+// is still private.
 import assert from "node:assert/strict";
 import { spawn, type ChildProcess } from "node:child_process";
 import { cpSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
@@ -25,9 +31,10 @@ import { guardedZernio } from "./zernio-guard";
 const PLATFORM = process.argv[2] ?? "youtube";
 const CLIP = process.env.KUBCODE_LOCAL_E2E_CLIP ?? "";
 const TITLE = process.env.KUBCODE_LOCAL_E2E_TITLE;
-const VISIBILITY = process.env.KUBCODE_LOCAL_E2E_VISIBILITY ?? "private";
-const POST = process.env.KUBCODE_LOCAL_E2E_POST === CLIP && CLIP !== "";
-const LEAD_MINUTES = Number(process.env.KUBCODE_LOCAL_E2E_LEAD_MINUTES ?? "10");
+const VISIBILITY = process.env.KUBCODE_LOCAL_E2E_REHEARSE ? "private" : (process.env.KUBCODE_LOCAL_E2E_VISIBILITY ?? "private");
+const REHEARSE = process.env.KUBCODE_LOCAL_E2E_REHEARSE === CLIP && CLIP !== "";
+const POST = (process.env.KUBCODE_LOCAL_E2E_POST === CLIP && CLIP !== "") || REHEARSE;
+const LEAD_MINUTES = REHEARSE ? 7 * 24 * 60 : Number(process.env.KUBCODE_LOCAL_E2E_LEAD_MINUTES ?? "10");
 const STUDIO = process.env.KUBCODE_STUDIO ?? path.join(homedir(), "Studio", "clips");
 const OUT = path.resolve(".qa/local-e2e/publish");
 const WAIT_MINUTES = LEAD_MINUTES + 20;
@@ -188,8 +195,34 @@ async function main() {
       return;
     }
     assert.equal(sched.code, 0, "schedule");
-    const d = (await db.pool.query("SELECT status, provider_ref FROM kubcode_accounts.deliveries")).rows[0];
+    const d = (await db.pool.query("SELECT id, status, provider_ref FROM kubcode_accounts.deliveries")).rows[0];
     assert.ok(d?.provider_ref, `delivery handed to Zernio (status ${d?.status})`);
+
+    if (REHEARSE) {
+      // Look, then always cancel, then judge: nothing may stay scheduled.
+      const problems: string[] = [];
+      if (d.status !== "scheduled") problems.push(`local status ${d.status}, expected scheduled`);
+      const p = await zernio("GET", `/posts/${encodeURIComponent(d.provider_ref)}`).catch(() => ({ status: 0, body: null }));
+      const post = p.body?.post ?? {};
+      const entry = post.platforms?.[0] ?? {};
+      const media = post.mediaItems?.[0] ?? {};
+      const psd = entry.platformSpecificData ?? {};
+      log(`at Zernio (HTTP ${p.status}): status ${entry.status ?? post.status}, platform ${entry.platform}, title "${psd.title ?? "?"}", visibility ${psd.visibility ?? "?"}, video ${media.type ?? "?"}, cover ${media.thumbnail ? "set" : "MISSING"}`);
+      if (p.status !== 200) problems.push(`GET post HTTP ${p.status}`);
+      if (!["pending", "scheduled"].includes(entry.status ?? post.status)) problems.push("not scheduled at Zernio");
+      if (entry.platform !== PLATFORM) problems.push(`platform ${entry.platform}`);
+      if (!media.thumbnail) problems.push("cover not set as the thumbnail");
+      if ((psd.visibility ?? "private") !== "private") problems.push(`visibility ${psd.visibility}`);
+
+      const cancel = await cli(["cancel", d.id], env);
+      log(`kubcode cancel: ${cancel.out.trim()}`);
+      const after = await zernio("GET", `/posts/${encodeURIComponent(d.provider_ref)}`).catch(() => ({ status: 0, body: null }));
+      const gone = after.status === 404 || ["cancelled", "deleted"].includes(after.body?.post?.status ?? after.body?.post?.platforms?.[0]?.status);
+      if (!gone) throw new Error(`POST STILL SCHEDULED AT ZERNIO (private, ${at}): ${d.provider_ref}; cancel it in the dashboard`);
+      assert.deepEqual(problems, [], "rehearsal checks");
+      log("REHEARSAL PASS: uploaded, scheduled private with our cover, cancelled; nothing became visible");
+      return;
+    }
     log(`scheduled at ${at}; Zernio post ${d.provider_ref}; waiting for it to publish (${WAIT_MINUTES} min max)`);
 
     // ---- follow the post at Zernio (webhooks go to production, not here)
