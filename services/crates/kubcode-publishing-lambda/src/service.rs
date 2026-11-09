@@ -124,6 +124,18 @@ pub enum WebhookResult {
     Retry,
 }
 
+/// An event type as it may appear in logs: `[a-z0-9_.]`, at most 60 chars.
+pub fn log_safe(t: &str) -> &str {
+    let ok = (1..=60).contains(&t.len())
+        && t.bytes()
+            .all(|b| b.is_ascii_lowercase() || b.is_ascii_digit() || b == b'_' || b == b'.');
+    if ok {
+        t
+    } else {
+        "other"
+    }
+}
+
 fn clip_ref_ok(c: &str) -> bool {
     (1..=120).contains(&c.len())
         && c.bytes()
@@ -557,16 +569,66 @@ impl Service<'_> {
         body: &[u8],
     ) -> WebhookResult {
         let Ok(set) = self.providers(kind) else {
+            println!(
+                "[publishing] webhook provider={} outcome=not_configured",
+                kind.as_str()
+            );
             return WebhookResult::Unauthorized;
         };
         let events = Arc::clone(&set.events);
-        let Ok(v) = events.verify(headers, body) else {
-            return WebhookResult::Unauthorized;
+        let v = match events.verify(headers, body) {
+            Ok(v) => v,
+            Err(e) => {
+                println!(
+                    "[publishing] webhook provider={} outcome=refused code={}",
+                    kind.as_str(),
+                    e.code.as_str()
+                );
+                return WebhookResult::Unauthorized;
+            }
         };
         let translated = events.translate(&v);
+        // Event type and outcome only: never the body, ids or provider text.
+        let log = |outcome: &str| {
+            println!(
+                "[publishing] webhook provider={} event={} outcome={outcome}",
+                kind.as_str(),
+                log_safe(&v.event_type)
+            )
+        };
         match self.store.apply_event(kind, &v, &translated).await {
-            Ok(_) => WebhookResult::Accepted,
-            Err(_) => WebhookResult::Retry,
+            Ok(o) => {
+                log(match o {
+                    kubcode_publishing_store::ApplyOutcome::Applied => "applied",
+                    kubcode_publishing_store::ApplyOutcome::Duplicate => "duplicate",
+                    kubcode_publishing_store::ApplyOutcome::IdReuse => "id_reuse",
+                });
+                WebhookResult::Accepted
+            }
+            Err(_) => {
+                log("retry");
+                WebhookResult::Retry
+            }
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    #[test]
+    fn only_plain_event_types_reach_the_logs() {
+        assert_eq!(super::log_safe("account.connected"), "account.connected");
+        assert_eq!(
+            super::log_safe("post.platform.published"),
+            "post.platform.published"
+        );
+        for bad in [
+            "",
+            "Account.Connected",
+            "x\nforged log line",
+            &"a".repeat(61),
+        ] {
+            assert_eq!(super::log_safe(bad), "other", "{bad:?}");
         }
     }
 }
