@@ -445,6 +445,9 @@ name = "deranged"
 version = "0.5.9"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "9e9de72ce2ad1f90dc62fa25f0f430ef85eb4b0d8fa0be4f30373bc40a21d28e"
+dependencies = [
+ "serde_core",
+]
 
 [[package]]
 name = "digest"
@@ -979,6 +982,22 @@ dependencies = [
  "tokio-postgres-rustls",
  "uuid",
  "zeroize",
+]
+
+[[package]]
+name = "kubcode-publishing"
+version = "0.1.0"
+dependencies = [
+ "async-trait",
+ "bytes",
+ "futures",
+ "kubcode-publishing",
+ "serde",
+ "serde_json",
+ "thiserror",
+ "time",
+ "tokio",
+ "uuid",
 ]
 
 [[package]]
