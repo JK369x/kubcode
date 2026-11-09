@@ -55,11 +55,52 @@ _Avoid_: quota (that word is the platform's own limit on the kubcode app)
 **Owner**:
 The single account flagged as the site owner.
 
+### Publishing
+
+**Workspace**:
+The unit that holds a creator's channels and is billed per channel. One creator owns one workspace for now.
+_Avoid_: customer, profile (that is Zernio's word), team
+
+**Channel**:
+One social account on one platform inside a workspace, such as one YouTube channel or one Instagram account.
+_Avoid_: account (ambiguous with the kubcode member account), profile
+
+**Provider**:
+Who carries out a capability for a channel: Zernio (phase 1) or kubcode's own integration (native).
+_Avoid_: integration, vendor
+
+**Connection**:
+A channel's link through one provider. A channel can have one through Zernio and one native while it moves between them.
+_Avoid_: token, linked account
+
+**Post**:
+What a creator wants published: one clip with its title, description, tags and designed cover.
+_Avoid_: upload, schedule (as a noun)
+
+**Delivery**:
+One post going to one channel at one time. It is the thing that gets scheduled, cancelled, published or fails.
+_Avoid_: job, publication
+
+**Receipt**:
+The record that a delivery went out: the platform's link, the time, and whether the platform shows our cover.
+
+**Inbox item**:
+A comment or direct message received on a channel.
+_Avoid_: notification, event
+
+**Automation rule**:
+An instruction that reacts to inbox items, such as "a comment with this keyword on this post gets this DM".
+_Avoid_: workflow (Zernio's word for its own flows), bot
+
 ## Relationships
 
 - A **Skill** has zero or more **Skill packages**; each package version has at most one **Package approval**
 - A **Download** is made by one **Member** for one approved **Skill package** version and counts toward that member's **Download limit**
 - **Preview media** and **Skill packages** are cleared separately: an approved package says nothing about the skill's clips
+- A **Creator** owns one **Workspace**; a **Workspace** has many **Channels**
+- A **Channel** has one or more **Connections**, at most one per **Provider**
+- A **Post** has one **Delivery** per **Channel** it goes to; a published **Delivery** has one **Receipt**
+- **Inbox items** and **Automation rules** belong to one **Channel**; a rule may target one **Post**'s delivery or every post
 
 ## Example dialogue
 
@@ -70,4 +111,5 @@ The single account flagged as the site owner.
 
 - "template" was used for both the skill page ("ดู template") and the downloadable kit — resolved: the downloadable thing is a **Skill package**; the page is the **Skill**.
 - HANDOFF P2 "member approval" — resolved for downloads: any **Member** may download; member approval stays a separate future feature.
+- "customer" in the two-phase publishing plan (2026-11-08) meant the person paying per channel. Resolved (2026-11-09): that person is a **Creator**, and what is billed is their **Workspace**'s **Channels**.
 - "user" in the open-to-others plan meant two groups: technical people who run **Skill packages** with their own AI agent, and **Creators** who only post. Resolved (2026-11-05): the first outside audience is **Creators**, served by posting tools first; generating video for them is later.
