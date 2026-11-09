@@ -87,6 +87,45 @@ dummy key the runner prints `outcome=zernio_auth_failed`, which proves browser
 runs that checkout's Rust runner with this checkout's web build, e.g. main
 before a fix, to see the bug locally first.
 
+## Publish (the owner's CLI, a real post)
+
+`scripts/local-e2e/run-publish.sh` runs the owner's real `kubcode` CLI
+(push, schedule with its confirmation summary) against the local runner, and
+posts to the account of a channel that is **already connected in production**:
+Zernio's free quota is used by those channels, so a third test account would
+be billed.
+
+- The script finds that account read-only (`GET /v1/accounts`, one active
+  account of the platform) and seeds it, with its Zernio profile, into a
+  throwaway local database.
+- **Production's account is never changed:** the runner runs with
+  `KUBCODE_LOCAL_PROTECT_ACCOUNTS=1` (connect, complete and disconnect are
+  refused; tested in the example), and the script's only Zernio client allows
+  reads only (`scripts/local-e2e/zernio-guard.ts`, tested). Nothing at Zernio is
+  deleted at the end.
+- The CLI's local mode is chosen by `KUBCODE_LOCAL_OPS_URL` (must be
+  `http://127.0.0.1:<port>`): commands go, signed as usual, to the runner's
+  `POST /ops`; media is copied to a local directory that stands in for S3.
+- A scratch copy of the clip carries the test title, so the studio folder is
+  not touched.
+
+```bash
+# dry run: push + summary, then cancel at the confirmation (nothing sent to Zernio)
+KUBCODE_LOCAL_E2E_CLIP=<clip-id> KUBCODE_LOCAL_E2E_TITLE="[ทดสอบ kubcode] ..." \
+  scripts/local-e2e/run-publish.sh
+
+# post (private by default, 10 minutes ahead) — only with the owner's OK on clip, title, channel
+KUBCODE_LOCAL_E2E_CLIP=<clip-id> KUBCODE_LOCAL_E2E_TITLE="..." KUBCODE_LOCAL_E2E_POST=<clip-id> \
+  scripts/local-e2e/run-publish.sh
+```
+
+After a post the script follows it at Zernio until it is published (webhooks
+go to production, which ignores a post it does not know). Check the thumbnail
+in YouTube Studio: it must be the designed cover.
+
+Wiring check with no Zernio call and no key:
+`echo sk_dummy | KUBCODE_LOCAL_E2E_OFFLINE=1 KUBCODE_LOCAL_E2E_CLIP=<clip-id> npx tsx scripts/local-e2e/publish.ts`.
+
 ## Zernio quota
 
 Zernio's first 2 connected accounts are free; each further one is billed. A
@@ -96,4 +135,5 @@ the Zernio dashboard for a leftover `kubcode-<8 hex>` profile and its accounts.
 ## Not covered (yet)
 
 - Webhooks: Zernio cannot reach 127.0.0.1. Use a tunnel when a change needs them.
-- Scheduling and media upload (S3): the runner has no media bucket.
+- S3 itself (publish mode uses a local directory) and the ops Lambda's IAM
+  invoke (the CLI talks to the runner over loopback).

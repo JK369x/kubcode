@@ -16,7 +16,8 @@ use std::process::ExitCode;
 use std::time::{SystemTime, UNIX_EPOCH};
 
 use kubcode_cli::clip::read_clip;
-use kubcode_cli::ops::{call, AwsCli, MacKeychain};
+use kubcode_cli::local::LocalOps;
+use kubcode_cli::ops::{call, Aws, AwsCli, Keychain, MacKeychain};
 use kubcode_cli::push::push;
 use kubcode_cli::schedule::{bangkok, render_summary, ChannelInfo};
 use kubcode_publishing::domain::Visibility;
@@ -66,11 +67,21 @@ fn channels(answer: &Value) -> Vec<ChannelInfo> {
 }
 
 fn run(args: &[String]) -> Result<(), String> {
-    let aws = AwsCli::new()?;
-    let keys = MacKeychain::new();
+    // KUBCODE_LOCAL_OPS_URL (loopback only) points at the local E2E runner
+    // (docs/dev/local-e2e.md); otherwise the real ops Lambda and Keychain.
+    let local = LocalOps::from_env().transpose()?;
+    let (cli, mac);
+    let (aws, keys): (&dyn Aws, &dyn Keychain) = match local.as_ref() {
+        Some(l) => (l, l),
+        None => {
+            cli = AwsCli::new()?;
+            mac = MacKeychain::new();
+            (&cli, &mac)
+        }
+    };
     match args.first().map(String::as_str) {
         Some("whoami") => {
-            let a = call(&aws, &keys, &json!({"op": "whoami"}), now())?;
+            let a = call(aws, keys, &json!({"op": "whoami"}), now())?;
             println!("workspace {}", a["workspace"].as_str().unwrap_or("?"));
             for c in a["channels"].as_array().into_iter().flatten() {
                 let status: Vec<&str> = c["connections"]
@@ -92,7 +103,7 @@ fn run(args: &[String]) -> Result<(), String> {
         Some("push") => {
             let id = args.get(1).ok_or("ต้องระบุรหัสคลิป")?;
             let clip = read_clip(&studio(), id).map_err(|e| e.to_string())?;
-            let p = push(&aws, &keys, &clip, now())?;
+            let p = push(aws, keys, &clip, now())?;
             println!("video {}", p.video);
             if let Some(c) = p.cover {
                 println!("cover {c}");
@@ -129,8 +140,8 @@ fn run(args: &[String]) -> Result<(), String> {
                 return Err("ต้องระบุ --channel อย่างน้อยหนึ่งช่อง".into());
             }
             let clip = read_clip(&studio(), id).map_err(|e| e.to_string())?;
-            let pushed = push(&aws, &keys, &clip, now())?;
-            let who = call(&aws, &keys, &json!({"op": "whoami"}), now())?;
+            let pushed = push(aws, keys, &clip, now())?;
+            let who = call(aws, keys, &json!({"op": "whoami"}), now())?;
             let req = ScheduleRequest {
                 clip_ref: clip.id.clone(),
                 video_asset: pushed.video,
@@ -165,8 +176,8 @@ fn run(args: &[String]) -> Result<(), String> {
                 return Err("ยกเลิก: ยังไม่ได้ตั้งเวลา".into());
             }
             let a = call(
-                &aws,
-                &keys,
+                aws,
+                keys,
                 &json!({"op": "schedule", "request": req, "digest": hex::encode(digest(&req))}),
                 now(),
             )?;
@@ -193,7 +204,7 @@ fn run(args: &[String]) -> Result<(), String> {
                 .get(1)
                 .and_then(|s| s.parse().ok())
                 .ok_or("รหัสโพสต์ไม่ถูกต้อง")?;
-            let a = call(&aws, &keys, &json!({"op": "status", "post": post}), now())?;
+            let a = call(aws, keys, &json!({"op": "status", "post": post}), now())?;
             for d in a["deliveries"].as_array().into_iter().flatten() {
                 let at = d["publish_at"]
                     .as_str()
@@ -219,8 +230,8 @@ fn run(args: &[String]) -> Result<(), String> {
                 .and_then(|s| s.parse().ok())
                 .ok_or("รหัส delivery ไม่ถูกต้อง")?;
             call(
-                &aws,
-                &keys,
+                aws,
+                keys,
                 &json!({"op": "cancel", "delivery": delivery}),
                 now(),
             )?;
