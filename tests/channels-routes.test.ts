@@ -159,6 +159,16 @@ test("connect: a Lambda failure or a non-https URL is a 503 with no cookie", asy
   }
 });
 
+test("connect: the provider's account quota being full says so instead of 'not ready'", async () => {
+  const l = lambda({ ok: false, code: "payment_required" });
+  const res = await handleChannelConnect(await post("/api/channels/connect", { platform: "youtube" }), deps(owner, { fetch: l.fetch }));
+  assert.equal(res.status, 409);
+  assert.equal(res.headers.get("set-cookie"), null);
+  const body = (await res.json()) as { code: string; message: string };
+  assert.equal(body.code, "PROVIDER_QUOTA");
+  assert.match(body.message, /โควตา/);
+});
+
 // ------------------------------------------------------------ callback
 
 const openIntent = (over: Partial<{ cookieHash: Buffer; bindingHash: Buffer; open: boolean; live: boolean }> = {}) => ({
