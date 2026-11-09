@@ -109,6 +109,8 @@ export const PUBLISHING_PARAMETERS = {
   zernioApiKey: "/kubcode/prod/zernio-api-key",
   zernioWebhookSecret: "/kubcode/prod/zernio-webhook-secret",
   zernioWebhookSecretPrevious: "/kubcode/prod/zernio-webhook-secret-previous",
+  // Signs the owner CLI's ops commands; the other copy is in the owner's vault.
+  opsKey: "/kubcode/prod/publishing-ops-key",
 } as const;
 
 // services/crates/kubcode-publishing-lambda/build-lambda.sh output. Relative to infra/.

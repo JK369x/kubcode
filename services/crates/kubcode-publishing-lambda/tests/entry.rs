@@ -186,3 +186,61 @@ async fn the_ops_function() {
         .starts_with(&format!("clips/{}/clip-1/", ws.0)));
     db.drop().await;
 }
+
+#[tokio::test]
+#[ignore = "needs KUBCODE_TEST_DATABASE_URL; run with --ignored"]
+async fn ops_commands_must_be_signed_with_the_ops_key() {
+    let db = db().await;
+    let mut store = db.store().await;
+    let fake = Arc::new(FakeProvider::default());
+    let (reg, cfg) = (registry(&fake), cfg());
+    let mut s = Service {
+        store: &mut store,
+        reg: &reg,
+        cfg: &cfg,
+        media: &FakeOpener,
+        now: OffsetDateTime::now_utc(),
+    };
+    db.user(true).await;
+    let key = b"FIXTURE-ONLY-publishing-ops-key-0000000000000";
+    let command = r#"{"op":"whoami"}"#;
+    let nonce = "00112233445566778899aabbccddeeff";
+    let envelope =
+        |sig: String, ts: u64| json!({"command": command, "ts": ts, "nonce": nonce, "sig": sig});
+    let good = envelope(ops::sign(key, NOW, nonce, command), NOW);
+
+    assert_eq!(
+        ops::run_signed(&mut s, None, good.clone(), "b", NOW).await["code"],
+        "unavailable",
+        "no key in SSM: nothing runs"
+    );
+    assert_eq!(
+        ops::run_signed(&mut s, Some(key), json!({"op": "whoami"}), "b", NOW).await["code"],
+        "unauthorized",
+        "IAM invoke alone is not enough"
+    );
+    let forged = envelope(
+        ops::sign(b"another-key-00000000000000000000000", NOW, nonce, command),
+        NOW,
+    );
+    assert_eq!(
+        ops::run_signed(&mut s, Some(key), forged, "b", NOW).await["code"],
+        "unauthorized"
+    );
+    let stale = envelope(ops::sign(key, NOW - 301, nonce, command), NOW - 301);
+    assert_eq!(
+        ops::run_signed(&mut s, Some(key), stale, "b", NOW).await["code"],
+        "unauthorized"
+    );
+
+    assert_eq!(
+        ops::run_signed(&mut s, Some(key), good.clone(), "b", NOW).await["ok"],
+        true
+    );
+    assert_eq!(
+        ops::run_signed(&mut s, Some(key), good, "b", NOW).await["code"],
+        "unauthorized",
+        "a replayed command is refused"
+    );
+    db.drop().await;
+}

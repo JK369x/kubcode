@@ -1019,6 +1019,7 @@ dependencies = [
  "bytes",
  "futures",
  "hex",
+ "hmac 0.12.1",
  "kubcode-oauth-connect",
  "kubcode-publishing",
  "kubcode-publishing-store",

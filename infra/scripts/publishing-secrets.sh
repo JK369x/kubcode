@@ -4,6 +4,7 @@
 #
 #   infra/scripts/publishing-secrets.sh zernio-key       vault kubcode/zernio-api-key -> SSM
 #   infra/scripts/publishing-secrets.sh hmac             new web-host HMAC key -> SSM + vault kubcode/publishing-hmac-key
+#   infra/scripts/publishing-secrets.sh ops-key          new CLI signing key -> SSM + vault kubcode/publishing-ops-key
 #   infra/scripts/publishing-secrets.sh webhook URL [--compromised]
 #                                                        new webhook secret -> SSM, registered with Zernio for URL.
 #                                                        The old one stays valid as -previous until drop-previous,
@@ -53,6 +54,13 @@ zernio-key)
   grep -Eq '^(sk|zrk)_[A-Za-z0-9]+$' "$TMP/key" || die "the stored value does not look like a Zernio key"
   put "$P/zernio-api-key" "$TMP/key"
   ;;
+ops-key)
+  check_account
+  (umask 077; random_hex >"$TMP/ops")
+  put "$P/publishing-ops-key" "$TMP/ops"
+  kc_put publishing-ops-key "$(cat "$TMP/ops")" || die "Keychain refused kubcode/publishing-ops-key"
+  echo "publishing-secrets: also stored in the vault as kubcode/publishing-ops-key (read by the kubcode CLI)" >&2
+  ;;
 hmac)
   check_account
   (umask 077; random_hex >"$TMP/hmac")
@@ -86,6 +94,14 @@ webhook)
   put "$P/zernio-webhook-secret" "$TMP/secret"
   code=$(curl -sS -o "$TMP/resp" -w '%{http_code}' -X POST https://zernio.com/api/v1/webhooks/settings \
     -H @"$TMP/auth" -H 'Content-Type: application/json' --data-binary @"$TMP/body") || die "Zernio unreachable"
+  if [ "$compromised" = "--compromised" ]; then
+    # Warm Lambdas cache secrets for 5 minutes; a configuration change starts
+    # fresh environments now. The description is reset by the next pulumi up.
+    aws lambda update-function-configuration --region "$REGION" --function-name kubcode-publishing \
+      --description "Publishing: web host API (HMAC) and Zernio webhooks (secrets reloaded $(date -u +%FT%TZ))" >/dev/null &&
+      echo "publishing-secrets: forced kubcode-publishing to reload its secrets" >&2 ||
+      echo "publishing-secrets: WARNING: could not force a reload; the old secret stays valid for up to 5 minutes" >&2
+  fi
   case "$code" in
   2??) echo "publishing-secrets: webhook registered with Zernio ($code)" >&2 ;;
   *) die "Zernio answered $code; the SSM secret is set, register again after fixing" ;;
@@ -99,7 +115,7 @@ drop-previous)
   ;;
 status)
   check_account
-  for n in worker-db-url publishing-hmac-key zernio-api-key zernio-webhook-secret zernio-webhook-secret-previous; do
+  for n in worker-db-url publishing-hmac-key publishing-ops-key zernio-api-key zernio-webhook-secret zernio-webhook-secret-previous; do
     if aws ssm describe-parameters --region "$REGION" \
          --parameter-filters "Key=Name,Values=$P/$n" --query 'length(Parameters)' --output text | grep -qx 1; then
       echo "set     $P/$n"

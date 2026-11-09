@@ -364,7 +364,7 @@ role `kubcode-lambda-publishing` (boundary, Lambda trust):
 | Function | Door | Serves |
 |---|---|---|
 | `kubcode-publishing` | Function URL, auth NONE | `/api/*` from the web host (KUBCODE-HMAC-V1, nonce table shared with oauth-connect) and `/webhooks/zernio` (Zernio's HMAC signature) |
-| `kubcode-publishing-ops` | **no URL, no resource policy** | the owner's `kubcode` CLI; only IAM principals with `lambda:InvokeFunction` (the admin profile) can call it |
+| `kubcode-publishing-ops` | **no URL, no resource policy** | the owner's `kubcode` CLI. IAM invoke **and** a signature with the ops key (vault + SSM only) are both required: the account holds other principals, so IAM alone is not trusted |
 
 The role may write its two log groups (14 days), read exactly the publishing SSM
 parameters, and `s3:GetObject` under `kubcode-media-…/clips/*`. The CLI uploads clips
@@ -381,6 +381,7 @@ policy). An admin may also apply it from the branch with the usual local apply.
 
 ```bash
 infra/scripts/publishing-secrets.sh hmac        # new web-host HMAC key -> SSM + vault
+infra/scripts/publishing-secrets.sh ops-key     # new CLI signing key -> SSM + vault
 infra/scripts/publishing-secrets.sh zernio-key  # vault kubcode/zernio-api-key -> SSM
 URL=$(pulumi -C infra stack output --stack prod publishingUrl)
 infra/scripts/publishing-secrets.sh webhook "${URL%/}/webhooks/zernio"

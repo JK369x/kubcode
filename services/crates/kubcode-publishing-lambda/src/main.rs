@@ -16,8 +16,8 @@ use lambda_http::{Body, Request, Response};
 use lambda_runtime::{service_fn, LambdaEvent};
 use oauth_connect::aws::AwsClient;
 use publishing_lambda::runtime::{
-    secrets_from, PgLimiter, S3Opener, Secrets, PARAM_HMAC_KEY, PARAM_WEBHOOK_SECRET,
-    PARAM_WEBHOOK_SECRET_PREVIOUS, PARAM_WORKER_DB_URL, PARAM_ZERNIO_KEY,
+    secrets_from, PgLimiter, S3Opener, Secrets, PARAM_HMAC_KEY, PARAM_OPS_KEY,
+    PARAM_WEBHOOK_SECRET, PARAM_WEBHOOK_SECRET_PREVIOUS, PARAM_WORKER_DB_URL, PARAM_ZERNIO_KEY,
 };
 use publishing_lambda::service::{ProviderSet, Registry, Service};
 use publishing_lambda::{http, ops};
@@ -47,6 +47,7 @@ impl Env {
             PARAM_ZERNIO_KEY,
             PARAM_WEBHOOK_SECRET,
             PARAM_WEBHOOK_SECRET_PREVIOUS,
+            PARAM_OPS_KEY,
         ];
         let loaded = match self.aws.ssm_parameters(&names).await {
             Ok(found) => secrets_from(found),
@@ -154,7 +155,14 @@ async fn serve_ops(env: &Env, event: Value) -> Value {
         media: &env.opener,
         now: time::OffsetDateTime::now_utc(),
     };
-    ops::run(&mut svc, event, &env.opener.bucket).await
+    ops::run_signed(
+        &mut svc,
+        s.ops_key.as_deref().map(|k| k.as_slice()),
+        event,
+        &env.opener.bucket,
+        now(),
+    )
+    .await
 }
 
 #[tokio::main(flavor = "current_thread")]

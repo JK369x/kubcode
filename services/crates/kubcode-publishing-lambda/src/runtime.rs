@@ -28,6 +28,8 @@ pub const PARAM_ZERNIO_KEY: &str = "/kubcode/prod/zernio-api-key";
 pub const PARAM_WEBHOOK_SECRET: &str = "/kubcode/prod/zernio-webhook-secret";
 /// Accepted for a day after a rotation (design §5.4).
 pub const PARAM_WEBHOOK_SECRET_PREVIOUS: &str = "/kubcode/prod/zernio-webhook-secret-previous";
+/// Signs the owner CLI's commands (ops function); also in the owner's vault.
+pub const PARAM_OPS_KEY: &str = "/kubcode/prod/publishing-ops-key";
 pub const MIN_HMAC_KEY_BYTES: usize = 32;
 
 pub struct Secrets {
@@ -37,6 +39,8 @@ pub struct Secrets {
     /// `provider_not_configured` until then.
     pub zernio_key: Option<Zeroizing<String>>,
     pub webhook_secrets: Vec<Vec<u8>>,
+    /// Absent until the admin creates it: the ops function answers unavailable.
+    pub ops_key: Option<Zeroizing<Vec<u8>>>,
 }
 
 /// Turns the SSM map into secrets, with fixed codes for what is missing.
@@ -59,11 +63,16 @@ pub fn secrets_from(
         .filter(|s| s.len() >= MIN_HMAC_KEY_BYTES)
         .map(|s| s.as_bytes().to_vec())
         .collect();
+    let ops_key = found
+        .remove(PARAM_OPS_KEY)
+        .filter(|k| k.len() >= MIN_HMAC_KEY_BYTES)
+        .map(|k| Zeroizing::new(k.as_bytes().to_vec()));
     Ok(Secrets {
         db_url,
         hmac_key: Zeroizing::new(hmac.as_bytes().to_vec()),
         zernio_key,
         webhook_secrets,
+        ops_key,
     })
 }
 
