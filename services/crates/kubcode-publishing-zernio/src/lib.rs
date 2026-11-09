@@ -356,7 +356,8 @@ impl ConnectProvider for Zernio {
             .into_iter()
             .find(|a| a.id == account_id)
             .ok_or_else(|| rejected("account_not_in_profile"))?;
-        if acct.profile_id.as_deref().is_some_and(|p| p != profile.0) {
+        // Fail closed: an account without a profile id is not proven ours.
+        if acct.profile_id.as_deref() != Some(profile.0.as_str()) {
             return Err(rejected("account_not_in_profile"));
         }
         if acct.platform != platform_name(platform) {

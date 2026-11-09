@@ -199,3 +199,48 @@ fn media_over_zernios_5_gb_cap_is_refused_by_the_adapter() {
     let v: Vec<_> = h.zernio.validate(&d).into_iter().map(|v| v.code).collect();
     assert_eq!(v, vec!["provider_video_too_large"]);
 }
+
+/// Answers every call with the same JSON body.
+struct Canned(serde_json::Value);
+
+#[async_trait::async_trait]
+impl kubcode_publishing_zernio::transport::Transport for Canned {
+    async fn send(
+        &self,
+        _req: kubcode_publishing_zernio::transport::HttpRequest,
+    ) -> Result<
+        kubcode_publishing_zernio::transport::HttpResponse,
+        kubcode_publishing_zernio::transport::TransportError,
+    > {
+        Ok(kubcode_publishing_zernio::transport::HttpResponse {
+            status: 200,
+            headers: vec![],
+            body: serde_json::to_vec(&self.0).unwrap(),
+        })
+    }
+}
+
+#[tokio::test]
+async fn an_account_without_a_profile_id_is_not_accepted() {
+    use kubcode_publishing::domain::ProviderRef;
+    use kubcode_publishing::ports::CallbackParams;
+    let z = kubcode_publishing_zernio::Zernio::new(
+        kubcode_publishing_zernio::ZernioConfig {
+            base_url: support::BASE.into(),
+            api_key: API_KEY.into(),
+        },
+        std::sync::Arc::new(Canned(serde_json::json!({
+            "accounts": [{"_id": "a1", "platform": "youtube", "username": "x", "isActive": true}]
+        }))),
+        std::sync::Arc::new(kubcode_publishing_zernio::limiter::MinuteWindow::new(10)),
+    );
+    let err = z
+        .complete(
+            &ProviderRef("p1".into()),
+            Platform::YouTube,
+            &CallbackParams(vec![("accountId".into(), "a1".into())]),
+        )
+        .await
+        .unwrap_err();
+    assert_eq!(err.code.as_str(), "account_not_in_profile");
+}
