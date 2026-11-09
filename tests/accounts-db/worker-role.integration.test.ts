@@ -65,7 +65,7 @@ test("with no kubcode_worker role, 0004 creates it NOLOGIN and its grants apply"
   );
   assert.equal(grants.rows[0].ok, true, "worker grants present");
   const policies = await pool.query("SELECT 1 FROM pg_policies WHERE policyname = 'kubcode_worker_access'");
-  assert.equal(policies.rowCount, 5, "one worker policy per settings table");
+  assert.equal(policies.rowCount, 5 + 14, "one worker policy per settings (0004) and publishing (0007/0008) table");
 });
 
 test("with the role already present (operator gave it LOGIN), 0004 leaves the role alone", async () => {
