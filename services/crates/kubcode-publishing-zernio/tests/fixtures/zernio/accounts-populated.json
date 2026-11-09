@@ -1,0 +1,3 @@
+{"_source": "https://zernio.com/openapi.yaml v1.529.3, GET /v1/accounts example (profileId is oneOf string | Profile)",
+ "accounts": [{"_id": "64e1...", "platform": "twitter", "profileId": {"_id": "64f0...", "name": "My Brand", "slug": "my-brand"}, "username": "@acme", "displayName": "Acme", "profileUrl": "https://x.com/acme", "isActive": true}],
+ "hasAnalyticsAccess": false}

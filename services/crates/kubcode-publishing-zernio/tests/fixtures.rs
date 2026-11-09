@@ -53,6 +53,20 @@ fn connect_url_and_accounts() {
 }
 
 #[test]
+fn accounts_with_a_populated_profile() {
+    // GET /v1/accounts returns profileId as a Profile object (OpenAPI
+    // example); the multi-tenant guide shows a plain string. Both must read.
+    let accts = parse::accounts(&fixture("accounts-populated"));
+    assert_eq!(accts.len(), 1);
+    assert_eq!(accts[0].id, "64e1...");
+    assert_eq!(accts[0].profile_id.as_deref(), Some("64f0..."));
+    // An object without an id is still no proof of ownership.
+    let no_id =
+        json!({"accounts": [{"_id": "a1", "platform": "youtube", "profileId": {"name": "x"}}]});
+    assert_eq!(parse::accounts(&no_id)[0].profile_id, None);
+}
+
+#[test]
 fn health_uses_account_id_not_underscore_id() {
     let h = parse::health(&fixture("accounts-health"));
     assert_eq!(

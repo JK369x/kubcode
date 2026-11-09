@@ -202,7 +202,8 @@ impl FakeZernio {
                         .iter()
                         .filter(|(_, (p, _, active))| *p == pid && *active)
                         .map(|(id, (p, plat, active))| {
-                            json!({"_id": id, "platform": plat, "username": "lokeekbaeb", "isActive": active, "profileId": p})
+                            // Populated, as the real GET /v1/accounts returns it.
+                            json!({"_id": id, "platform": plat, "username": "lokeekbaeb", "isActive": active, "profileId": {"_id": p, "name": "kubcode", "slug": "kubcode"}})
                         })
                         .collect()
                 });
