@@ -1,0 +1,7 @@
+{"_source": "https://zernio.com/openapi.yaml v1.529.3, GET /v1/posts/{postId} example 'Failed post with error details'",
+ "post": {"_id": "65f1c0a9e2b5af0012ab34cd", "content": "This post failed to publish", "status": "failed",
+          "platforms": [{"platform": "instagram",
+                         "accountId": {"_id": "64e1f0a9e2b5af0012ab34de", "platform": "instagram", "username": "acmecorp", "isActive": false},
+                         "status": "failed",
+                         "errorMessage": "Instagram access token has expired. Please reconnect your account.",
+                         "errorCategory": "auth_expired", "errorSource": "user"}]}}

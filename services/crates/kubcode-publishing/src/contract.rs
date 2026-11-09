@@ -217,14 +217,21 @@ pub async fn publisher_contract<H: PublisherHarness>(h: &H) {
         let before = h.provider_posts().await;
 
         let d = checked(h, req.clone());
-        let post = p
+        let taken = p
             .schedule(&conn, &d, media.as_ref())
             .await
             .expect("schedule");
+        assert_eq!(
+            taken.state.status,
+            DeliveryStatus::Scheduled,
+            "{platform:?}: a future publish time is reported as scheduled"
+        );
+        let post = taken.post;
         let again = p
             .schedule(&conn, &d, media.as_ref())
             .await
-            .expect("schedule again");
+            .expect("schedule again")
+            .post;
         assert_eq!(post, again, "{platform:?}: same idempotency key, same post");
         assert_eq!(
             h.provider_posts().await,
@@ -247,7 +254,8 @@ pub async fn publisher_contract<H: PublisherHarness>(h: &H) {
         let second = p
             .schedule(&conn, &checked(h, other), media.as_ref())
             .await
-            .expect("a new key is a new post");
+            .expect("a new key is a new post")
+            .post;
         assert_ne!(second, post);
         p.cancel(&conn, &second).await.expect("cancel");
         p.cancel(&conn, &second)

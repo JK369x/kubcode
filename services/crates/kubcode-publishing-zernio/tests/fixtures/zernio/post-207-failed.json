@@ -1,0 +1,6 @@
+{"_source": "https://zernio.com/openapi.yaml v1.529.3, POST /v1/posts 207 example allPlatformsFailed (inline publish, terminal)",
+ "post": {"_id": "6a9e43f7fd28fe46ce033d98", "content": "We just launched!", "status": "failed",
+          "platforms": [{"platform": "facebook", "status": "failed",
+                         "errorMessage": "Facebook needs you to confirm your identity before you can publish as this Page. Open the Facebook mobile app, go to this Page, and complete the identity confirmation, then try again.",
+                         "errorCategory": "platform_rejected", "errorSource": "platform"}]},
+ "message": "Post created but publishing failed"}

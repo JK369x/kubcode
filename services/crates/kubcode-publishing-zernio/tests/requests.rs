@@ -4,13 +4,14 @@ mod support;
 
 use kubcode_publishing::config::PublishingConfig;
 use kubcode_publishing::contract::{sample_request, PublisherHarness};
-use kubcode_publishing::domain::{Platform, Visibility, WorkspaceId};
+use kubcode_publishing::domain::{DeliveryStatus, Platform, Visibility, WorkspaceId};
 use kubcode_publishing::fake::FakeMedia;
 use kubcode_publishing::ports::{
     check, Checked, ConnectProvider, DeliveryRequest, Publisher, WorkspaceCtx,
 };
 use kubcode_publishing::validate::Velocity;
 use kubcode_publishing_zernio::transport::Method;
+use serde_json::Value;
 use support::{Harness, API_KEY};
 use uuid::Uuid;
 
@@ -180,7 +181,8 @@ async fn cancelling_a_published_post_is_refused() {
         .zernio
         .schedule(&conn, &checked(&h, req), &FakeMedia)
         .await
-        .unwrap();
+        .unwrap()
+        .post;
     h.fake.set_post_status(&post.0, "published");
     let err = h.zernio.cancel(&conn, &post).await.unwrap_err();
     assert_eq!(err.code.as_str(), "already_published");
@@ -243,4 +245,34 @@ async fn an_account_without_a_profile_id_is_not_accepted() {
         .await
         .unwrap_err();
     assert_eq!(err.code.as_str(), "account_not_in_profile");
+}
+
+#[tokio::test]
+async fn an_inline_publish_failure_is_reported_not_taken_as_scheduled() {
+    let h = Harness::default();
+    let conn = h.connection(Platform::YouTube).await;
+    let fixture: Value = serde_json::from_str(
+        &std::fs::read_to_string(format!(
+            "{}/tests/fixtures/zernio/post-207-failed.json",
+            env!("CARGO_MANIFEST_DIR")
+        ))
+        .unwrap(),
+    )
+    .unwrap();
+    h.fake.answer_next_post(207, fixture);
+    let taken = h
+        .publisher()
+        .schedule(
+            &conn,
+            &checked(&h, sample_request(Platform::YouTube, h.now())),
+            h.media().as_ref(),
+        )
+        .await
+        .expect("a 207 is an answer, not an error");
+    assert_eq!(taken.post.0, "6a9e43f7fd28fe46ce033d98");
+    assert_eq!(taken.state.status, DeliveryStatus::Failed);
+    assert_eq!(
+        taken.state.error.unwrap().code.as_str(),
+        "platform_platform_rejected"
+    );
 }

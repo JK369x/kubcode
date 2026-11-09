@@ -131,6 +131,24 @@ pub fn platform_error_code(category: Option<&str>) -> String {
     format!("platform_{clean}")
 }
 
+/// Account cooldowns and quota pools send no Retry-After and last 10 min to
+/// 24 h (OpenAPI `rateLimitedUntil`); retry no sooner than this.
+const PLATFORM_RETRY_SECS: u32 = 15 * 60;
+
+/// A failed post's `errorCategory` (OpenAPI enum) as our error: the code keeps
+/// the category, the class says what to do about it.
+pub fn platform_error(category: Option<&str>) -> PublishError {
+    let class = match category {
+        Some("auth_expired") => ErrorClass::NeedsReconnect,
+        Some("platform_rate_limit" | "quota_exhausted") => ErrorClass::RateLimited {
+            retry_after_secs: PLATFORM_RETRY_SECS,
+        },
+        Some("platform_error" | "system_error") => ErrorClass::Temporary,
+        _ => ErrorClass::Rejected,
+    };
+    PublishError::new(class, &platform_error_code(category))
+}
+
 fn platform_status(s: &str) -> Option<DeliveryStatus> {
     Some(match s {
         "pending" | "scheduled" => DeliveryStatus::Scheduled,
@@ -156,13 +174,8 @@ pub fn post_state(v: &Value) -> Option<(String, DeliveryState)> {
         .and_then(|e| str_of(e, &["status"]))
         .and_then(|s| platform_status(&s))
         .or_else(|| str_of(post, &["status"]).and_then(|s| platform_status(&s)))?;
-    let error = (status == DeliveryStatus::Failed).then(|| {
-        let category = entry.and_then(|e| str_of(e, &["errorCategory"]));
-        PublishError::new(
-            ErrorClass::Rejected,
-            &platform_error_code(category.as_deref()),
-        )
-    });
+    let error = (status == DeliveryStatus::Failed)
+        .then(|| platform_error(entry.and_then(|e| str_of(e, &["errorCategory"])).as_deref()));
     Some((
         id,
         DeliveryState {

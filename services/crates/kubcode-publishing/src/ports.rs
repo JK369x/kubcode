@@ -159,19 +159,28 @@ pub struct DeliveryState {
     pub error: Option<PublishError>,
 }
 
+/// The provider's answer when it takes a delivery: its post and the state it
+/// reported. Usually `Scheduled`; a publish time that is already due is
+/// attempted inline and can come back published or failed.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct Accepted {
+    pub post: ProviderRef,
+    pub state: DeliveryState,
+}
+
 #[async_trait]
 pub trait Publisher: Send + Sync {
     fn kind(&self) -> ProviderKind;
     /// Provider-only limits on top of the core rules. Pure, no network.
     fn validate(&self, draft: &DeliveryDraft) -> Vec<Violation>;
-    /// Hands the delivery over; returns the provider's post ref. Idempotent on
-    /// the request's `idempotency_key`.
+    /// Hands the delivery over; returns the provider's post and the state it
+    /// reported. Idempotent on the request's `idempotency_key`.
     async fn schedule(
         &self,
         conn: &ConnectionRef,
         delivery: &Checked,
         media: &dyn MediaSource,
-    ) -> Result<ProviderRef>;
+    ) -> Result<Accepted>;
     /// Idempotent: cancelling an already cancelled post succeeds.
     async fn cancel(&self, conn: &ConnectionRef, post: &ProviderRef) -> Result<()>;
     async fn status(&self, conn: &ConnectionRef, post: &ProviderRef) -> Result<DeliveryState>;

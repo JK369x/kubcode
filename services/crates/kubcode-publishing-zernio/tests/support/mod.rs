@@ -53,6 +53,8 @@ struct State {
     keys: HashMap<String, String>,     // idempotency key -> post id
     uploads: HashMap<String, Vec<u8>>, // upload path -> bytes
     fault: Option<Fault>,
+    /// The next POST /v1/posts answers this (status, body) instead.
+    next_post: Option<(u16, Value)>,
     next: u64,
     log: Vec<Recorded>,
 }
@@ -86,6 +88,11 @@ impl FakeZernio {
 
     pub fn log(&self) -> Vec<Recorded> {
         self.with(|s| s.log.clone())
+    }
+
+    /// Scripts the next POST /v1/posts answer, e.g. a 207 inline failure.
+    pub fn answer_next_post(&self, status: u16, body: Value) {
+        self.with(|s| s.next_post = Some((status, body)));
     }
 
     pub fn inject(&self, f: Fault) {
@@ -259,6 +266,9 @@ impl FakeZernio {
                 if let Some(id) = self.with(|s| s.keys.get(&key).cloned()) {
                     let post = self.with(|s| s.posts[&id].clone());
                     return resp(200, json!({"post": post}));
+                }
+                if let Some((status, body)) = self.with(|s| s.next_post.take()) {
+                    return resp(status, body);
                 }
                 let id = self.id();
                 let b = body.unwrap();

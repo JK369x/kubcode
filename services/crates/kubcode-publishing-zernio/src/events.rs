@@ -26,10 +26,28 @@ pub fn sign(secret: &[u8], raw: &[u8]) -> String {
     hex::encode(mac.finalize().into_bytes())
 }
 
+/// The digest in a signature header. Zernio sends lowercase hex today (seen
+/// on real deliveries); the spec does not fix the encoding, so an optional
+/// `sha256=` prefix and base64 are accepted too.
+fn digest_of(header: &str) -> Option<Vec<u8>> {
+    use base64::Engine as _;
+    let v = header.trim();
+    let v = v.strip_prefix("sha256=").unwrap_or(v);
+    if v.len() == 64 {
+        if let Ok(d) = hex::decode(v.to_ascii_lowercase()) {
+            return Some(d);
+        }
+    }
+    base64::engine::general_purpose::STANDARD
+        .decode(v)
+        .ok()
+        .filter(|d| d.len() == 32)
+}
+
 /// Constant-time check against each secret (current first, then the previous
 /// one during a rotation).
 pub fn signature_matches<S: AsRef<[u8]>>(secrets: &[S], header: &str, raw: &[u8]) -> bool {
-    let Ok(given) = hex::decode(header.trim().to_ascii_lowercase()) else {
+    let Some(given) = digest_of(header) else {
         return false;
     };
     secrets.iter().any(|secret| {

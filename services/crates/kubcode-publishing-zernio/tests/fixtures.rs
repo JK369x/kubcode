@@ -67,6 +67,75 @@ fn accounts_with_a_populated_profile() {
 }
 
 #[test]
+fn a_failed_post_carries_the_class_its_error_category_implies() {
+    let (_, st) = parse::post_state(&fixture("post-failed-auth-expired")).unwrap();
+    assert_eq!(st.status, DeliveryStatus::Failed);
+    let err = st.error.unwrap();
+    assert_eq!(err.code.as_str(), "platform_auth_expired");
+    assert_eq!(err.class, ErrorClass::NeedsReconnect);
+
+    // OpenAPI errorCategory enum.
+    let class = |c: Option<&str>| parse::platform_error(c).class;
+    assert_eq!(class(Some("auth_expired")), ErrorClass::NeedsReconnect);
+    for c in ["platform_rate_limit", "quota_exhausted"] {
+        assert!(
+            matches!(class(Some(c)), ErrorClass::RateLimited { .. }),
+            "{c}"
+        );
+        assert!(parse::platform_error(Some(c)).retryable(), "{c}");
+    }
+    for c in ["platform_error", "system_error"] {
+        assert_eq!(class(Some(c)), ErrorClass::Temporary, "{c}");
+    }
+    for c in [
+        Some("user_content"),
+        Some("user_abuse"),
+        Some("account_issue"),
+        Some("platform_rejected"),
+        Some("unknown"),
+        Some("brand_new"),
+        None,
+    ] {
+        assert_eq!(class(c), ErrorClass::Rejected, "{c:?}");
+    }
+}
+
+#[test]
+fn an_inline_publish_that_failed_is_terminal() {
+    let (id, st) = parse::post_state(&fixture("post-207-failed")).unwrap();
+    assert_eq!(id, "6a9e43f7fd28fe46ce033d98");
+    assert_eq!(st.status, DeliveryStatus::Failed);
+    assert_eq!(st.error.unwrap().class, ErrorClass::Rejected);
+}
+
+#[test]
+fn webhook_signatures_in_every_common_encoding() {
+    use base64::Engine as _;
+    let secret = b"0123456789abcdef0123456789abcdef";
+    let raw = br#"{"id":"evt_1","event":"post.published"}"#;
+    let hexed = sign(secret, raw);
+    let bytes = hex::decode(&hexed).unwrap();
+    let b64 = base64::engine::general_purpose::STANDARD.encode(&bytes);
+    for header in [
+        hexed.clone(),
+        hexed.to_ascii_uppercase(),
+        format!("sha256={hexed}"),
+        b64.clone(),
+        format!("sha256={b64}"),
+    ] {
+        assert!(signature_matches(&[secret], &header, raw), "{header}");
+    }
+    for header in ["", "sha256=", "not-a-signature", &format!("sha1={hexed}")] {
+        assert!(!signature_matches(&[secret], header, raw), "{header:?}");
+    }
+    assert!(!signature_matches(
+        &[b"another-secret-another-secret-00"],
+        &b64,
+        raw
+    ));
+}
+
+#[test]
 fn health_uses_account_id_not_underscore_id() {
     let h = parse::health(&fixture("accounts-health"));
     assert_eq!(

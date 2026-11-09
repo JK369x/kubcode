@@ -510,9 +510,30 @@ impl Service<'_> {
             cover.as_ref().map(|c| (c.s3_key.as_str(), &c.meta)),
         );
         match publisher.schedule(&conn, &checked, media.as_ref()).await {
-            Ok(post_ref) => {
-                self.store.mark_scheduled(delivery, &post_ref).await?;
-                Ok(result(DeliveryStatus::Scheduled, Vec::new()))
+            Ok(taken) => {
+                self.store.mark_scheduled(delivery, &taken.post).await?;
+                // A due time is attempted inline: record what the provider said.
+                match taken.state.status {
+                    DeliveryStatus::Failed => {
+                        let code = taken
+                            .state
+                            .error
+                            .map(|e| e.code.as_str().to_owned())
+                            .unwrap_or_else(|| "platform_rejected".into());
+                        self.store
+                            .transition(delivery, DeliveryStatus::Failed, Some(&code))
+                            .await?;
+                        Ok(result(DeliveryStatus::Failed, vec![code]))
+                    }
+                    // On its way; the receipt (post id, URL) comes with the webhook.
+                    DeliveryStatus::Published | DeliveryStatus::Publishing => {
+                        self.store
+                            .transition(delivery, DeliveryStatus::Publishing, None)
+                            .await?;
+                        Ok(result(DeliveryStatus::Publishing, Vec::new()))
+                    }
+                    _ => Ok(result(DeliveryStatus::Scheduled, Vec::new())),
+                }
             }
             Err(e) => {
                 let code = e.code.as_str().to_owned();
