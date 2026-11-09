@@ -92,6 +92,8 @@ jobs:
           KUBCODE_TEST_DATABASE_URL: postgres://postgres:fixture-only@127.0.0.1:5432/kubcode_ci_test
       - run: bash crates/kubcode-oauth-connect/build-lambda.sh
       - run: unzip -Z crates/kubcode-oauth-connect/dist/bootstrap.zip | grep -E '^-rwx.*bootstrap$'
+      - run: bash crates/kubcode-publishing-lambda/build-lambda.sh
+      - run: unzip -Z crates/kubcode-publishing-lambda/dist/bootstrap.zip | grep -E '^-rwx.*bootstrap$'
 
   # Rust presign Lambda (docs/design/package-signer.md). Also proves the musl
   # release build and the deployable zip, so a broken build never reaches infra.
