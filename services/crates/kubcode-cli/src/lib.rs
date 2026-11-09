@@ -5,6 +5,7 @@
 //! key from the Keychain vault.
 
 pub mod clip;
+pub mod local;
 pub mod ops;
 pub mod push;
 pub mod schedule;

@@ -9,6 +9,12 @@
 //!   KUBCODE_LOCAL_WORKER_DB_URL  loopback postgres URL for kubcode_worker
 //!   KUBCODE_LOCAL_HMAC_KEY       the key the local Next server signs with
 //!
+//! Publish mode (scripts/local-e2e/publish.ts) adds:
+//!   KUBCODE_LOCAL_OPS_KEY        hex; enables POST /ops (the CLI's ops function)
+//!   KUBCODE_LOCAL_MEDIA_DIR      stands in for the media bucket (`clips/...` keys)
+//!   KUBCODE_LOCAL_PROTECT_ACCOUNTS=1  refuses connect, complete and disconnect,
+//!       so a real account seeded from production is never changed or deleted
+//!
 //! Run: secret.sh get zernio-api-key | cargo run --example publishing_local
 
 use std::collections::HashMap;
@@ -23,18 +29,24 @@ use hyper::server::conn::http1;
 use hyper::{Request, Response};
 use hyper_util::rt::TokioIo;
 use kubcode_publishing::config::PublishingConfig;
+use kubcode_publishing::domain::{MediaKind, MediaMeta, Platform, ProviderKind, ProviderRef};
 use kubcode_publishing::errors::{ErrorClass, PublishError};
+use kubcode_publishing::ports::{
+    CallbackParams, ConnectProvider, ConnectStart, ConnectedAccount, ConnectionHealth,
+    ConnectionRef, MediaBody, MediaSource, WorkspaceCtx,
+};
 use kubcode_publishing_store::Store;
 use kubcode_publishing_zernio::events::ZernioEvents;
 use kubcode_publishing_zernio::limiter::Limiter;
 use kubcode_publishing_zernio::transport::ReqwestTransport;
 use kubcode_publishing_zernio::{Zernio, ZernioConfig, PRODUCTION_BASE};
-use publishing_lambda::http;
 use publishing_lambda::runtime::{
-    secrets_from, S3Opener, Secrets, PARAM_HMAC_KEY, PARAM_WORKER_DB_URL, PARAM_ZERNIO_KEY,
+    secrets_from, Secrets, PARAM_HMAC_KEY, PARAM_WORKER_DB_URL, PARAM_ZERNIO_KEY,
 };
-use publishing_lambda::service::{ProviderSet, Registry, Service};
+use publishing_lambda::service::{MediaOpener, ProviderSet, Registry, Service};
+use publishing_lambda::{http, ops};
 use serde_json::json;
+use std::path::PathBuf;
 use tokio::net::TcpListener;
 use zeroize::Zeroizing;
 
@@ -77,11 +89,114 @@ impl Limiter for LocalLimiter {
     }
 }
 
+/// Publish mode: the account is real and belongs to production. Nothing here
+/// may connect, complete or disconnect; health checks pass through.
+struct Protected(Arc<dyn ConnectProvider>);
+
+fn protected() -> PublishError {
+    PublishError::new(ErrorClass::Rejected, "protected_account")
+}
+
+#[async_trait]
+impl ConnectProvider for Protected {
+    fn kind(&self) -> ProviderKind {
+        self.0.kind()
+    }
+    async fn start(
+        &self,
+        _ws: &WorkspaceCtx,
+        _platform: Platform,
+        _callback_url: &str,
+    ) -> Result<ConnectStart, PublishError> {
+        Err(protected())
+    }
+    async fn complete(
+        &self,
+        _profile: &ProviderRef,
+        _platform: Platform,
+        _cb: &CallbackParams,
+    ) -> Result<ConnectedAccount, PublishError> {
+        Err(protected())
+    }
+    async fn disconnect(&self, _conn: &ConnectionRef) -> Result<(), PublishError> {
+        Err(protected())
+    }
+    async fn health(&self, profile: &ProviderRef) -> Result<Vec<ConnectionHealth>, PublishError> {
+        self.0.health(profile).await
+    }
+}
+
+/// Stands in for the media bucket: `<dir>/<key>` for keys the service wrote.
+struct LocalOpener {
+    dir: Option<PathBuf>,
+}
+
+/// The same shape the S3 opener accepts (`clips/...`, no `..`).
+fn key_ok(key: &str) -> bool {
+    key.starts_with("clips/")
+        && !key.contains("..")
+        && key
+            .bytes()
+            .all(|b| b.is_ascii_alphanumeric() || b"/._-".contains(&b))
+}
+
+struct LocalMedia {
+    dir: Option<PathBuf>,
+    video: (String, MediaMeta),
+    cover: Option<(String, MediaMeta)>,
+}
+
+impl MediaOpener for LocalOpener {
+    fn open(
+        &self,
+        video_key: &str,
+        video: &MediaMeta,
+        cover: Option<(&str, &MediaMeta)>,
+    ) -> Box<dyn MediaSource> {
+        Box::new(LocalMedia {
+            dir: self.dir.clone(),
+            video: (video_key.to_owned(), video.clone()),
+            cover: cover.map(|(k, m)| (k.to_owned(), m.clone())),
+        })
+    }
+}
+
+#[async_trait]
+impl MediaSource for LocalMedia {
+    async fn open(&self, kind: MediaKind) -> Result<MediaBody, PublishError> {
+        let (key, meta) = match kind {
+            MediaKind::Video => &self.video,
+            MediaKind::Cover => self
+                .cover
+                .as_ref()
+                .ok_or_else(|| PublishError::new(ErrorClass::Rejected, "cover_missing"))?,
+        };
+        let dir = self
+            .dir
+            .as_ref()
+            .ok_or_else(|| PublishError::new(ErrorClass::Temporary, "no_local_media_dir"))?;
+        if !key_ok(key) {
+            return Err(PublishError::new(ErrorClass::Bug, "bad_media_key"));
+        }
+        let bytes = tokio::fs::read(dir.join(key))
+            .await
+            .map_err(|_| PublishError::new(ErrorClass::Rejected, "media_missing"))?;
+        let filename = key.rsplit('/').next().unwrap_or("media").to_owned();
+        let body = futures::stream::once(async move { Ok(Bytes::from(bytes)) });
+        Ok(MediaBody {
+            meta: meta.clone(),
+            filename,
+            body: Box::pin(body),
+        })
+    }
+}
+
 struct Local {
     secrets: Secrets,
     registry: Registry,
     cfg: PublishingConfig,
-    opener: S3Opener,
+    opener: LocalOpener,
+    ops_key: Option<Zeroizing<Vec<u8>>>,
 }
 
 async fn handle(
@@ -122,6 +237,21 @@ async fn handle(
         .duration_since(UNIX_EPOCH)
         .map(|d| d.as_secs())
         .unwrap_or(0);
+    if parts.uri.path() == "/ops" {
+        // The CLI's ops function (IAM invoke in production; loopback here).
+        if parts.method != hyper::Method::POST {
+            return reply(
+                405,
+                json!({"ok": false, "code": "method_not_allowed"}).to_string(),
+            );
+        }
+        let Ok(event) = serde_json::from_slice(&body) else {
+            return reply(400, json!({"ok": false, "code": "bad_request"}).to_string());
+        };
+        let key = local.ops_key.as_ref().map(|k| k.as_slice());
+        let answer = ops::run_signed(&mut svc, key, event, "local-media", now).await;
+        return reply(200, answer.to_string());
+    }
     let r = http::handle(
         &mut svc,
         &local.secrets.hmac_key,
@@ -179,28 +309,39 @@ async fn main() {
             per_minute: cfg.api_per_minute,
         }),
     ));
+    let protect = std::env::var("KUBCODE_LOCAL_PROTECT_ACCOUNTS").as_deref() == Ok("1");
+    let connect: Arc<dyn ConnectProvider> = if protect {
+        Arc::new(Protected(z.clone()))
+    } else {
+        z.clone()
+    };
     let registry = Registry {
         zernio: Some(ProviderSet {
-            connect: z.clone(),
+            connect,
             publisher: z,
             // Webhooks are not part of the local loop: nothing verifies.
             events: Arc::new(ZernioEvents::new(Vec::new())),
         }),
     };
-    let opener = S3Opener {
-        http: reqwest::Client::new(),
-        bucket: "local-no-media".into(),
-        region: "ap-southeast-1".into(),
+    let opener = LocalOpener {
+        dir: std::env::var_os("KUBCODE_LOCAL_MEDIA_DIR").map(PathBuf::from),
     };
+    let ops_key = std::env::var("KUBCODE_LOCAL_OPS_KEY")
+        .ok()
+        .map(|h| Zeroizing::new(hex::decode(h).expect("KUBCODE_LOCAL_OPS_KEY is hex")));
     let local = Arc::new(Local {
         secrets,
         registry,
         cfg,
         opener,
+        ops_key,
     });
 
     let listener = TcpListener::bind(("127.0.0.1", port)).await.expect("bind");
-    println!("[publishing-local] listening on http://127.0.0.1:{port}");
+    println!(
+        "[publishing-local] listening on http://127.0.0.1:{port}{}",
+        if protect { " (accounts protected)" } else { "" }
+    );
     loop {
         let Ok((stream, _)) = listener.accept().await else {
             continue;
@@ -212,5 +353,84 @@ async fn main() {
                 .serve_connection(TokioIo::new(stream), svc)
                 .await;
         });
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// Any call that reaches it fails the test.
+    struct Tripwire;
+
+    #[async_trait]
+    impl ConnectProvider for Tripwire {
+        fn kind(&self) -> ProviderKind {
+            ProviderKind::Zernio
+        }
+        async fn start(
+            &self,
+            _: &WorkspaceCtx,
+            _: Platform,
+            _: &str,
+        ) -> Result<ConnectStart, PublishError> {
+            panic!("start reached the provider")
+        }
+        async fn complete(
+            &self,
+            _: &ProviderRef,
+            _: Platform,
+            _: &CallbackParams,
+        ) -> Result<ConnectedAccount, PublishError> {
+            panic!("complete reached the provider")
+        }
+        async fn disconnect(&self, _: &ConnectionRef) -> Result<(), PublishError> {
+            panic!("disconnect reached the provider")
+        }
+        async fn health(&self, _: &ProviderRef) -> Result<Vec<ConnectionHealth>, PublishError> {
+            Ok(Vec::new())
+        }
+    }
+
+    #[tokio::test]
+    async fn protected_accounts_are_never_connected_or_disconnected() {
+        let p = Protected(Arc::new(Tripwire));
+        let profile = ProviderRef("prod-profile".into());
+        let conn = ConnectionRef {
+            platform: Platform::YouTube,
+            profile: profile.clone(),
+            account: ProviderRef("prod-account".into()),
+        };
+        let code = |e: PublishError| e.code.as_str().to_owned();
+        assert_eq!(
+            code(p.disconnect(&conn).await.unwrap_err()),
+            "protected_account"
+        );
+        assert_eq!(
+            code(
+                p.complete(&profile, Platform::YouTube, &CallbackParams(Vec::new()))
+                    .await
+                    .unwrap_err()
+            ),
+            "protected_account"
+        );
+        assert!(
+            p.health(&profile).await.unwrap().is_empty(),
+            "health passes through"
+        );
+    }
+
+    #[test]
+    fn media_keys_stay_under_clips() {
+        assert!(key_ok("clips/0b6f/clip-1/ab12.mp4"));
+        for bad in [
+            "../etc/passwd",
+            "clips/../x",
+            "other/x.mp4",
+            "clips/a b.mp4",
+            "/clips/x",
+        ] {
+            assert!(!key_ok(bad), "{bad}");
+        }
     }
 }
