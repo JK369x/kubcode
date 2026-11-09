@@ -12,6 +12,7 @@ kubcode-publishing = { path = "../kubcode-publishing" }
 async-trait = "0.1"
 bytes = "1"
 futures = "0.3"
+base64 = "0.22"
 hex = "0.4"
 hmac = "0.12"
 reqwest = { version = "0.12", default-features = false, features = ["rustls-tls", "stream"] }

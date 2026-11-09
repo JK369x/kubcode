@@ -13,8 +13,8 @@ use async_trait::async_trait;
 use kubcode_publishing::domain::{MediaKind, Platform, ProviderKind, ProviderRef, Visibility};
 use kubcode_publishing::errors::{ErrorClass, PublishError, Result};
 use kubcode_publishing::ports::{
-    CallbackParams, Checked, ConnectProvider, ConnectStart, ConnectedAccount, ConnectionHealth,
-    ConnectionRef, DeliveryState, MediaSource, Publisher, WorkspaceCtx,
+    Accepted, CallbackParams, Checked, ConnectProvider, ConnectStart, ConnectedAccount,
+    ConnectionHealth, ConnectionRef, DeliveryState, MediaSource, Publisher, WorkspaceCtx,
 };
 use kubcode_publishing::validate::{DeliveryDraft, Violation};
 use serde_json::{json, Value};
@@ -443,7 +443,7 @@ impl Publisher for Zernio {
         conn: &ConnectionRef,
         delivery: &Checked,
         media: &dyn MediaSource,
-    ) -> Result<ProviderRef> {
+    ) -> Result<Accepted> {
         let req = delivery.request();
         let d = &req.draft;
         let name = platform_name(d.platform);
@@ -462,8 +462,12 @@ impl Publisher for Zernio {
                 Some(&key.to_string()),
             )
             .await?;
-        let (id, _) = parse::post_state(&resp).ok_or_else(bad_response)?;
-        Ok(ProviderRef(id))
+        // A due time is published inline (201/207): keep what Zernio says.
+        let (id, state) = parse::post_state(&resp).ok_or_else(bad_response)?;
+        Ok(Accepted {
+            post: ProviderRef(id),
+            state,
+        })
     }
 
     async fn cancel(&self, _conn: &ConnectionRef, post: &ProviderRef) -> Result<()> {

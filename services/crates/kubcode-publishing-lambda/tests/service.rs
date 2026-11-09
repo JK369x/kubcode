@@ -11,8 +11,9 @@ use kubcode_publishing::domain::{
     ChannelId, DeliveryStatus, MediaKind, MediaMeta, Platform, ProviderKind, ProviderRef,
     Visibility,
 };
+use kubcode_publishing::errors::{ErrorClass, PublishError};
 use kubcode_publishing::fake::FakeProvider;
-use kubcode_publishing::ports::CallbackParams;
+use kubcode_publishing::ports::{CallbackParams, DeliveryState};
 use kubcode_publishing_store::Store;
 use publishing_lambda::service::{AssetRequest, Service, WebhookResult};
 use publishing_lambda::summary::{digest, ScheduleRequest, Target};
@@ -156,6 +157,52 @@ async fn connect_then_publish_one_clip_privately() {
 
     let status = s.status(owner, out.post).await.unwrap();
     assert_eq!(status[0].status, DeliveryStatus::Scheduled);
+    db.drop().await;
+}
+
+#[tokio::test]
+#[ignore = "needs KUBCODE_TEST_DATABASE_URL; run with --ignored"]
+async fn what_the_provider_reports_on_handover_is_what_we_record() {
+    let db = db().await;
+    let mut store = db.store().await;
+    let fake = Arc::new(FakeProvider::default());
+    let (reg, cfg) = (registry(&fake), cfg());
+    let mut s = svc(&mut store, &reg, &cfg);
+    let owner = db.user(true).await;
+    let yt = connect(&mut s, &fake, owner, Platform::YouTube).await;
+
+    // A due publish that failed inline: terminal, with the provider's code.
+    fake.answer_next_schedule(DeliveryState {
+        status: DeliveryStatus::Failed,
+        platform_post_id: None,
+        platform_url: None,
+        error: Some(PublishError::new(
+            ErrorClass::Rejected,
+            "platform_user_content",
+        )),
+    });
+    let (video, cover) = assets(&mut s, owner, true).await;
+    let req = request(video, cover, &[yt]);
+    let out = s.schedule(owner, req.clone(), digest(&req)).await.unwrap();
+    assert_eq!(out.deliveries[0].status, DeliveryStatus::Failed);
+    assert_eq!(
+        out.deliveries[0].codes,
+        vec!["platform_user_content".to_owned()]
+    );
+    let st = s.status(owner, out.post).await.unwrap();
+    assert_eq!(st[0].status, DeliveryStatus::Failed);
+
+    // Published inline: on its way; the receipt (URL) comes with the webhook.
+    fake.answer_next_schedule(DeliveryState {
+        status: DeliveryStatus::Published,
+        platform_post_id: None,
+        platform_url: None,
+        error: None,
+    });
+    let (video, cover) = assets(&mut s, owner, true).await;
+    let req = request(video, cover, &[yt]);
+    let out = s.schedule(owner, req.clone(), digest(&req)).await.unwrap();
+    assert_eq!(out.deliveries[0].status, DeliveryStatus::Publishing);
     db.drop().await;
 }
 

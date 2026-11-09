@@ -17,8 +17,9 @@ use crate::domain::{
 use crate::errors::{ErrorClass, ErrorCode, PublishError, Result};
 use crate::events::{EventSource, Headers, ProviderEvent, VerifiedDelivery};
 use crate::ports::{
-    CallbackParams, Checked, ConnectProvider, ConnectStart, ConnectedAccount, ConnectionHealth,
-    ConnectionRef, DeliveryState, MediaBody, MediaSource, Publisher, WorkspaceCtx,
+    Accepted, CallbackParams, Checked, ConnectProvider, ConnectStart, ConnectedAccount,
+    ConnectionHealth, ConnectionRef, DeliveryState, MediaBody, MediaSource, Publisher,
+    WorkspaceCtx,
 };
 use crate::validate::{DeliveryDraft, Violation};
 
@@ -32,7 +33,18 @@ struct State {
     keys: HashMap<Uuid, ProviderRef>,
     fault: Option<Fault>,
     reject_title: Option<String>,
+    /// The state the next new schedule reports instead of `Scheduled`.
+    next_state: Option<DeliveryState>,
     next: u64,
+}
+
+fn plain(status: DeliveryStatus) -> DeliveryState {
+    DeliveryState {
+        status,
+        platform_post_id: None,
+        platform_url: None,
+        error: None,
+    }
 }
 
 pub struct FakeProvider {
@@ -72,6 +84,11 @@ impl FakeProvider {
 
     pub fn inject(&self, fault: Fault) {
         self.with(|s| s.fault = Some(fault));
+    }
+
+    /// The next new schedule reports `state` (e.g. an inline failure).
+    pub fn answer_next_schedule(&self, state: DeliveryState) {
+        self.with(|s| s.next_state = Some(state));
     }
 
     /// Adds an account to `profile` as if the creator approved the consent.
@@ -227,22 +244,29 @@ impl Publisher for FakeProvider {
         _conn: &ConnectionRef,
         delivery: &Checked,
         media: &dyn MediaSource,
-    ) -> Result<ProviderRef> {
+    ) -> Result<Accepted> {
         if let Some(e) = self.take_fault() {
             return Err(e);
         }
         let key = delivery.request().idempotency_key;
         if let Some(post) = self.with(|s| s.keys.get(&key).cloned()) {
-            return Ok(post);
+            let status = self.with(|s| s.posts[&post]);
+            return Ok(Accepted {
+                post,
+                state: plain(status),
+            });
         }
         media.open(MediaKind::Video).await?;
         media.open(MediaKind::Cover).await?;
         let post = self.fresh("post");
+        let state = self
+            .with(|s| s.next_state.take())
+            .unwrap_or_else(|| plain(DeliveryStatus::Scheduled));
         self.with(|s| {
             s.keys.insert(key, post.clone());
-            s.posts.insert(post.clone(), DeliveryStatus::Scheduled);
+            s.posts.insert(post.clone(), state.status);
         });
-        Ok(post)
+        Ok(Accepted { post, state })
     }
 
     async fn cancel(&self, _conn: &ConnectionRef, post: &ProviderRef) -> Result<()> {
