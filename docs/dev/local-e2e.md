@@ -12,13 +12,14 @@ Zernio API**. Production is for one smoke test after merge, never for debugging.
 | Database | throwaway DB on the local test Postgres, all migrations, a fictional owner | yes (migrations, grants, RLS) |
 | Publishing Lambda | `services/crates/kubcode-publishing-lambda/examples/publishing_local.rs` on 127.0.0.1 | yes: `http::handle`, `Service`, Zernio adapter, `Store`; only the HTTP server, secret source and a no-TLS DB connection differ |
 | Web host | `next start` with the production build | yes; `scripts/local-e2e/lambda-route.cjs` (preload) sends the fake Function URL to the runner |
-| Browser | headed Chromium; `https://kubcode.dev/**` is answered by the local Next server | yes: same origin, cookies, CSRF and callback URL as production |
+| Browser | headless Chromium for our pages, where `https://kubcode.dev/**` is answered by the local Next server; the platform consent in your own browser | yes: same origin, cookies, CSRF and callback URL as production |
 | Zernio, Google/Meta consent | real | real |
 
 The pinned guards (`https://kubcode.dev` callback, Function URL format, Origin
 and CSRF checks) stay unchanged and are exercised. Zernio's real redirect to
 `https://kubcode.dev/api/channels/callback` lands on the local server because
-the browser routes that origin, not because of DNS or a certificate. Nothing is
+the harness replays it into the browser that routes that origin, not because
+of DNS or a certificate. Nothing is
 added to the system keychain or trust store.
 
 ## Run
@@ -36,8 +37,21 @@ scripts/local-e2e/run.sh               # YouTube; `run.sh instagram` for Instagr
 login password) and pipes it to the harness on stdin. The key never appears in
 argv, env, logs or files.
 
-When the terminal prints `READY`, use the Chromium window: click
-**เชื่อม YouTube**, sign in to the platform and approve. The harness then:
+The harness drives our pages in a headless browser, clicks **เชื่อม YouTube**
+itself and opens the platform's consent page in **your default browser**
+(Google refuses sign-in in an automated browser). When it prints `READY`:
+
+1. sign in and approve in your browser;
+2. Zernio then shows a page that continues to kubcode.dev. **Do not click it**:
+   copy the page address (Cmd+L, Cmd+C). The harness reads the clipboard,
+   accepts only `https://kubcode.dev/api/channels/callback?i=<64 hex>...`
+   (directly or inside Zernio's `?to=`), never prints it, and replays it into
+   the local server with this run's cookies.
+   Clicked continue already? Production rejects that callback before touching
+   the database or the Lambda (no intent cookie / unknown state), so nothing is
+   consumed: copy the callback entry from History (Cmd+Y) instead.
+
+The harness then:
 
 1. waits for the connect intent to close and prints the runner's
    `[publishing] api ...` lines (outcome code + callback parameter names);
@@ -46,10 +60,6 @@ When the terminal prints `READY`, use the Chromium window: click
 3. clicks **ยกเลิกการเชื่อม** (exercises disconnect → Zernio `DELETE /v1/accounts/{id}`);
 4. deletes any account left in this run's Zernio profile, then the profile, and
    drops the throwaway database (also when a step fails).
-
-The browser profile is kept in `.qa/local-e2e/browser` so the platform login
-survives between runs. Delete it when you are done:
-`scripts/local-e2e/run.sh --forget`.
 
 ### Wiring check without consent
 

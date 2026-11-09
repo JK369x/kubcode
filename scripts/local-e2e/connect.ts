@@ -16,7 +16,7 @@
 // Then: the owner connects, the script checks the database and the page,
 // disconnects through the page, and deletes what it created at Zernio.
 import assert from "node:assert/strict";
-import { spawn, type ChildProcess } from "node:child_process";
+import { execFileSync, spawn, type ChildProcess } from "node:child_process";
 import { randomBytes } from "node:crypto";
 import { mkdirSync } from "node:fs";
 import { createServer } from "node:net";
@@ -27,6 +27,7 @@ import { createPgAccountStore } from "../../lib/accounts/store";
 import { accountToken } from "../../lib/accounts/session";
 import { SESSION_COOKIE_NAME } from "../../lib/auth-policy";
 import { throwawayDb } from "../../tests/accounts-db/harness";
+import { callbackFrom } from "./callback";
 
 const PLATFORM = process.argv[2] ?? "youtube";
 const FIXTURE = {
@@ -77,6 +78,15 @@ async function waitFor<T>(what: string, ms: number, probe: () => Promise<T | und
 async function zernio(key: string, method: string, p: string): Promise<{ status: number; body: any }> {
   const res = await fetch(`${ZERNIO}${p}`, { method, headers: { authorization: `Bearer ${key}` }, redirect: "error" });
   return { status: res.status, body: await res.json().catch(() => null) };
+}
+
+/** The clipboard as text; empty when unreadable. Never printed. */
+function clipboard(): string {
+  try {
+    return execFileSync("pbpaste", { encoding: "utf8", timeout: 2000 }).trim();
+  } catch {
+    return "";
+  }
 }
 
 /** A tiny cookie jar for the routed browser: the edge's view of kubcode.dev. */
@@ -172,11 +182,10 @@ async function main() {
 
     // ---- browser: kubcode.dev is served by the local Next server
     mkdirSync(OUT, { recursive: true });
-    // A kept profile holds the owner's platform login between runs; it lives
-    // under .qa/ (gitignored) and `run.sh --forget` deletes it.
-    context = SMOKE
-      ? await (await chromium.launch({ headless: true })).newContext({ viewport: { width: 1180, height: 900 } })
-      : await chromium.launchPersistentContext(`${OUT}/browser`, { headless: false, viewport: { width: 1180, height: 900 } });
+    // Headless: it only drives our pages. Google refuses sign-in in an
+    // automated browser, so the consent step happens in the owner's own
+    // browser (hand-off below).
+    context = await (await chromium.launch({ headless: true })).newContext({ viewport: { width: 1180, height: 900 } });
     const cookies = jar({ [SESSION_COOKIE_NAME]: session });
     await context.route("https://kubcode.dev/**", async (route: Route) => {
       const req = route.request();
@@ -190,7 +199,18 @@ async function main() {
       cookies.take(res.headersArray().filter((h) => h.name.toLowerCase() === "set-cookie").map((h) => h.value));
       await route.fulfill({ response: res });
     });
-    const page = context.pages()[0] ?? (await context.newPage());
+    // Leaving kubcode.dev (the consent URL) is recorded, not followed.
+    let consentUrl: string | undefined;
+    await context.route(
+      (url) => url.origin !== "https://kubcode.dev",
+      async (route: Route) => {
+        if (route.request().isNavigationRequest() && route.request().frame().parentFrame() === null) {
+          consentUrl = route.request().url();
+          await route.abort();
+        } else await route.continue();
+      },
+    );
+    const page = await context.newPage();
     await page.goto("https://kubcode.dev/account/channels");
     await page.getByRole("heading", { name: "ช่องที่เชื่อมไว้" }).waitFor();
 
@@ -204,7 +224,24 @@ async function main() {
       await page.screenshot({ path: `${OUT}/smoke.png`, fullPage: true });
       return;
     }
-    log(`READY: in the Chromium window, click "เชื่อม ${label}" and finish the consent (${WAIT_MINUTES} min max)`);
+    // ---- hand-off: consent in the owner's default browser
+    await page.getByRole("button", { name: `เชื่อม ${label}` }).click();
+    const url = await waitFor("the consent URL", 30_000, async () => consentUrl);
+    assert.match(url, /^https:\/\//, "consent URL is https");
+    const before = clipboard();
+    spawn("open", [url], { stdio: "ignore" });
+    log(`READY: the ${label} consent page is open in your default browser.`);
+    log(`  1. Sign in and approve.`);
+    log(`  2. Zernio then shows a page that continues to kubcode.dev. Do NOT click continue:`);
+    log(`     copy the page address (Cmd+L, then Cmd+C). This script picks it up from the clipboard.`);
+    log(`     (Clicked it already? Cmd+Y → copy the kubcode.dev/api/channels/callback entry.)`);
+    log(`  (${WAIT_MINUTES} min max)`);
+    const callback = await waitFor("the callback URL on the clipboard", WAIT_MINUTES * 60_000, async () => {
+      const c = clipboard();
+      return c !== before ? callbackFrom(c) : undefined;
+    });
+    log("got the callback URL; replaying it into the local server");
+    await page.goto(callback);
 
     // ---- wait for the outcome in the database (the intent closes either way)
     const closed = await waitFor("the connect to finish", WAIT_MINUTES * 60_000, async () => {
@@ -213,7 +250,6 @@ async function main() {
       );
       return rows[0] as { status: string; error_code: string | null } | undefined;
     });
-    profileId = (await db.pool.query("SELECT provider_ref FROM kubcode_accounts.provider_profiles WHERE provider = 'zernio'")).rows[0]?.provider_ref;
     for (const l of runnerLines.filter((l) => l.includes("api path="))) log(`runner: ${l}`);
     assert.equal(closed.status, "consumed", `connect failed with ${closed.error_code}`);
 
@@ -240,6 +276,9 @@ async function main() {
     failure = error;
   } finally {
     // ---- leave nothing at Zernio: accounts of this run's profile, then the profile
+    profileId = (
+      await db.pool.query("SELECT provider_ref FROM kubcode_accounts.provider_profiles WHERE provider = 'zernio'").catch(() => ({ rows: [] }))
+    ).rows[0]?.provider_ref;
     if (profileId) {
       const list = await zernio(key, "GET", `/accounts?profileId=${encodeURIComponent(profileId)}`).catch(() => null);
       for (const a of list?.body?.accounts ?? []) {
