@@ -18,6 +18,16 @@ fn id_of(v: &Value) -> Option<String> {
     str_of(v, &["_id", "id"])
 }
 
+/// A reference that is either a plain id or a populated object (OpenAPI
+/// `oneOf: [string, Profile]`; `GET /v1/accounts` returns the object).
+fn ref_id(v: &Value, key: &str) -> Option<String> {
+    match v.get(key)? {
+        Value::String(_) => str_of(v, &[key]),
+        obj @ Value::Object(_) => str_of(obj, &["_id"]),
+        _ => None,
+    }
+}
+
 /// From `POST /v1/profiles` (`{profile: {...}}`) or `GET /v1/profiles?externalId=`
 /// (`{profiles: [...]}`).
 pub fn profile_id(v: &Value) -> Option<String> {
@@ -62,7 +72,7 @@ pub fn accounts(v: &Value) -> Vec<Account> {
                 // Not in the docs example; names guessed from the search
                 // parameter's wording. Absent is fine (match by username).
                 platform_user_id: str_of(a, &["platformUserId", "platformId"]),
-                profile_id: str_of(a, &["profileId"]),
+                profile_id: ref_id(a, "profileId"),
                 active: a.get("isActive").and_then(Value::as_bool).unwrap_or(true),
             })
         })
