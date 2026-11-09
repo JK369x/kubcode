@@ -355,3 +355,42 @@ scoping (boundary incl. the wrap-key Decrypt Deny and SSM read, deploy, preview,
 both key policies), naming and tags (one explicit
 provider), the media bucket settings, the OIDC lookup, the budget, the package
 signer (role, log group, function, URL, package objects) and the CI gate. `npm run typecheck` checks types. The root `tsconfig.json` excludes `infra/`.
+
+## Publishing Lambdas (docs/design/publishing-core.md §4)
+
+`kubcode:publishing: "true"` deploys one Rust binary as two functions sharing the
+role `kubcode-lambda-publishing` (boundary, Lambda trust):
+
+| Function | Door | Serves |
+|---|---|---|
+| `kubcode-publishing` | Function URL, auth NONE | `/api/*` from the web host (KUBCODE-HMAC-V1, nonce table shared with oauth-connect) and `/webhooks/zernio` (Zernio's HMAC signature) |
+| `kubcode-publishing-ops` | **no URL, no resource policy** | the owner's `kubcode` CLI; only IAM principals with `lambda:InvokeFunction` (the admin profile) can call it |
+
+The role may write its two log groups (14 days), read exactly the publishing SSM
+parameters, and `s3:GetObject` under `kubcode-media-…/clips/*`. The CLI uploads clips
+with SSE-S3 (`AES256`), like the package zips, so the role needs no KMS grant for
+media. Its SecureStrings are decrypted through a narrow `SsmParameterRead` statement on
+the secrets key (see below); it is **not** on the wrap key. Env holds only
+`KUBCODE_PUBLISHING_MODE` and `KUBCODE_MEDIA_BUCKET`; secrets come from SSM, cached
+5 minutes, so the functions start before they exist (503 / `provider_not_configured`).
+
+CI can create all of this (roles under the boundary, functions, URL, secrets key
+policy). An admin may also apply it from the branch with the usual local apply.
+
+### Secrets (admin, after the functions exist)
+
+```bash
+infra/scripts/publishing-secrets.sh hmac        # new web-host HMAC key -> SSM + vault
+infra/scripts/publishing-secrets.sh zernio-key  # vault kubcode/zernio-api-key -> SSM
+URL=$(pulumi -C infra stack output --stack prod publishingUrl)
+infra/scripts/publishing-secrets.sh webhook "${URL%/}/webhooks/zernio"
+infra/scripts/publishing-secrets.sh status      # names only
+```
+
+Values travel vault → 0600 temp file → SSM (`file://`) and never appear in argv, on
+screen or in chat. `webhook` registers the endpoint with Zernio and keeps the old
+secret as `…-previous` (the Lambda accepts both) until `drop-previous`, which should
+run about a day later; `webhook URL --compromised` drops the old secret at once.
+
+The role decrypts with `alias/kubcode-secrets` only through SSM and only for these five
+parameter ARNs (`SsmParameterRead` in the key policy); it is not in the broad `KeyUse`.

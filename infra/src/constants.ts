@@ -30,6 +30,13 @@ export const NAMES = {
   oauthConnectFunction: "kubcode-oauth-connect",
   oauthConnectRole: "kubcode-lambda-oauth-connect",
   oauthConnectLogGroup: "/aws/lambda/kubcode-oauth-connect",
+  // Publishing Lambda (docs/design/publishing-core.md §4): one binary, two
+  // functions sharing one role. The ops function has no URL (IAM invoke only).
+  publishingFunction: "kubcode-publishing",
+  publishingOpsFunction: "kubcode-publishing-ops",
+  publishingRole: "kubcode-lambda-publishing",
+  publishingLogGroup: "/aws/lambda/kubcode-publishing",
+  publishingOpsLogGroup: "/aws/lambda/kubcode-publishing-ops",
   // Spike resources that predate this stack; denied to every kubcode role.
   outOfScopePrefix: "kubcode-igtest-",
 } as const;
@@ -93,6 +100,19 @@ export const SSM_PARAMETERS = {
   // kubcode's shared Google client, JSON {client_id, client_secret} (design §2a).
   googleConnectClient: "/kubcode/prod/google-connect-client",
 } as const;
+
+// What the publishing Lambda reads (SecureStrings set by the admin CLI, never
+// the stack). The worker DB URL is shared with the connect Lambda.
+export const PUBLISHING_PARAMETERS = {
+  workerDbUrl: "/kubcode/prod/worker-db-url",
+  hmacKey: "/kubcode/prod/publishing-hmac-key",
+  zernioApiKey: "/kubcode/prod/zernio-api-key",
+  zernioWebhookSecret: "/kubcode/prod/zernio-webhook-secret",
+  zernioWebhookSecretPrevious: "/kubcode/prod/zernio-webhook-secret-previous",
+} as const;
+
+// services/crates/kubcode-publishing-lambda/build-lambda.sh output. Relative to infra/.
+export const PUBLISHING_BINARY = "../services/crates/kubcode-publishing-lambda/dist/bootstrap.zip";
 
 // Zip with the static musl `bootstrap` from
 // services/crates/kubcode-oauth-connect/build-lambda.sh. Relative to infra/.

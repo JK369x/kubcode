@@ -26,6 +26,8 @@ const outputs = createStack({
   packageSignerKey: config.getSecret("packageSignerKey"),
   // The OAuth connect Lambda (design §2); its role joins both key policies.
   oauthConnect: config.getBoolean("oauthConnect") ?? false,
+  // The publishing Lambdas (docs/design/publishing-core.md §4).
+  publishing: config.getBoolean("publishing") ?? false,
 });
 
 export const mediaBucket = outputs.mediaBucket;
@@ -38,3 +40,4 @@ export const previewRoleArn = outputs.previewRoleArn;
 export const boundaryPolicyArn = outputs.boundaryPolicyArn;
 export const packageSignerUrl = outputs.packageSignerUrl;
 export const oauthConnectUrl = outputs.oauthConnectUrl;
+export const publishingUrl = outputs.publishingUrl;

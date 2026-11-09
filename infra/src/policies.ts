@@ -7,7 +7,7 @@
 // boundary. So even if CI rewrote its own role policy, it could not reach
 // beyond kubcode-* resources (this account also holds client resources).
 // Changing the boundary is an admin-only, local `pulumi up` (see README).
-import { ACCOUNT_ID, GITHUB_SUB_PREFIX, LAMBDA_ROLE_PREFIX, NAMES, REGION, SSM_PARAMETERS } from "./constants";
+import { ACCOUNT_ID, GITHUB_SUB_PREFIX, LAMBDA_ROLE_PREFIX, NAMES, REGION, PUBLISHING_PARAMETERS, SSM_PARAMETERS } from "./constants";
 
 export type Statement = {
   Sid?: string;
@@ -106,6 +106,35 @@ export function oauthConnectPolicy(opts: { logGroupName: string }): PolicyDocume
       Action: "ssm:GetParameters",
       Resource: Object.values(SSM_PARAMETERS).map(param),
     },
+  ]);
+}
+
+/**
+ * Inline policy of the publishing Lambda role (both functions): their own log
+ * streams, exactly the publishing SSM parameters, and reading clip media under
+ * clips/* (stored with SSE-S3, so no KMS grant is needed). KMS for the
+ * SecureStrings comes from the secrets key policy's KeyUse, never IAM.
+ */
+export function publishingPolicy(opts: { logGroupNames: readonly string[]; bucket: string }): PolicyDocument {
+  for (const lg of opts.logGroupNames) {
+    if (!lg.startsWith("/aws/lambda/kubcode-")) throw new Error(`log group must be /aws/lambda/kubcode-*: ${lg}`);
+  }
+  if (!opts.bucket.startsWith("kubcode-")) throw new Error(`bucket must be kubcode-*: ${opts.bucket}`);
+  const param = (name: string) => `arn:aws:ssm:${REGION}:${ACCOUNT_ID}:parameter${name}`;
+  return doc([
+    {
+      Sid: "WriteOwnLogStreams",
+      Effect: "Allow",
+      Action: ["logs:CreateLogStream", "logs:PutLogEvents"],
+      Resource: opts.logGroupNames.map((lg) => `arn:aws:logs:${REGION}:${ACCOUNT_ID}:log-group:${lg}:*`),
+    },
+    {
+      Sid: "ReadOwnParameters",
+      Effect: "Allow",
+      Action: "ssm:GetParameters",
+      Resource: Object.values(PUBLISHING_PARAMETERS).map(param),
+    },
+    { Sid: "ReadClipMedia", Effect: "Allow", Action: "s3:GetObject", Resource: `arn:aws:s3:::${opts.bucket}/clips/*` },
   ]);
 }
 
@@ -470,6 +499,8 @@ export function secretsKeyPolicy(opts: {
   userArns: string[];
   /** May encrypt SSM SecureStrings under /kubcode/* with this key (the break-glass admin). */
   ssmWriterArns?: string[];
+  /** Roles that may only decrypt their own SSM SecureStrings, through SSM. */
+  ssmReaders?: { arns: string[]; parameterNames: readonly string[] };
 }): PolicyDocument {
   if (opts.adminArns.length === 0) throw new Error("the secrets key needs at least one admin (lockout safety)");
   const root = `arn:aws:iam::${ACCOUNT_ID}:root`;
@@ -512,6 +543,24 @@ export function secretsKeyPolicy(opts: {
       Condition: {
         StringEquals: { "kms:ViaService": `ssm.${REGION}.amazonaws.com` },
         StringLike: { "kms:EncryptionContext:PARAMETER_ARN": KUBCODE_PARAMETERS },
+      },
+    });
+  if (opts.ssmReaders?.arns.length)
+    statements.push({
+      // Decrypt only, only through SSM, and only for the listed parameters:
+      // these roles cannot use the key for anything else.
+      Sid: "SsmParameterRead",
+      Effect: "Allow",
+      Principal: { AWS: opts.ssmReaders.arns },
+      Action: "kms:Decrypt",
+      Resource: "*",
+      Condition: {
+        StringEquals: {
+          "kms:ViaService": `ssm.${REGION}.amazonaws.com`,
+          "kms:EncryptionContext:PARAMETER_ARN": opts.ssmReaders.parameterNames.map(
+            (n) => `arn:aws:ssm:${REGION}:${ACCOUNT_ID}:parameter${n}`,
+          ),
+        },
       },
     });
   return doc(statements);

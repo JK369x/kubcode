@@ -11,12 +11,13 @@ import {
   NAMES,
   PACKAGES,
   PACKAGE_SIGNER_BINARY,
+  PUBLISHING_PARAMETERS,
   REGION,
   packageObjectKey,
   packageSourceDir,
   validatePackageSignerKey,
 } from "../src/constants";
-import { lambdaTrustPolicy, oauthConnectPolicy, packageSignerPolicy } from "../src/policies";
+import { lambdaTrustPolicy, oauthConnectPolicy, packageSignerPolicy, publishingPolicy } from "../src/policies";
 
 type Recorded = { type: string; name: string; inputs: any; provider?: string };
 let resources: Recorded[] = [];
@@ -87,6 +88,7 @@ async function build(
     wrapKeyDecryptArns?: pulumi.Input<string>[];
     packageSignerKey?: pulumi.Input<string>;
     oauthConnect?: boolean;
+    publishing?: boolean;
   } = {},
 ) {
   resources = [];
@@ -100,6 +102,7 @@ async function build(
     wrapKeyDecryptArns: opts.wrapKeyDecryptArns ?? [],
     packageSignerKey: opts.packageSignerKey,
     oauthConnect: opts.oauthConnect ?? false,
+    publishing: opts.publishing ?? false,
   });
   await Promise.all(Object.values(out).map((o) => settle(pulumi.output(o))));
   // Let dependent resources (policies built from other outputs) register.
@@ -470,4 +473,76 @@ test("oauth connect role may decrypt: wrap key (DEKs) and secrets key (its SSM S
   assert.deepEqual(wrap.Statement.find((s: any) => s.Sid === "KeyDecrypt").Principal.AWS, [CONNECT_ROLE_ARN]);
   const secrets = JSON.parse(byType("aws:kms/keyPolicy:KeyPolicy").find((p) => p.name === "secrets-key-policy")!.inputs.policy);
   assert.deepEqual(secrets.Statement.find((s: any) => s.Sid === "KeyUse").Principal.AWS, [CONNECT_ROLE_ARN]);
+});
+
+// --- Publishing Lambdas (docs/design/publishing-core.md §4)
+
+const PUBLISHING_ROLE_ARN = `arn:aws:iam::${ACCOUNT_ID}:role/kubcode-lambda-publishing`;
+
+test("publishing: off unless kubcode:publishing is true", async () => {
+  await build();
+  assert.equal(byName("aws:iam/role:Role", NAMES.publishingRole), undefined);
+  assert.equal(byName("aws:lambda/function:Function", NAMES.publishingFunction), undefined);
+  assert.equal(byName("aws:lambda/function:Function", NAMES.publishingOpsFunction), undefined);
+});
+
+test("publishing role: kubcode-lambda-* name, boundary, Lambda trust, logs + SSM + clips/* read only", async () => {
+  await build({ publishing: true });
+  const role = byName("aws:iam/role:Role", NAMES.publishingRole)!;
+  assert.equal(role.inputs.permissionsBoundary, BOUNDARY_ARN);
+  assert.deepEqual(JSON.parse(role.inputs.assumeRolePolicy), lambdaTrustPolicy());
+  const rp = byName("aws:iam/rolePolicy:RolePolicy", NAMES.publishingRole)!;
+  const policy = JSON.parse(rp.inputs.policy);
+  assert.deepEqual(
+    policy,
+    publishingPolicy({ logGroupNames: [NAMES.publishingLogGroup, NAMES.publishingOpsLogGroup], bucket: NAMES.mediaBucket }),
+  );
+  const s3: any = policy.Statement.find((s: any) => s.Sid === "ReadClipMedia");
+  assert.deepEqual(s3.Action, "s3:GetObject");
+  assert.equal(s3.Resource, `arn:aws:s3:::kubcode-media-${ACCOUNT_ID}/clips/*`, "never packages/ or the whole bucket");
+  const ssm: any = policy.Statement.find((s: any) => s.Sid === "ReadOwnParameters");
+  assert.ok(ssm.Resource.every((r: string) => r.startsWith(`arn:aws:ssm:ap-southeast-1:${ACCOUNT_ID}:parameter/kubcode/prod/`)));
+  assert.ok(!JSON.stringify(policy).includes("kms:"), "KMS only through the key policy");
+});
+
+test("publishing functions: one binary, two modes; only the url mode has a Function URL", async () => {
+  const out = await build({ publishing: true });
+  const url = byName("aws:lambda/function:Function", NAMES.publishingFunction)!.inputs;
+  const ops = byName("aws:lambda/function:Function", NAMES.publishingOpsFunction)!.inputs;
+  for (const fn of [url, ops]) {
+    assert.equal(fn.runtime, "provided.al2023");
+    assert.equal(fn.handler, "bootstrap");
+    assert.equal(fn.role, PUBLISHING_ROLE_ARN);
+    assert.equal(fn.timeout, 300);
+    assert.equal(fn.environment.variables.KUBCODE_MEDIA_BUCKET, `kubcode-media-${ACCOUNT_ID}`);
+    assert.deepEqual(Object.keys(fn.environment.variables).sort(), ["KUBCODE_MEDIA_BUCKET", "KUBCODE_PUBLISHING_MODE"], "no secrets in env");
+  }
+  assert.equal(url.environment.variables.KUBCODE_PUBLISHING_MODE, "url");
+  assert.equal(ops.environment.variables.KUBCODE_PUBLISHING_MODE, "ops");
+  assert.ok(seen({ kind: "FileArchive", path: "../services/crates/kubcode-publishing-lambda/dist/bootstrap.zip" }));
+  const urls = byType("aws:lambda/functionUrl:FunctionUrl").filter((u) => String(u.inputs.functionName).startsWith("kubcode-publishing"));
+  assert.deepEqual(urls.map((u) => u.inputs.functionName), ["kubcode-publishing"], "the ops function has no URL");
+  assert.equal(urls[0].inputs.authorizationType, "NONE");
+  const opsPerms = byType("aws:lambda/permission:Permission").filter((p) => p.inputs.function === "kubcode-publishing-ops");
+  assert.equal(opsPerms.length, 0, "no resource policy: IAM is the only way in");
+  for (const lg of [NAMES.publishingLogGroup, NAMES.publishingOpsLogGroup]) {
+    assert.equal(byName("aws:cloudwatch/logGroup:LogGroup", lg)!.inputs.retentionInDays, 14);
+  }
+  assert.ok(await new Promise((r) => pulumi.output(out.publishingUrl).apply(r)));
+});
+
+test("publishing role: decrypt only through SSM and only its own parameters; not KeyUse, not the wrap key", async () => {
+  await build({ oauthConnect: true, publishing: true });
+  const secrets = JSON.parse(byType("aws:kms/keyPolicy:KeyPolicy").find((p) => p.name === "secrets-key-policy")!.inputs.policy);
+  assert.deepEqual(secrets.Statement.find((s: any) => s.Sid === "KeyUse").Principal.AWS, [CONNECT_ROLE_ARN]);
+  const read = secrets.Statement.find((s: any) => s.Sid === "SsmParameterRead");
+  assert.deepEqual(read.Principal.AWS, [PUBLISHING_ROLE_ARN]);
+  assert.equal(read.Action, "kms:Decrypt");
+  assert.equal(read.Condition.StringEquals["kms:ViaService"], "ssm.ap-southeast-1.amazonaws.com");
+  assert.deepEqual(
+    read.Condition.StringEquals["kms:EncryptionContext:PARAMETER_ARN"],
+    Object.values(PUBLISHING_PARAMETERS).map((n) => `arn:aws:ssm:ap-southeast-1:${ACCOUNT_ID}:parameter${n}`),
+  );
+  const wrap = JSON.parse(byType("aws:kms/keyPolicy:KeyPolicy").find((p) => p.name === "secrets-wrap-key-policy")!.inputs.policy);
+  assert.deepEqual(wrap.Statement.find((s: any) => s.Sid === "KeyDecrypt").Principal.AWS, [CONNECT_ROLE_ARN]);
 });
