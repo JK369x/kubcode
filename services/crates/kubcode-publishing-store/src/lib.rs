@@ -932,7 +932,7 @@ impl Store {
     pub async fn use_nonce(&self, nonce_hash: &[u8; 32]) -> Result<bool> {
         self.c
             .execute(
-                "DELETE FROM kubcode_accounts.connect_request_nonces WHERE created_at < now() - interval '10 minutes'",
+                "DELETE FROM kubcode_accounts.connect_request_nonces WHERE created_at < now() - interval '20 minutes'",
                 &[],
             )
             .await?;
