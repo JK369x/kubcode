@@ -40,3 +40,24 @@ infra/scripts/secret.sh has zernio-api-key && echo stored
 ## ถ้า key รั่ว
 
 ลบ key ใน Zernio dashboard ทันที → สร้างใหม่ → ทำข้อ C ซ้ำ (`put` จะเขียนทับค่าเดิม) → แจ้ง agent ให้ update SSM
+
+## F. หลัง slice 1 merge แล้ว — ขั้นที่เจ้าของทำ (ตามลำดับ)
+
+1. **ลงทะเบียน webhook กับ Zernio** (อ่าน vault 1 ครั้ง, macOS จะถามรหัสผ่าน):
+   ```sh
+   AWS_PROFILE=default infra/scripts/publishing-secrets.sh webhook \
+     "$(pulumi -C infra stack output --stack prod publishingUrl)webhooks/zernio"
+   ```
+   วันถัดไปถ้าเคยมี secret เก่า: `infra/scripts/publishing-secrets.sh drop-previous`
+2. **เปิดหน้า /account/channels บนเว็บ** (อ่าน `publishing-hmac-key` จาก vault):
+   ```sh
+   infra/web/scripts/webhost.sh set-publishing
+   ```
+3. **ติดตั้ง CLI** บน Mac: `cargo install --path services/crates/kubcode-cli`
+4. **เชื่อมช่อง** ที่ https://kubcode.dev/account/channels → "เชื่อม YouTube" แล้ว "เชื่อม Instagram"
+   (2 ช่องแรกฟรี) จากนั้นตรวจด้วย `kubcode whoami`
+5. **โพสต์ทดสอบแบบ private** (หลังเจ้าของ OK คลิป):
+   ```sh
+   kubcode schedule <clip-id> --channel <youtube-channel-id> --at 2026-11-12T19:00:00+07:00 --visibility private
+   ```
+   ระบบจะแสดงสรุปทั้งหมดก่อน ต้องพิมพ์รหัสคลิปเพื่อยืนยัน แล้วดูผลด้วย `kubcode status <post-id>`

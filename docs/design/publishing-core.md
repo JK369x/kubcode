@@ -1,6 +1,6 @@
 # Design — Publishing core, phase 1 on Zernio, swappable per platform and capability
 
-Status: **draft for orchestrator OK** · 2026-11-09 · ADR `docs/adr/0004-publishing-core-zernio-first.md`
+Status: **approved 2026-11-09; slice 1 built (#39–#45)** · 2026-11-09 · ADR `docs/adr/0004-publishing-core-zernio-first.md`
 Inputs: orchestrator `decisions/2026-11-08-publishing-two-phase.md`, `docs/zernio-research-2026-11-08.md`,
 `docs/scheduler-prd.md`, `docs/scheduler.md`; repo ADR 0001–0003, `docs/design/settings-keys.md`,
 `infra/README.md`. Zernio facts below were read from docs.zernio.com on 2026-11-09 (URLs in §12).
@@ -456,3 +456,28 @@ docs.zernio.com: `/platforms/youtube/posts`, `/platforms/instagram/fields`, `/gu
 `/webhooks/social`, `/webhooks/inbox`, `/comment-automations/create-comment-automation`,
 `/comment-automations/list-comment-automations`, `/workflows`, `/guides/rate-limits`, `/multi-tenant`,
 `/pricing/inbox`; zernio.com `/pricing`.
+
+## 13. As built (slice 1, 2026-11-09)
+
+Where the build differs from the plan above, or settles what it left open:
+
+- **Crates**: `kubcode-publishing` (core, no I/O), `kubcode-publishing-zernio` (adapter, its own crate so
+  the core stays network-free), `kubcode-publishing-store` (Postgres, runs as `kubcode_worker`),
+  `kubcode-publishing-lambda` (one binary, two functions), `kubcode-cli` (`kubcode`).
+- **Ops function auth**: IAM invoke **and** an HMAC envelope `{command, ts, nonce, sig}` signed with
+  `/kubcode/prod/publishing-ops-key` (copy in the owner's vault), ±5 min, one-time nonce. IAM alone is
+  not trusted because the AWS account also holds other principals (security review).
+- **KMS**: the publishing role is not in the secrets key's `KeyUse`; a `SsmParameterRead` statement lets
+  it Decrypt only via SSM and only its own parameter ARNs. It is not on the wrap key.
+- **Media**: the CLI uploads with SSE-S3 (`AES256`), so the role needs only `s3:GetObject` on `clips/*`.
+- **Webhooks**: event id and type come only from the signed body (id falls back to the body hash);
+  a reused id with a different body is recorded and never applied. Rotation keeps `-previous` until
+  `drop-previous`; `--compromised` drops it and forces a reload.
+- **Migrations**: 0007, 0008 as planned; 0009 lets the Lambda role read only the active owner's row.
+- **Zernio fixtures** are the docs' own examples (`tests/fixtures/zernio`) until real calls are recorded.
+- **Infra** was applied by an admin from the branch (owner's OK): 9 created + 3 updated, then 4 updated;
+  no delete or replace.
+
+Still to do before slice 1 is "done": register the webhook, turn on the page in `web.env`, connect the
+owner's two channels, and one private test post (owner's OK). Checklist:
+`docs/design/publishing-core-owner-checklist.md` §F.
