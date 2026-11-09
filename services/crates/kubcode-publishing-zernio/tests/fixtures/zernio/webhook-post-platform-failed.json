@@ -1,0 +1,6 @@
+{"_source": "built from the field list on https://docs.zernio.com/webhooks/social (no JSON example)",
+ "id": "evt_02", "event": "post.platform.failed", "timestamp": "2026-11-11T12:00:09Z",
+ "post": {"id": "65f1c0a9e2b5af0012ab34ce", "status": "failed",
+  "platforms": [{"platform": "instagram", "status": "failed", "accountId": "66b2e19d8c3f5a7e9d0b1c2e", "error": "Media processing failed", "errorCategory": "user_content", "errorSource": "user"}]},
+ "platform": {"name": "instagram", "status": "failed", "error": "Media processing failed", "errorCategory": "user_content", "errorSource": "user"},
+ "account": {"accountId": "66b2e19d8c3f5a7e9d0b1c2e", "platform": "instagram", "username": "lokeekbaebkub"}}

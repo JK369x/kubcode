@@ -1,0 +1,3 @@
+{"_source": "https://docs.zernio.com/guides/error-handling",
+ "summary": {"total": 1, "healthy": 0, "warning": 0, "error": 1, "needsReconnect": 1},
+ "accounts": [{"accountId": "66b2e19d8c3f5a7e9d0b1c2d", "platform": "instagram", "status": "error", "canPost": false, "needsReconnect": true, "issues": ["Token expired"]}]}
