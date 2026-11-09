@@ -233,6 +233,20 @@ async function main() {
       headers.cookie = cookies.header();
       const res = await route.fetch({ url: `http://127.0.0.1:${nextPort}${pathname}${search}`, headers, maxRedirects: 0 });
       cookies.take(res.headersArray().filter((h) => h.name.toLowerCase() === "set-cookie").map((h) => h.value));
+      // Chromium does not route the follow-up of a fulfilled redirect, so a
+      // page redirect to kubcode.dev would reach production. Start a new
+      // navigation instead, which the route answers locally.
+      const location = res.headers()["location"];
+      if (req.isNavigationRequest() && res.status() >= 300 && res.status() < 400 && location) {
+        const next = new URL(location, "https://kubcode.dev");
+        if (next.origin !== "https://kubcode.dev") throw new Error(`redirect off kubcode.dev: ${next.origin}`);
+        await route.fulfill({
+          status: 200,
+          contentType: "text/html",
+          body: `<!doctype html><script>location.replace(${JSON.stringify(next.href)})</script>`,
+        });
+        return;
+      }
       await route.fulfill({ response: res });
     });
     // Leaving kubcode.dev (the consent URL) is recorded, not followed.
@@ -257,6 +271,11 @@ async function main() {
         runnerLines.find((l) => l.includes("path=/api/connect/start")),
       );
       log(`SMOKE: browser → Next → runner → Zernio wired: ${line}`);
+      // A callback for a state nobody opened: the server answers 303 to the
+      // channels page, which the routed browser must follow.
+      await page.goto(`https://kubcode.dev/api/channels/callback?i=${"0".repeat(64)}&accountId=x`);
+      await page.waitForURL(/\/account\/channels\?notice=connect_failed$/, { timeout: 15_000 });
+      log("SMOKE: the callback's redirect lands on the channels page");
       await page.screenshot({ path: `${OUT}/smoke.png`, fullPage: true });
       return;
     }
@@ -314,6 +333,9 @@ async function main() {
     log("PASS: disconnected through the page");
   } catch (error) {
     failure = error;
+    // Path only: the callback query carries provider tokens.
+    const at = context?.pages()[0]?.url();
+    if (at) log(`page was at ${new URL(at).origin}${new URL(at).pathname}`);
   } finally {
     // ---- leave nothing at Zernio: accounts of this run's profile, then the profile
     profileId = (
