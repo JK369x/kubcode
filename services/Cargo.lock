@@ -953,6 +953,21 @@ dependencies = [
 ]
 
 [[package]]
+name = "kubcode-cli"
+version = "0.1.0"
+dependencies = [
+ "hex",
+ "kubcode-publishing",
+ "kubcode-publishing-lambda",
+ "serde",
+ "serde_json",
+ "sha2 0.10.9",
+ "time",
+ "uuid",
+ "zeroize",
+]
+
+[[package]]
 name = "kubcode-envelope"
 version = "0.1.0"
 dependencies = [
