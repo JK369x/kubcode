@@ -48,8 +48,50 @@ const ACCOUNT_TABLES = [
   "oauth_connect_intents",
   "connect_request_nonces",
   "secret_audit_events",
+  // 0007/0008: publishing (docs/design/publishing-core.md).
+  "workspaces",
+  "workspace_members",
+  "provider_profiles",
+  "channels",
+  "channel_connections",
+  "channel_connect_intents",
+  "provider_routes",
+  "publishing_audit_events",
+  "media_assets",
+  "posts",
+  "deliveries",
+  "receipts",
+  "provider_events",
+  "rate_windows",
 ];
-const ALL_VERSIONS = ["0001_accounts", "0002_interactions", "0003_downloads", "0004_settings_keys", "0005_owner_flag", "0006_connect_app_source"];
+const PUBLISHING_MEMBER_TABLES = [
+  "workspaces",
+  "workspace_members",
+  "channels",
+  "channel_connections",
+  "publishing_audit_events",
+  "media_assets",
+  "posts",
+  "deliveries",
+  "receipts",
+];
+const PUBLISHING_WORKER_TABLES = [
+  "workspaces",
+  "workspace_members",
+  "provider_profiles",
+  "channels",
+  "channel_connections",
+  "channel_connect_intents",
+  "provider_routes",
+  "publishing_audit_events",
+  "media_assets",
+  "posts",
+  "deliveries",
+  "receipts",
+  "provider_events",
+  "rate_windows",
+];
+const ALL_VERSIONS = ["0001_accounts", "0002_interactions", "0003_downloads", "0004_settings_keys", "0005_owner_flag", "0006_connect_app_source", "0007_publishing_channels", "0008_publishing_posts"];
 
 // Refuses anything that is not clearly a local test database BEFORE any
 // connection is attempted.
@@ -295,13 +337,21 @@ test("account data lives only in kubcode_accounts: no public objects, RLS on, po
   );
   const allowed: Record<string, string[]> = {
     kubcode_server_access: ["page_stars", "star_toggles", "page_comments", "comment_reports", "download_events"],
-    kubcode_user_scope: ["user_secrets", "oauth_connections", "oauth_connect_intents", "secret_audit_events"],
-    kubcode_worker_access: ["user_secrets", "oauth_connections", "oauth_connect_intents", "connect_request_nonces", "secret_audit_events"],
+    kubcode_user_scope: ["user_secrets", "oauth_connections", "oauth_connect_intents", "secret_audit_events", "channel_connect_intents"],
+    kubcode_worker_access: [
+      "user_secrets", "oauth_connections", "oauth_connect_intents", "connect_request_nonces", "secret_audit_events",
+      ...PUBLISHING_WORKER_TABLES,
+    ],
+    // 0007/0008: members read their own workspaces' rows; routes are readable by all.
+    kubcode_member_scope: PUBLISHING_MEMBER_TABLES,
+    kubcode_read_all: ["provider_routes"],
   };
   const roleOf: Record<string, string> = {
     kubcode_server_access: "kubcode_app",
     kubcode_user_scope: "kubcode_app",
     kubcode_worker_access: "kubcode_worker",
+    kubcode_member_scope: "kubcode_app",
+    kubcode_read_all: "kubcode_app",
   };
   for (const p of policies.rows) {
     assert.ok(allowed[p.policyname]?.includes(p.tablename), `${p.policyname} on ${p.tablename}`);
