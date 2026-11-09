@@ -54,6 +54,12 @@ mv "$new" "$f"
 echo "write-env: keys $(cut -d= -f1 "$f" | sort | tr '\n' ' ')"
 
 if [ "${KUBCODE_ENV_NO_RESTART:-0}" != 1 ] && [ -e "$ROOT/current" ]; then
+  # If the unit or a drop-in changed on disk since systemd loaded it, a plain
+  # restart would still run the old definition (systemd only warns).
+  if [ "$($SYSTEMCTL show -p NeedDaemonReload --value kubcode-web.service 2>/dev/null)" = yes ]; then
+    $SYSTEMCTL daemon-reload
+    echo "write-env: reloaded systemd units (kubcode-web.service had changed on disk)" >&2
+  fi
   $SYSTEMCTL restart kubcode-web.service
   if ! "$SMOKE"; then
     if [ "$had_old" = 1 ]; then

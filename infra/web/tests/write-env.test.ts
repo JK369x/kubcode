@@ -52,7 +52,7 @@ test("malformed lines are refused and the old file stays", () => {
 
 // With a live release, write-env restarts the app and smokes it. A typo in a
 // secret must not take the site down: the old file comes back.
-function liveBox(smokeOk: boolean) {
+function liveBox(smokeOk: boolean, needReload = "no") {
   const dir = mkdtempSync(join(tmpdir(), "kubcode-env-live-"));
   const root = join(dir, "srv");
   mkdirSync(join(root, "releases", "r1"), { recursive: true });
@@ -60,7 +60,11 @@ function liveBox(smokeOk: boolean) {
   const log = join(dir, "calls.log");
   writeFileSync(log, "");
   const systemctl = join(dir, "systemctl");
-  writeFileSync(systemctl, `#!/bin/sh\necho "restart" >> "${log}"\n`);
+  // `show -p NeedDaemonReload --value` answers needReload; other verbs are logged.
+  writeFileSync(
+    systemctl,
+    `#!/bin/sh\nif [ "$1" = show ]; then echo "${needReload}"; exit 0; fi\necho "$1" >> "${log}"\n`,
+  );
   const smoke = join(dir, "smoke");
   // The stub smoke passes only when the env file holds GOOD='1'.
   writeFileSync(smoke, `#!/bin/sh\ngrep -qx "GOOD='1'" "${join(dir, "web.env")}"\n`);
@@ -82,6 +86,14 @@ test("a good change restarts and smokes once", () => {
   assert.equal(r.status, 0, String(r.stderr));
   assert.match(readFileSync(b.file, "utf8"), /^B='2'$/m);
   assert.equal(readFileSync(b.log, "utf8"), "restart\n");
+});
+
+test("a unit changed on disk is reloaded before the restart, so the restart uses it", () => {
+  const b = liveBox(true, "yes");
+  const r = b.run("GOOD='1'\n");
+  assert.equal(r.status, 0, String(r.stderr));
+  assert.equal(readFileSync(b.log, "utf8"), "daemon-reload\nrestart\n");
+  assert.match(String(r.stderr), /reloaded systemd units/);
 });
 
 test("a change that fails the smoke restores the old env and restarts again", () => {
