@@ -37,13 +37,15 @@ const CALL_TIMEOUT_MS = 20_000;
 /** Our own parameter on the callback; never forwarded. */
 const OWN_PARAMS = new Set(["i"]);
 
-type RouteError = "NOT_FOUND_FEATURE" | "UNAVAILABLE" | "FORBIDDEN" | "NOT_SIGNED_IN" | "CHANNEL_NOT_FOUND";
+type RouteError = "NOT_FOUND_FEATURE" | "UNAVAILABLE" | "FORBIDDEN" | "NOT_SIGNED_IN" | "CHANNEL_NOT_FOUND" | "PROVIDER_QUOTA";
 const ERRORS: Record<RouteError, { status: number; message: string }> = {
   NOT_FOUND_FEATURE: { status: 404, message: "ไม่พบหน้านี้" },
   UNAVAILABLE: { status: 503, message: "ระบบเชื่อมช่องยังไม่พร้อม ลองใหม่ภายหลัง" },
   FORBIDDEN: { status: 403, message: "คุณไม่มีสิทธิ์ใช้ระบบโพสต์" },
   NOT_SIGNED_IN: ACCOUNT_ERRORS.NOT_SIGNED_IN,
   CHANNEL_NOT_FOUND: { status: 404, message: "ไม่พบช่องนี้" },
+  // The provider refuses another account until its billing allows one.
+  PROVIDER_QUOTA: { status: 409, message: "บัญชีผู้ให้บริการเชื่อมต่อใช้โควตาช่องเต็มแล้ว แจ้งผู้ดูแลระบบ" },
 };
 
 const errorResponse = (code: RouteError) =>
@@ -137,6 +139,7 @@ export async function handleChannelConnect(request: Request, deps: ChannelRouteD
     },
     deps,
   );
+  if (answer?.code === "payment_required") return errorResponse("PROVIDER_QUOTA");
   const url = answer?.ok === true && typeof answer.auth_url === "string" ? answer.auth_url : "";
   if (!url.startsWith("https://")) return errorResponse("UNAVAILABLE");
   return jsonNoStore({ ok: true, authorizeUrl: url }, [intentCookie(cookieToken, INTENT_TTL_SECONDS)]);
