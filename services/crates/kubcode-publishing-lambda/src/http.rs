@@ -13,7 +13,7 @@ use serde_json::{json, Value};
 use sha2::{Digest, Sha256};
 use uuid::Uuid;
 
-use crate::service::{Service, WebhookResult};
+use crate::service::{log_safe, Service, WebhookResult};
 
 pub const MAX_API_BODY: usize = 16 * 1024;
 pub const MAX_WEBHOOK_BODY: usize = 1024 * 1024;
@@ -69,6 +69,34 @@ struct DisconnectBody {
 /// Our own query parameter on the callback; never passed to the provider.
 const OWN_PARAMS: &[&str] = &["i"];
 
+/// One log line per API call: the path, the outcome code and, for the
+/// callback, the parameter names the provider sent (never their values, which
+/// carry account ids and tokens).
+pub fn api_log_line(path: &str, code: Option<&str>, param_keys: Option<&[&str]>) -> String {
+    let mut line = format!(
+        "[publishing] api path={path} outcome={}",
+        code.map_or("ok", log_safe)
+    );
+    if let Some(keys) = param_keys {
+        let mut names: Vec<&str> = keys
+            .iter()
+            .map(|k| {
+                let ok = (1..=40).contains(&k.len())
+                    && k.bytes().all(|b| b.is_ascii_alphanumeric() || b == b'_');
+                if ok {
+                    *k
+                } else {
+                    "other"
+                }
+            })
+            .collect();
+        names.sort_unstable();
+        line.push_str(" params=");
+        line.push_str(&names.join(","));
+    }
+    line
+}
+
 pub async fn handle(
     svc: &mut Service<'_>,
     hmac_key: &[u8],
@@ -115,7 +143,8 @@ pub async fn handle(
         Ok(false) => return fail(401, "unauthorized"),
         Err(_) => return fail(503, "unavailable"),
     }
-    let result = match path {
+    let mut param_keys: Option<Vec<String>> = None;
+    let (route, result) = match path {
         "/api/connect/start" => {
             let Ok(b) = serde_json::from_slice::<StartBody>(body) else {
                 return fail(400, "bad_request");
@@ -128,9 +157,11 @@ pub async fn handle(
             ) else {
                 return fail(400, "bad_request");
             };
-            svc.connect_start(b.user_id, platform, &state, &cookie, &binding)
+            let r = svc
+                .connect_start(b.user_id, platform, &state, &cookie, &binding)
                 .await
-                .map(|url| json!({"ok": true, "auth_url": url}))
+                .map(|url| json!({"ok": true, "auth_url": url}));
+            ("/api/connect/start", r)
         }
         "/api/connect/complete" => {
             let Ok(b) = serde_json::from_slice::<CompleteBody>(body) else {
@@ -139,31 +170,78 @@ pub async fn handle(
             let Some(state) = hex32(&b.state) else {
                 return fail(400, "bad_request");
             };
-            let params = b
+            let params: Vec<(String, String)> = b
                 .params
                 .into_iter()
                 .filter(|(k, _)| !OWN_PARAMS.contains(&k.as_str()))
                 .take(32)
                 .collect();
-            svc.connect_complete(&state, CallbackParams(params))
+            param_keys = Some(params.iter().map(|(k, _)| k.clone()).collect());
+            let r = svc
+                .connect_complete(&state, CallbackParams(params))
                 .await
-                .map(|ch| json!({"ok": true, "channel_id": ch.0}))
+                .map(|ch| json!({"ok": true, "channel_id": ch.0}));
+            ("/api/connect/complete", r)
         }
         "/api/channels/disconnect" => {
             let Ok(b) = serde_json::from_slice::<DisconnectBody>(body) else {
                 return fail(400, "bad_request");
             };
-            svc.disconnect(b.user_id, ChannelId(b.channel_id))
+            let r = svc
+                .disconnect(b.user_id, ChannelId(b.channel_id))
                 .await
-                .map(|()| json!({"ok": true}))
+                .map(|()| json!({"ok": true}));
+            ("/api/channels/disconnect", r)
         }
         _ => return fail(404, "not_found"),
     };
+    let keys: Option<Vec<&str>> = param_keys
+        .as_ref()
+        .map(|v| v.iter().map(String::as_str).collect());
+    println!(
+        "{}",
+        api_log_line(
+            route,
+            result.as_ref().err().map(|f| f.code.as_str()),
+            keys.as_deref()
+        )
+    );
     match result {
         Ok(v) => reply(200, v),
         // A refused business step is a 200 with ok=false, so the web host
         // can map the code to Thai copy; transport failures stay 5xx.
         Err(f) if f.code == "store_unavailable" => fail(503, "unavailable"),
         Err(f) => reply(200, json!({"ok": false, "code": f.code})),
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::api_log_line;
+
+    #[test]
+    fn api_lines_carry_path_outcome_and_param_names_only() {
+        assert_eq!(
+            api_log_line("/api/connect/start", None, None),
+            "[publishing] api path=/api/connect/start outcome=ok"
+        );
+        let keys = ["connected", "profileId", "accountId", "username"];
+        assert_eq!(
+            api_log_line("/api/connect/complete", Some("connect_incomplete"), Some(&keys)),
+            "[publishing] api path=/api/connect/complete outcome=connect_incomplete params=accountId,connected,profileId,username"
+        );
+    }
+
+    #[test]
+    fn hostile_names_and_codes_never_reach_the_logs() {
+        let keys = ["error", "x\nforged", "", &"k".repeat(41)];
+        assert_eq!(
+            api_log_line("/api/connect/complete", Some("Bad Code\n"), Some(&keys)),
+            "[publishing] api path=/api/connect/complete outcome=other params=error,other,other,other"
+        );
+        assert_eq!(
+            api_log_line("/api/connect/complete", None, Some(&[])),
+            "[publishing] api path=/api/connect/complete outcome=ok params="
+        );
     }
 }
