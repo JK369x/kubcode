@@ -1,6 +1,6 @@
 # 0004 — Publishing core: our own domain, Zernio first, swappable per platform and capability
 
-Status: proposed (2026-11-09, waiting for orchestrator/owner OK) · Design `docs/design/publishing-core.md`
+Status: accepted (2026-11-09; design approved by the orchestrator, slice 1 merged in #39–#45) · Design `docs/design/publishing-core.md`
 · Extends ADR 0003 (posting tools for creators) and the scheduler PRD (replaces its slices 3–5 for
 Zernio-backed channels)
 
