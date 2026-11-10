@@ -1,6 +1,6 @@
 # Instagram comment → DM (slice 3) — verification and design
 
-Status: **B chosen by the owner (2026-11-10)**; design approved (§4.8 decided the same day). Extends
+Status: **B chosen by the owner (2026-11-10)**; design approved (§4.8 decided the same day; the worker trigger revised the same evening). Extends
 `docs/design/publishing-core.md` (Automation rule, Inbox item; the Automations port of ADR 0004).
 
 ## 1. Goal
@@ -176,9 +176,15 @@ Zernio call), so no new Lambda route is needed for the UI.
 
 ### 4.8 Decided (2026-11-10)
 
-1. **Worker:** EventBridge Scheduler every minute invokes the publishing Lambda in a `worker` mode:
-   one mechanism for sending and catch-up, at most about a minute's delay. An async self-invoke from
-   the webhook is added only if a minute proves too slow.
+1. **Worker:** a **systemd timer on the web host** (Lightsail) calls `POST /api/worker` on the
+   publishing Function URL every minute, signed with the existing KUBCODE-HMAC-V1 key (timestamp
+   window and nonce, like every `/api/*` route). A Postgres advisory lock makes overlapping ticks
+   harmless; the ledger claim already prevents a second DM. One log line per tick. Same `worker::run`
+   for sending and catch-up, at most about a minute's delay.
+   - EventBridge Scheduler was the first choice but needs a `scheduler` grant, a scheduler role and an
+     invoke right in the deploy permissions boundary, which would push it past IAM's 6,144-character
+     limit (2026-11-10). **When several creators are on it, move to EventBridge Scheduler with its
+     own, separate boundary** (the timer then goes away).
 2. **Keywords:** before matching, the comment and the keywords are case-folded, zero-width
    characters (U+200B–U+200D, U+2060, U+FEFF) removed and runs of whitespace collapsed; then
    `contains` (default) or `exact` (the whole normalised comment). Thai has no spaces between words,
