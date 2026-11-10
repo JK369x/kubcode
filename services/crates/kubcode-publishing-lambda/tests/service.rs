@@ -512,3 +512,48 @@ async fn comments_become_one_dm_per_person_per_post() {
     );
     db.drop().await;
 }
+
+#[tokio::test]
+#[ignore = "needs KUBCODE_TEST_DATABASE_URL; run with --ignored"]
+async fn catch_up_finds_comments_the_webhook_missed() {
+    use kubcode_publishing::events::IncomingComment;
+    let db = db().await;
+    let mut store = db.store().await;
+    let fake = Arc::new(FakeProvider::default());
+    let (reg, cfg) = (registry(&fake), cfg());
+    let mut s = svc(&mut store, &reg, &cfg);
+    let owner = db.user(true).await;
+    let ig = connect(&mut s, &fake, owner, Platform::Instagram).await;
+    let acct = s.store.connections(ig).await.unwrap()[0]
+        .provider_ref
+        .clone();
+    db.owner
+        .execute(
+            "INSERT INTO kubcode_accounts.automation_rules (channel_id, keywords, dm_text)
+             VALUES ($1, ARRAY['ขอลิงก์'], 'ลิงก์: https://kubcode.dev/go/x')",
+            &[&ig.0],
+        )
+        .await
+        .unwrap();
+    let c = |id: &str, author: &str, own: bool| IncomingComment {
+        account: acct.clone(),
+        comment_id: id.into(),
+        platform_post_id: "p1".into(),
+        author_id: author.into(),
+        own_account: own,
+        is_reply: false,
+        created_at: Some(time::OffsetDateTime::now_utc()),
+        text: "ขอลิงก์".into(),
+    };
+    fake.set_post_comments("p1", vec![c("k1", "a1", false), c("k2", "me", true)]);
+
+    assert_eq!(s.catch_up().await.unwrap(), 1, "one new matching comment");
+    assert_eq!(
+        s.catch_up().await.unwrap(),
+        0,
+        "seen comments are not recorded again"
+    );
+    assert_eq!(s.work().await.unwrap(), vec![("k1".to_owned(), "dm_sent")]);
+    assert!(s.work().await.unwrap().is_empty());
+    db.drop().await;
+}

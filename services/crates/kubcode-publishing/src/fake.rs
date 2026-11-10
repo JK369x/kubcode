@@ -39,6 +39,8 @@ struct State {
     inbox: Vec<(String, String, String, String)>,
     /// The next private replies' outcomes (default Sent).
     next_private: std::collections::VecDeque<PrivateReply>,
+    /// Catch-up: comments per post, newest post first.
+    comments: Vec<(String, Vec<IncomingComment>)>,
     next: u64,
 }
 
@@ -93,6 +95,14 @@ impl FakeProvider {
     /// The next private reply answers `outcome` instead of `Sent`.
     pub fn answer_next_private(&self, outcome: PrivateReply) {
         self.with(|s| s.next_private.push_back(outcome));
+    }
+
+    /// What catch-up reads: a post and its comments (later posts first).
+    pub fn set_post_comments(&self, post: &str, comments: Vec<IncomingComment>) {
+        self.with(|s| {
+            s.comments.retain(|(p, _)| p != post);
+            s.comments.insert(0, (post.to_owned(), comments));
+        });
     }
 
     /// Every inbox call so far: (kind, post, comment, text).
@@ -393,6 +403,30 @@ impl Inbox for FakeProvider {
             ));
             s.next_private.pop_front().unwrap_or(PrivateReply::Sent)
         })
+    }
+
+    async fn recent_posts(&self, _account: &ProviderRef, limit: u32) -> Result<Vec<String>> {
+        Ok(self.with(|s| {
+            s.comments
+                .iter()
+                .take(limit as usize)
+                .map(|(p, _)| p.clone())
+                .collect()
+        }))
+    }
+
+    async fn post_comments(
+        &self,
+        _account: &ProviderRef,
+        platform_post_id: &str,
+    ) -> Result<Vec<IncomingComment>> {
+        Ok(self.with(|s| {
+            s.comments
+                .iter()
+                .find(|(p, _)| p == platform_post_id)
+                .map(|(_, c)| c.clone())
+                .unwrap_or_default()
+        }))
     }
 
     async fn public_reply(

@@ -116,3 +116,57 @@ async fn the_public_reply_answers_the_comment_with_a_key() {
         Some("reply-17800000000000001")
     );
 }
+
+#[tokio::test]
+async fn catch_up_reads_commented_posts_and_their_top_level_comments() {
+    let h = Harness::default();
+    h.fake.answer_next_inbox(200, fixture("commented-posts"));
+    let posts = h
+        .zernio
+        .recent_posts(&ProviderRef(ACCOUNT.into()), 10)
+        .await
+        .unwrap();
+    assert_eq!(
+        posts,
+        vec!["17900000000000001".to_owned()],
+        "only Instagram media ids, never Zernio's"
+    );
+    let req = h.fake.log().into_iter().last().unwrap();
+    assert_eq!(req.method, Method::Get);
+    let q: std::collections::HashMap<_, _> = req.url.query_pairs().into_owned().collect();
+    assert_eq!(
+        (
+            q.get("accountId").map(String::as_str),
+            q.get("limit").map(String::as_str)
+        ),
+        (Some(ACCOUNT), Some("10"))
+    );
+
+    h.fake.answer_next_inbox(200, fixture("post-comments"));
+    let comments = h
+        .zernio
+        .post_comments(&ProviderRef(ACCOUNT.into()), "17900000000000001")
+        .await
+        .unwrap();
+    assert_eq!(
+        comments.len(),
+        2,
+        "top level only; replies are not comments to answer"
+    );
+    let c = &comments[0];
+    assert_eq!(
+        (c.comment_id.as_str(), c.author_id.as_str(), c.text.as_str()),
+        ("17800000000000001", "17841400000000001", "ขอลิงก์ครับ")
+    );
+    assert_eq!(c.platform_post_id, "17900000000000001");
+    assert!(!c.own_account && !c.is_reply && c.created_at.is_some());
+    assert!(comments[1].own_account, "isOwner marks our own comment");
+    let req = h.fake.log().into_iter().last().unwrap();
+    assert!(
+        req.url
+            .path()
+            .ends_with("/v1/inbox/comments/17900000000000001"),
+        "{}",
+        req.url
+    );
+}

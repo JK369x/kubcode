@@ -213,6 +213,15 @@ pub trait Inbox: Send + Sync {
         comment_id: &str,
         text: &str,
     ) -> PrivateReply;
+    /// Catch-up: the platform ids of the account's most recently commented
+    /// posts.
+    async fn recent_posts(&self, account: &ProviderRef, limit: u32) -> Result<Vec<String>>;
+    /// Catch-up: a post's top-level comments (replies are not answered).
+    async fn post_comments(
+        &self,
+        account: &ProviderRef,
+        platform_post_id: &str,
+    ) -> Result<Vec<crate::events::IncomingComment>>;
     /// A public reply under the comment; `key` makes a retry harmless.
     async fn public_reply(
         &self,

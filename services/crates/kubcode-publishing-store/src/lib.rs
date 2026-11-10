@@ -1013,6 +1013,25 @@ impl Store {
         Ok(n == 1)
     }
 
+    /// Channels with at least one active rule, with the posts their
+    /// post-scoped rules name (catch-up reads these).
+    pub async fn rule_channels(&self) -> Result<Vec<(ChannelId, Vec<String>)>> {
+        let rows = self
+            .c
+            .query(
+                "SELECT channel_id,
+                        coalesce(array_agg(DISTINCT platform_post_id) FILTER (WHERE platform_post_id IS NOT NULL), '{}')
+                   FROM kubcode_accounts.automation_rules WHERE active
+                  GROUP BY channel_id ORDER BY channel_id",
+                &[],
+            )
+            .await?;
+        Ok(rows
+            .iter()
+            .map(|r| (ChannelId(r.get(0)), r.get(1)))
+            .collect())
+    }
+
     /// The oldest comments waiting for the worker.
     pub async fn pending_comments(&self, limit: i64) -> Result<Vec<PendingComment>> {
         let rows = self

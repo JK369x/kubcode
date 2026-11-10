@@ -639,7 +639,7 @@ impl Service<'_> {
         // here can answer Retry before the event is marked as seen.
         for e in &translated {
             if let ProviderEvent::CommentReceived(c) = e {
-                if self.record_comment(kind, c).await.is_err() {
+                if self.record_comment(kind, c, false).await.is_err() {
                     log_comment(None, "retry");
                     return WebhookResult::Retry;
                 }
@@ -686,6 +686,8 @@ const PRIVATE_REPLY_WINDOW: Duration = Duration::days(7);
 const SENDING_TIMEOUT: Duration = Duration::minutes(2);
 /// Comments handled per worker run.
 const WORK_BATCH: i64 = 25;
+/// Catch-up reads this many recently commented posts per channel.
+const CATCH_UP_POSTS: u32 = 10;
 
 impl Service<'_> {
     /// Keeps a comment for the worker when an active rule matches it; anything
@@ -694,10 +696,17 @@ impl Service<'_> {
         &mut self,
         kind: ProviderKind,
         c: &IncomingComment,
-    ) -> std::result::Result<(), StoreError> {
+        quiet: bool,
+    ) -> std::result::Result<bool, StoreError> {
+        // `quiet` (catch-up) logs only what it keeps, so rescans stay silent.
+        let log = |channel, outcome| {
+            if !quiet {
+                log_comment(channel, outcome)
+            }
+        };
         let Some(channel) = self.store.comment_channel(kind, &c.account).await? else {
-            log_comment(None, "no_channel");
-            return Ok(());
+            log(None, "no_channel");
+            return Ok(false);
         };
         let skipped = if c.own_account {
             Some("own_account")
@@ -712,21 +721,66 @@ impl Service<'_> {
             None
         };
         if let Some(code) = skipped {
-            log_comment(Some(channel), code);
-            return Ok(());
+            log(Some(channel), code);
+            return Ok(false);
         }
         let rows = self.store.rules_of(channel).await?;
         let rules: Vec<_> = rows.iter().map(|r| r.rule.clone()).collect();
         let Some(rule) = choose(&rules, &c.platform_post_id, &c.text) else {
-            log_comment(Some(channel), "no_rule");
-            return Ok(());
+            log(Some(channel), "no_rule");
+            return Ok(false);
         };
         let rule_id = rows.iter().find(|r| r.rule.id == rule.id).map(|r| r.id);
-        self.store
+        let new = self
+            .store
             .record_comment(channel, kind, c, rule_id, None)
             .await?;
-        log_comment(Some(channel), "matched");
-        Ok(())
+        if new {
+            log_comment(Some(channel), "matched");
+        }
+        Ok(new)
+    }
+
+    /// Reads recent comments of channels with active rules and keeps the ones
+    /// the webhook did not deliver. Returns how many were newly kept.
+    pub async fn catch_up(&mut self) -> Result<usize> {
+        let mut kept = 0;
+        for (channel, rule_posts) in self.store.rule_channels().await? {
+            let Some(conn) = self
+                .store
+                .connections(channel)
+                .await?
+                .into_iter()
+                .find(|k| k.status != kubcode_publishing::domain::ConnectionStatus::Revoked)
+            else {
+                continue;
+            };
+            let Some(inbox) = self.providers(conn.provider)?.inbox.clone() else {
+                continue;
+            };
+            let mut posts = rule_posts;
+            match inbox.recent_posts(&conn.provider_ref, CATCH_UP_POSTS).await {
+                Ok(recent) => posts.extend(recent),
+                Err(e) => log_comment(Some(channel), &format!("catch_up_{}", e.code.as_str())),
+            }
+            posts.sort();
+            posts.dedup();
+            for post in posts {
+                let comments = match inbox.post_comments(&conn.provider_ref, &post).await {
+                    Ok(c) => c,
+                    Err(e) => {
+                        log_comment(Some(channel), &format!("catch_up_{}", e.code.as_str()));
+                        continue;
+                    }
+                };
+                for c in &comments {
+                    if self.record_comment(conn.provider, c, true).await? {
+                        kept += 1;
+                    }
+                }
+            }
+        }
+        Ok(kept)
     }
 
     /// The worker: sends what was recorded, oldest first. Returns

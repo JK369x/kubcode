@@ -1,0 +1,6 @@
+{"_source": "OpenAPI v1.529.3, GET /v1/inbox/comments 200 (schema fields; one Zernio-id row to be skipped)",
+ "data": [
+   {"id": "17900000000000001", "platform": "instagram", "accountId": "507f1f77bcf86cd799439011", "accountUsername": "sample_brand", "createdTime": "2026-11-09T10:00:00Z", "commentCount": 3},
+   {"id": "507f1f77bcf86cd799439013", "platform": "instagram", "accountId": "507f1f77bcf86cd799439011", "accountUsername": "sample_brand", "createdTime": "2026-11-08T10:00:00Z", "commentCount": 1}
+ ],
+ "pagination": {"hasMore": false}}

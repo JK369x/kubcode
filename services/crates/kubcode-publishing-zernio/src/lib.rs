@@ -12,6 +12,7 @@ use std::sync::Arc;
 use async_trait::async_trait;
 use kubcode_publishing::domain::{MediaKind, Platform, ProviderKind, ProviderRef, Visibility};
 use kubcode_publishing::errors::{ErrorClass, PublishError, Result};
+use kubcode_publishing::events::IncomingComment;
 use kubcode_publishing::ports::{
     Accepted, CallbackParams, Checked, ConnectProvider, ConnectStart, ConnectedAccount,
     ConnectionHealth, ConnectionRef, DeliveryState, Inbox, MediaSource, PrivateReply, Publisher,
@@ -550,6 +551,82 @@ impl Inbox for Zernio {
             502 | 504 => PrivateReply::Unknown,
             status => PrivateReply::Failed(map_error(status, r.retry_after, &r.body)),
         }
+    }
+
+    async fn recent_posts(&self, account: &ProviderRef, limit: u32) -> Result<Vec<String>> {
+        let acct = path_id(account)?;
+        let limit = limit.clamp(1, 100).to_string();
+        let v = self
+            .call(
+                Method::Get,
+                self.url(
+                    "/v1/inbox/comments",
+                    &[("accountId", acct), ("limit", &limit)],
+                ),
+                None,
+                None,
+            )
+            .await?;
+        // Instagram media ids are digits; a Zernio id would key the ledger
+        // differently from the webhook's platformPostId, so it is skipped.
+        Ok(v.get("data")
+            .and_then(Value::as_array)
+            .into_iter()
+            .flatten()
+            .filter_map(|p| p.get("id")?.as_str())
+            .filter(|id| !id.is_empty() && id.len() <= 64 && id.bytes().all(|b| b.is_ascii_digit()))
+            .map(str::to_owned)
+            .collect())
+    }
+
+    async fn post_comments(
+        &self,
+        account: &ProviderRef,
+        platform_post_id: &str,
+    ) -> Result<Vec<IncomingComment>> {
+        let acct = path_id(account)?;
+        let post =
+            segment(platform_post_id).ok_or_else(|| e(ErrorClass::Bug, "bad_comment_ref"))?;
+        let v = self
+            .call(
+                Method::Get,
+                self.url(
+                    &format!("/v1/inbox/comments/{post}"),
+                    &[("accountId", acct)],
+                ),
+                None,
+                None,
+            )
+            .await?;
+        Ok(v.get("comments")
+            .and_then(Value::as_array)
+            .into_iter()
+            .flatten()
+            .filter_map(|c| {
+                let s = |p: &str| {
+                    c.pointer(p)?
+                        .as_str()
+                        .filter(|x| !x.is_empty())
+                        .map(str::to_owned)
+                };
+                Some(IncomingComment {
+                    account: account.clone(),
+                    comment_id: s("/id")?,
+                    platform_post_id: post.to_owned(),
+                    author_id: s("/from/id")?,
+                    own_account: c.pointer("/from/isOwner").and_then(Value::as_bool) == Some(true),
+                    is_reply: s("/parentId").is_some(),
+                    created_at: s("/createdTime").and_then(|t| {
+                        time::OffsetDateTime::parse(
+                            &t,
+                            &time::format_description::well_known::Rfc3339,
+                        )
+                        .ok()
+                    }),
+                    text: s("/message").unwrap_or_default(),
+                })
+            })
+            .collect())
     }
 
     async fn public_reply(
