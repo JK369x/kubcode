@@ -41,7 +41,9 @@
   display: flex;
   flex-direction: column;
   flex: 1;
-  min-height: 0;
+  /* Room for at least a couple of comments plus the box (owner 2026-11-11:
+     comments were squeezed out of sight by the TOC). */
+  min-height: 22rem;
   border: 1px solid var(--line);
   border-radius: 16px;
   background: var(--surface);
@@ -61,7 +63,7 @@
 }
 .scroll {
   flex: 1;
-  min-height: 0;
+  min-height: 7rem;
   overflow: auto;
   overscroll-behavior: contain;
   padding: 14px 16px;
@@ -161,6 +163,32 @@
   background: var(--surface);
   color: var(--ink);
   resize: vertical;
+  min-height: 2.5rem;
+  transition: min-height 0.18s ease, border-color 0.18s ease;
+}
+.form[data-open] textarea {
+  min-height: 5.5rem;
+  border-color: var(--purple);
+}
+.form[data-open] .formRow {
+  animation: composerIn 0.18s ease both;
+}
+@keyframes composerIn {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .form textarea,
+  .form[data-open] .formRow {
+    transition: none;
+    animation: none;
+  }
 }
 .formRow {
   display: flex;

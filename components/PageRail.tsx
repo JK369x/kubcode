@@ -13,8 +13,17 @@ export function PageRail({ toc, target }: { toc: TocItem[]; target?: Interaction
   return target ? <RailWithInteractions toc={toc} target={target} /> : <Rail toc={toc} />;
 }
 
-function TocBlock({ toc }: { toc: TocItem[] }) {
+function TocBlock({ toc, compact = false }: { toc: TocItem[]; compact?: boolean }) {
   if (toc.length < 2) return null;
+  if (compact)
+    return (
+      // Next to comments the TOC folds away and stays short, so it never
+      // squeezes the comment list (owner 2026-11-11).
+      <details className="rail-toc rail-toc--compact" open>
+        <summary className="toc-label">สารบัญ · {toc.length} หัวข้อ</summary>
+        <TocNav items={toc} spy follow />
+      </details>
+    );
   return (
     <section className="rail-toc" aria-label="สารบัญ">
       <p className="toc-label">สารบัญ</p>
@@ -39,7 +48,7 @@ function RailWithInteractions({ toc, target }: { toc: TocItem[]; target: Interac
     <>
       <aside className="page-rail page-rail--full">
         <StarControl target={target} it={it} />
-        <TocBlock toc={toc} />
+        <TocBlock toc={toc} compact />
         <CommentsPanel target={target} it={it} headingId={headingId} />
       </aside>
       <CommentSheet target={target} it={it} />

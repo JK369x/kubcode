@@ -2415,9 +2415,28 @@ img.tool-mark {
   /* With comments, the rail is exactly the viewport below the header. */
   .page-rail--full {
     height: calc(100vh - 8rem);
+    min-height: 34rem;
   }
   .rail-toc {
     flex: none;
+  }
+  /* Beside comments: a short, foldable TOC; the comment panel keeps at least
+     22rem so the list and the box are always visible together. */
+  .rail-toc--compact summary {
+    cursor: pointer;
+    list-style: none;
+  }
+  .rail-toc--compact summary::-webkit-details-marker {
+    display: none;
+  }
+  .rail-toc--compact summary::after {
+    content: " ▾";
+  }
+  .rail-toc--compact:not([open]) summary::after {
+    content: " ▸";
+  }
+  .rail-toc--compact .toc-scroll {
+    max-height: 8.5rem;
   }
   .rail-toc .toc-label {
     margin-bottom: 4px;
