@@ -10,25 +10,20 @@
  * the build does not depend on the studio folder; a test keeps the copy in
  * step when the studio file is present).
  *
- * The site adds a few keys for catalogue skills the studio has not filed yet
+ * The site may add keys for catalogue skills the studio has not filed yet
  * (SITE_VISUALS / SITE_STORIES). Move them into the studio file when it
- * gains them.
+ * gains them. None today: blender-3d and paradox-fact moved to the studio
+ * file on 2026-11-10.
  */
 import taxonomy from "./taxonomy.json";
 
 export type TaxonomyLabel = { th: string; en: string };
 
 /** Site-only visual styles: catalogue skills with no studio series yet. */
-const SITE_VISUALS = {
-  // make-short: Blender scenes built in code, bean-shaped characters.
-  "blender-3d": { th: "3D Blender", en: "3D Blender" },
-} satisfies Record<string, TaxonomyLabel>;
+const SITE_VISUALS = {} satisfies Record<string, TaxonomyLabel>;
 
 /** Site-only story formats. */
-const SITE_STORIES = {
-  // make-short's formula: a history paradox, told as fact.
-  "paradox-fact": { th: "ข้อเท็จจริงย้อนแย้ง", en: "Paradox Fact" },
-} satisfies Record<string, TaxonomyLabel>;
+const SITE_STORIES = {} satisfies Record<string, TaxonomyLabel>;
 
 const pick = (r: Record<string, { th: string; en: string }>) =>
   Object.fromEntries(Object.entries(r).map(([k, v]) => [k, { th: v.th, en: v.en }]));

@@ -1,49 +1,229 @@
 {
   "_doc": "Two independent axes (owner 2026-11-10). visual_style = how it looks (kit/renderer). story_format = how the story is told (script formula, tone, fact vs fiction). One format can use many visual styles. Kit author names are credits in made_with, never series names.",
   "visual_styles": {
-    "flat-room":       {"th": "ห้องเวกเตอร์แสงอุ่น", "en": "Flat Room", "kit": "jk-animation-studio styles/thai-survival (kit by upstream, cat removed)", "renderer": "Python SVG + GSAP / HyperFrames"},
-    "night-vector":    {"th": "เวกเตอร์มืด หมอก แสงไฟดวงเดียว", "en": "Night Vector", "kit": "styles/genhaha-horror-story", "renderer": "HyperFrames"},
-    "satellite-map":   {"th": "แผนที่ดาวเทียม 3D", "en": "Satellite Map", "kit": "styles/genhaha-map-story", "renderer": "Three.js / HyperFrames"},
-    "soft-2d":         {"th": "2D นุ่ม ตัวละครหัวกลม", "en": "Soft 2D", "kit": "styles/jk-soft-story, styles/jk-soft-story-motion-v2", "renderer": "HyperFrames"},
-    "low-poly":        {"th": "3D โลว์โพลี", "en": "Low-poly 3D", "kit": "styles/low-poly-urban", "renderer": "Three.js / HyperFrames"},
-    "stick-svg":       {"th": "ตัวละครเส้น SVG", "en": "Stick SVG", "kit": "styles/freshstack-what-if (FreshStack What If Animation, MIT)", "renderer": "React SVG / Remotion"},
-    "stickman-canvas": {"th": "สติกแมน Canvas", "en": "Stickman Canvas", "kit": "styles/growkaz-stickman", "renderer": "Canvas 2D + headless Chrome"},
-    "sitcom-toon":     {"th": "การ์ตูนซิตคอม", "en": "Sitcom Toon", "kit": "lemo-opuscar toon.js (MIT)", "renderer": "Playwright/Chromium + FFmpeg"},
-    "deep-sea":        {"th": "สารคดีใต้ทะเล", "en": "Deep Sea", "kit": "deep-sea-docs 0.1 (kubcode)", "renderer": "HyperFrames"},
-    "footage-reframe": {"th": "ฟุตเทจจริง + ซับ", "en": "Footage Reframe", "kit": "-", "renderer": "HyperFrames"}
+    "flat-room": {
+      "th": "ห้องเวกเตอร์แสงอุ่น",
+      "en": "Flat Room",
+      "kit": "jk-animation-studio styles/thai-survival (kit by upstream, cat removed)",
+      "renderer": "Python SVG + GSAP / HyperFrames"
+    },
+    "night-vector": {
+      "th": "เวกเตอร์มืด หมอก แสงไฟดวงเดียว",
+      "en": "Night Vector",
+      "kit": "styles/genhaha-horror-story",
+      "renderer": "HyperFrames"
+    },
+    "satellite-map": {
+      "th": "แผนที่ดาวเทียม 3D",
+      "en": "Satellite Map",
+      "kit": "styles/genhaha-map-story",
+      "renderer": "Three.js / HyperFrames"
+    },
+    "soft-2d": {
+      "th": "2D นุ่ม ตัวละครหัวกลม",
+      "en": "Soft 2D",
+      "kit": "styles/jk-soft-story, styles/jk-soft-story-motion-v2",
+      "renderer": "HyperFrames"
+    },
+    "low-poly": {
+      "th": "3D โลว์โพลี",
+      "en": "Low-poly 3D",
+      "kit": "styles/low-poly-urban",
+      "renderer": "Three.js / HyperFrames"
+    },
+    "stick-svg": {
+      "th": "ตัวละครเส้น SVG",
+      "en": "Stick SVG",
+      "kit": "styles/freshstack-what-if (FreshStack What If Animation, MIT)",
+      "renderer": "React SVG / Remotion"
+    },
+    "stickman-canvas": {
+      "th": "สติกแมน Canvas",
+      "en": "Stickman Canvas",
+      "kit": "styles/growkaz-stickman",
+      "renderer": "Canvas 2D + headless Chrome"
+    },
+    "sitcom-toon": {
+      "th": "การ์ตูนซิตคอม",
+      "en": "Sitcom Toon",
+      "kit": "lemo-opuscar toon.js (MIT)",
+      "renderer": "Playwright/Chromium + FFmpeg"
+    },
+    "deep-sea": {
+      "th": "สารคดีใต้ทะเล",
+      "en": "Deep Sea",
+      "kit": "deep-sea-docs 0.1 (kubcode)",
+      "renderer": "HyperFrames"
+    },
+    "footage-reframe": {
+      "th": "ฟุตเทจจริง + ซับ",
+      "en": "Footage Reframe",
+      "kit": "-",
+      "renderer": "HyperFrames"
+    },
+    "blender-3d": {
+      "th": "3D Blender",
+      "en": "Blender 3D",
+      "kit": "make-short (NoCodeHack, MIT) v3 engine",
+      "renderer": "Blender 5.x EEVEE"
+    }
   },
   "story_formats": {
-    "know-to-survive":   {"th": "รู้ไว้รอด", "en": "Know to Survive", "formula": "สถานการณ์อันตรายใกล้ตัว → สัญญาณเตือน → วิธีรอด → เบอร์ฉุกเฉิน", "kind": "fact"},
-    "ghost-story":       {"th": "เรื่องผี", "en": "Ghost Story", "formula": "ฮุกเวลา/สถานที่ → เหตุแปลกซ้ำ → หักมุม → บอกว่าเป็นเรื่องแต่ง", "kind": "fiction"},
-    "map-fact":          {"th": "เรื่องแผนที่", "en": "Map Facts", "formula": "ข้อเท็จจริงแปลกเกี่ยวกับสถานที่ → เทียบกับสิ่งที่คนไทยรู้จัก → แหล่งอ้างอิง", "kind": "fact"},
-    "what-if":           {"th": "ถ้าเกิดว่า…", "en": "What If", "formula": "สมมติ 1 ข้อ → ผลลัพธ์ทีละขั้น → ข้อเท็จจริงจริง 1 ข้อ → คำถามปิด", "kind": "fiction+fact"},
-    "life-story":        {"th": "เรื่องชีวิต", "en": "Life Story", "formula": "ปัญหาใกล้ตัว → ความรู้สึก → ทางออกเล็กๆ ทำได้วันนี้", "kind": "fiction"},
-    "behind-the-city":   {"th": "เบื้องหลังเมือง", "en": "Behind the City", "formula": "สิ่งที่เห็นทุกวัน → เบื้องหลังจริง → ตัวเลข 1 ตัว", "kind": "fact"},
-    "money-tip":         {"th": "เงินทองง่ายๆ", "en": "Money Tip", "formula": "ปัญหาเงิน → กฎ 1 ข้อ → ตัวอย่างตัวเลข", "kind": "fact"},
-    "zombie-sitcom":     {"th": "ซอมบี้คอนโด", "en": "Zombie Condo", "formula": "ซีรีส์ต่อเนื่อง ตลก ตอนละ 1 มุก", "kind": "fiction"},
-    "outbreak-drama":    {"th": "ห้างติดเชื้อ", "en": "Outbreak", "formula": "ซีรีส์ต่อเนื่อง ระทึก", "kind": "fiction"},
-    "satire":            {"th": "เสียดสี", "en": "Satire", "formula": "สมมติเกินจริงเกี่ยวกับคนดัง → บอกว่าเป็นเรื่องแต่ง", "kind": "fiction"},
-    "deep-dive-doc":     {"th": "สารคดีสั้น", "en": "Mini Doc", "formula": "ปริศนา → ข้อเท็จจริงทีละชั้น → แหล่งอ้างอิง", "kind": "fact"},
-    "tool-from-podcast": {"th": "เครื่องมือจากพอดแคสต์", "en": "Tool from Podcast", "formula": "ตัดช่วงอธิบายเครื่องมือ → ซับไทย → เครดิตต้นทาง", "kind": "fact"},
-    "celebrity-quote":   {"th": "คำพูดคนดัง", "en": "Celebrity Quote", "formula": "คำพูดจริง 1 ประโยค → บริบท → ซับไทย", "kind": "fact"},
-    "mystery":           {"th": "ปริศนา", "en": "Mystery", "formula": "คำถามชวนสงสัย → เบาะแส → คำตอบ", "kind": "fact"}
+    "know-to-survive": {
+      "th": "รู้ไว้รอด",
+      "en": "Know to Survive",
+      "formula": "สถานการณ์อันตรายใกล้ตัว → สัญญาณเตือน → วิธีรอด → เบอร์ฉุกเฉิน",
+      "kind": "fact"
+    },
+    "ghost-story": {
+      "th": "เรื่องผี",
+      "en": "Ghost Story",
+      "formula": "ฮุกเวลา/สถานที่ → เหตุแปลกซ้ำ → หักมุม → บอกว่าเป็นเรื่องแต่ง",
+      "kind": "fiction"
+    },
+    "map-fact": {
+      "th": "เรื่องแผนที่",
+      "en": "Map Facts",
+      "formula": "ข้อเท็จจริงแปลกเกี่ยวกับสถานที่ → เทียบกับสิ่งที่คนไทยรู้จัก → แหล่งอ้างอิง",
+      "kind": "fact"
+    },
+    "what-if": {
+      "th": "ถ้าเกิดว่า…",
+      "en": "What If",
+      "formula": "สมมติ 1 ข้อ → ผลลัพธ์ทีละขั้น → ข้อเท็จจริงจริง 1 ข้อ → คำถามปิด",
+      "kind": "fiction+fact"
+    },
+    "life-story": {
+      "th": "เรื่องชีวิต",
+      "en": "Life Story",
+      "formula": "ปัญหาใกล้ตัว → ความรู้สึก → ทางออกเล็กๆ ทำได้วันนี้",
+      "kind": "fiction"
+    },
+    "behind-the-city": {
+      "th": "เบื้องหลังเมือง",
+      "en": "Behind the City",
+      "formula": "สิ่งที่เห็นทุกวัน → เบื้องหลังจริง → ตัวเลข 1 ตัว",
+      "kind": "fact"
+    },
+    "money-tip": {
+      "th": "เงินทองง่ายๆ",
+      "en": "Money Tip",
+      "formula": "ปัญหาเงิน → กฎ 1 ข้อ → ตัวอย่างตัวเลข",
+      "kind": "fact"
+    },
+    "zombie-sitcom": {
+      "th": "ซอมบี้คอนโด",
+      "en": "Zombie Condo",
+      "formula": "ซีรีส์ต่อเนื่อง ตลก ตอนละ 1 มุก",
+      "kind": "fiction"
+    },
+    "outbreak-drama": {
+      "th": "ห้างติดเชื้อ",
+      "en": "Outbreak",
+      "formula": "ซีรีส์ต่อเนื่อง ระทึก",
+      "kind": "fiction"
+    },
+    "satire": {
+      "th": "เสียดสี",
+      "en": "Satire",
+      "formula": "สมมติเกินจริงเกี่ยวกับคนดัง → บอกว่าเป็นเรื่องแต่ง",
+      "kind": "fiction"
+    },
+    "deep-dive-doc": {
+      "th": "สารคดีสั้น",
+      "en": "Mini Doc",
+      "formula": "ปริศนา → ข้อเท็จจริงทีละชั้น → แหล่งอ้างอิง",
+      "kind": "fact"
+    },
+    "tool-from-podcast": {
+      "th": "เครื่องมือจากพอดแคสต์",
+      "en": "Tool from Podcast",
+      "formula": "ตัดช่วงอธิบายเครื่องมือ → ซับไทย → เครดิตต้นทาง",
+      "kind": "fact"
+    },
+    "celebrity-quote": {
+      "th": "คำพูดคนดัง",
+      "en": "Celebrity Quote",
+      "formula": "คำพูดจริง 1 ประโยค → บริบท → ซับไทย",
+      "kind": "fact"
+    },
+    "mystery": {
+      "th": "ปริศนา",
+      "en": "Mystery",
+      "formula": "คำถามชวนสงสัย → เบาะแส → คำตอบ",
+      "kind": "fact"
+    },
+    "paradox-fact": {
+      "th": "ข้อเท็จจริงย้อนแย้ง",
+      "en": "Paradox Fact",
+      "formula": "สองเรื่องจริงที่ไม่น่าจริงพร้อมกัน → พยายามล้มเหลวทีละขั้น → เฉลยด้วยข้อเท็จจริง",
+      "kind": "fact"
+    }
   },
   "map_from_series": {
-    "thai-survival": ["flat-room", "know-to-survive"],
-    "genhaha-horror-story": ["night-vector", "ghost-story"],
-    "genhaha-map-story": ["satellite-map", "map-fact"],
-    "jk-soft-story": ["soft-2d", "life-story"],
-    "jk-soft-story-motion-v2": ["soft-2d", "life-story"],
-    "low-poly-urban": ["low-poly", "behind-the-city"],
-    "mall-infection": ["low-poly", "outbreak-drama"],
-    "satire-stories": ["low-poly", "satire"],
-    "freshstack-what-if": ["stick-svg", "what-if"],
-    "what-if-studio": ["stick-svg", "what-if"],
-    "growkaz-stickman": ["stickman-canvas", "money-tip"],
-    "zombie-condo": ["sitcom-toon", "zombie-sitcom"],
-    "deep-sea-docs": ["deep-sea", "deep-dive-doc"],
-    "tech-podcast": ["footage-reframe", "tool-from-podcast"],
-    "celebrity-shorts": ["footage-reframe", "celebrity-quote"],
-    "us-antarctica": ["footage-reframe", "mystery"]
+    "thai-survival": [
+      "flat-room",
+      "know-to-survive"
+    ],
+    "genhaha-horror-story": [
+      "night-vector",
+      "ghost-story"
+    ],
+    "genhaha-map-story": [
+      "satellite-map",
+      "map-fact"
+    ],
+    "jk-soft-story": [
+      "soft-2d",
+      "life-story"
+    ],
+    "jk-soft-story-motion-v2": [
+      "soft-2d",
+      "life-story"
+    ],
+    "low-poly-urban": [
+      "low-poly",
+      "behind-the-city"
+    ],
+    "mall-infection": [
+      "low-poly",
+      "outbreak-drama"
+    ],
+    "satire-stories": [
+      "low-poly",
+      "satire"
+    ],
+    "freshstack-what-if": [
+      "stick-svg",
+      "what-if"
+    ],
+    "what-if-studio": [
+      "stick-svg",
+      "what-if"
+    ],
+    "growkaz-stickman": [
+      "stickman-canvas",
+      "money-tip"
+    ],
+    "zombie-condo": [
+      "sitcom-toon",
+      "zombie-sitcom"
+    ],
+    "deep-sea-docs": [
+      "deep-sea",
+      "deep-dive-doc"
+    ],
+    "tech-podcast": [
+      "footage-reframe",
+      "tool-from-podcast"
+    ],
+    "celebrity-shorts": [
+      "footage-reframe",
+      "celebrity-quote"
+    ],
+    "us-antarctica": [
+      "footage-reframe",
+      "mystery"
+    ]
   }
 }
