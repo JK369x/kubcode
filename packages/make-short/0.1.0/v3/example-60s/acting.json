@@ -1,0 +1,1021 @@
+[
+ {
+  "f": 2,
+  "char": "marcel",
+  "do": "react",
+  "args": {
+   "name": "rub_belly"
+  }
+ },
+ {
+  "f": 40,
+  "char": "marcel",
+  "do": "squash",
+  "args": {
+   "amt": -0.1,
+   "dur": 8
+  }
+ },
+ {
+  "f": 98,
+  "char": "marcel",
+  "do": "react",
+  "args": {
+   "name": "rub_belly"
+  }
+ },
+ {
+  "f": 127,
+  "char": "marcel",
+  "do": "react",
+  "args": {
+   "name": "nod"
+  }
+ },
+ {
+  "f": 138,
+  "char": "marcel",
+  "do": "react",
+  "args": {
+   "name": "shrug"
+  }
+ },
+ {
+  "f": 168,
+  "char": "marcel",
+  "do": "react",
+  "args": {
+   "name": "tremble"
+  }
+ },
+ {
+  "f": 246,
+  "char": "marcel",
+  "do": "react",
+  "args": {
+   "name": "proud_puff",
+   "hold": 4
+  }
+ },
+ {
+  "f": 268,
+  "char": "marcel",
+  "do": "squash",
+  "args": {
+   "amt": -0.08,
+   "dur": 8
+  }
+ },
+ {
+  "f": 280,
+  "char": "marcel",
+  "do": "react",
+  "args": {
+   "name": "tremble"
+  }
+ },
+ {
+  "f": 284,
+  "char": "marcel",
+  "do": "squash",
+  "args": {
+   "amt": 0.12,
+   "dur": 8
+  }
+ },
+ {
+  "f": 303,
+  "char": "marcel",
+  "do": "react",
+  "args": {
+   "name": "sway"
+  }
+ },
+ {
+  "f": 330,
+  "char": "marcel",
+  "do": "react",
+  "args": {
+   "name": "nod"
+  }
+ },
+ {
+  "f": 348,
+  "char": "marcel",
+  "do": "react",
+  "args": {
+   "name": "lean_in"
+  }
+ },
+ {
+  "f": 366,
+  "char": "marcel",
+  "do": "react",
+  "args": {
+   "name": "jump"
+  }
+ },
+ {
+  "f": 386,
+  "char": "marcel",
+  "do": "react",
+  "args": {
+   "name": "jump",
+   "amp": 0.8
+  }
+ },
+ {
+  "f": 405,
+  "char": "marcel",
+  "do": "lean",
+  "args": {
+   "amt": 10,
+   "dur": 12
+  }
+ },
+ {
+  "f": 417,
+  "char": "marcel",
+  "do": "react",
+  "args": {
+   "name": "point_jab",
+   "hold": 4
+  }
+ },
+ {
+  "f": 436,
+  "char": "marcel",
+  "do": "squash",
+  "args": {
+   "amt": 0.12,
+   "dur": 8
+  }
+ },
+ {
+  "f": 452,
+  "char": "marcel",
+  "do": "react",
+  "args": {
+   "name": "shock",
+   "hold": 6
+  }
+ },
+ {
+  "f": 466,
+  "char": "marcel",
+  "do": "react",
+  "args": {
+   "name": "slump",
+   "amp": 0.6
+  }
+ },
+ {
+  "f": 483,
+  "char": "marcel",
+  "do": "react",
+  "args": {
+   "name": "kick"
+  }
+ },
+ {
+  "f": 502,
+  "char": "marcel",
+  "do": "react",
+  "args": {
+   "name": "recoil_hit",
+   "hold": 6
+  }
+ },
+ {
+  "f": 516,
+  "char": "marcel",
+  "do": "react",
+  "args": {
+   "name": "hop_pain"
+  }
+ },
+ {
+  "f": 538,
+  "char": "marcel",
+  "do": "react",
+  "args": {
+   "name": "nod"
+  }
+ },
+ {
+  "f": 547,
+  "char": "marcel",
+  "do": "react",
+  "args": {
+   "name": "smash",
+   "hold": 4
+  }
+ },
+ {
+  "f": 570,
+  "char": "marcel",
+  "do": "react",
+  "args": {
+   "name": "wobble"
+  }
+ },
+ {
+  "f": 584,
+  "char": "marcel",
+  "do": "react",
+  "args": {
+   "name": "slump",
+   "amp": 0.7
+  }
+ },
+ {
+  "f": 600,
+  "char": "marcel",
+  "do": "react",
+  "args": {
+   "name": "lookaround"
+  }
+ },
+ {
+  "f": 603,
+  "char": "gaston",
+  "do": "react",
+  "args": {
+   "name": "march_bounce"
+  }
+ },
+ {
+  "f": 616,
+  "char": "marcel",
+  "do": "react",
+  "args": {
+   "name": "shock",
+   "amp": 0.8,
+   "hold": 4
+  }
+ },
+ {
+  "f": 627,
+  "char": "gaston",
+  "do": "react",
+  "args": {
+   "name": "proud_puff",
+   "hold": 2
+  }
+ },
+ {
+  "f": 642,
+  "char": "gaston",
+  "do": "talk",
+  "args": {
+   "f_out": 678,
+   "words": [
+    [
+     642,
+     647,
+     "\"Step"
+    ],
+    [
+     652,
+     659,
+     "aside,"
+    ],
+    [
+     660,
+     681,
+     "amateur.\""
+    ]
+   ],
+   "amp": 1.0
+  }
+ },
+ {
+  "f": 646,
+  "char": "marcel",
+  "do": "react",
+  "args": {
+   "name": "tilt"
+  }
+ },
+ {
+  "f": 650,
+  "char": "gaston",
+  "do": "react",
+  "args": {
+   "name": "tilt"
+  }
+ },
+ {
+  "f": 658,
+  "char": "gaston",
+  "do": "react",
+  "args": {
+   "name": "point_jab",
+   "hold": 6
+  }
+ },
+ {
+  "f": 660,
+  "char": "marcel",
+  "do": "react",
+  "args": {
+   "name": "recoil_hit",
+   "hold": 8,
+   "amp": 0.8
+  }
+ },
+ {
+  "f": 680,
+  "char": "marcel",
+  "do": "react",
+  "args": {
+   "name": "betrayed_droop",
+   "hold": 4
+  }
+ },
+ {
+  "f": 680,
+  "char": "gaston",
+  "do": "react",
+  "args": {
+   "name": "smash",
+   "amp": 1.0,
+   "hold": 14
+  }
+ },
+ {
+  "f": 694,
+  "char": "marcel",
+  "do": "react",
+  "args": {
+   "name": "flinch",
+   "hold": 6
+  }
+ },
+ {
+  "f": 718,
+  "char": "marcel",
+  "do": "react",
+  "args": {
+   "name": "shrug"
+  }
+ },
+ {
+  "f": 721,
+  "char": "gaston",
+  "do": "react",
+  "args": {
+   "name": "recoil_hit",
+   "amp": 0.6,
+   "hold": 4
+  }
+ },
+ {
+  "f": 731,
+  "char": "gaston",
+  "do": "react",
+  "args": {
+   "name": "shrug",
+   "hold": 6
+  }
+ },
+ {
+  "f": 733,
+  "char": "marcel",
+  "do": "react",
+  "args": {
+   "name": "slump",
+   "hold": 8
+  }
+ },
+ {
+  "f": 756,
+  "char": "gaston",
+  "do": "react",
+  "args": {
+   "name": "sit_plop"
+  }
+ },
+ {
+  "f": 758,
+  "char": "marcel",
+  "do": "react",
+  "args": {
+   "name": "lookaround"
+  }
+ },
+ {
+  "f": 772,
+  "char": "marcel",
+  "do": "react",
+  "args": {
+   "name": "tremble"
+  }
+ },
+ {
+  "f": 772,
+  "char": "gaston",
+  "do": "react",
+  "args": {
+   "name": "proud_puff",
+   "hold": 6
+  }
+ },
+ {
+  "f": 790,
+  "char": "marcel",
+  "do": "react",
+  "args": {
+   "name": "wobble",
+   "amp": 0.7
+  }
+ },
+ {
+  "f": 799,
+  "char": "gaston",
+  "do": "react",
+  "args": {
+   "name": "shrug"
+  }
+ },
+ {
+  "f": 810,
+  "char": "marcel",
+  "do": "react",
+  "args": {
+   "name": "throw_heave",
+   "hold": 6
+  }
+ },
+ {
+  "f": 818,
+  "char": "gaston",
+  "do": "react",
+  "args": {
+   "name": "lookaround"
+  }
+ },
+ {
+  "f": 846,
+  "char": "marcel",
+  "do": "react",
+  "args": {
+   "name": "lean_in",
+   "hold": 0
+  }
+ },
+ {
+  "f": 851,
+  "char": "gaston",
+  "do": "react",
+  "args": {
+   "name": "sway",
+   "amp": 0.9
+  }
+ },
+ {
+  "f": 861,
+  "char": "gaston",
+  "do": "react",
+  "args": {
+   "name": "tilt"
+  }
+ },
+ {
+  "f": 868,
+  "char": "marcel",
+  "do": "react",
+  "args": {
+   "name": "shock",
+   "amp": 0.7
+  }
+ },
+ {
+  "f": 886,
+  "char": "gaston",
+  "do": "react",
+  "args": {
+   "name": "shrug",
+   "amp": 0.7
+  }
+ },
+ {
+  "f": 890,
+  "char": "marcel",
+  "do": "react",
+  "args": {
+   "name": "slump",
+   "hold": 10
+  }
+ },
+ {
+  "f": 898,
+  "char": "marcel",
+  "do": "react",
+  "args": {
+   "name": "shock",
+   "hold": 8
+  }
+ },
+ {
+  "f": 906,
+  "char": "gaston",
+  "do": "react",
+  "args": {
+   "name": "shock",
+   "hold": 6
+  }
+ },
+ {
+  "f": 922,
+  "char": "marcel",
+  "do": "react",
+  "args": {
+   "name": "lean_in"
+  }
+ },
+ {
+  "f": 930,
+  "char": "gaston",
+  "do": "react",
+  "args": {
+   "name": "lean_in"
+  }
+ },
+ {
+  "f": 956,
+  "char": "marcel",
+  "do": "react",
+  "args": {
+   "name": "tilt"
+  }
+ },
+ {
+  "f": 960,
+  "char": "gaston",
+  "do": "react",
+  "args": {
+   "name": "tilt"
+  }
+ },
+ {
+  "f": 977,
+  "char": "gaston",
+  "do": "talk",
+  "args": {
+   "f_out": 1041,
+   "words": [
+    [
+     977,
+     978,
+     "You"
+    ],
+    [
+     980,
+     992,
+     "see,"
+    ],
+    [
+     993,
+     1000,
+     "nobody"
+    ],
+    [
+     1002,
+     1005,
+     "had"
+    ],
+    [
+     1007,
+     1011,
+     "thought"
+    ],
+    [
+     1013,
+     1016,
+     "that"
+    ],
+    [
+     1018,
+     1020,
+     "far"
+    ],
+    [
+     1025,
+     1041,
+     "ahead."
+    ]
+   ],
+   "amp": 0.55
+  }
+ },
+ {
+  "f": 980,
+  "char": "marcel",
+  "do": "react",
+  "args": {
+   "name": "nod"
+  }
+ },
+ {
+  "f": 984,
+  "char": "gaston",
+  "do": "react",
+  "args": {
+   "name": "sway"
+  }
+ },
+ {
+  "f": 996,
+  "char": "marcel",
+  "do": "react",
+  "args": {
+   "name": "tilt"
+  }
+ },
+ {
+  "f": 1004,
+  "char": "gaston",
+  "do": "react",
+  "args": {
+   "name": "point_jab",
+   "amp": 0.8
+  }
+ },
+ {
+  "f": 1010,
+  "char": "marcel",
+  "do": "react",
+  "args": {
+   "name": "shock",
+   "amp": 0.9,
+   "hold": 6
+  }
+ },
+ {
+  "f": 1018,
+  "char": "gaston",
+  "do": "react",
+  "args": {
+   "name": "proud_puff",
+   "amp": 0.7
+  }
+ },
+ {
+  "f": 1030,
+  "char": "marcel",
+  "do": "react",
+  "args": {
+   "name": "slump",
+   "amp": 0.5
+  }
+ },
+ {
+  "f": 1284,
+  "char": "marcel",
+  "do": "react",
+  "args": {
+   "name": "jump",
+   "amp": 0.6
+  }
+ },
+ {
+  "f": 1294,
+  "char": "gaston",
+  "do": "react",
+  "args": {
+   "name": "point_jab",
+   "hold": 2
+  }
+ },
+ {
+  "f": 1306,
+  "char": "gaston",
+  "do": "react",
+  "args": {
+   "name": "nod"
+  }
+ },
+ {
+  "f": 1310,
+  "char": "marcel",
+  "do": "react",
+  "args": {
+   "name": "lean_in"
+  }
+ },
+ {
+  "f": 1318,
+  "char": "gaston",
+  "do": "react",
+  "args": {
+   "name": "hop",
+   "amp": 0.7
+  }
+ },
+ {
+  "f": 1332,
+  "char": "gaston",
+  "do": "react",
+  "args": {
+   "name": "lean_in"
+  }
+ },
+ {
+  "f": 1336,
+  "char": "marcel",
+  "do": "react",
+  "args": {
+   "name": "tremble"
+  }
+ },
+ {
+  "f": 1348,
+  "char": "marcel",
+  "do": "react",
+  "args": {
+   "name": "flinch",
+   "hold": 30
+  }
+ },
+ {
+  "f": 1372,
+  "char": "gaston",
+  "do": "react",
+  "args": {
+   "name": "smash",
+   "hold": 0
+  }
+ },
+ {
+  "f": 1405,
+  "char": "gaston",
+  "do": "react",
+  "args": {
+   "name": "nod",
+   "amp": 0.9
+  }
+ },
+ {
+  "f": 1418,
+  "char": "marcel",
+  "do": "react",
+  "args": {
+   "name": "shock",
+   "hold": 6
+  }
+ },
+ {
+  "f": 1424,
+  "char": "gaston",
+  "do": "react",
+  "args": {
+   "name": "recoil_hit",
+   "amp": 0.8
+  }
+ },
+ {
+  "f": 1432,
+  "char": "marcel",
+  "do": "react",
+  "args": {
+   "name": "lean_in"
+  }
+ },
+ {
+  "f": 1444,
+  "char": "gaston",
+  "do": "react",
+  "args": {
+   "name": "proud_puff",
+   "hold": 6
+  }
+ },
+ {
+  "f": 1454,
+  "char": "marcel",
+  "do": "react",
+  "args": {
+   "name": "bite_lunge"
+  }
+ },
+ {
+  "f": 1470,
+  "char": "marcel",
+  "do": "react",
+  "args": {
+   "name": "chew_bob"
+  }
+ },
+ {
+  "f": 1477,
+  "char": "gaston",
+  "do": "react",
+  "args": {
+   "name": "tilt",
+   "amp": 0.9
+  }
+ },
+ {
+  "f": 1488,
+  "char": "marcel",
+  "do": "react",
+  "args": {
+   "name": "betrayed_droop",
+   "hold": 10
+  }
+ },
+ {
+  "f": 1498,
+  "char": "gaston",
+  "do": "react",
+  "args": {
+   "name": "shrug",
+   "hold": 8
+  }
+ },
+ {
+  "f": 1580,
+  "char": "soldier",
+  "do": "react",
+  "args": {
+   "name": "march_bounce"
+  }
+ },
+ {
+  "f": 1604,
+  "char": "soldier",
+  "do": "react",
+  "args": {
+   "name": "march_bounce"
+  }
+ },
+ {
+  "f": 1628,
+  "char": "soldier",
+  "do": "react",
+  "args": {
+   "name": "march_bounce"
+  }
+ },
+ {
+  "f": 1648,
+  "char": "soldier",
+  "do": "react",
+  "args": {
+   "name": "cheer"
+  }
+ },
+ {
+  "f": 1650,
+  "char": "marcel",
+  "do": "react",
+  "args": {
+   "name": "lean_in"
+  }
+ },
+ {
+  "f": 1650,
+  "char": "gaston",
+  "do": "react",
+  "args": {
+   "name": "sway"
+  }
+ },
+ {
+  "f": 1664,
+  "char": "marcel",
+  "do": "react",
+  "args": {
+   "name": "tilt"
+  }
+ },
+ {
+  "f": 1666,
+  "char": "gaston",
+  "do": "react",
+  "args": {
+   "name": "proud_puff",
+   "hold": 4
+  }
+ },
+ {
+  "f": 1672,
+  "char": "marcel",
+  "do": "react",
+  "args": {
+   "name": "shrug"
+  }
+ },
+ {
+  "f": 1688,
+  "char": "soldier",
+  "do": "react",
+  "args": {
+   "name": "point_jab"
+  }
+ },
+ {
+  "f": 1698,
+  "char": "marcel",
+  "do": "react",
+  "args": {
+   "name": "recoil_hit",
+   "hold": 6
+  }
+ },
+ {
+  "f": 1699,
+  "char": "gaston",
+  "do": "react",
+  "args": {
+   "name": "hop",
+   "amp": 0.9
+  }
+ },
+ {
+  "f": 1710,
+  "char": "soldier",
+  "do": "react",
+  "args": {
+   "name": "point_jab",
+   "amp": 0.8
+  }
+ },
+ {
+  "f": 1712,
+  "char": "gaston",
+  "do": "react",
+  "args": {
+   "name": "shrug"
+  }
+ },
+ {
+  "f": 1716,
+  "char": "marcel",
+  "do": "react",
+  "args": {
+   "name": "flinch",
+   "amp": 0.7
+  }
+ },
+ {
+  "f": 1727,
+  "char": "marcel",
+  "do": "react",
+  "args": {
+   "name": "chew_bob"
+  }
+ },
+ {
+  "f": 1767,
+  "char": "marcel",
+  "do": "react",
+  "args": {
+   "name": "chew_bob"
+  }
+ },
+ {
+  "f": 1771,
+  "char": "marcel",
+  "do": "talk",
+  "args": {
+   "f_out": 1805,
+   "words": [
+    [
+     1771,
+     1776,
+     "calls"
+    ],
+    [
+     1778,
+     1782,
+     "that"
+    ],
+    [
+     1790,
+     1805,
+     "progress."
+    ]
+   ],
+   "amp": 0.7
+  }
+ },
+ {
+  "f": 1788,
+  "char": "marcel",
+  "do": "react",
+  "args": {
+   "name": "proud_puff",
+   "hold": 6
+  }
+ },
+ {
+  "f": 1802,
+  "char": "marcel",
+  "do": "react",
+  "args": {
+   "name": "chew_bob"
+  }
+ }
+]

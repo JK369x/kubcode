@@ -57,6 +57,15 @@ export const PACKAGES: readonly SkillPackage[] = [
     maxKb: 29,
     agents: ["claude-code"],
   }),
+  pkg({
+    slug: "make-short",
+    version: "0.1.0",
+    licence: "MIT",
+    credit: "NoCodeHack (github.com/nocodehack/make-short); macOS patch by kubcode.dev",
+    approval: { by: "owner", date: "2026-11-10" },
+    maxKb: 15299,
+    agents: ["claude-code"],
+  }),
 ];
 
 /** The package members may download for a skill, or null. */

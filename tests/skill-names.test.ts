@@ -11,6 +11,7 @@ const catalogNames: Record<string, string> = {
   "thai-jk-voice": "Thai Voice",
   "captions-overlay": "Captions Overlay",
   "podcast-tool-short": "Podcast Shorts",
+  "make-short": "Bean Shorts 3D",
 };
 
 const styleNames: Record<string, string> = {

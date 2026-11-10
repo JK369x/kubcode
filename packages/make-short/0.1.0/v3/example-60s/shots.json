@@ -1,0 +1,4223 @@
+[
+ {
+  "id": "s01",
+  "set": "insert",
+  "f_in": 0,
+  "f_out": 50,
+  "transition_in": "dissolve",
+  "mood": "day",
+  "size": "MACRO",
+  "angle": "",
+  "words": "Canned food",
+  "subj": "p:can",
+  "az": 8,
+  "az1": -8,
+  "el": 28,
+  "el1": 58,
+  "push": 0.9,
+  "camera": [
+   {
+    "f": 0,
+    "pos": {
+     "anchor": "marcel_spot",
+     "off": [
+      0,
+      3,
+      1
+     ]
+    },
+    "target": {
+     "anchor": "marcel_spot",
+     "off": [
+      0,
+      0,
+      1
+     ]
+    },
+    "lens": 70,
+    "roll_deg": 0
+   },
+   {
+    "f": 50,
+    "pos": {
+     "anchor": "marcel_spot",
+     "off": [
+      0,
+      3,
+      1
+     ]
+    },
+    "target": {
+     "anchor": "marcel_spot",
+     "off": [
+      0,
+      0,
+      1
+     ]
+    },
+    "lens": 70,
+    "roll_deg": 0
+   }
+  ],
+  "actions": [],
+  "props": [
+   {
+    "f": 2,
+    "prop": "can",
+    "action": "appear",
+    "args": {}
+   }
+  ],
+  "fx": [],
+  "moodkey": "day_in"
+ },
+ {
+  "id": "s02",
+  "set": "camp",
+  "f_in": 50,
+  "f_out": 127,
+  "transition_in": "cut",
+  "mood": "day",
+  "size": "MED",
+  "angle": "",
+  "words": "forty-eight years before anyone invented the can opener",
+  "subj": "m",
+  "az": 12,
+  "az1": -6,
+  "el": 38,
+  "el1": 4,
+  "push": 0.92,
+  "camera": [
+   {
+    "f": 50,
+    "pos": {
+     "anchor": "marcel_spot",
+     "off": [
+      0,
+      3,
+      1
+     ]
+    },
+    "target": {
+     "anchor": "marcel_spot",
+     "off": [
+      0,
+      0,
+      1
+     ]
+    },
+    "lens": 40,
+    "roll_deg": 0
+   },
+   {
+    "f": 127,
+    "pos": {
+     "anchor": "marcel_spot",
+     "off": [
+      0,
+      3,
+      1
+     ]
+    },
+    "target": {
+     "anchor": "marcel_spot",
+     "off": [
+      0,
+      0,
+      1
+     ]
+    },
+    "lens": 40,
+    "roll_deg": 0
+   }
+  ],
+  "actions": [
+   {
+    "f": 50,
+    "char": "marcel",
+    "act": "place",
+    "args": {
+     "loc": {
+      "anchor": "marcel_spot",
+      "off": [
+       0,
+       0,
+       0
+      ]
+     },
+     "rot_z": 0
+    }
+   },
+   {
+    "f": 50,
+    "char": "marcel",
+    "act": "pose",
+    "args": {
+     "name": "sit"
+    }
+   },
+   {
+    "f": 50,
+    "char": "marcel",
+    "act": "face",
+    "args": {
+     "name": "hungry"
+    }
+   },
+   {
+    "f": 96,
+    "char": "marcel",
+    "act": "place",
+    "args": {
+     "loc": {
+      "anchor": "marcel_spot",
+      "off": [
+       0,
+       0,
+       0
+      ]
+     },
+     "rot_z": 0
+    }
+   },
+   {
+    "f": 96,
+    "char": "marcel",
+    "act": "pose",
+    "args": {
+     "name": "sit"
+    }
+   },
+   {
+    "f": 96,
+    "char": "marcel",
+    "act": "face",
+    "args": {
+     "name": "hungry"
+    }
+   }
+  ],
+  "props": [],
+  "fx": [],
+  "moodkey": "day"
+ },
+ {
+  "id": "s03",
+  "set": "camp",
+  "f_in": 127,
+  "f_out": 172,
+  "transition_in": "cut",
+  "mood": "day",
+  "size": "MED",
+  "angle": "",
+  "words": "Forty-eight years",
+  "subj": "m",
+  "az": -15,
+  "az1": 0,
+  "el": -7,
+  "el1": -7,
+  "push": 1.0,
+  "camera": [
+   {
+    "f": 127,
+    "pos": {
+     "anchor": "marcel_spot",
+     "off": [
+      0,
+      3,
+      1
+     ]
+    },
+    "target": {
+     "anchor": "marcel_spot",
+     "off": [
+      0,
+      0,
+      1
+     ]
+    },
+    "lens": 35,
+    "roll_deg": 0
+   },
+   {
+    "f": 172,
+    "pos": {
+     "anchor": "marcel_spot",
+     "off": [
+      0,
+      3,
+      1
+     ]
+    },
+    "target": {
+     "anchor": "marcel_spot",
+     "off": [
+      0,
+      0,
+      1
+     ]
+    },
+    "lens": 35,
+    "roll_deg": 0
+   }
+  ],
+  "actions": [
+   {
+    "f": 130,
+    "char": "marcel",
+    "act": "pose",
+    "args": {
+     "name": "sigh"
+    }
+   }
+  ],
+  "props": [],
+  "fx": [],
+  "hvmul": 0.8,
+  "zmin": 0.3,
+  "moodkey": "day"
+ },
+ {
+  "id": "s04",
+  "set": "insert",
+  "f_in": 172,
+  "f_out": 236,
+  "transition_in": "whip",
+  "mood": "day",
+  "size": "MACRO",
+  "angle": "",
+  "words": "Just hammers and bad ideas",
+  "subj": "p:can p:hammer p:chisel",
+  "az": 20,
+  "az1": -5,
+  "el": 35,
+  "el1": 30,
+  "push": 0.95,
+  "camera": [
+   {
+    "f": 172,
+    "pos": {
+     "anchor": "marcel_spot",
+     "off": [
+      0,
+      3,
+      1
+     ]
+    },
+    "target": {
+     "anchor": "marcel_spot",
+     "off": [
+      0,
+      0,
+      1
+     ]
+    },
+    "lens": 60,
+    "roll_deg": 0
+   },
+   {
+    "f": 236,
+    "pos": {
+     "anchor": "marcel_spot",
+     "off": [
+      0,
+      3,
+      1
+     ]
+    },
+    "target": {
+     "anchor": "marcel_spot",
+     "off": [
+      0,
+      0,
+      1
+     ]
+    },
+    "lens": 60,
+    "roll_deg": 0
+   }
+  ],
+  "actions": [],
+  "props": [
+   {
+    "f": 173,
+    "prop": "hammer",
+    "action": "appear",
+    "args": {}
+   },
+   {
+    "f": 193,
+    "prop": "chisel",
+    "action": "appear",
+    "args": {}
+   },
+   {
+    "f": 209,
+    "prop": "can",
+    "action": "dent",
+    "args": {
+     "amount": 0.6
+    }
+   }
+  ],
+  "fx": [],
+  "moodkey": "day_in"
+ },
+ {
+  "id": "s05",
+  "set": "camp",
+  "f_in": 236,
+  "f_out": 300,
+  "transition_in": "whip",
+  "mood": "day",
+  "size": "MED",
+  "angle": "",
+  "words": "Meet Marcel, a very hungry soldier",
+  "subj": "m",
+  "az": 0,
+  "az1": 10,
+  "el": 3,
+  "el1": 3,
+  "push": 0.92,
+  "camera": [
+   {
+    "f": 236,
+    "pos": {
+     "anchor": "marcel_spot",
+     "off": [
+      0,
+      3,
+      1
+     ]
+    },
+    "target": {
+     "anchor": "marcel_spot",
+     "off": [
+      0,
+      0,
+      1
+     ]
+    },
+    "lens": 40,
+    "roll_deg": 7
+   },
+   {
+    "f": 300,
+    "pos": {
+     "anchor": "marcel_spot",
+     "off": [
+      0,
+      3,
+      1
+     ]
+    },
+    "target": {
+     "anchor": "marcel_spot",
+     "off": [
+      0,
+      0,
+      1
+     ]
+    },
+    "lens": 40,
+    "roll_deg": 7
+   }
+  ],
+  "actions": [
+   {
+    "f": 240,
+    "char": "marcel",
+    "act": "place",
+    "args": {
+     "loc": {
+      "anchor": "marcel_spot",
+      "off": [
+       0,
+       0,
+       0
+      ]
+     },
+     "rot_z": 0
+    }
+   },
+   {
+    "f": 240,
+    "char": "marcel",
+    "act": "pose",
+    "args": {
+     "name": "idle"
+    }
+   },
+   {
+    "f": 248,
+    "char": "marcel",
+    "act": "face",
+    "args": {
+     "name": "neutral"
+    }
+   },
+   {
+    "f": 282,
+    "char": "marcel",
+    "act": "face",
+    "args": {
+     "name": "hungry"
+    }
+   }
+  ],
+  "props": [],
+  "fx": [],
+  "moodkey": "day"
+ },
+ {
+  "id": "s06",
+  "set": "camp",
+  "f_in": 300,
+  "f_out": 330,
+  "transition_in": "cut",
+  "mood": "day",
+  "size": "MED",
+  "angle": "",
+  "words": "by the river",
+  "subj": "m",
+  "az": -25,
+  "az1": -15,
+  "el": 3,
+  "el1": 3,
+  "push": 0.8,
+  "camera": [
+   {
+    "f": 300,
+    "pos": {
+     "anchor": "marcel_spot",
+     "off": [
+      0,
+      3,
+      1
+     ]
+    },
+    "target": {
+     "anchor": "marcel_spot",
+     "off": [
+      0,
+      0,
+      1
+     ]
+    },
+    "lens": 28,
+    "roll_deg": 0
+   },
+   {
+    "f": 330,
+    "pos": {
+     "anchor": "marcel_spot",
+     "off": [
+      0,
+      3,
+      1
+     ]
+    },
+    "target": {
+     "anchor": "marcel_spot",
+     "off": [
+      0,
+      0,
+      1
+     ]
+    },
+    "lens": 28,
+    "roll_deg": 0
+   }
+  ],
+  "actions": [
+   {
+    "f": 300,
+    "char": "marcel",
+    "act": "place",
+    "args": {
+     "loc": {
+      "anchor": "marcel_spot",
+      "off": [
+       0,
+       0,
+       0
+      ]
+     },
+     "rot_z": 0
+    }
+   },
+   {
+    "f": 300,
+    "char": "marcel",
+    "act": "pose",
+    "args": {
+     "name": "sit"
+    }
+   }
+  ],
+  "props": [],
+  "fx": [],
+  "moodkey": "day"
+ },
+ {
+  "id": "s07",
+  "set": "camp",
+  "f_in": 330,
+  "f_out": 372,
+  "transition_in": "cut",
+  "mood": "day",
+  "size": "MED",
+  "angle": "",
+  "words": "the army sent him a crate",
+  "subj": "m crate",
+  "az": 35,
+  "az1": 22,
+  "el": 3,
+  "el1": 3,
+  "push": 1,
+  "camera": [
+   {
+    "f": 330,
+    "pos": {
+     "anchor": "marcel_spot",
+     "off": [
+      0,
+      3,
+      1
+     ]
+    },
+    "target": {
+     "anchor": "marcel_spot",
+     "off": [
+      0,
+      0,
+      1
+     ]
+    },
+    "lens": 40,
+    "roll_deg": 0
+   },
+   {
+    "f": 372,
+    "pos": {
+     "anchor": "marcel_spot",
+     "off": [
+      0,
+      3,
+      1
+     ]
+    },
+    "target": {
+     "anchor": "marcel_spot",
+     "off": [
+      0,
+      0,
+      1
+     ]
+    },
+    "lens": 40,
+    "roll_deg": 0
+   }
+  ],
+  "actions": [
+   {
+    "f": 330,
+    "char": "marcel",
+    "act": "place",
+    "args": {
+     "loc": {
+      "anchor": "marcel_spot",
+      "off": [
+       2.3,
+       0,
+       0
+      ]
+     },
+     "rot_z": 0
+    }
+   },
+   {
+    "f": 345,
+    "char": "marcel",
+    "act": "pose",
+    "args": {
+     "name": "idle"
+    }
+   },
+   {
+    "f": 361,
+    "char": "marcel",
+    "act": "face",
+    "args": {
+     "name": "hungry"
+    }
+   }
+  ],
+  "props": [
+   {
+    "f": 335,
+    "prop": "crate",
+    "action": "appear",
+    "args": {}
+   }
+  ],
+  "fx": [],
+  "hvmul": 0.75,
+  "moodkey": "day"
+ },
+ {
+  "id": "s08",
+  "set": "camp",
+  "f_in": 372,
+  "f_out": 405,
+  "transition_in": "cut",
+  "mood": "day",
+  "size": "MACRO",
+  "angle": "",
+  "words": "of canned beef",
+  "subj": "crate p:can",
+  "az": -10,
+  "az1": -10,
+  "el": 20,
+  "el1": 10,
+  "push": 0.95,
+  "camera": [
+   {
+    "f": 372,
+    "pos": {
+     "anchor": "marcel_spot",
+     "off": [
+      0,
+      3,
+      1
+     ]
+    },
+    "target": {
+     "anchor": "marcel_spot",
+     "off": [
+      0,
+      0,
+      1
+     ]
+    },
+    "lens": 60,
+    "roll_deg": 0
+   },
+   {
+    "f": 405,
+    "pos": {
+     "anchor": "marcel_spot",
+     "off": [
+      0,
+      3,
+      1
+     ]
+    },
+    "target": {
+     "anchor": "marcel_spot",
+     "off": [
+      0,
+      0,
+      1
+     ]
+    },
+    "lens": 60,
+    "roll_deg": 0
+   }
+  ],
+  "actions": [],
+  "props": [
+   {
+    "f": 376,
+    "prop": "can",
+    "action": "appear",
+    "args": {}
+   }
+  ],
+  "fx": [],
+  "moodkey": "day"
+ },
+ {
+  "id": "s09",
+  "set": "camp",
+  "f_in": 405,
+  "f_out": 446,
+  "transition_in": "cut",
+  "mood": "day",
+  "size": "MED",
+  "angle": "",
+  "words": "Marcel tries his knife",
+  "subj": "m crate",
+  "az": -40,
+  "az1": -30,
+  "el": 3,
+  "el1": 3,
+  "push": 0.95,
+  "camera": [
+   {
+    "f": 405,
+    "pos": {
+     "anchor": "marcel_spot",
+     "off": [
+      0,
+      3,
+      1
+     ]
+    },
+    "target": {
+     "anchor": "marcel_spot",
+     "off": [
+      0,
+      0,
+      1
+     ]
+    },
+    "lens": 40,
+    "roll_deg": -7
+   },
+   {
+    "f": 446,
+    "pos": {
+     "anchor": "marcel_spot",
+     "off": [
+      0,
+      3,
+      1
+     ]
+    },
+    "target": {
+     "anchor": "marcel_spot",
+     "off": [
+      0,
+      0,
+      1
+     ]
+    },
+    "lens": 40,
+    "roll_deg": -7
+   }
+  ],
+  "actions": [
+   {
+    "f": 405,
+    "char": "marcel",
+    "act": "face",
+    "args": {
+     "name": "determined"
+    }
+   },
+   {
+    "f": 419,
+    "char": "marcel",
+    "act": "hold",
+    "args": {
+     "prop": "knife"
+    }
+   },
+   {
+    "f": 425,
+    "char": "marcel",
+    "act": "pose",
+    "args": {
+     "name": "stab"
+    }
+   },
+   {
+    "f": 436,
+    "char": "marcel",
+    "act": "pose",
+    "args": {
+     "name": "stab"
+    }
+   }
+  ],
+  "props": [
+   {
+    "f": 419,
+    "prop": "knife",
+    "action": "appear",
+    "args": {}
+   }
+  ],
+  "fx": [],
+  "hvmul": 0.7,
+  "moodkey": "day"
+ },
+ {
+  "id": "s10",
+  "set": "camp",
+  "f_in": 446,
+  "f_out": 479,
+  "transition_in": "cut",
+  "mood": "day",
+  "size": "MED",
+  "angle": "",
+  "words": "The knife bends",
+  "subj": "m crate",
+  "az": -55,
+  "az1": -45,
+  "el": 2,
+  "el1": 2,
+  "push": 0.9,
+  "camera": [
+   {
+    "f": 446,
+    "pos": {
+     "anchor": "marcel_spot",
+     "off": [
+      0,
+      3,
+      1
+     ]
+    },
+    "target": {
+     "anchor": "marcel_spot",
+     "off": [
+      0,
+      0,
+      1
+     ]
+    },
+    "lens": 50,
+    "roll_deg": 0
+   },
+   {
+    "f": 479,
+    "pos": {
+     "anchor": "marcel_spot",
+     "off": [
+      0,
+      3,
+      1
+     ]
+    },
+    "target": {
+     "anchor": "marcel_spot",
+     "off": [
+      0,
+      0,
+      1
+     ]
+    },
+    "lens": 50,
+    "roll_deg": 0
+   }
+  ],
+  "actions": [
+   {
+    "f": 456,
+    "char": "marcel",
+    "act": "face",
+    "args": {
+     "name": "pain"
+    }
+   }
+  ],
+  "props": [
+   {
+    "f": 450,
+    "prop": "knife",
+    "action": "bend",
+    "args": {
+     "amount": 1
+    }
+   }
+  ],
+  "fx": [],
+  "hvmul": 0.5,
+  "moodkey": "day"
+ },
+ {
+  "id": "s11",
+  "set": "camp",
+  "f_in": 479,
+  "f_out": 536,
+  "transition_in": "cut",
+  "mood": "day",
+  "size": "MED",
+  "angle": "",
+  "words": "His boot. The boot hurts more",
+  "subj": "m p:boot",
+  "az": 10,
+  "az1": 0,
+  "el": 4,
+  "el1": 4,
+  "push": 0.95,
+  "camera": [
+   {
+    "f": 479,
+    "pos": {
+     "anchor": "marcel_spot",
+     "off": [
+      0,
+      3,
+      1
+     ]
+    },
+    "target": {
+     "anchor": "marcel_spot",
+     "off": [
+      0,
+      0,
+      1
+     ]
+    },
+    "lens": 40,
+    "roll_deg": 0
+   },
+   {
+    "f": 536,
+    "pos": {
+     "anchor": "marcel_spot",
+     "off": [
+      0,
+      3,
+      1
+     ]
+    },
+    "target": {
+     "anchor": "marcel_spot",
+     "off": [
+      0,
+      0,
+      1
+     ]
+    },
+    "lens": 40,
+    "roll_deg": 0
+   }
+  ],
+  "actions": [
+   {
+    "f": 479,
+    "char": "marcel",
+    "act": "place",
+    "args": {
+     "loc": {
+      "anchor": "marcel_spot",
+      "off": [
+       0,
+       0,
+       0
+      ]
+     },
+     "rot_z": 0
+    }
+   },
+   {
+    "f": 489,
+    "char": "marcel",
+    "act": "pose",
+    "args": {
+     "name": "kick"
+    }
+   },
+   {
+    "f": 489,
+    "char": "marcel",
+    "act": "face",
+    "args": {
+     "name": "determined"
+    }
+   },
+   {
+    "f": 508,
+    "char": "marcel",
+    "act": "face",
+    "args": {
+     "name": "pain"
+    }
+   },
+   {
+    "f": 508,
+    "char": "marcel",
+    "act": "pose",
+    "args": {
+     "name": "recoil"
+    }
+   }
+  ],
+  "props": [
+   {
+    "f": 489,
+    "prop": "boot",
+    "action": "appear",
+    "args": {}
+   }
+  ],
+  "fx": [],
+  "moodkey": "day"
+ },
+ {
+  "id": "s12",
+  "set": "camp",
+  "f_in": 536,
+  "f_out": 600,
+  "transition_in": "cut",
+  "mood": "day",
+  "size": "MED",
+  "angle": "",
+  "words": "A rock. The rock loses",
+  "subj": "m",
+  "az": 22,
+  "az1": 14,
+  "el": 0,
+  "el1": 0,
+  "push": 0.95,
+  "camera": [
+   {
+    "f": 536,
+    "pos": {
+     "anchor": "marcel_spot",
+     "off": [
+      0,
+      3,
+      1
+     ]
+    },
+    "target": {
+     "anchor": "marcel_spot",
+     "off": [
+      0,
+      0,
+      1
+     ]
+    },
+    "lens": 40,
+    "roll_deg": 0
+   },
+   {
+    "f": 600,
+    "pos": {
+     "anchor": "marcel_spot",
+     "off": [
+      0,
+      3,
+      1
+     ]
+    },
+    "target": {
+     "anchor": "marcel_spot",
+     "off": [
+      0,
+      0,
+      1
+     ]
+    },
+    "lens": 40,
+    "roll_deg": 0
+   }
+  ],
+  "actions": [
+   {
+    "f": 536,
+    "char": "marcel",
+    "act": "pose",
+    "args": {
+     "name": "idle"
+    }
+   },
+   {
+    "f": 547,
+    "char": "marcel",
+    "act": "hold",
+    "args": {
+     "prop": "rock"
+    }
+   },
+   {
+    "f": 547,
+    "char": "marcel",
+    "act": "pose",
+    "args": {
+     "name": "smash_down"
+    }
+   },
+   {
+    "f": 558,
+    "char": "marcel",
+    "act": "face",
+    "args": {
+     "name": "determined"
+    }
+   },
+   {
+    "f": 571,
+    "char": "marcel",
+    "act": "face",
+    "args": {
+     "name": "pain"
+    }
+   }
+  ],
+  "props": [
+   {
+    "f": 547,
+    "prop": "rock",
+    "action": "appear",
+    "args": {}
+   },
+   {
+    "f": 571,
+    "prop": "rock",
+    "action": "bend",
+    "args": {
+     "amount": 0
+    }
+   }
+  ],
+  "fx": [],
+  "moodkey": "day"
+ },
+ {
+  "id": "s13",
+  "set": "camp",
+  "f_in": 600,
+  "f_out": 642,
+  "transition_in": "cut",
+  "mood": "day",
+  "size": "MED",
+  "angle": "",
+  "words": "Chef Gaston marches over",
+  "subj": "g",
+  "az": -10,
+  "az1": 10,
+  "el": -4,
+  "el1": -2,
+  "push": 1,
+  "camera": [
+   {
+    "f": 600,
+    "pos": {
+     "anchor": "marcel_spot",
+     "off": [
+      0,
+      3,
+      1
+     ]
+    },
+    "target": {
+     "anchor": "marcel_spot",
+     "off": [
+      0,
+      0,
+      1
+     ]
+    },
+    "lens": 32,
+    "roll_deg": 0
+   },
+   {
+    "f": 642,
+    "pos": {
+     "anchor": "marcel_spot",
+     "off": [
+      0,
+      3,
+      1
+     ]
+    },
+    "target": {
+     "anchor": "marcel_spot",
+     "off": [
+      0,
+      0,
+      1
+     ]
+    },
+    "lens": 32,
+    "roll_deg": 0
+   }
+  ],
+  "actions": [
+   {
+    "f": 600,
+    "char": "marcel",
+    "act": "face",
+    "args": {
+     "name": "neutral"
+    }
+   },
+   {
+    "f": 603,
+    "char": "gaston",
+    "act": "place",
+    "args": {
+     "loc": {
+      "anchor": "gaston_spot",
+      "off": [
+       3.5,
+       0,
+       0
+      ]
+     },
+     "rot_z": 0
+    }
+   },
+   {
+    "f": 603,
+    "char": "gaston",
+    "act": "pose",
+    "args": {
+     "name": "march"
+    }
+   },
+   {
+    "f": 603,
+    "char": "gaston",
+    "act": "face",
+    "args": {
+     "name": "smug"
+    }
+   },
+   {
+    "f": 625,
+    "char": "gaston",
+    "act": "place",
+    "args": {
+     "loc": {
+      "anchor": "gaston_spot",
+      "off": [
+       0.5,
+       0,
+       0
+      ]
+     },
+     "rot_z": 0
+    }
+   },
+   {
+    "f": 625,
+    "char": "gaston",
+    "act": "pose",
+    "args": {
+     "name": "idle"
+    }
+   }
+  ],
+  "props": [],
+  "fx": [],
+  "zmin": 0.25,
+  "moodkey": "day"
+ },
+ {
+  "id": "s14",
+  "set": "camp",
+  "f_in": 642,
+  "f_out": 682,
+  "transition_in": "cut",
+  "mood": "day",
+  "size": "CU",
+  "angle": "",
+  "words": "Step aside, amateur",
+  "subj": "g",
+  "az": 5,
+  "az1": 0,
+  "el": -2,
+  "el1": 0,
+  "push": 0.95,
+  "camera": [
+   {
+    "f": 642,
+    "pos": {
+     "anchor": "marcel_spot",
+     "off": [
+      0,
+      3,
+      1
+     ]
+    },
+    "target": {
+     "anchor": "marcel_spot",
+     "off": [
+      0,
+      0,
+      1
+     ]
+    },
+    "lens": 85,
+    "roll_deg": 0
+   },
+   {
+    "f": 682,
+    "pos": {
+     "anchor": "marcel_spot",
+     "off": [
+      0,
+      3,
+      1
+     ]
+    },
+    "target": {
+     "anchor": "marcel_spot",
+     "off": [
+      0,
+      0,
+      1
+     ]
+    },
+    "lens": 85,
+    "roll_deg": 0
+   }
+  ],
+  "actions": [
+   {
+    "f": 642,
+    "char": "gaston",
+    "act": "face",
+    "args": {
+     "name": "smug"
+    }
+   },
+   {
+    "f": 642,
+    "char": "gaston",
+    "act": "pose",
+    "args": {
+     "name": "point"
+    }
+   }
+  ],
+  "props": [],
+  "fx": [],
+  "zmin": 0.35,
+  "hide_names": [
+   "wtall",
+   "wgrass"
+  ],
+  "moodkey": "day"
+ },
+ {
+  "id": "s15",
+  "set": "camp",
+  "f_in": 682,
+  "f_out": 745,
+  "transition_in": "cut",
+  "mood": "day",
+  "size": "MED",
+  "angle": "",
+  "words": "He smacks it with a frying pan. Nothing",
+  "subj": "g crate",
+  "az": 55,
+  "az1": 45,
+  "el": -2,
+  "el1": -2,
+  "push": 1,
+  "camera": [
+   {
+    "f": 682,
+    "pos": {
+     "anchor": "marcel_spot",
+     "off": [
+      0,
+      3,
+      1
+     ]
+    },
+    "target": {
+     "anchor": "marcel_spot",
+     "off": [
+      0,
+      0,
+      1
+     ]
+    },
+    "lens": 40,
+    "roll_deg": 0
+   },
+   {
+    "f": 745,
+    "pos": {
+     "anchor": "marcel_spot",
+     "off": [
+      0,
+      3,
+      1
+     ]
+    },
+    "target": {
+     "anchor": "marcel_spot",
+     "off": [
+      0,
+      0,
+      1
+     ]
+    },
+    "lens": 40,
+    "roll_deg": 0
+   }
+  ],
+  "actions": [
+   {
+    "f": 682,
+    "char": "marcel",
+    "act": "place",
+    "args": {
+     "loc": {
+      "anchor": "marcel_spot",
+      "off": [
+       4.7,
+       0,
+       0
+      ]
+     },
+     "rot_z": 0
+    }
+   },
+   {
+    "f": 689,
+    "char": "gaston",
+    "act": "hold",
+    "args": {
+     "prop": "pan"
+    }
+   },
+   {
+    "f": 689,
+    "char": "gaston",
+    "act": "pose",
+    "args": {
+     "name": "idle"
+    }
+   },
+   {
+    "f": 731,
+    "char": "gaston",
+    "act": "pose",
+    "args": {
+     "name": "sigh"
+    }
+   },
+   {
+    "f": 731,
+    "char": "gaston",
+    "act": "face",
+    "args": {
+     "name": "neutral"
+    }
+   }
+  ],
+  "props": [
+   {
+    "f": 689,
+    "prop": "pan",
+    "action": "appear",
+    "args": {}
+   },
+   {
+    "f": 721,
+    "prop": "can",
+    "action": "dent",
+    "args": {
+     "amount": 0.2
+    }
+   }
+  ],
+  "fx": [],
+  "hvmul": 0.8,
+  "hide_names": [
+   "wtall",
+   "wgrass"
+  ],
+  "moodkey": "day"
+ },
+ {
+  "id": "s16",
+  "set": "camp",
+  "f_in": 745,
+  "f_out": 800,
+  "transition_in": "cut",
+  "mood": "day",
+  "size": "MED",
+  "angle": "",
+  "words": "He sits on it. Still nothing",
+  "subj": "g",
+  "az": 12,
+  "az1": 0,
+  "el": -6,
+  "el1": -6,
+  "push": 0.97,
+  "camera": [
+   {
+    "f": 745,
+    "pos": {
+     "anchor": "marcel_spot",
+     "off": [
+      0,
+      3,
+      1
+     ]
+    },
+    "target": {
+     "anchor": "marcel_spot",
+     "off": [
+      0,
+      0,
+      1
+     ]
+    },
+    "lens": 35,
+    "roll_deg": 0
+   },
+   {
+    "f": 800,
+    "pos": {
+     "anchor": "marcel_spot",
+     "off": [
+      0,
+      3,
+      1
+     ]
+    },
+    "target": {
+     "anchor": "marcel_spot",
+     "off": [
+      0,
+      0,
+      1
+     ]
+    },
+    "lens": 35,
+    "roll_deg": 0
+   }
+  ],
+  "actions": [
+   {
+    "f": 757,
+    "char": "gaston",
+    "act": "place",
+    "args": {
+     "loc": {
+      "anchor": "gaston_spot",
+      "off": [
+       1.5,
+       0,
+       0.455
+      ]
+     },
+     "rot_z": 0
+    }
+   },
+   {
+    "f": 758,
+    "char": "gaston",
+    "act": "pose",
+    "args": {
+     "name": "sit"
+    }
+   },
+   {
+    "f": 772,
+    "char": "gaston",
+    "act": "face",
+    "args": {
+     "name": "smug"
+    }
+   },
+   {
+    "f": 799,
+    "char": "gaston",
+    "act": "face",
+    "args": {
+     "name": "neutral"
+    }
+   },
+   {
+    "f": 799,
+    "char": "gaston",
+    "act": "pose",
+    "args": {
+     "name": "idle"
+    }
+   }
+  ],
+  "props": [],
+  "fx": [],
+  "zmin": 0.25,
+  "hide_names": [
+   "wtall",
+   "wgrass"
+  ],
+  "moodkey": "day"
+ },
+ {
+  "id": "s17",
+  "set": "camp",
+  "f_in": 800,
+  "f_out": 900,
+  "transition_in": "cut",
+  "mood": "day",
+  "size": "MED",
+  "angle": "",
+  "words": "Marcel hurls it at a tree. The tree loses too",
+  "subj": "m tree",
+  "az": 85,
+  "az1": 75,
+  "el": 3,
+  "el1": 3,
+  "push": 1,
+  "camera": [
+   {
+    "f": 800,
+    "pos": {
+     "anchor": "marcel_spot",
+     "off": [
+      0,
+      3,
+      1
+     ]
+    },
+    "target": {
+     "anchor": "marcel_spot",
+     "off": [
+      0,
+      0,
+      1
+     ]
+    },
+    "lens": 32,
+    "roll_deg": 0
+   },
+   {
+    "f": 900,
+    "pos": {
+     "anchor": "marcel_spot",
+     "off": [
+      0,
+      3,
+      1
+     ]
+    },
+    "target": {
+     "anchor": "marcel_spot",
+     "off": [
+      0,
+      0,
+      1
+     ]
+    },
+    "lens": 32,
+    "roll_deg": 0
+   }
+  ],
+  "actions": [
+   {
+    "f": 800,
+    "char": "marcel",
+    "act": "place",
+    "args": {
+     "loc": {
+      "anchor": "tree",
+      "off": [
+       2.2,
+       2.6,
+       0
+      ]
+     },
+     "rot_z": 0
+    }
+   },
+   {
+    "f": 800,
+    "char": "gaston",
+    "act": "place",
+    "args": {
+     "loc": {
+      "anchor": "gaston_spot",
+      "off": [
+       1.5,
+       0,
+       0
+      ]
+     },
+     "rot_z": 0
+    }
+   },
+   {
+    "f": 812,
+    "char": "marcel",
+    "act": "pose",
+    "args": {
+     "name": "throw"
+    }
+   },
+   {
+    "f": 812,
+    "char": "marcel",
+    "act": "face",
+    "args": {
+     "name": "determined"
+    }
+   },
+   {
+    "f": 889,
+    "char": "marcel",
+    "act": "face",
+    "args": {
+     "name": "pain"
+    }
+   }
+  ],
+  "props": [
+   {
+    "f": 823,
+    "prop": "can",
+    "action": "appear",
+    "args": {
+     "fly_to": "tree",
+     "frames": [
+      823,
+      861
+     ],
+     "from": {
+      "anchor": "tree",
+      "off": [
+       2.2,
+       4.8,
+       1.0
+      ]
+     }
+    }
+   },
+   {
+    "f": 861,
+    "prop": "can",
+    "action": "dent",
+    "args": {
+     "amount": 0.4
+    }
+   }
+  ],
+  "fx": [
+   {
+    "f": 861,
+    "type": "sparkle",
+    "at": {
+     "anchor": "tree",
+     "off": [
+      0.3,
+      0.6,
+      1.1
+     ]
+    }
+   }
+  ],
+  "hvmul": 1.2,
+  "moodkey": "day"
+ },
+ {
+  "id": "s19",
+  "set": "camp",
+  "f_in": 900,
+  "f_out": 945,
+  "transition_in": "cut",
+  "mood": "day",
+  "size": "CU",
+  "angle": "",
+  "words": "Wait.",
+  "subj": "m",
+  "az": -8,
+  "az1": -8,
+  "el": 0,
+  "el1": 0,
+  "push": 0.97,
+  "camera": [
+   {
+    "f": 900,
+    "pos": {
+     "anchor": "marcel_spot",
+     "off": [
+      0,
+      3,
+      1
+     ]
+    },
+    "target": {
+     "anchor": "marcel_spot",
+     "off": [
+      0,
+      0,
+      1
+     ]
+    },
+    "lens": 85,
+    "roll_deg": -10
+   },
+   {
+    "f": 945,
+    "pos": {
+     "anchor": "marcel_spot",
+     "off": [
+      0,
+      3,
+      1
+     ]
+    },
+    "target": {
+     "anchor": "marcel_spot",
+     "off": [
+      0,
+      0,
+      1
+     ]
+    },
+    "lens": 85,
+    "roll_deg": -10
+   }
+  ],
+  "actions": [
+   {
+    "f": 900,
+    "char": "marcel",
+    "act": "place",
+    "args": {
+     "loc": {
+      "anchor": "marcel_spot",
+      "off": [
+       -0.3,
+       0,
+       0
+      ]
+     },
+     "rot_z": 0
+    }
+   },
+   {
+    "f": 900,
+    "char": "marcel",
+    "act": "pose",
+    "args": {
+     "name": "shock"
+    }
+   },
+   {
+    "f": 900,
+    "char": "marcel",
+    "act": "face",
+    "args": {
+     "name": "shock"
+    }
+   },
+   {
+    "f": 900,
+    "char": "gaston",
+    "act": "place",
+    "args": {
+     "loc": {
+      "anchor": "gaston_spot",
+      "off": [
+       -1.8,
+       0.1,
+       0
+      ]
+     },
+     "rot_z": 0
+    }
+   },
+   {
+    "f": 910,
+    "char": "gaston",
+    "act": "pose",
+    "args": {
+     "name": "peer"
+    }
+   },
+   {
+    "f": 910,
+    "char": "gaston",
+    "act": "face",
+    "args": {
+     "name": "shock"
+    }
+   }
+  ],
+  "props": [],
+  "fx": [],
+  "hide_names": [
+   "wtall",
+   "wgrass"
+  ],
+  "moodkey": "day"
+ },
+ {
+  "id": "s20",
+  "set": "camp",
+  "f_in": 945,
+  "f_out": 977,
+  "transition_in": "cut",
+  "mood": "day",
+  "size": "MED",
+  "angle": "",
+  "words": "Who sells food nobody can open",
+  "subj": "m g",
+  "az": 10,
+  "az1": 0,
+  "el": 0,
+  "el1": 0,
+  "push": 1,
+  "camera": [
+   {
+    "f": 945,
+    "pos": {
+     "anchor": "marcel_spot",
+     "off": [
+      0,
+      3,
+      1
+     ]
+    },
+    "target": {
+     "anchor": "marcel_spot",
+     "off": [
+      0,
+      0,
+      1
+     ]
+    },
+    "lens": 40,
+    "roll_deg": 0
+   },
+   {
+    "f": 977,
+    "pos": {
+     "anchor": "marcel_spot",
+     "off": [
+      0,
+      3,
+      1
+     ]
+    },
+    "target": {
+     "anchor": "marcel_spot",
+     "off": [
+      0,
+      0,
+      1
+     ]
+    },
+    "lens": 40,
+    "roll_deg": 0
+   }
+  ],
+  "actions": [
+   {
+    "f": 945,
+    "char": "marcel",
+    "act": "pose",
+    "args": {
+     "name": "peer"
+    }
+   },
+   {
+    "f": 945,
+    "char": "gaston",
+    "act": "pose",
+    "args": {
+     "name": "peer"
+    }
+   },
+   {
+    "f": 945,
+    "char": "marcel",
+    "act": "place",
+    "args": {
+     "loc": {
+      "anchor": "marcel_spot",
+      "off": [
+       -0.3,
+       0,
+       0
+      ]
+     },
+     "rot_z": 0
+    }
+   },
+   {
+    "f": 945,
+    "char": "gaston",
+    "act": "place",
+    "args": {
+     "loc": {
+      "anchor": "gaston_spot",
+      "off": [
+       0.3,
+       0,
+       0
+      ]
+     },
+     "rot_z": 0
+    }
+   }
+  ],
+  "props": [],
+  "fx": [],
+  "hvmul": 0.6,
+  "moodkey": "day"
+ },
+ {
+  "id": "s21",
+  "set": "night",
+  "f_in": 977,
+  "f_out": 1012,
+  "transition_in": "dissolve",
+  "mood": "night",
+  "size": "MED",
+  "angle": "",
+  "words": "You see, nobody had thought",
+  "subj": "m g",
+  "az": 15,
+  "az1": 5,
+  "el": 2,
+  "el1": 2,
+  "push": 0.9,
+  "camera": [
+   {
+    "f": 977,
+    "pos": {
+     "anchor": "marcel_spot",
+     "off": [
+      0,
+      3,
+      1
+     ]
+    },
+    "target": {
+     "anchor": "marcel_spot",
+     "off": [
+      0,
+      0,
+      1
+     ]
+    },
+    "lens": 35,
+    "roll_deg": 0
+   },
+   {
+    "f": 1012,
+    "pos": {
+     "anchor": "marcel_spot",
+     "off": [
+      0,
+      3,
+      1
+     ]
+    },
+    "target": {
+     "anchor": "marcel_spot",
+     "off": [
+      0,
+      0,
+      1
+     ]
+    },
+    "lens": 35,
+    "roll_deg": 0
+   }
+  ],
+  "actions": [
+   {
+    "f": 977,
+    "char": "marcel",
+    "act": "place",
+    "args": {
+     "loc": {
+      "anchor": "marcel_spot",
+      "off": [
+       0,
+       0,
+       0
+      ]
+     },
+     "rot_z": 0
+    }
+   },
+   {
+    "f": 977,
+    "char": "marcel",
+    "act": "pose",
+    "args": {
+     "name": "sit"
+    }
+   },
+   {
+    "f": 977,
+    "char": "marcel",
+    "act": "face",
+    "args": {
+     "name": "neutral"
+    }
+   },
+   {
+    "f": 977,
+    "char": "gaston",
+    "act": "place",
+    "args": {
+     "loc": {
+      "anchor": "gaston_spot",
+      "off": [
+       0,
+       0,
+       0
+      ]
+     },
+     "rot_z": 0
+    }
+   },
+   {
+    "f": 977,
+    "char": "gaston",
+    "act": "pose",
+    "args": {
+     "name": "sit"
+    }
+   },
+   {
+    "f": 977,
+    "char": "gaston",
+    "act": "face",
+    "args": {
+     "name": "smug"
+    }
+   }
+  ],
+  "props": [],
+  "fx": [],
+  "hvmul": 0.65,
+  "moodkey": "night"
+ },
+ {
+  "id": "s22",
+  "set": "night",
+  "f_in": 1012,
+  "f_out": 1042,
+  "transition_in": "cut",
+  "mood": "night",
+  "size": "CU",
+  "angle": "",
+  "words": "that far ahead",
+  "subj": "g",
+  "az": -45,
+  "az1": -40,
+  "el": 2,
+  "el1": 2,
+  "push": 0.97,
+  "camera": [
+   {
+    "f": 1012,
+    "pos": {
+     "anchor": "marcel_spot",
+     "off": [
+      0,
+      3,
+      1
+     ]
+    },
+    "target": {
+     "anchor": "marcel_spot",
+     "off": [
+      0,
+      0,
+      1
+     ]
+    },
+    "lens": 85,
+    "roll_deg": 0
+   },
+   {
+    "f": 1042,
+    "pos": {
+     "anchor": "marcel_spot",
+     "off": [
+      0,
+      3,
+      1
+     ]
+    },
+    "target": {
+     "anchor": "marcel_spot",
+     "off": [
+      0,
+      0,
+      1
+     ]
+    },
+    "lens": 85,
+    "roll_deg": 0
+   }
+  ],
+  "actions": [],
+  "props": [],
+  "fx": [],
+  "moodkey": "night"
+ },
+ {
+  "id": "s23",
+  "set": "insert",
+  "f_in": 1042,
+  "f_out": 1100,
+  "transition_in": "whip",
+  "mood": "night",
+  "size": "MED",
+  "angle": "",
+  "words": "The can was patented in 1810",
+  "subj": "p:can p:label_card",
+  "az": 10,
+  "az1": -5,
+  "el": 40,
+  "el1": 20,
+  "push": 0.95,
+  "camera": [
+   {
+    "f": 1042,
+    "pos": {
+     "anchor": "marcel_spot",
+     "off": [
+      0,
+      3,
+      1
+     ]
+    },
+    "target": {
+     "anchor": "marcel_spot",
+     "off": [
+      0,
+      0,
+      1
+     ]
+    },
+    "lens": 35,
+    "roll_deg": 0
+   },
+   {
+    "f": 1100,
+    "pos": {
+     "anchor": "marcel_spot",
+     "off": [
+      0,
+      3,
+      1
+     ]
+    },
+    "target": {
+     "anchor": "marcel_spot",
+     "off": [
+      0,
+      0,
+      1
+     ]
+    },
+    "lens": 35,
+    "roll_deg": 0
+   }
+  ],
+  "actions": [],
+  "props": [
+   {
+    "f": 1042,
+    "prop": "can",
+    "action": "appear",
+    "args": {}
+   },
+   {
+    "f": 1042,
+    "prop": "label_card",
+    "action": "appear",
+    "args": {}
+   }
+  ],
+  "fx": [],
+  "moodkey": "night_warm"
+ },
+ {
+  "id": "s24",
+  "set": "insert",
+  "f_in": 1100,
+  "f_out": 1133,
+  "transition_in": "cut",
+  "mood": "night",
+  "size": "MACRO",
+  "angle": "",
+  "words": "in thick iron",
+  "subj": "p:can",
+  "az": -15,
+  "az1": -15,
+  "el": 12,
+  "el1": 12,
+  "push": 0.95,
+  "camera": [
+   {
+    "f": 1100,
+    "pos": {
+     "anchor": "marcel_spot",
+     "off": [
+      0,
+      3,
+      1
+     ]
+    },
+    "target": {
+     "anchor": "marcel_spot",
+     "off": [
+      0,
+      0,
+      1
+     ]
+    },
+    "lens": 85,
+    "roll_deg": 0
+   },
+   {
+    "f": 1133,
+    "pos": {
+     "anchor": "marcel_spot",
+     "off": [
+      0,
+      3,
+      1
+     ]
+    },
+    "target": {
+     "anchor": "marcel_spot",
+     "off": [
+      0,
+      0,
+      1
+     ]
+    },
+    "lens": 85,
+    "roll_deg": 0
+   }
+  ],
+  "actions": [],
+  "props": [
+   {
+    "f": 1106,
+    "prop": "can",
+    "action": "dent",
+    "args": {
+     "amount": 0.3
+    }
+   }
+  ],
+  "fx": [],
+  "moodkey": "night_warm"
+ },
+ {
+  "id": "s25",
+  "set": "insert",
+  "f_in": 1133,
+  "f_out": 1182,
+  "transition_in": "cut",
+  "mood": "night",
+  "size": "MED",
+  "angle": "",
+  "words": "often heavier than the food inside",
+  "subj": "pt:table:0.2:0.6:0.4:0.3",
+  "az": 12,
+  "az1": 0,
+  "el": 12,
+  "el1": 12,
+  "push": 1,
+  "camera": [
+   {
+    "f": 1133,
+    "pos": {
+     "anchor": "marcel_spot",
+     "off": [
+      0,
+      3,
+      1
+     ]
+    },
+    "target": {
+     "anchor": "marcel_spot",
+     "off": [
+      0,
+      0,
+      1
+     ]
+    },
+    "lens": 35,
+    "roll_deg": 0
+   },
+   {
+    "f": 1182,
+    "pos": {
+     "anchor": "marcel_spot",
+     "off": [
+      0,
+      3,
+      1
+     ]
+    },
+    "target": {
+     "anchor": "marcel_spot",
+     "off": [
+      0,
+      0,
+      1
+     ]
+    },
+    "lens": 35,
+    "roll_deg": 0
+   }
+  ],
+  "actions": [],
+  "props": [
+   {
+    "f": 1138,
+    "prop": "scale",
+    "action": "appear",
+    "args": {}
+   },
+   {
+    "f": 1138,
+    "prop": "can",
+    "action": "appear",
+    "args": {
+     "on": "scale"
+    }
+   },
+   {
+    "f": 1153,
+    "prop": "food",
+    "action": "appear",
+    "args": {
+     "on": "scale",
+     "tip": "iron_down"
+    }
+   }
+  ],
+  "fx": [],
+  "hvmul": 0.8,
+  "moodkey": "night_warm"
+ },
+ {
+  "id": "s26",
+  "set": "insert",
+  "f_in": 1182,
+  "f_out": 1250,
+  "transition_in": "cut",
+  "mood": "night",
+  "size": "MACRO",
+  "angle": "",
+  "words": "The label instructions: Cut round the top",
+  "subj": "p:label_card",
+  "az": 0,
+  "az1": 0,
+  "el": 75,
+  "el1": 70,
+  "push": 0.95,
+  "camera": [
+   {
+    "f": 1182,
+    "pos": {
+     "anchor": "marcel_spot",
+     "off": [
+      0,
+      3,
+      1
+     ]
+    },
+    "target": {
+     "anchor": "marcel_spot",
+     "off": [
+      0,
+      0,
+      1
+     ]
+    },
+    "lens": 70,
+    "roll_deg": 0
+   },
+   {
+    "f": 1250,
+    "pos": {
+     "anchor": "marcel_spot",
+     "off": [
+      0,
+      3,
+      1
+     ]
+    },
+    "target": {
+     "anchor": "marcel_spot",
+     "off": [
+      0,
+      0,
+      1
+     ]
+    },
+    "lens": 70,
+    "roll_deg": 0
+   }
+  ],
+  "actions": [],
+  "props": [
+   {
+    "f": 1182,
+    "prop": "label_card",
+    "action": "appear",
+    "args": {}
+   }
+  ],
+  "fx": [],
+  "moodkey": "night_warm"
+ },
+ {
+  "id": "s27",
+  "set": "insert",
+  "f_in": 1250,
+  "f_out": 1284,
+  "transition_in": "cut",
+  "mood": "night",
+  "size": "MED",
+  "angle": "",
+  "words": "with a chisel and hammer",
+  "subj": "pt:table:0.1:0.0:0.35:0.5",
+  "az": -20,
+  "az1": -10,
+  "el": 24,
+  "el1": 24,
+  "push": 1,
+  "camera": [
+   {
+    "f": 1250,
+    "pos": {
+     "anchor": "marcel_spot",
+     "off": [
+      0,
+      3,
+      1
+     ]
+    },
+    "target": {
+     "anchor": "marcel_spot",
+     "off": [
+      0,
+      0,
+      1
+     ]
+    },
+    "lens": 35,
+    "roll_deg": 0
+   },
+   {
+    "f": 1284,
+    "pos": {
+     "anchor": "marcel_spot",
+     "off": [
+      0,
+      3,
+      1
+     ]
+    },
+    "target": {
+     "anchor": "marcel_spot",
+     "off": [
+      0,
+      0,
+      1
+     ]
+    },
+    "lens": 35,
+    "roll_deg": 0
+   }
+  ],
+  "actions": [],
+  "props": [
+   {
+    "f": 1250,
+    "prop": "chisel",
+    "action": "appear",
+    "args": {}
+   },
+   {
+    "f": 1260,
+    "prop": "hammer",
+    "action": "appear",
+    "args": {}
+   }
+  ],
+  "fx": [],
+  "moodkey": "night_warm"
+ },
+ {
+  "id": "s28",
+  "set": "tent",
+  "f_in": 1284,
+  "f_out": 1340,
+  "transition_in": "dissolve",
+  "mood": "interior",
+  "size": "MED",
+  "angle": "",
+  "words": "Gaston grabs a chisel and hammer",
+  "subj": "g m",
+  "az": 12,
+  "az1": 0,
+  "el": 6,
+  "el1": 6,
+  "push": 1,
+  "camera": [
+   {
+    "f": 1284,
+    "pos": {
+     "anchor": "marcel_spot",
+     "off": [
+      0,
+      3,
+      1
+     ]
+    },
+    "target": {
+     "anchor": "marcel_spot",
+     "off": [
+      0,
+      0,
+      1
+     ]
+    },
+    "lens": 35,
+    "roll_deg": 0
+   },
+   {
+    "f": 1340,
+    "pos": {
+     "anchor": "marcel_spot",
+     "off": [
+      0,
+      3,
+      1
+     ]
+    },
+    "target": {
+     "anchor": "marcel_spot",
+     "off": [
+      0,
+      0,
+      1
+     ]
+    },
+    "lens": 35,
+    "roll_deg": 0
+   }
+  ],
+  "actions": [
+   {
+    "f": 1284,
+    "char": "gaston",
+    "act": "place",
+    "args": {
+     "loc": {
+      "anchor": "gaston_spot",
+      "off": [
+       -0.9,
+       0,
+       0
+      ]
+     },
+     "rot_z": 0
+    }
+   },
+   {
+    "f": 1284,
+    "char": "gaston",
+    "act": "pose",
+    "args": {
+     "name": "idle"
+    }
+   },
+   {
+    "f": 1284,
+    "char": "gaston",
+    "act": "face",
+    "args": {
+     "name": "determined"
+    }
+   },
+   {
+    "f": 1284,
+    "char": "marcel",
+    "act": "place",
+    "args": {
+     "loc": {
+      "anchor": "marcel_spot",
+      "off": [
+       0.9,
+       0,
+       0
+      ]
+     },
+     "rot_z": 0
+    }
+   },
+   {
+    "f": 1284,
+    "char": "marcel",
+    "act": "pose",
+    "args": {
+     "name": "sit"
+    }
+   },
+   {
+    "f": 1284,
+    "char": "marcel",
+    "act": "face",
+    "args": {
+     "name": "hungry"
+    }
+   },
+   {
+    "f": 1303,
+    "char": "gaston",
+    "act": "hold",
+    "args": {
+     "prop": "chisel"
+    }
+   },
+   {
+    "f": 1318,
+    "char": "gaston",
+    "act": "hold",
+    "args": {
+     "prop": "hammer"
+    }
+   }
+  ],
+  "props": [],
+  "fx": [],
+  "hvmul": 0.72,
+  "moodkey": "interior"
+ },
+ {
+  "id": "s29",
+  "set": "tent",
+  "f_in": 1340,
+  "f_out": 1383,
+  "transition_in": "cut",
+  "mood": "interior",
+  "size": "MED",
+  "angle": "",
+  "words": "Marcel closes his eyes",
+  "subj": "g m",
+  "az": -10,
+  "az1": 5,
+  "el": -4,
+  "el1": -4,
+  "push": 0.92,
+  "camera": [
+   {
+    "f": 1340,
+    "pos": {
+     "anchor": "marcel_spot",
+     "off": [
+      0,
+      3,
+      1
+     ]
+    },
+    "target": {
+     "anchor": "marcel_spot",
+     "off": [
+      0,
+      0,
+      1
+     ]
+    },
+    "lens": 32,
+    "roll_deg": 0
+   },
+   {
+    "f": 1383,
+    "pos": {
+     "anchor": "marcel_spot",
+     "off": [
+      0,
+      3,
+      1
+     ]
+    },
+    "target": {
+     "anchor": "marcel_spot",
+     "off": [
+      0,
+      0,
+      1
+     ]
+    },
+    "lens": 32,
+    "roll_deg": 0
+   }
+  ],
+  "actions": [
+   {
+    "f": 1351,
+    "char": "marcel",
+    "act": "pose",
+    "args": {
+     "name": "eyes_closed"
+    }
+   },
+   {
+    "f": 1351,
+    "char": "marcel",
+    "act": "face",
+    "args": {
+     "name": "eyes_shut"
+    }
+   },
+   {
+    "f": 1376,
+    "char": "gaston",
+    "act": "pose",
+    "args": {
+     "name": "smash_down"
+    }
+   }
+  ],
+  "props": [],
+  "fx": [],
+  "zmin": 0.25,
+  "hvmul": 0.72,
+  "moodkey": "interior"
+ },
+ {
+  "id": "s30",
+  "set": "insert",
+  "f_in": 1383,
+  "f_out": 1411,
+  "transition_in": "whip",
+  "mood": "interior",
+  "size": "MACRO",
+  "angle": "",
+  "words": "Clang",
+  "subj": "pt:table:-0.1:0.05:0.25:0.25 pt:table:0.55:0.1:0.2:0.1 pt:table:0.35:-0.45:0.2:0.1",
+  "az": 25,
+  "az1": 25,
+  "el": 22,
+  "el1": 22,
+  "push": 1,
+  "camera": [
+   {
+    "f": 1383,
+    "pos": {
+     "anchor": "marcel_spot",
+     "off": [
+      0,
+      3,
+      1
+     ]
+    },
+    "target": {
+     "anchor": "marcel_spot",
+     "off": [
+      0,
+      0,
+      1
+     ]
+    },
+    "lens": 70,
+    "roll_deg": 0
+   },
+   {
+    "f": 1411,
+    "pos": {
+     "anchor": "marcel_spot",
+     "off": [
+      0,
+      3,
+      1
+     ]
+    },
+    "target": {
+     "anchor": "marcel_spot",
+     "off": [
+      0,
+      0,
+      1
+     ]
+    },
+    "lens": 70,
+    "roll_deg": 0
+   }
+  ],
+  "actions": [],
+  "props": [
+   {
+    "f": 1383,
+    "prop": "hammer",
+    "action": "appear",
+    "args": {}
+   },
+   {
+    "f": 1383,
+    "prop": "chisel",
+    "action": "appear",
+    "args": {}
+   }
+  ],
+  "fx": [
+   {
+    "f": 1388,
+    "type": "sparkle",
+    "at": {
+     "anchor": "table",
+     "off": [
+      0.0,
+      0.0,
+      0.45
+     ]
+    }
+   }
+  ],
+  "moodkey": "interior_in"
+ },
+ {
+  "id": "s31",
+  "set": "tent",
+  "f_in": 1411,
+  "f_out": 1444,
+  "transition_in": "cut",
+  "mood": "interior",
+  "size": "MED",
+  "angle": "",
+  "words": "The lid pops",
+  "subj": null,
+  "az": 0,
+  "az1": 0,
+  "el": 0,
+  "el1": 0,
+  "push": 1,
+  "camera": [
+   {
+    "f": 1411,
+    "pos": {
+     "anchor": "marcel_spot",
+     "off": [
+      0,
+      3,
+      1
+     ]
+    },
+    "target": {
+     "anchor": "marcel_spot",
+     "off": [
+      0,
+      0,
+      1
+     ]
+    },
+    "lens": 35,
+    "roll_deg": 0
+   },
+   {
+    "f": 1444,
+    "pos": {
+     "anchor": "marcel_spot",
+     "off": [
+      0,
+      3,
+      1
+     ]
+    },
+    "target": {
+     "anchor": "marcel_spot",
+     "off": [
+      0,
+      0,
+      1
+     ]
+    },
+    "lens": 35,
+    "roll_deg": 0
+   }
+  ],
+  "actions": [
+   {
+    "f": 1398,
+    "char": "gaston",
+    "act": "pose",
+    "args": {
+     "name": "recoil"
+    }
+   },
+   {
+    "f": 1411,
+    "char": "gaston",
+    "act": "place",
+    "args": {
+     "loc": {
+      "anchor": "gaston_spot",
+      "off": [
+       0.0,
+       0,
+       0
+      ]
+     },
+     "rot_z": 0
+    }
+   },
+   {
+    "f": 1440,
+    "char": "gaston",
+    "act": "pose",
+    "args": {
+     "name": "idle"
+    }
+   },
+   {
+    "f": 1442,
+    "char": "marcel",
+    "act": "face",
+    "args": {
+     "name": "hungry"
+    }
+   }
+  ],
+  "props": [
+   {
+    "f": 1420,
+    "prop": "lid",
+    "action": "pop",
+    "args": {}
+   }
+  ],
+  "fx": [
+   {
+    "f": 1420,
+    "type": "sparkle",
+    "at": {
+     "anchor": "can_spot",
+     "off": [
+      0.1,
+      0,
+      0.45
+     ]
+    }
+   },
+   {
+    "f": 1421,
+    "type": "puff",
+    "at": {
+     "anchor": "can_spot",
+     "off": [
+      0.35,
+      0,
+      0.3
+     ]
+    },
+    "k": 0.25
+   }
+  ],
+  "camrel": [
+   [
+    [
+     0.1,
+     -1.3,
+     0.75
+    ],
+    [
+     0.1,
+     0.0,
+     0.3
+    ]
+   ],
+   [
+    [
+     0.1,
+     -1.1,
+     0.8
+    ],
+    [
+     0.1,
+     0.0,
+     0.35
+    ]
+   ]
+  ],
+  "moodkey": "interior_lid"
+ },
+ {
+  "id": "s32",
+  "set": "tent",
+  "f_in": 1444,
+  "f_out": 1482,
+  "transition_in": "cut",
+  "mood": "interior",
+  "size": "MED",
+  "angle": "",
+  "words": "Marcel takes one bite",
+  "subj": "m",
+  "az": 15,
+  "az1": 0,
+  "el": 4,
+  "el1": 4,
+  "push": 0.95,
+  "camera": [
+   {
+    "f": 1444,
+    "pos": {
+     "anchor": "marcel_spot",
+     "off": [
+      0,
+      3,
+      1
+     ]
+    },
+    "target": {
+     "anchor": "marcel_spot",
+     "off": [
+      0,
+      0,
+      1
+     ]
+    },
+    "lens": 40,
+    "roll_deg": 0
+   },
+   {
+    "f": 1482,
+    "pos": {
+     "anchor": "marcel_spot",
+     "off": [
+      0,
+      3,
+      1
+     ]
+    },
+    "target": {
+     "anchor": "marcel_spot",
+     "off": [
+      0,
+      0,
+      1
+     ]
+    },
+    "lens": 40,
+    "roll_deg": 0
+   }
+  ],
+  "actions": [
+   {
+    "f": 1457,
+    "char": "marcel",
+    "act": "pose",
+    "args": {
+     "name": "bite"
+    }
+   },
+   {
+    "f": 1462,
+    "char": "marcel",
+    "act": "face",
+    "args": {
+     "name": "chewing"
+    }
+   }
+  ],
+  "props": [],
+  "fx": [],
+  "moodkey": "interior"
+ },
+ {
+  "id": "s33",
+  "set": "tent",
+  "f_in": 1482,
+  "f_out": 1520,
+  "transition_in": "cut",
+  "mood": "interior",
+  "size": "CU",
+  "angle": "",
+  "words": "and looks betrayed",
+  "subj": "m",
+  "az": -5,
+  "az1": -5,
+  "el": -1,
+  "el1": -1,
+  "push": 0.97,
+  "camera": [
+   {
+    "f": 1482,
+    "pos": {
+     "anchor": "marcel_spot",
+     "off": [
+      0,
+      3,
+      1
+     ]
+    },
+    "target": {
+     "anchor": "marcel_spot",
+     "off": [
+      0,
+      0,
+      1
+     ]
+    },
+    "lens": 85,
+    "roll_deg": -8
+   },
+   {
+    "f": 1520,
+    "pos": {
+     "anchor": "marcel_spot",
+     "off": [
+      0,
+      3,
+      1
+     ]
+    },
+    "target": {
+     "anchor": "marcel_spot",
+     "off": [
+      0,
+      0,
+      1
+     ]
+    },
+    "lens": 85,
+    "roll_deg": -8
+   }
+  ],
+  "actions": [
+   {
+    "f": 1497,
+    "char": "marcel",
+    "act": "face",
+    "args": {
+     "name": "betrayed"
+    }
+   },
+   {
+    "f": 1497,
+    "char": "marcel",
+    "act": "pose",
+    "args": {
+     "name": "sigh"
+    }
+   }
+  ],
+  "props": [],
+  "fx": [],
+  "zmin": 0.2,
+  "moodkey": "interior"
+ },
+ {
+  "id": "s34",
+  "set": "insert",
+  "f_in": 1520,
+  "f_out": 1596,
+  "transition_in": "cut",
+  "mood": "day",
+  "size": "MACRO",
+  "angle": "",
+  "words": "The first American can opener came in 1858",
+  "subj": "p:opener_1858 p:can",
+  "az": 25,
+  "az1": -20,
+  "el": 22,
+  "el1": 35,
+  "push": 0.95,
+  "camera": [
+   {
+    "f": 1520,
+    "pos": {
+     "anchor": "marcel_spot",
+     "off": [
+      0,
+      3,
+      1
+     ]
+    },
+    "target": {
+     "anchor": "marcel_spot",
+     "off": [
+      0,
+      0,
+      1
+     ]
+    },
+    "lens": 85,
+    "roll_deg": 0
+   },
+   {
+    "f": 1596,
+    "pos": {
+     "anchor": "marcel_spot",
+     "off": [
+      0,
+      3,
+      1
+     ]
+    },
+    "target": {
+     "anchor": "marcel_spot",
+     "off": [
+      0,
+      0,
+      1
+     ]
+    },
+    "lens": 85,
+    "roll_deg": 0
+   }
+  ],
+  "actions": [],
+  "props": [
+   {
+    "f": 1520,
+    "prop": "opener_1858",
+    "action": "appear",
+    "args": {}
+   }
+  ],
+  "fx": [
+   {
+    "f": 1550,
+    "type": "sparkle",
+    "at": {
+     "anchor": "can_spot",
+     "off": [
+      0.0,
+      0.0,
+      0.3
+     ]
+    }
+   }
+  ],
+  "moodkey": "day_in"
+ },
+ {
+  "id": "s35",
+  "set": "camp",
+  "f_in": 1596,
+  "f_out": 1630,
+  "transition_in": "dissolve",
+  "mood": "day",
+  "size": "MED",
+  "angle": "",
+  "words": "Soldiers got it in the Civil War",
+  "subj": "s1 s2 s3",
+  "az": -12,
+  "az1": -5,
+  "el": 4,
+  "el1": 4,
+  "push": 1,
+  "camera": [
+   {
+    "f": 1596,
+    "pos": {
+     "anchor": "marcel_spot",
+     "off": [
+      0,
+      3,
+      1
+     ]
+    },
+    "target": {
+     "anchor": "marcel_spot",
+     "off": [
+      0,
+      0,
+      1
+     ]
+    },
+    "lens": 35,
+    "roll_deg": 0
+   },
+   {
+    "f": 1630,
+    "pos": {
+     "anchor": "marcel_spot",
+     "off": [
+      0,
+      3,
+      1
+     ]
+    },
+    "target": {
+     "anchor": "marcel_spot",
+     "off": [
+      0,
+      0,
+      1
+     ]
+    },
+    "lens": 35,
+    "roll_deg": 0
+   }
+  ],
+  "actions": [
+   {
+    "f": 1596,
+    "char": "s1",
+    "act": "place",
+    "args": {
+     "loc": {
+      "anchor": "marcel_spot",
+      "off": [
+       -1.5,
+       0,
+       0
+      ]
+     },
+     "rot_z": 0
+    }
+   },
+   {
+    "f": 1596,
+    "char": "s1",
+    "act": "pose",
+    "args": {
+     "name": "march"
+    }
+   },
+   {
+    "f": 1596,
+    "char": "s1",
+    "act": "face",
+    "args": {
+     "name": "smug"
+    }
+   },
+   {
+    "f": 1596,
+    "char": "s2",
+    "act": "place",
+    "args": {
+     "loc": {
+      "anchor": "marcel_spot",
+      "off": [
+       -3.0,
+       0,
+       0
+      ]
+     },
+     "rot_z": 0
+    }
+   },
+   {
+    "f": 1596,
+    "char": "s2",
+    "act": "pose",
+    "args": {
+     "name": "march"
+    }
+   },
+   {
+    "f": 1596,
+    "char": "s2",
+    "act": "face",
+    "args": {
+     "name": "smug"
+    }
+   },
+   {
+    "f": 1596,
+    "char": "s3",
+    "act": "place",
+    "args": {
+     "loc": {
+      "anchor": "marcel_spot",
+      "off": [
+       -4.5,
+       0,
+       0
+      ]
+     },
+     "rot_z": 0
+    }
+   },
+   {
+    "f": 1596,
+    "char": "s3",
+    "act": "pose",
+    "args": {
+     "name": "march"
+    }
+   },
+   {
+    "f": 1596,
+    "char": "s3",
+    "act": "face",
+    "args": {
+     "name": "smug"
+    }
+   }
+  ],
+  "props": [],
+  "fx": [],
+  "moving": true,
+  "hvmul": 0.8,
+  "hide_names": [
+   "rifle",
+   "tripod",
+   "wwalk",
+   "seat",
+   "fgs",
+   "fgstack",
+   "fgcrate",
+   "fgbarrel",
+   "fgsack",
+   "fgrock",
+   "bench",
+   "midcrate",
+   "crB",
+   "log",
+   "drum",
+   "ball"
+  ],
+  "moodkey": "day"
+ },
+ {
+  "id": "s36",
+  "set": "camp",
+  "f_in": 1630,
+  "f_out": 1656,
+  "transition_in": "cut",
+  "mood": "day",
+  "size": "CU",
+  "angle": "",
+  "words": "Civil War",
+  "subj": "s2",
+  "az": 8,
+  "az1": 8,
+  "el": 0,
+  "el1": 0,
+  "push": 0.97,
+  "camera": [
+   {
+    "f": 1630,
+    "pos": {
+     "anchor": "marcel_spot",
+     "off": [
+      0,
+      3,
+      1
+     ]
+    },
+    "target": {
+     "anchor": "marcel_spot",
+     "off": [
+      0,
+      0,
+      1
+     ]
+    },
+    "lens": 85,
+    "roll_deg": 0
+   },
+   {
+    "f": 1656,
+    "pos": {
+     "anchor": "marcel_spot",
+     "off": [
+      0,
+      3,
+      1
+     ]
+    },
+    "target": {
+     "anchor": "marcel_spot",
+     "off": [
+      0,
+      0,
+      1
+     ]
+    },
+    "lens": 85,
+    "roll_deg": 0
+   }
+  ],
+  "actions": [
+   {
+    "f": 1640,
+    "char": "s1",
+    "act": "place",
+    "args": {
+     "loc": {
+      "anchor": "marcel_spot",
+      "off": [
+       1.2,
+       0,
+       0
+      ]
+     },
+     "rot_z": 0
+    }
+   },
+   {
+    "f": 1640,
+    "char": "s1",
+    "act": "pose",
+    "args": {
+     "name": "idle"
+    }
+   },
+   {
+    "f": 1640,
+    "char": "s2",
+    "act": "place",
+    "args": {
+     "loc": {
+      "anchor": "marcel_spot",
+      "off": [
+       -0.3,
+       0,
+       0
+      ]
+     },
+     "rot_z": 0
+    }
+   },
+   {
+    "f": 1640,
+    "char": "s2",
+    "act": "pose",
+    "args": {
+     "name": "idle"
+    }
+   },
+   {
+    "f": 1640,
+    "char": "s3",
+    "act": "place",
+    "args": {
+     "loc": {
+      "anchor": "marcel_spot",
+      "off": [
+       -1.8,
+       0,
+       0
+      ]
+     },
+     "rot_z": 0
+    }
+   },
+   {
+    "f": 1640,
+    "char": "s3",
+    "act": "pose",
+    "args": {
+     "name": "idle"
+    }
+   }
+  ],
+  "props": [],
+  "fx": [],
+  "hide_names": [
+   "rifle",
+   "tripod"
+  ],
+  "moodkey": "day"
+ },
+ {
+  "id": "s37",
+  "set": "camp",
+  "f_in": 1656,
+  "f_out": 1700,
+  "transition_in": "cut",
+  "mood": "day",
+  "size": "MED",
+  "angle": "",
+  "words": "Everyone else? Too dangerous",
+  "subj": "g m",
+  "az": 8,
+  "az1": -8,
+  "el": 2,
+  "el1": 2,
+  "push": 1,
+  "camera": [
+   {
+    "f": 1656,
+    "pos": {
+     "anchor": "marcel_spot",
+     "off": [
+      0,
+      3,
+      1
+     ]
+    },
+    "target": {
+     "anchor": "marcel_spot",
+     "off": [
+      0,
+      0,
+      1
+     ]
+    },
+    "lens": 35,
+    "roll_deg": 0
+   },
+   {
+    "f": 1700,
+    "pos": {
+     "anchor": "marcel_spot",
+     "off": [
+      0,
+      3,
+      1
+     ]
+    },
+    "target": {
+     "anchor": "marcel_spot",
+     "off": [
+      0,
+      0,
+      1
+     ]
+    },
+    "lens": 35,
+    "roll_deg": 0
+   }
+  ],
+  "actions": [
+   {
+    "f": 1656,
+    "char": "gaston",
+    "act": "place",
+    "args": {
+     "loc": {
+      "anchor": "gaston_spot",
+      "off": [
+       0,
+       0,
+       0
+      ]
+     },
+     "rot_z": 0
+    }
+   },
+   {
+    "f": 1656,
+    "char": "gaston",
+    "act": "pose",
+    "args": {
+     "name": "sigh"
+    }
+   },
+   {
+    "f": 1656,
+    "char": "marcel",
+    "act": "place",
+    "args": {
+     "loc": {
+      "anchor": "marcel_spot",
+      "off": [
+       0,
+       0,
+       0
+      ]
+     },
+     "rot_z": 0
+    }
+   },
+   {
+    "f": 1656,
+    "char": "marcel",
+    "act": "pose",
+    "args": {
+     "name": "peer"
+    }
+   },
+   {
+    "f": 1665,
+    "char": "gaston",
+    "act": "face",
+    "args": {
+     "name": "smug"
+    }
+   },
+   {
+    "f": 1685,
+    "char": "s1",
+    "act": "place",
+    "args": {
+     "loc": {
+      "anchor": "marcel_spot",
+      "off": [
+       1.2,
+       0,
+       0
+      ]
+     },
+     "rot_z": 0
+    }
+   },
+   {
+    "f": 1685,
+    "char": "s1",
+    "act": "hold",
+    "args": {
+     "prop": "opener_1858"
+    }
+   }
+  ],
+  "props": [
+   {
+    "f": 1685,
+    "prop": "opener_1858",
+    "action": "appear",
+    "args": {}
+   }
+  ],
+  "fx": [],
+  "hvmul": 0.65,
+  "moodkey": "day"
+ },
+ {
+  "id": "s38",
+  "set": "camp",
+  "f_in": 1700,
+  "f_out": 1727,
+  "transition_in": "cut",
+  "mood": "day",
+  "size": "MED",
+  "angle": "",
+  "words": "for home use",
+  "subj": "m s1",
+  "az": 20,
+  "az1": 10,
+  "el": 3,
+  "el1": 3,
+  "push": 1,
+  "camera": [
+   {
+    "f": 1700,
+    "pos": {
+     "anchor": "marcel_spot",
+     "off": [
+      0,
+      3,
+      1
+     ]
+    },
+    "target": {
+     "anchor": "marcel_spot",
+     "off": [
+      0,
+      0,
+      1
+     ]
+    },
+    "lens": 35,
+    "roll_deg": 0
+   },
+   {
+    "f": 1727,
+    "pos": {
+     "anchor": "marcel_spot",
+     "off": [
+      0,
+      3,
+      1
+     ]
+    },
+    "target": {
+     "anchor": "marcel_spot",
+     "off": [
+      0,
+      0,
+      1
+     ]
+    },
+    "lens": 35,
+    "roll_deg": 0
+   }
+  ],
+  "actions": [
+   {
+    "f": 1689,
+    "char": "s1",
+    "act": "pose",
+    "args": {
+     "name": "stab"
+    }
+   },
+   {
+    "f": 1700,
+    "char": "marcel",
+    "act": "pose",
+    "args": {
+     "name": "recoil"
+    }
+   },
+   {
+    "f": 1700,
+    "char": "marcel",
+    "act": "face",
+    "args": {
+     "name": "shock"
+    }
+   },
+   {
+    "f": 1711,
+    "char": "s1",
+    "act": "pose",
+    "args": {
+     "name": "stab"
+    }
+   }
+  ],
+  "props": [],
+  "fx": [
+   {
+    "f": 1711,
+    "type": "sparkle",
+    "at": {
+     "anchor": "marcel_spot",
+     "off": [
+      0.4,
+      0,
+      1.3
+     ]
+    }
+   }
+  ],
+  "moodkey": "day"
+ },
+ {
+  "id": "s39",
+  "set": "camp",
+  "f_in": 1727,
+  "f_out": 1762,
+  "transition_in": "cut",
+  "mood": "day",
+  "size": "MED",
+  "angle": "",
+  "words": "Marcel, still chewing",
+  "subj": "m",
+  "az": 10,
+  "az1": 10,
+  "el": 26,
+  "el1": 6,
+  "push": 1,
+  "camera": [
+   {
+    "f": 1727,
+    "pos": {
+     "anchor": "marcel_spot",
+     "off": [
+      0,
+      3,
+      1
+     ]
+    },
+    "target": {
+     "anchor": "marcel_spot",
+     "off": [
+      0,
+      0,
+      1
+     ]
+    },
+    "lens": 40,
+    "roll_deg": 0
+   },
+   {
+    "f": 1762,
+    "pos": {
+     "anchor": "marcel_spot",
+     "off": [
+      0,
+      3,
+      1
+     ]
+    },
+    "target": {
+     "anchor": "marcel_spot",
+     "off": [
+      0,
+      0,
+      1
+     ]
+    },
+    "lens": 40,
+    "roll_deg": 0
+   }
+  ],
+  "actions": [
+   {
+    "f": 1727,
+    "char": "marcel",
+    "act": "place",
+    "args": {
+     "loc": {
+      "anchor": "marcel_spot",
+      "off": [
+       0,
+       0,
+       0
+      ]
+     },
+     "rot_z": 0
+    }
+   },
+   {
+    "f": 1727,
+    "char": "marcel",
+    "act": "pose",
+    "args": {
+     "name": "chew"
+    }
+   },
+   {
+    "f": 1727,
+    "char": "marcel",
+    "act": "face",
+    "args": {
+     "name": "chewing"
+    }
+   },
+   {
+    "f": 1727,
+    "char": "s1",
+    "act": "place",
+    "args": {
+     "loc": {
+      "anchor": "marcel_spot",
+      "off": [
+       9,
+       0,
+       0
+      ]
+     },
+     "rot_z": 0
+    }
+   },
+   {
+    "f": 1727,
+    "char": "s2",
+    "act": "place",
+    "args": {
+     "loc": {
+      "anchor": "marcel_spot",
+      "off": [
+       9,
+       0,
+       0
+      ]
+     },
+     "rot_z": 0
+    }
+   },
+   {
+    "f": 1727,
+    "char": "s3",
+    "act": "place",
+    "args": {
+     "loc": {
+      "anchor": "marcel_spot",
+      "off": [
+       9,
+       0,
+       0
+      ]
+     },
+     "rot_z": 0
+    }
+   }
+  ],
+  "props": [],
+  "fx": [],
+  "moodkey": "day"
+ },
+ {
+  "id": "s40",
+  "set": "camp",
+  "f_in": 1762,
+  "f_out": 1815,
+  "transition_in": "cut",
+  "mood": "day",
+  "size": "CU",
+  "angle": "",
+  "words": "calls that progress",
+  "subj": "m",
+  "az": 0,
+  "az1": 0,
+  "el": 2,
+  "el1": 2,
+  "push": 1,
+  "camera": [
+   {
+    "f": 1762,
+    "pos": {
+     "anchor": "marcel_spot",
+     "off": [
+      0,
+      3,
+      1
+     ]
+    },
+    "target": {
+     "anchor": "marcel_spot",
+     "off": [
+      0,
+      0,
+      1
+     ]
+    },
+    "lens": 70,
+    "roll_deg": 0
+   },
+   {
+    "f": 1815,
+    "pos": {
+     "anchor": "marcel_spot",
+     "off": [
+      0,
+      3,
+      1
+     ]
+    },
+    "target": {
+     "anchor": "marcel_spot",
+     "off": [
+      0,
+      0,
+      1
+     ]
+    },
+    "lens": 70,
+    "roll_deg": 0
+   }
+  ],
+  "actions": [
+   {
+    "f": 1790,
+    "char": "marcel",
+    "act": "face",
+    "args": {
+     "name": "smug"
+    }
+   },
+   {
+    "f": 1790,
+    "char": "marcel",
+    "act": "pose",
+    "args": {
+     "name": "smug"
+    }
+   },
+   {
+    "f": 1800,
+    "char": "marcel",
+    "act": "pose",
+    "args": {
+     "name": "chew"
+    }
+   },
+   {
+    "f": 1800,
+    "char": "marcel",
+    "act": "face",
+    "args": {
+     "name": "chewing"
+    }
+   }
+  ],
+  "props": [],
+  "fx": [],
+  "moodkey": "day"
+ }
+]

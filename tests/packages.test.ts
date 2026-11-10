@@ -10,10 +10,10 @@ const root = join(__dirname, "..");
 const KEY = /^packages\/[a-z0-9]+(-[a-z0-9]+)*\/[0-9]+\.[0-9]+\.[0-9]+\.zip$/;
 const FILENAME = /^[a-z0-9]+(-[a-z0-9]+)*-[0-9]+\.[0-9]+\.[0-9]+\.zip$/;
 
-test("packages: the approved releases are What If 0.1.0 and Podcast Shorts 0.1.0", () => {
+test("packages: the approved releases are What If, Podcast Shorts and make-short 0.1.0", () => {
   assert.deepEqual(
     PACKAGES.map((p) => `${p.slug}@${p.version}`),
-    ["freshstack-what-if@0.1.0", "podcast-tool-short@0.1.0"],
+    ["freshstack-what-if@0.1.0", "podcast-tool-short@0.1.0", "make-short@0.1.0"],
   );
 });
 

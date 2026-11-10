@@ -274,6 +274,27 @@ export const rawSkills: readonly Skill[] = [
     rights: "uncleared",
     examples: [],
   },
+  {
+    slug: "make-short",
+    name: "Bean Shorts 3D",
+    category: "video",
+    description:
+      "ทำคลิปสั้นแอนิเมชัน 3D ใน Blender ด้วยโค้ด ตัวละครทรงเมล็ดถั่ว มีเสียงพากย์ ซับ เสียงประกอบ และ agent อีกตัวให้คะแนนพร้อมวินาทีที่ต้องแก้",
+    version: "0.1.0",
+    status: "draft",
+    approvalScope:
+      "ชุด MIT ของ NoCodeHack แจกต่อพร้อมเครดิต · เราทดสอบบน Mac แค่ gate และเรนเดอร์ภาพ 15 วินาที ยังไม่ได้ลองเสียงและรอบ critic",
+    requirements: [
+      "Claude Code · Blender 5.x",
+      "Node 22+ · Python 3.10+ (pillow, numpy) · FFmpeg",
+      "GPU ที่ Blender ใช้ได้ · บน Mac ใช้ kubcode/mac-patch.sh",
+    ],
+    useCases: ["story"],
+    cost: "no-key",
+    costNote: "อัดเสียงตัวเองได้ฟรี · ถ้าใช้ ElevenLabs ราว 1 เครดิตต่อตัวอักษร",
+    rights: "uncleared",
+    examples: [],
+  },
 ];
 /** Catalog as published by this build (see lib/publication.ts). */
 export const skills: Skill[] = publishSkills(rawSkills);

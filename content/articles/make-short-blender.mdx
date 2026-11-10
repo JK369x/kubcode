@@ -1,0 +1,90 @@
+---
+slug: make-short-blender
+title: "make-short: Claude Code ทำคลิปสั้น 3D ใน Blender"
+description: "skill ฟรีที่ให้ Claude Code ทำคลิปสั้น 3D ใน Blender พร้อม critic ให้คะแนนแยก เราลองบน Mac แล้ว คลิป 15 วิเรนเดอร์ 7.3 นาที"
+tags: [animation, 3d, ai-agent, renderer, free-tier]
+refs:
+  - tool:make-short
+  - tool:blender
+  - tool:claude-code
+  - tool:elevenlabs
+  - tool:ffmpeg
+  - skill:make-short
+  - article:style-author-renderer
+category: how-to
+featured: true
+cover:
+  src: /covers/make-short-blender/cover.jpg
+  og: /covers/make-short-blender/og.jpg
+  alt: "ภาพจริงจากการรัน make-short บน Mac ของเรา: ภาพนิ่งตรวจช็อตสองภาพ กระป๋อง Salted Beef บนโต๊ะไม้ กับทหารทรงเมล็ดถั่วในค่าย และแถบเฟรมจากวิดีโอ 15 วินาทีที่เรนเดอร์ใน 7.3 นาที"
+  source: own-screenshot
+updated: 2026-11-10
+go: [make-short]
+sources:
+  - title: "nocodehack/make-short (MIT, commit 5a17d35, 5 พ.ย. 2026)"
+    url: https://github.com/nocodehack/make-short
+  - title: "Blender License"
+    url: https://www.blender.org/about/license/
+sourceNote: "สรุปด้วยคำของเรา ตัวเลขคะแนน critic และค่าใช้จ่ายมาจาก README ต้นทาง ส่วนเวลาเรนเดอร์บน Mac มาจากการทดสอบของเราเมื่อ 10 พ.ย. 2026"
+---
+## make-short คืออะไร
+
+[make-short](/tools/make-short) เป็น skill ฟรี (MIT) ของ NoCodeHack สำหรับ [Claude Code](/tools/claude-code) พิมพ์ไอเดียหนึ่งบรรทัด แล้ว Claude จะพาทำคลิปสั้นแนวตั้งที่มีตัวละครทรงเมล็ดถั่วในโลก 3D แบบภาพวาด มีเสียงพากย์ ซับ และเสียงประกอบ ทุกฉากเป็นสคริปต์ Python ที่ [Blender](/tools/blender) เรนเดอร์ในเครื่องเรา ไม่ใช้โมเดลสร้างภาพหรือวิดีโอ
+
+ที่น่าสนใจที่สุดคือ **critic แยกตัว** หลังเรนเดอร์ skill จะเปิด agent ใหม่ที่ไม่ได้สร้างคลิปมาให้คะแนนตาม rubric โดยบอกวินาทีของทุกจุดที่หักคะแนน ผู้เขียนพบว่า Claude ให้คะแนนงานตัวเอง 6.5 จาก 10 แต่ critic ให้ภาพเดียวกันแค่ 4.2 หลังแก้ตาม critic หลายรอบ คะแนนขึ้นไปถึง 7.9
+
+## ขั้นตอนที่ skill พาทำ
+
+1. **วัดคลิปต้นแบบ** (ถ้ามี): แตกคลิปที่ชอบเป็นตัวเลข เช่น จำนวนช็อต ความสว่าง สี
+2. **เขียนเรื่อง:** ใช้สูตร paradox คือเปิดด้วยสองเรื่องจริงที่ไม่น่าจะจริงพร้อมกัน แล้วเฉลยด้วยข้อเท็จจริง **คุณต้องอนุมัติเรื่องก่อน**
+3. **เสียง:** อัดเสียงตัวเองฟรี แล้วให้ Whisper จับเวลาทุกคำ หรือใช้ [ElevenLabs](/tools/elevenlabs) (ราว 1 เครดิตต่อตัวอักษร skill บอกจำนวนตัวอักษรก่อนสร้าง)
+4. **สร้างช็อต:** เขียน `shots.json`, `acting.json` และฉาก Blender คลิปยาวใช้ทีม agent ช่วยกัน
+5. **ด่านตรวจ:** เรนเดอร์ภาพนิ่งช็อตละภาพ ตรวจทั้งตัวเลขและด้วยตา **คุณสั่ง render เอง**
+6. **critic:** agent ใหม่ให้คะแนนและเขียนจุดที่ต้องแก้ 3 ข้อตามช่วงเฟรม
+7. **แก้:** แก้เฉพาะช่วงที่ critic ชี้ แล้วเรนเดอร์ใหม่
+8. **โพสต์:** ไม่บังคับ ถ้าต่อ Blotato จะอัปโหลดแบบ private หลังคุณพิมพ์ `go` เท่านั้น
+
+## เราลองบน Mac: ได้ผลจริง
+
+ต้นทางเขียนไว้สำหรับ Windows กับ Git Bash เราลองบน MacBook (Apple M5, Blender 5.3, Node 24, FFmpeg 9) และพบว่าต้องแก้ 4 จุดในโฟลเดอร์โปรเจกต์:
+
+- คำสั่ง `pwd -W` มีแค่ใน Git Bash บน Mac ต้องใช้ `pwd`
+- สคริปต์เรียก `python` แต่ Mac มี `python3`
+- หา Blender ใน `C:\Program Files` ต้องชี้ไปที่ `/Applications/Blender.app`
+- ไฟล์ `.sh` ที่คัดลอกมายังไม่ได้ตั้งสิทธิ์ให้รันได้
+
+เราเขียน `kubcode/mac-patch.sh` แก้ทั้ง 4 จุดให้ (แก้แค่สำเนาโปรเจกต์ ไม่แตะไฟล์ต้นทาง) มีอยู่ในชุดที่ดาวน์โหลดจากหน้า [skill](/skills/make-short) ผลที่ได้:
+
+- **ตรวจไฟล์เสียง (`node --check`):** ผ่านทั้ง 4 ไฟล์
+- **ตรวจแผนช็อตตัวอย่าง 60 วินาที:** 39 ช็อต ไม่มี error
+- **ด่านตรวจภาพนิ่ง 2 ช็อต:** PASS 2/2 ใน 38 วินาที
+- **เรนเดอร์ 15 วินาทีแรก (450 เฟรม, 1080×1920):** 437 วินาที หรือราว 7.3 นาที
+
+เราลองแค่ส่วนภาพ ส่วนเสียง การมิกซ์ และรอบ critic ยังไม่ได้ลองบน Mac
+
+```bash title="mac-setup.sh"
+brew install --cask blender && brew install ffmpeg node
+python3 -m pip install --user pillow numpy
+cp -R ~/.claude/skills/make-short/v3 ~/shorts/my-short
+bash ~/.claude/skills/make-short/kubcode/mac-patch.sh ~/shorts/my-short
+```
+
+## ค่าใช้จ่ายจริง
+
+- **skill และ Blender:** ฟรี
+- **Claude:** ต้นทางรายงานว่าคลิป 15 วินาทีใช้เวลา 26 นาที ใช้ราว 3% ของโควตา 5 ชั่วโมงในแผน Max 5x หรือราว $5 ถ้าคิดราคา API ถ้าใช้แผน Pro จะกินโควตาราว 5 เท่า
+- **เสียง:** อัดเองฟรี ถ้าใช้ ElevenLabs คลิป 15 วินาทีใช้ราว 202 เครดิต
+- **รอบแก้:** เป็นส่วนที่กินโควตามากที่สุด จะแก้กี่รอบเลือกเองได้
+
+## ข้อควรรู้ก่อนใช้
+
+- ใช้ได้กับ Claude Code เท่านั้น อัปโหลดเป็น Skills บน claude.ai ไม่ได้ เพราะต้องรัน Blender ในเครื่อง
+- ต้องมีการ์ดจอที่ Blender ใช้ได้ ถ้าใช้แค่ CPU จะช้ามาก
+- ฉากและตัวละครที่มีมาคือค่ายทหาร ถ้าเรื่องต้องใช้ฉากหรือตัวละครใหม่ ต้องแก้ `lib/sets.py` หรือ `lib/chars.py` และเผื่อเวลา
+- เสียงพากย์และ Whisper ตั้งค่าเป็นภาษาอังกฤษ ถ้าจะทำภาษาไทยต้องเปลี่ยนภาษาของ Whisper และหาเสียงไทยเอง
+
+## สรุป
+
+> make-short เหมาะกับคนที่อยากได้คลิป 3D หน้าตาเหมือนกันทุกตอนโดยไม่ต้องเป็น Blender ก็ทำได้ จุดที่ควรเอาไปใช้กับ skill อื่นด้วยคือ critic แยกตัว อย่าเชื่อคะแนนที่ AI ให้งานตัวเอง
+
+อ่านเรื่องการแยกชั้นของงานวิดีโอเพิ่มได้ที่[สไตล์ ผู้เขียน และ renderer ไม่ใช่สิ่งเดียวกัน](/articles/style-author-renderer)

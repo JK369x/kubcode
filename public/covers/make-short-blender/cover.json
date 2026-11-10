@@ -1,0 +1,12 @@
+{
+  "slug": "make-short-blender",
+  "tool": "HTML layout rendered with headless Chrome (docs/covers/real/make-short-blender/cover.html)",
+  "date": "2026-11-10",
+  "source": "own-screenshot",
+  "content": "Our own run of nocodehack/make-short (MIT, commit 5a17d35) on an Apple M5 Mac with Blender 5.3: gate stills s01 and s05 from `bash gate.sh s01 s05` (PASS 2/2), and frames at 3/6/9/12.5/14 s of `FRAMES=450 bash go.sh t1` (437 s). The scene is upstream's 60 s example (shots.json/acting.json), rendered by us.",
+  "master": "cover.jpg",
+  "og": "og.jpg",
+  "width": 1600,
+  "height": 900,
+  "fonts": "Anuphan and Archivo (SIL OFL, @fontsource)"
+}

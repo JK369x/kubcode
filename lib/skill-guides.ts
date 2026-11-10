@@ -37,6 +37,16 @@ const GUIDES: Readonly<Record<string, readonly GuideStep[]>> = {
     },
     { text: "ตรวจสิทธิ์และเครดิตของพอดแคสต์ต้นทางทุกตอนก่อนเผยแพร่ (ดู KUBCODE-NOTICE.md)" },
   ],
+  "make-short": [
+    { text: "เข้าสู่ระบบ แล้วกด “ดาวน์โหลด skill” ในกล่องดาวน์โหลด (ไฟล์ .zip)" },
+    { text: "แตกไฟล์ไว้ในโฟลเดอร์ skill ของ Claude Code", code: "~/.claude/skills/make-short/" },
+    { text: "ติดตั้ง Blender 5.x, Node 22+, Python 3.10+ (pillow, numpy) และ ffmpeg ถ้าใช้ Mac ให้อ่าน KUBCODE-NOTICE.md เรื่อง mac-patch.sh" },
+    {
+      text: "เปิด Claude Code แล้ววางคำสั่งนี้ เปลี่ยนหัวข้อเป็นเรื่องที่อยากทำได้",
+      prompt: "/make-short a 15 second Short about why ice floats on water",
+    },
+    { text: "อนุมัติเรื่อง แผนช็อต และภาพนิ่งก่อนสั่ง render ทุกครั้ง skill จะไม่โพสต์อะไรจนกว่าคุณจะพิมพ์ go" },
+  ],
 };
 
 /** The steps for a skill: its own guide, or three plain steps. */
