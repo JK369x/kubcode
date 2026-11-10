@@ -54,6 +54,26 @@ async function main() {
   const profileId = typeof acct.profileId === "string" ? acct.profileId : acct.profileId?._id;
   log(`account: @${acct.username ?? "?"}; rule: "${KEYWORD}" on ${POST ? `post ${POST}` : "all posts"}; ${SEND ? "SEND" : "dry run (no DM, no reply)"}`);
 
+  // Read-only scope check: the comment and message scopes must be granted.
+  assert.match(String(acct._id), /^[A-Za-z0-9]{1,64}$/);
+  const health = await zernio("GET", `/accounts/${acct._id}/health`);
+  assert.equal(health.status, 200, `GET health: ${health.status}`);
+  const perms: { scope?: string; granted?: boolean }[] = [];
+  const walk = (v: unknown) => {
+    if (Array.isArray(v)) v.forEach(walk);
+    else if (v && typeof v === "object") {
+      const o = v as Record<string, unknown>;
+      if (typeof o.scope === "string" && typeof o.granted === "boolean") perms.push({ scope: o.scope, granted: o.granted });
+      else Object.values(o).forEach(walk);
+    }
+  };
+  walk(health.body?.permissions ?? health.body);
+  for (const need of ["instagram_business_manage_comments", "instagram_business_manage_messages"]) {
+    const p = perms.find((x) => x.scope === need);
+    log(`scope ${need}: ${p ? (p.granted ? "granted" : "NOT granted") : "not reported"}`);
+    assert.ok(p?.granted, `${need} must be granted (reconnect Instagram with comments and messaging)`);
+  }
+
   const db = await throwawayDb();
   const kids: ChildProcess[] = [];
   let failure: unknown;
