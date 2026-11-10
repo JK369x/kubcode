@@ -1,6 +1,6 @@
 # Instagram comment → DM (slice 3) — verification and design
 
-Status: **B chosen by the owner (2026-11-10)**; design below, two choices still to confirm (§4.8). Extends
+Status: **B chosen by the owner (2026-11-10)**; design approved (§4.8 decided the same day). Extends
 `docs/design/publishing-core.md` (Automation rule, Inbox item; the Automations port of ADR 0004).
 
 ## 1. Goal
@@ -174,20 +174,19 @@ Zernio call), so no new Lambda route is needed for the UI.
 - Read-only scope check on @lokeekbaebkub before E2E: `instagram_business_manage_comments` and
   `instagram_business_manage_messages` granted.
 
-### 4.8 To confirm before building
+### 4.8 Decided (2026-11-10)
 
-1. **How the worker runs.** (a) **EventBridge Scheduler every minute** invoking the publishing
-   Lambda in a `worker` mode: one mechanism for processing and catch-up, ≤ 1 min delay, no new
-   permissions beyond the schedule (recommended); or (b) the webhook also **invokes the Lambda
-   asynchronously** right after recording (seconds, needs `lambda:InvokeFunction` on itself) plus
-   the schedule for catch-up. Start with (a); add (b) if a minute feels slow.
-2. **Keyword matching for Thai.** `contains` on the lower-cased text (Thai has no spaces between
-   words, so "word" matching is unreliable); `exact` for whole-comment keywords. Emojis and spaces
-   trimmed.
+1. **Worker:** EventBridge Scheduler every minute invokes the publishing Lambda in a `worker` mode:
+   one mechanism for sending and catch-up, at most about a minute's delay. An async self-invoke from
+   the webhook is added only if a minute proves too slow.
+2. **Keywords:** before matching, the comment and the keywords are case-folded, zero-width
+   characters (U+200B–U+200D, U+2060, U+FEFF) removed and runs of whitespace collapsed; then
+   `contains` (default) or `exact` (the whole normalised comment). Thai has no spaces between words,
+   so there is no word mode.
 
 ## 5. Next steps
 
-1. Confirm §4.8. Read-only scope check (Keychain prompt).
+1. Read-only scope check (Keychain prompt, when the owner is at the keyboard).
 2. TDD in slices: (i) webhook translation + Inbox item + ignore rules; (ii) matcher + ledger +
    cap; (iii) Zernio adapter calls (OpenAPI fixtures) + worker; (iv) owner UI; (v) schedule +
    webhook subscription.
