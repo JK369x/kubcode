@@ -2,11 +2,12 @@
 //! the Lambda role `kubcode_worker`. Provider refs are written and read here
 //! and nowhere else outside the adapters.
 
+use kubcode_publishing::automation::{MatchMode, Rule, Scope};
 use kubcode_publishing::domain::{
     ChannelId, ConnectionId, ConnectionStatus, DeliveryId, DeliveryStatus, MediaAssetId, MediaKind,
     MediaMeta, Platform, PostId, ProviderKind, ProviderRef, Visibility, WorkspaceId,
 };
-use kubcode_publishing::events::{ProviderEvent, VerifiedDelivery};
+use kubcode_publishing::events::{IncomingComment, ProviderEvent, VerifiedDelivery};
 use kubcode_publishing::ports::ConnectedAccount;
 use kubcode_publishing::routing::{Route, RouteTable};
 use kubcode_publishing::validate::Velocity;
@@ -142,6 +143,63 @@ pub struct DeliverySummary {
     pub cover_check: Option<String>,
     /// The studio clip the post was made from (the CLI finds its cover by it).
     pub clip_ref: String,
+}
+
+/// A rule as the matcher needs it, with what to send.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct RuleRow {
+    pub id: Uuid,
+    pub rule: Rule,
+    pub public_reply: Option<String>,
+    pub dm_text: String,
+    /// The public reply only after a sent DM (the default policy).
+    pub reply_after_dm: bool,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct PendingComment {
+    pub id: Uuid,
+    pub channel: ChannelId,
+    pub provider: ProviderKind,
+    pub comment_id: String,
+    pub platform_post_id: String,
+    pub author_id: String,
+    pub commented_at: Option<OffsetDateTime>,
+    pub rule_id: Option<Uuid>,
+}
+
+/// The private reply's ledger state (docs/design/ig-comment-dm.md §4.3).
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum DmState {
+    Claimed,
+    /// Written before the call; a row left here becomes `DmUnknown`.
+    DmSending,
+    DmSent,
+    DmFailed,
+    DmUnknown,
+    /// Instagram spent the comment's one private reply on a failed call.
+    DmConsumed,
+}
+
+impl DmState {
+    pub fn as_str(self) -> &'static str {
+        match self {
+            DmState::Claimed => "claimed",
+            DmState::DmSending => "dm_sending",
+            DmState::DmSent => "dm_sent",
+            DmState::DmFailed => "dm_failed",
+            DmState::DmUnknown => "dm_unknown",
+            DmState::DmConsumed => "dm_consumed",
+        }
+    }
+
+    pub fn can_move_to(self, to: DmState) -> bool {
+        use DmState::*;
+        matches!(
+            (self, to),
+            (Claimed, DmSending) | (DmSending, DmSent | DmFailed | DmUnknown | DmConsumed)
+        )
+    }
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -858,6 +916,232 @@ impl Store {
                 })
             })
             .collect()
+    }
+
+    // ------------------------------------------------------------ comment → DM
+
+    /// The channel a provider account belongs to (a live connection).
+    pub async fn comment_channel(
+        &self,
+        provider: ProviderKind,
+        account: &ProviderRef,
+    ) -> Result<Option<ChannelId>> {
+        let row = self
+            .c
+            .query_opt(
+                "SELECT channel_id FROM kubcode_accounts.channel_connections
+                  WHERE provider = $1 AND provider_ref = $2 AND status <> 'revoked'",
+                &[&provider.as_str(), &account.0],
+            )
+            .await?;
+        Ok(row.map(|r| ChannelId(r.get(0))))
+    }
+
+    /// A channel's rules in the owner's order.
+    pub async fn rules_of(&self, channel: ChannelId) -> Result<Vec<RuleRow>> {
+        let rows = self
+            .c
+            .query(
+                "SELECT id, keywords, match_mode, platform_post_id, public_reply, dm_text, reply_policy, active
+                   FROM kubcode_accounts.automation_rules
+                  WHERE channel_id = $1 ORDER BY position, created_at, id",
+                &[&channel.0],
+            )
+            .await?;
+        rows.iter()
+            .map(|r| {
+                let id: Uuid = r.get(0);
+                let mode = match r.get::<_, &str>(2) {
+                    "exact" => MatchMode::Exact,
+                    "contains" => MatchMode::Contains,
+                    _ => return Err(StoreError::Corrupt),
+                };
+                let post: Option<String> = r.get(3);
+                Ok(RuleRow {
+                    id,
+                    rule: Rule {
+                        id: id.to_string(),
+                        keywords: r.get(1),
+                        mode,
+                        scope: post.map_or(Scope::AllPosts, Scope::Post),
+                        active: r.get(7),
+                    },
+                    public_reply: r.get(4),
+                    dm_text: r.get(5),
+                    reply_after_dm: r.get::<_, &str>(6) == "after_dm",
+                })
+            })
+            .collect()
+    }
+
+    /// Records a received comment once (by the provider's comment id). With
+    /// `skipped` it is done at once with that outcome; otherwise it waits for
+    /// the worker. The text is not stored. True when it was new.
+    pub async fn record_comment(
+        &self,
+        channel: ChannelId,
+        provider: ProviderKind,
+        c: &IncomingComment,
+        rule: Option<Uuid>,
+        skipped: Option<&str>,
+    ) -> Result<bool> {
+        let (status, outcome) = match skipped {
+            Some(code) => ("done", Some(code)),
+            None => ("pending", None),
+        };
+        let n = self
+            .c
+            .execute(
+                "INSERT INTO kubcode_accounts.comment_items
+                   (channel_id, provider, comment_id, platform_post_id, author_id, commented_at, rule_id,
+                    status, outcome, processed_at)
+                 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, CASE WHEN $8 = 'done' THEN now() END)
+                 ON CONFLICT (provider, comment_id) DO NOTHING",
+                &[
+                    &channel.0,
+                    &provider.as_str(),
+                    &c.comment_id,
+                    &c.platform_post_id,
+                    &c.author_id,
+                    &c.created_at,
+                    &rule,
+                    &status,
+                    &outcome,
+                ],
+            )
+            .await?;
+        Ok(n == 1)
+    }
+
+    /// The oldest comments waiting for the worker.
+    pub async fn pending_comments(&self, limit: i64) -> Result<Vec<PendingComment>> {
+        let rows = self
+            .c
+            .query(
+                "SELECT id, channel_id, provider, comment_id, platform_post_id, author_id, commented_at, rule_id
+                   FROM kubcode_accounts.comment_items
+                  WHERE status = 'pending' ORDER BY received_at, id LIMIT $1",
+                &[&limit],
+            )
+            .await?;
+        rows.iter()
+            .map(|r| {
+                Ok(PendingComment {
+                    id: r.get(0),
+                    channel: ChannelId(r.get(1)),
+                    provider: parse(ProviderKind::parse(r.get(2)))?,
+                    comment_id: r.get(3),
+                    platform_post_id: r.get(4),
+                    author_id: r.get(5),
+                    commented_at: r.get(6),
+                    rule_id: r.get(7),
+                })
+            })
+            .collect()
+    }
+
+    pub async fn finish_comment(&self, item: Uuid, outcome: &str) -> Result<()> {
+        self.c
+            .execute(
+                "UPDATE kubcode_accounts.comment_items
+                    SET status = 'done', outcome = $2, processed_at = now()
+                  WHERE id = $1",
+                &[&item, &outcome],
+            )
+            .await?;
+        Ok(())
+    }
+
+    /// Claims the one DM this person may get for this post; None when it was
+    /// already claimed (by this or an earlier comment).
+    pub async fn claim_dm(&self, c: &PendingComment, rule: Uuid) -> Result<Option<Uuid>> {
+        let row = self
+            .c
+            .query_opt(
+                "INSERT INTO kubcode_accounts.dm_ledger
+                   (channel_id, platform_post_id, author_id, comment_item_id, rule_id)
+                 VALUES ($1, $2, $3, $4, $5)
+                 ON CONFLICT (channel_id, platform_post_id, author_id) DO NOTHING
+                 RETURNING id",
+                &[
+                    &c.channel.0,
+                    &c.platform_post_id,
+                    &c.author_id,
+                    &c.id,
+                    &rule,
+                ],
+            )
+            .await?;
+        Ok(row.map(|r| r.get(0)))
+    }
+
+    /// Moves a ledger row from `from` to `to` (and records `code`); false when
+    /// it was not in `from`, so a step can never be taken twice.
+    pub async fn move_dm(
+        &self,
+        ledger: Uuid,
+        from: DmState,
+        to: DmState,
+        code: Option<&str>,
+    ) -> Result<bool> {
+        if !from.can_move_to(to) {
+            return Ok(false);
+        }
+        let n = self
+            .c
+            .execute(
+                "UPDATE kubcode_accounts.dm_ledger
+                    SET dm_state = $3, error_code = $4, updated_at = now()
+                  WHERE id = $1 AND dm_state = $2",
+                &[&ledger, &from.as_str(), &to.as_str(), &code],
+            )
+            .await?;
+        Ok(n == 1)
+    }
+
+    /// `sent`, `failed` or `skipped` for the public reply.
+    pub async fn set_reply(&self, ledger: Uuid, state: &str) -> Result<()> {
+        self.c
+            .execute(
+                "UPDATE kubcode_accounts.dm_ledger SET reply_state = $2, updated_at = now() WHERE id = $1",
+                &[&ledger, &state],
+            )
+            .await?;
+        Ok(())
+    }
+
+    /// DMs this calendar month (Asia/Bangkok) that went or may have gone out.
+    pub async fn dms_this_month(&self, channel: ChannelId, now: OffsetDateTime) -> Result<i64> {
+        let bkk = now.to_offset(time::UtcOffset::from_hms(7, 0, 0).expect("static offset"));
+        let start = bkk
+            .replace_day(1)
+            .expect("day 1 exists")
+            .replace_time(time::Time::MIDNIGHT);
+        let row = self
+            .c
+            .query_one(
+                "SELECT count(*) FROM kubcode_accounts.dm_ledger
+                  WHERE channel_id = $1 AND created_at >= $2
+                    AND dm_state IN ('dm_sending', 'dm_sent', 'dm_unknown')",
+                &[&channel.0, &start],
+            )
+            .await?;
+        Ok(row.get(0))
+    }
+
+    /// Rows left in `dm_sending` longer than `older_than` (a crash or a lost
+    /// answer) become `dm_unknown`: the DM may be out, so it is never retried.
+    pub async fn stale_sending_to_unknown(&self, older_than: Duration) -> Result<u64> {
+        let cutoff = OffsetDateTime::now_utc() - older_than;
+        Ok(self
+            .c
+            .execute(
+                "UPDATE kubcode_accounts.dm_ledger
+                    SET dm_state = 'dm_unknown', error_code = 'interrupted', updated_at = now()
+                  WHERE dm_state = 'dm_sending' AND updated_at < $1",
+                &[&cutoff],
+            )
+            .await?)
     }
 
     // ------------------------------------------------------------ webhooks
