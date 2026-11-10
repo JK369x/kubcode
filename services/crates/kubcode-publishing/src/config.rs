@@ -17,6 +17,8 @@ pub struct PublishingConfig {
     /// Overrides of the per-platform daily caps; platforms not listed use
     /// Zernio's documented values (see [`Self::daily_cap`]).
     pub daily_caps: Vec<(Platform, u32)>,
+    /// Comment → DM fair use: DMs per channel per calendar month.
+    pub dm_cap_per_month: u32,
 }
 
 impl Default for PublishingConfig {
@@ -27,6 +29,7 @@ impl Default for PublishingConfig {
             posts_per_hour: 25,
             api_per_minute: 60,
             daily_caps: Vec::new(),
+            dm_cap_per_month: 5_000,
         }
     }
 }
@@ -62,6 +65,7 @@ impl PublishingConfig {
             cover_max_bytes: positive(&get, "KUBCODE_PUBLISH_COVER_MAX_BYTES", d.cover_max_bytes)?,
             posts_per_hour: positive(&get, "KUBCODE_PUBLISH_POSTS_PER_HOUR", d.posts_per_hour)?,
             api_per_minute: positive(&get, "KUBCODE_ZERNIO_API_PER_MINUTE", d.api_per_minute)?,
+            dm_cap_per_month: positive(&get, "KUBCODE_DM_CAP_PER_MONTH", d.dm_cap_per_month)?,
             daily_caps: d.daily_caps,
         })
     }

@@ -1,0 +1,5 @@
+{"_source": "OpenAPI v1.529.3 private-reply 502 example (error text shortened)",
+ "error": "Meta did not confirm this private reply (server error or no response). In most observed cases the reply was still delivered and the comment's single private reply is spent.",
+ "type": "platform_error", "code": "platform_api_error", "platform": "instagram",
+ "platformError": {"message": "An unknown error has occurred.", "type": "OAuthException", "code": 1},
+ "details": {"privateReplyOutcome": "unknown"}}

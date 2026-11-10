@@ -546,3 +546,263 @@ async fn a_request_nonce_is_used_once() {
     assert!(s.use_nonce(&hash("n2")).await.unwrap());
     db.drop().await;
 }
+
+fn comment(id: &str, post: &str, author: &str) -> kubcode_publishing::events::IncomingComment {
+    kubcode_publishing::events::IncomingComment {
+        account: ProviderRef("acct-1".into()),
+        comment_id: id.into(),
+        platform_post_id: post.into(),
+        author_id: author.into(),
+        own_account: false,
+        is_reply: false,
+        created_at: Some(OffsetDateTime::now_utc()),
+        text: "ขอลิงก์ครับ".into(),
+    }
+}
+
+#[tokio::test]
+#[ignore = "needs KUBCODE_TEST_DATABASE_URL; run with --ignored"]
+async fn comment_to_dm_bookkeeping() {
+    use kubcode_publishing::automation::{MatchMode, Scope};
+    use kubcode_publishing_store::DmState;
+
+    let db = db().await;
+    let mut s = db.worker().await;
+    let u = db.user().await;
+    let ws = s.owner_workspace(u).await.unwrap();
+    s.open_intent(&intent(ws, u, "c")).await.unwrap();
+    let i = s.take_intent(&hash("c")).await.unwrap();
+    let ch = s.attach_connection(&i, &account("acct-1")).await.unwrap();
+
+    // The incoming account finds its channel; an unknown one finds nothing.
+    assert_eq!(
+        s.comment_channel(ProviderKind::Zernio, &ProviderRef("acct-1".into()))
+            .await
+            .unwrap(),
+        Some(ch)
+    );
+    assert_eq!(
+        s.comment_channel(ProviderKind::Zernio, &ProviderRef("nope".into()))
+            .await
+            .unwrap(),
+        None
+    );
+
+    // Rules are written by members through the web app; here as the owner.
+    let rule: Uuid = db
+        .owner
+        .query_one(
+            "INSERT INTO kubcode_accounts.automation_rules (channel_id, keywords, dm_text, public_reply, position)
+             VALUES ($1, ARRAY['ขอลิงก์'], 'นี่ลิงก์: https://kubcode.dev/go/x', 'ส่งให้ใน DM แล้วนะ', 1) RETURNING id",
+            &[&ch.0],
+        )
+        .await
+        .unwrap()
+        .get(0);
+    db.owner
+        .execute(
+            "INSERT INTO kubcode_accounts.automation_rules (channel_id, keywords, match_mode, platform_post_id, dm_text, reply_policy, active, position)
+             VALUES ($1, ARRAY['LINK'], 'exact', 'p9', 'x', 'always', false, 0)",
+            &[&ch.0],
+        )
+        .await
+        .unwrap();
+    let rules = s.rules_of(ch).await.unwrap();
+    assert_eq!(rules.len(), 2);
+    assert_eq!(
+        rules[0].rule.scope,
+        Scope::Post("p9".into()),
+        "ordered by position"
+    );
+    assert_eq!(rules[0].rule.mode, MatchMode::Exact);
+    assert!(!rules[0].rule.active && !rules[0].reply_after_dm);
+    assert_eq!(rules[1].id, rule);
+    assert!(rules[1].reply_after_dm);
+    assert_eq!(rules[1].public_reply.as_deref(), Some("ส่งให้ใน DM แล้วนะ"));
+
+    // A comment is recorded once; its text is not kept.
+    assert!(s
+        .record_comment(
+            ch,
+            ProviderKind::Zernio,
+            &comment("c1", "p1", "a1"),
+            Some(rule),
+            None
+        )
+        .await
+        .unwrap());
+    assert!(!s
+        .record_comment(
+            ch,
+            ProviderKind::Zernio,
+            &comment("c1", "p1", "a1"),
+            Some(rule),
+            None
+        )
+        .await
+        .unwrap());
+    let cols: i64 = db
+        .owner
+        .query_one(
+            "SELECT count(*) FROM information_schema.columns
+              WHERE table_schema = 'kubcode_accounts' AND table_name = 'comment_items' AND column_name ~ 'text'",
+            &[],
+        )
+        .await
+        .unwrap()
+        .get(0);
+    assert_eq!(cols, 0, "no text column");
+    // Skipped at arrival: done at once, not queued.
+    assert!(s
+        .record_comment(
+            ch,
+            ProviderKind::Zernio,
+            &comment("c2", "p1", "me"),
+            None,
+            Some("own_account")
+        )
+        .await
+        .unwrap());
+    let pending = s.pending_comments(10).await.unwrap();
+    assert_eq!(pending.len(), 1);
+    let p = &pending[0];
+    assert_eq!((p.comment_id.as_str(), p.rule_id), ("c1", Some(rule)));
+
+    // One DM per person per post.
+    let l = s.claim_dm(p, rule).await.unwrap().expect("first claim");
+    assert!(
+        s.claim_dm(p, rule).await.unwrap().is_none(),
+        "same person, same post"
+    );
+    s.record_comment(
+        ch,
+        ProviderKind::Zernio,
+        &comment("c3", "p1", "a1"),
+        Some(rule),
+        None,
+    )
+    .await
+    .unwrap();
+    let again = s
+        .pending_comments(10)
+        .await
+        .unwrap()
+        .into_iter()
+        .find(|c| c.comment_id == "c3")
+        .unwrap();
+    assert!(
+        s.claim_dm(&again, rule).await.unwrap().is_none(),
+        "a second comment by the same person on the same post"
+    );
+    s.record_comment(
+        ch,
+        ProviderKind::Zernio,
+        &comment("c4", "p2", "a1"),
+        Some(rule),
+        None,
+    )
+    .await
+    .unwrap();
+    let other_post = s
+        .pending_comments(10)
+        .await
+        .unwrap()
+        .into_iter()
+        .find(|c| c.comment_id == "c4")
+        .unwrap();
+    let l2 = s
+        .claim_dm(&other_post, rule)
+        .await
+        .unwrap()
+        .expect("another post is another DM");
+
+    // States move only along the path; sending is written before the call.
+    assert!(
+        !s.move_dm(l, DmState::DmSending, DmState::DmSent, None)
+            .await
+            .unwrap(),
+        "not sending yet"
+    );
+    assert!(s
+        .move_dm(l, DmState::Claimed, DmState::DmSending, None)
+        .await
+        .unwrap());
+    assert!(s
+        .move_dm(l, DmState::DmSending, DmState::DmSent, None)
+        .await
+        .unwrap());
+    assert!(
+        !s.move_dm(l, DmState::DmSending, DmState::DmFailed, Some("late"))
+            .await
+            .unwrap(),
+        "final"
+    );
+    s.set_reply(l, "sent").await.unwrap();
+    assert!(s
+        .move_dm(l2, DmState::Claimed, DmState::DmSending, None)
+        .await
+        .unwrap());
+
+    // This month: sent, sending and unknown all count (the DM may be out).
+    assert_eq!(
+        s.dms_this_month(ch, OffsetDateTime::now_utc())
+            .await
+            .unwrap(),
+        2
+    );
+    // A row left in sending (crash, timeout) becomes unknown and stays so.
+    assert_eq!(
+        s.stale_sending_to_unknown(Duration::seconds(-1))
+            .await
+            .unwrap(),
+        1
+    );
+    assert!(
+        !s.move_dm(l2, DmState::DmSending, DmState::DmSent, None)
+            .await
+            .unwrap(),
+        "never retried"
+    );
+    assert_eq!(
+        s.dms_this_month(ch, OffsetDateTime::now_utc())
+            .await
+            .unwrap(),
+        2
+    );
+
+    s.finish_comment(p.id, "dm_sent").await.unwrap();
+    assert!(s
+        .pending_comments(10)
+        .await
+        .unwrap()
+        .iter()
+        .all(|c| c.id != p.id));
+    db.drop().await;
+}
+
+#[tokio::test]
+#[ignore = "needs KUBCODE_TEST_DATABASE_URL; run with --ignored"]
+async fn one_worker_tick_at_a_time() {
+    let db = db().await;
+    let a = db.worker().await;
+    let b = db.worker().await;
+    assert!(a.try_worker_lock().await.unwrap(), "the first tick runs");
+    assert!(
+        !b.try_worker_lock().await.unwrap(),
+        "an overlapping tick skips"
+    );
+    a.release_worker_lock().await.unwrap();
+    assert!(
+        b.try_worker_lock().await.unwrap(),
+        "free again after release"
+    );
+    drop(b); // the session lock also goes with the connection
+    let c = db.worker().await;
+    for _ in 0..50 {
+        if c.try_worker_lock().await.unwrap() {
+            break;
+        }
+        tokio::time::sleep(std::time::Duration::from_millis(20)).await;
+    }
+    db.drop().await;
+}

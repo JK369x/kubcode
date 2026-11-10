@@ -1,0 +1,3 @@
+{"_source": "OpenAPI v1.529.3 private-reply 400 example commentTooOld",
+ "error": "The comment is older than 7 days. Instagram only allows private replies within 7 days of the comment being posted.",
+ "type": "platform_error", "code": "platform_api_error", "platform": "instagram"}

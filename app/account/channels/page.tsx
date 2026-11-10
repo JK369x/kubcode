@@ -5,6 +5,7 @@ import { notFound, redirect } from "next/navigation";
 import { ChannelsPanel } from "@/components/ChannelsPanel";
 import styles from "@/components/KeysSettings.module.css";
 import { canonicalHostRedirect, readAuthConfig } from "@/lib/auth-policy";
+import { automationsEnabled } from "@/lib/automations/config";
 import { getChannelsView } from "@/lib/channels/view";
 
 export const dynamic = "force-dynamic";
@@ -35,7 +36,11 @@ export default async function ChannelsPage({ searchParams }: Props) {
       <div>
         <h1>ช่องที่เชื่อมไว้</h1>
         {view.state === "ready" ? (
-          <ChannelsPanel channels={view.channels} notice={typeof notice === "string" ? notice : null} />
+          <ChannelsPanel
+            channels={view.channels}
+            notice={typeof notice === "string" ? notice : null}
+            automations={automationsEnabled(env)}
+          />
         ) : (
           <p className="setup-notice" role="status">
             ระบบเชื่อมช่องใช้งานไม่ได้ชั่วคราว ลองใหม่ภายหลัง

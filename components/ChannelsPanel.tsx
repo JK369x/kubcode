@@ -1,11 +1,17 @@
 "use client";
 import { useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { send } from "@/lib/interactions/client";
 import type { ChannelStatus, ChannelView } from "@/lib/channels/store";
 import styles from "./KeysSettings.module.css";
 
-type Props = { channels: ChannelView[]; notice: string | null };
+type Props = {
+  channels: ChannelView[];
+  notice: string | null;
+  /** Whether comment → DM automations are on (read on the server). */
+  automations?: boolean;
+};
 
 const NOTICES: Record<string, string> = {
   connected: "เชื่อมช่องสำเร็จแล้ว",
@@ -31,7 +37,7 @@ const STATUS: Record<ChannelStatus, string> = {
 const date = (iso: string) =>
   new Intl.DateTimeFormat("th-TH", { dateStyle: "medium", timeZone: "Asia/Bangkok" }).format(new Date(iso));
 
-export function ChannelsPanel({ channels, notice }: Props) {
+export function ChannelsPanel({ channels, notice, automations = false }: Props) {
   const router = useRouter();
   const [busy, setBusy] = useState(false);
   const [status, setStatus] = useState(notice ? (NOTICES[notice] ?? "") : "");
@@ -79,6 +85,9 @@ export function ChannelsPanel({ channels, notice }: Props) {
                     {c.handle ? ` @${c.handle}` : ""} · {STATUS[c.status]}
                     {c.connectedAt ? ` · ตั้งแต่ ${date(c.connectedAt)}` : ""}
                   </span>
+                  {automations && c.platform === "instagram" && c.status === "active" ? (
+                    <Link href={`/account/channels/${c.id}/automations`}>ตั้งค่าตอบคอมเมนต์อัตโนมัติ</Link>
+                  ) : null}
                   {c.status !== "disconnected" ? (
                     <button type="button" className={styles.danger} disabled={busy} onClick={() => onDisconnect(c.id)}>
                       ยกเลิกการเชื่อม

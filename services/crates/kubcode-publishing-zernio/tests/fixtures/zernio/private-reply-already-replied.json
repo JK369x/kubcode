@@ -1,0 +1,4 @@
+{"_source": "OpenAPI v1.529.3 private-reply 400 example alreadyReplied",
+ "error": "A private reply has already been sent to this comment. Instagram only allows one private reply per comment.",
+ "type": "platform_error", "code": "platform_api_error", "platform": "instagram",
+ "details": {"privateReplyConsumed": true}}

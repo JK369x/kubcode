@@ -6,7 +6,9 @@
 use hmac::{Hmac, Mac};
 use kubcode_publishing::domain::{ProviderKind, ProviderRef};
 use kubcode_publishing::errors::{ErrorClass, ErrorCode, PublishError};
-use kubcode_publishing::events::{EventSource, Headers, ProviderEvent, VerifiedDelivery};
+use kubcode_publishing::events::{
+    EventSource, Headers, IncomingComment, ProviderEvent, VerifiedDelivery,
+};
 use serde_json::Value;
 use sha2::{Digest, Sha256};
 use time::format_description::well_known::Rfc3339;
@@ -154,6 +156,33 @@ impl EventSource for ZernioEvents {
                     code: code(&platform_error_code(category.as_deref())),
                 }
             }),
+            "comment.received" => (|| {
+                let c = b.get("comment")?;
+                let field = |k: &str| {
+                    c.get(k)?
+                        .as_str()
+                        .filter(|v| !v.is_empty())
+                        .map(str::to_owned)
+                };
+                Some(ProviderEvent::CommentReceived(IncomingComment {
+                    account: s(b, "/account/accountId")
+                        .or_else(|| s(b, "/account/id"))
+                        .map(ProviderRef)?,
+                    comment_id: field("id")?,
+                    platform_post_id: field("platformPostId")?,
+                    author_id: s(c, "/author/id")?,
+                    own_account: c.pointer("/author/isOwnAccount").and_then(|v| v.as_bool())
+                        == Some(true),
+                    is_reply: c.get("isReply").and_then(|v| v.as_bool()) == Some(true),
+                    created_at: field("createdAt")
+                        .and_then(|t| OffsetDateTime::parse(&t, &Rfc3339).ok()),
+                    text: c
+                        .get("text")
+                        .and_then(|v| v.as_str())
+                        .unwrap_or("")
+                        .to_owned(),
+                }))
+            })(),
             "account.connected" => {
                 account().map(|account| ProviderEvent::AccountConnected { account })
             }

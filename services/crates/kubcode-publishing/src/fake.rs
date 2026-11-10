@@ -15,11 +15,11 @@ use crate::domain::{
     ConnectionStatus, DeliveryStatus, MediaKind, MediaMeta, Platform, ProviderKind, ProviderRef,
 };
 use crate::errors::{ErrorClass, ErrorCode, PublishError, Result};
-use crate::events::{EventSource, Headers, ProviderEvent, VerifiedDelivery};
+use crate::events::{EventSource, Headers, IncomingComment, ProviderEvent, VerifiedDelivery};
 use crate::ports::{
     Accepted, CallbackParams, Checked, ConnectProvider, ConnectStart, ConnectedAccount,
-    ConnectionHealth, ConnectionRef, DeliveryState, MediaBody, MediaSource, Publisher,
-    WorkspaceCtx,
+    ConnectionHealth, ConnectionRef, DeliveryState, Inbox, MediaBody, MediaSource, PrivateReply,
+    Publisher, WorkspaceCtx,
 };
 use crate::validate::{DeliveryDraft, Violation};
 
@@ -35,6 +35,14 @@ struct State {
     reject_title: Option<String>,
     /// The state the next new schedule reports instead of `Scheduled`.
     next_state: Option<DeliveryState>,
+    /// Inbox calls: (kind, post, comment, text).
+    inbox: Vec<(String, String, String, String)>,
+    /// The next private replies' outcomes (default Sent).
+    next_private: std::collections::VecDeque<PrivateReply>,
+    /// Catch-up: comments per post, newest post first.
+    comments: Vec<(String, Vec<IncomingComment>)>,
+    /// Posts whose comments catch-up read.
+    reads: Vec<String>,
     next: u64,
 }
 
@@ -84,6 +92,29 @@ impl FakeProvider {
 
     pub fn inject(&self, fault: Fault) {
         self.with(|s| s.fault = Some(fault));
+    }
+
+    /// The next private reply answers `outcome` instead of `Sent`.
+    pub fn answer_next_private(&self, outcome: PrivateReply) {
+        self.with(|s| s.next_private.push_back(outcome));
+    }
+
+    /// What catch-up reads: a post and its comments (later posts first).
+    pub fn set_post_comments(&self, post: &str, comments: Vec<IncomingComment>) {
+        self.with(|s| {
+            s.comments.retain(|(p, _)| p != post);
+            s.comments.insert(0, (post.to_owned(), comments));
+        });
+    }
+
+    /// The posts catch-up read comments of.
+    pub fn inbox_reads(&self) -> Vec<String> {
+        self.with(|s| s.reads.clone())
+    }
+
+    /// Every inbox call so far: (kind, post, comment, text).
+    pub fn inbox_calls(&self) -> Vec<(String, String, String, String)> {
+        self.with(|s| s.inbox.clone())
     }
 
     /// The next new schedule reports `state` (e.g. an inline failure).
@@ -335,10 +366,94 @@ impl EventSource for FakeProvider {
                 post,
                 code: ErrorCode::new("platform_rejected").expect("valid code"),
             }],
+            ("comment.received", Some(post)) => {
+                let s = |k: &str| {
+                    d.body
+                        .get(k)
+                        .and_then(|v| v.as_str())
+                        .unwrap_or("")
+                        .to_owned()
+                };
+                vec![ProviderEvent::CommentReceived(IncomingComment {
+                    account: ProviderRef(s("account")),
+                    comment_id: s("comment"),
+                    platform_post_id: post.0,
+                    author_id: s("author"),
+                    own_account: d.body.get("own").and_then(|v| v.as_bool()) == Some(true),
+                    is_reply: false,
+                    created_at: Some(OffsetDateTime::now_utc()),
+                    text: s("text"),
+                })]
+            }
             (other, _) => vec![ProviderEvent::Ignored {
                 event_type: other.to_owned(),
             }],
         }
+    }
+}
+
+#[async_trait]
+impl Inbox for FakeProvider {
+    async fn private_reply(
+        &self,
+        _account: &ProviderRef,
+        platform_post_id: &str,
+        comment_id: &str,
+        text: &str,
+    ) -> PrivateReply {
+        self.with(|s| {
+            s.inbox.push((
+                "private".into(),
+                platform_post_id.into(),
+                comment_id.into(),
+                text.into(),
+            ));
+            s.next_private.pop_front().unwrap_or(PrivateReply::Sent)
+        })
+    }
+
+    async fn recent_posts(&self, _account: &ProviderRef, limit: u32) -> Result<Vec<String>> {
+        Ok(self.with(|s| {
+            s.comments
+                .iter()
+                .take(limit as usize)
+                .map(|(p, _)| p.clone())
+                .collect()
+        }))
+    }
+
+    async fn post_comments(
+        &self,
+        _account: &ProviderRef,
+        platform_post_id: &str,
+    ) -> Result<Vec<IncomingComment>> {
+        Ok(self.with(|s| {
+            s.reads.push(platform_post_id.to_owned());
+            s.comments
+                .iter()
+                .find(|(p, _)| p == platform_post_id)
+                .map(|(_, c)| c.clone())
+                .unwrap_or_default()
+        }))
+    }
+
+    async fn public_reply(
+        &self,
+        _account: &ProviderRef,
+        platform_post_id: &str,
+        comment_id: &str,
+        text: &str,
+        _key: &str,
+    ) -> Result<()> {
+        self.with(|s| {
+            s.inbox.push((
+                "public".into(),
+                platform_post_id.into(),
+                comment_id.into(),
+                text.into(),
+            ))
+        });
+        Ok(())
     }
 }
 

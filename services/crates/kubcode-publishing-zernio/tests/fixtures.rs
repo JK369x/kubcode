@@ -375,3 +375,42 @@ fn bodies_over_one_mebibyte_are_refused_before_hashing() {
         "body_too_large"
     );
 }
+
+#[test]
+fn comment_received() {
+    let e = translate("webhook-comment-received");
+    assert_eq!(e.len(), 1);
+    let ProviderEvent::CommentReceived(c) = &e[0] else {
+        panic!("{e:?}")
+    };
+    assert_eq!(c.account, ProviderRef("507f1f77bcf86cd799439011".into()));
+    assert_eq!(c.comment_id, "17800000000000001");
+    assert_eq!(c.platform_post_id, "17900000000000001");
+    assert_eq!(c.author_id, "17841400000000001");
+    assert_eq!(c.text, "Love this! 😍");
+    assert!(!c.own_account && !c.is_reply);
+    assert!(c.created_at.is_some());
+}
+
+#[test]
+fn our_own_reply_comes_back_flagged_and_broken_comments_are_ignored() {
+    let mut body = fixture("webhook-comment-received");
+    body["comment"]["author"]["isOwnAccount"] = json!(true);
+    body["comment"]["isReply"] = json!(true);
+    let (headers, raw) = support::signed(&body);
+    let events = ZernioEvents::new(vec![support::WEBHOOK_SECRET.to_vec()]);
+    let e = events.translate(&events.verify(&headers, &raw).unwrap());
+    let ProviderEvent::CommentReceived(c) = &e[0] else {
+        panic!("{e:?}")
+    };
+    assert!(c.own_account && c.is_reply);
+
+    let mut broken = fixture("webhook-comment-received");
+    broken["comment"]
+        .as_object_mut()
+        .unwrap()
+        .remove("platformPostId");
+    let (headers, raw) = support::signed(&broken);
+    let e = events.translate(&events.verify(&headers, &raw).unwrap());
+    assert!(matches!(&e[0], ProviderEvent::Ignored { .. }), "{e:?}");
+}

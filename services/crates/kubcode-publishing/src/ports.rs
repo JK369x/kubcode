@@ -185,3 +185,50 @@ pub trait Publisher: Send + Sync {
     async fn cancel(&self, conn: &ConnectionRef, post: &ProviderRef) -> Result<()>;
     async fn status(&self, conn: &ConnectionRef, post: &ProviderRef) -> Result<DeliveryState>;
 }
+
+/// What became of a private reply (docs/design/ig-comment-dm.md §4.3).
+/// Instagram allows one per comment and the provider offers no idempotency,
+/// so only `Failed` may ever be followed by another attempt.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum PrivateReply {
+    Sent,
+    /// The comment's one private reply is spent (an earlier reply, or a
+    /// refused one that still counted).
+    Consumed,
+    /// Refused without spending the reply (too old, declined, rate limited).
+    Failed(PublishError),
+    /// No clear answer (502, timeout, lost connection): it may have been
+    /// delivered.
+    Unknown,
+}
+
+/// Replies to comments: the comment → DM engine's capability.
+#[async_trait]
+pub trait Inbox: Send + Sync {
+    /// A plain-text DM to the comment's author.
+    async fn private_reply(
+        &self,
+        account: &ProviderRef,
+        platform_post_id: &str,
+        comment_id: &str,
+        text: &str,
+    ) -> PrivateReply;
+    /// Catch-up: the platform ids of the account's most recently commented
+    /// posts.
+    async fn recent_posts(&self, account: &ProviderRef, limit: u32) -> Result<Vec<String>>;
+    /// Catch-up: a post's top-level comments (replies are not answered).
+    async fn post_comments(
+        &self,
+        account: &ProviderRef,
+        platform_post_id: &str,
+    ) -> Result<Vec<crate::events::IncomingComment>>;
+    /// A public reply under the comment; `key` makes a retry harmless.
+    async fn public_reply(
+        &self,
+        account: &ProviderRef,
+        platform_post_id: &str,
+        comment_id: &str,
+        text: &str,
+        key: &str,
+    ) -> Result<()>;
+}

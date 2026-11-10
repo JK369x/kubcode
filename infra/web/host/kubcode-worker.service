@@ -1,0 +1,25 @@
+# Comment → DM worker tick (docs/design/ig-comment-dm.md §4.8): one signed call
+# to the publishing Function URL. Started by kubcode-worker.timer every minute.
+[Unit]
+Description=kubcode comment to DM worker tick
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+User=kubcode
+Group=kubcode
+EnvironmentFile=/etc/kubcode/web.env
+ExecStart=/usr/local/bin/node /usr/local/lib/kubcode/worker-tick
+TimeoutStartSec=60
+
+NoNewPrivileges=yes
+ProtectSystem=strict
+ProtectHome=yes
+PrivateTmp=yes
+PrivateDevices=yes
+ProtectKernelTunables=yes
+ProtectKernelModules=yes
+ProtectControlGroups=yes
+RestrictSUIDSGID=yes
+LockPersonality=yes
