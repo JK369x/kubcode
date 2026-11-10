@@ -414,3 +414,45 @@ fn our_own_reply_comes_back_flagged_and_broken_comments_are_ignored() {
     let e = events.translate(&events.verify(&headers, &raw).unwrap());
     assert!(matches!(&e[0], ProviderEvent::Ignored { .. }), "{e:?}");
 }
+
+#[test]
+fn tiktok_comment_received_carries_only_the_author_id() {
+    let e = translate("webhook-comment-received-tiktok");
+    let ProviderEvent::CommentReceived(c) = &e[0] else {
+        panic!("{e:?}")
+    };
+    assert_eq!(c.account, ProviderRef("507f1f77bcf86cd799439011".into()));
+    assert_eq!(
+        (c.comment_id.as_str(), c.platform_post_id.as_str()),
+        ("7400000000000000001", "7300000000000000001")
+    );
+    assert_eq!(c.author_id, "-000AbCdEfGhIjKlMnOpQrStUvWxYz");
+    assert_eq!(c.text, "EGM");
+    assert!(
+        !c.own_account,
+        "absent isOwnAccount is not evaluated, read as not ours"
+    );
+    assert!(!c.is_reply);
+}
+
+#[test]
+fn tiktok_url_resolved_fills_the_receipt() {
+    let e = translate("webhook-post-tiktok-url-resolved");
+    assert_eq!(e.len(), 1);
+    let ProviderEvent::PostPublished {
+        post,
+        platform_post_id,
+        url,
+        ..
+    } = &e[0]
+    else {
+        panic!("{e:?}")
+    };
+    assert_eq!(post, &ProviderRef("507f1f77bcf86cd799439013".into()));
+    assert_eq!(platform_post_id.as_deref(), Some("7300000000000000001"));
+    assert_eq!(
+        url.as_deref(),
+        Some("https://www.tiktok.com/@sample_brand/video/7300000000000000001"),
+        "the TikTok target, not the post's first platform"
+    );
+}

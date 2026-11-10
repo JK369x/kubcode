@@ -133,21 +133,25 @@ impl EventSource for ZernioEvents {
             }]
         };
         let event = match d.event_type.as_str() {
-            "post.platform.published" | "post.published" => post().map(|post| {
-                // The `platform` object on post.platform.*; the first entry on post.*.
-                let p = b
-                    .get("platform")
-                    .filter(|v| v.is_object())
-                    .or_else(|| b.pointer("/post/platforms/0"));
-                let field = |k: &str| p.and_then(|p| p.get(k)?.as_str()).map(str::to_owned);
-                ProviderEvent::PostPublished {
-                    post,
-                    platform_post_id: field("platformPostId"),
-                    url: field("publishedUrl").or_else(|| field("platformPostUrl")),
-                    at: s(b, "/post/publishedAt")
-                        .and_then(|t| OffsetDateTime::parse(&t, &Rfc3339).ok()),
-                }
-            }),
+            // TikTok reports its video id and URL late, as their own event
+            // with the post.platform.published shape (OpenAPI
+            // post.tiktok.url_resolved); the store fills the receipt then.
+            "post.platform.published" | "post.published" | "post.tiktok.url_resolved" => post()
+                .map(|post| {
+                    // The `platform` object on post.platform.*; the first entry on post.*.
+                    let p = b
+                        .get("platform")
+                        .filter(|v| v.is_object())
+                        .or_else(|| b.pointer("/post/platforms/0"));
+                    let field = |k: &str| p.and_then(|p| p.get(k)?.as_str()).map(str::to_owned);
+                    ProviderEvent::PostPublished {
+                        post,
+                        platform_post_id: field("platformPostId"),
+                        url: field("publishedUrl").or_else(|| field("platformPostUrl")),
+                        at: s(b, "/post/publishedAt")
+                            .and_then(|t| OffsetDateTime::parse(&t, &Rfc3339).ok()),
+                    }
+                }),
             "post.platform.failed" | "post.failed" => post().map(|post| {
                 let category = s(b, "/platform/errorCategory")
                     .or_else(|| s(b, "/post/platforms/0/errorCategory"));

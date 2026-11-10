@@ -29,7 +29,12 @@ import { SESSION_COOKIE_NAME } from "../../lib/auth-policy";
 import { throwawayDb } from "../../tests/accounts-db/harness";
 import { callbackFrom } from "./callback";
 
-const PLATFORM = process.argv[2] ?? "youtube";
+const LABELS = { youtube: "YouTube", instagram: "Instagram", tiktok: "TikTok" } as const;
+const PLATFORM = (process.argv[2] ?? "youtube") as keyof typeof LABELS;
+if (!Object.hasOwn(LABELS, PLATFORM)) {
+  console.error(`[local-e2e] unknown platform ${PLATFORM}; use ${Object.keys(LABELS).join(", ")}`);
+  process.exit(2);
+}
 const FIXTURE = {
   NEXTAUTH_URL: "https://kubcode.dev",
   NEXTAUTH_SECRET: "FIXTURE-ONLY-session-secret-local-e2e-0000001",
@@ -264,7 +269,7 @@ async function main() {
     await page.goto("https://kubcode.dev/account/channels");
     await page.getByRole("heading", { name: "ช่องที่เชื่อมไว้" }).waitFor();
 
-    const label = PLATFORM === "instagram" ? "Instagram" : "YouTube";
+    const label = LABELS[PLATFORM];
     if (SMOKE) {
       await page.getByRole("button", { name: `เชื่อม ${label}` }).click();
       const line = await waitFor("the runner's connect/start line", 30_000, async () =>
@@ -324,10 +329,25 @@ async function main() {
     assert.equal(await page.getByText("ยังไม่มีช่องที่เชื่อมไว้").count(), 0, "the page lists the channel");
     await page.screenshot({ path: `${OUT}/connected-${PLATFORM}.png`, fullPage: true });
     log(`PASS: ${PLATFORM} connected; the page shows it (${OUT}/connected-${PLATFORM}.png)`);
+    if (PLATFORM === "tiktok") {
+      // Read-only, this run's own profile: what TikTok reported. Comments need
+      // the TikTok for Business connection (every new one); posts are public only.
+      const pid = (await db.pool.query("SELECT provider_ref FROM kubcode_accounts.provider_profiles WHERE provider = 'zernio'")).rows[0]
+        ?.provider_ref;
+      const list = pid ? await zernio(key, "GET", `/accounts?profileId=${encodeURIComponent(pid)}`) : null;
+      const acct = (list?.body?.accounts ?? []).find((a: any) => a.platform === "tiktok");
+      log(`TikTok account type reported at connect: ${acct?.tiktokAccountType ?? "not reported"}`);
+      assert.ok(acct, "the TikTok account is in this run's profile");
+    }
 
     // ---- disconnect through the page (Zernio DELETE /v1/accounts/{id})
+    // The page asks first (names the channel, warns about scheduled posts).
+    page.once("dialog", (d) => {
+      assert.match(d.message(), new RegExp(`ยกเลิกการเชื่อม ${label} .*โพสต์ที่ตั้งเวลาไว้`, "s"));
+      void d.accept();
+    });
     await page.getByRole("button", { name: "ยกเลิกการเชื่อม" }).click();
-    await page.getByText("ยกเลิกการเชื่อมช่องแล้ว").waitFor();
+    await page.getByText(new RegExp(`^ยกเลิกการเชื่อม ${label} .* แล้ว$`)).waitFor();
     const left = (await db.pool.query("SELECT status FROM kubcode_accounts.channel_connections")).rows.map((r) => r.status);
     assert.deepEqual(left, ["revoked"], "disconnect revokes the connection");
     log("PASS: disconnected through the page");

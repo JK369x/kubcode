@@ -32,7 +32,7 @@ export default async function AutomationsPage({ params }: Props) {
     new Date(),
   );
   if (view.state === "signed-out") redirect("/account");
-  // Off, not allowed, or not this member's Instagram channel: no such page.
+  // Off, not allowed, or not this member's Instagram or TikTok channel: no such page.
   if (view.state === "disabled" || view.state === "forbidden" || view.state === "not-found") notFound();
 
   return (

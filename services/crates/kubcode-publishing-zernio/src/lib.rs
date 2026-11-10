@@ -33,6 +33,8 @@ use crate::transport::{HttpRequest, Method, RequestBody, Transport};
 pub const PRODUCTION_BASE: &str = "https://zernio.com/api";
 /// Our callback must be on our own domain (no open redirect through Zernio).
 const CALLBACK_PREFIX: &str = "https://kubcode.dev/";
+/// TikTok's privacy value for a public post (creator-info `privacyLevels`).
+const TIKTOK_PUBLIC: &str = "PUBLIC_TO_EVERYONE";
 /// Zernio's presign cap for every media type.
 const PROVIDER_MAX_BYTES: u64 = 5 * 1024 * 1024 * 1024;
 
@@ -271,6 +273,27 @@ impl Zernio {
                 "instagramThumbnail": cover_url,
                 "shareToFeed": true,
             }),
+            // OpenAPI TikTokPlatformData: a direct post (no Creator Inbox
+            // draft). Business connections publish videos public only; the
+            // core refuses anything else before this point. Comments stay on
+            // for the keyword reply; duet and stitch are off. The owner's
+            // confirmation in the CLI is the preview/consent TikTok asks for.
+            Platform::TikTok => {
+                let mut psd = json!({
+                    "draft": false,
+                    "privacyLevel": TIKTOK_PUBLIC,
+                    "allowComment": true,
+                    "allowDuet": false,
+                    "allowStitch": false,
+                    "commercialContentType": "none",
+                    "contentPreviewConfirmed": true,
+                    "expressConsentGiven": true,
+                });
+                if let Some(c) = cover_url {
+                    psd["videoCoverImageUrl"] = json!(c);
+                }
+                psd
+            }
             _ => json!({}),
         };
         let mut body = json!({
@@ -567,7 +590,7 @@ impl Inbox for Zernio {
                 None,
             )
             .await?;
-        // Instagram media ids are digits; a Zernio id would key the ledger
+        // Instagram media and TikTok video ids are digits; a Zernio id would key the ledger
         // differently from the webhook's platformPostId, so it is skipped.
         Ok(v.get("data")
             .and_then(Value::as_array)

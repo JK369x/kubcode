@@ -3,6 +3,7 @@
 //!   kubcode whoami
 //!   kubcode push <clip-id>
 //!   kubcode schedule <clip-id> --channel <id> [--channel <id>…] --at <RFC 3339> [--visibility private|public|unlisted]
+//!     (TikTok and Instagram: public only, so pass --visibility public)
 //!   kubcode status <post-id>
 //!   kubcode cancel <delivery-id>
 //!
@@ -20,7 +21,7 @@ use kubcode_cli::cover_check::{check_youtube, youtube_video_id, Verdict};
 use kubcode_cli::local::LocalOps;
 use kubcode_cli::ops::{call, Aws, AwsCli, Keychain, MacKeychain};
 use kubcode_cli::push::push;
-use kubcode_cli::schedule::{bangkok, render_summary, ChannelInfo};
+use kubcode_cli::schedule::{bangkok, check_visibility, render_summary, ChannelInfo};
 use kubcode_publishing::domain::Visibility;
 use publishing_lambda::summary::{digest, ScheduleRequest, Target};
 use serde_json::{json, Value};
@@ -141,8 +142,9 @@ fn run(args: &[String]) -> Result<(), String> {
                 return Err("ต้องระบุ --channel อย่างน้อยหนึ่งช่อง".into());
             }
             let clip = read_clip(&studio(), id).map_err(|e| e.to_string())?;
-            let pushed = push(aws, keys, &clip, now())?;
             let who = call(aws, keys, &json!({"op": "whoami"}), now())?;
+            check_visibility(&targets_ch, &channels(&who), visibility)?;
+            let pushed = push(aws, keys, &clip, now())?;
             let req = ScheduleRequest {
                 clip_ref: clip.id.clone(),
                 video_asset: pushed.video,

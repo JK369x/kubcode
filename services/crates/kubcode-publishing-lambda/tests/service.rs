@@ -623,3 +623,206 @@ async fn the_scheduled_worker_catches_up_every_ten_minutes() {
     );
     db.drop().await;
 }
+
+#[tokio::test]
+#[ignore = "needs KUBCODE_TEST_DATABASE_URL; run with --ignored"]
+async fn tiktok_comments_get_only_the_public_reply_once_per_person_per_post() {
+    let db = db().await;
+    let mut store = db.store().await;
+    let fake = Arc::new(FakeProvider::default());
+    let (reg, mut cfg) = (registry(&fake), cfg());
+    cfg.dm_cap_per_month = 2;
+    let mut s = svc(&mut store, &reg, &cfg);
+    let owner = db.user(true).await;
+    let tt = connect(&mut s, &fake, owner, Platform::TikTok).await;
+    let acct = s.store.connections(tt).await.unwrap()[0]
+        .provider_ref
+        .clone();
+    db.owner
+        .execute(
+            "INSERT INTO kubcode_accounts.automation_rules (channel_id, keywords, dm_text, public_reply)
+             VALUES ($1, ARRAY['egm'], 'unused on TikTok', 'ลิงก์อยู่ในไบโอนะ https://kubcode.dev/go/egm')",
+            &[&tt.0],
+        )
+        .await
+        .unwrap();
+    let mut n = 0;
+    let mut comment = |id: &str, post: &str, author: &str, text: &str| {
+        n += 1;
+        fake.signed(serde_json::json!({
+            "id": format!("tt-evt-{n}"), "event": "comment.received", "account": acct.0,
+            "comment": id, "post": post, "author": author, "text": text, "own": false,
+        }))
+    };
+    for (id, post, author, text) in [
+        ("t1", "v1", "a1", "EGM please"),
+        ("t2", "v1", "a1", "egm"),
+        ("t3", "v1", "a2", "nice"),
+    ] {
+        let (h, b) = comment(id, post, author, text);
+        assert_eq!(
+            s.webhook(ProviderKind::Zernio, &h, &b).await,
+            WebhookResult::Accepted
+        );
+    }
+    assert_eq!(
+        s.work().await.unwrap(),
+        vec![
+            ("t1".to_owned(), "reply_sent"),
+            ("t2".to_owned(), "duplicate")
+        ]
+    );
+    assert_eq!(
+        fake.inbox_calls(),
+        vec![(
+            "public".to_owned(),
+            "v1".to_owned(),
+            "t1".to_owned(),
+            "ลิงก์อยู่ในไบโอนะ https://kubcode.dev/go/egm".to_owned()
+        )],
+        "never a private reply on TikTok"
+    );
+    let row = db
+        .owner
+        .query_one(
+            "SELECT dm_state, reply_state FROM kubcode_accounts.dm_ledger WHERE channel_id = $1",
+            &[&tt.0],
+        )
+        .await
+        .unwrap();
+    assert_eq!(
+        (row.get::<_, String>(0), row.get::<_, String>(1)),
+        ("claimed".to_owned(), "sent".to_owned())
+    );
+
+    // Public replies count against the same monthly cap (2): one more, then stop.
+    for (id, post) in [("t4", "v2"), ("t5", "v3")] {
+        let (h, b) = comment(id, post, "a1", "egm");
+        s.webhook(ProviderKind::Zernio, &h, &b).await;
+    }
+    assert_eq!(
+        s.work().await.unwrap(),
+        vec![
+            ("t4".to_owned(), "reply_sent"),
+            ("t5".to_owned(), "cap_reached")
+        ]
+    );
+    assert_eq!(fake.inbox_calls().len(), 2);
+
+    // A TikTok rule without a public reply sends nothing.
+    db.owner
+        .execute(
+            "UPDATE kubcode_accounts.automation_rules SET public_reply = NULL WHERE channel_id = $1",
+            &[&tt.0],
+        )
+        .await
+        .unwrap();
+    cfg_free(&db, tt).await;
+    let (h, b) = comment("t6", "v4", "a3", "egm");
+    s.webhook(ProviderKind::Zernio, &h, &b).await;
+    assert_eq!(
+        s.work().await.unwrap(),
+        vec![("t6".to_owned(), "no_public_reply")]
+    );
+    assert_eq!(fake.inbox_calls().len(), 2);
+    db.drop().await;
+}
+
+/// Moves this channel's ledger rows to last month, so the cap is free again.
+async fn cfg_free(db: &support::Db, channel: ChannelId) {
+    db.owner
+        .execute(
+            "UPDATE kubcode_accounts.dm_ledger SET created_at = created_at - interval '40 days' WHERE channel_id = $1",
+            &[&channel.0],
+        )
+        .await
+        .unwrap();
+}
+
+#[tokio::test]
+#[ignore = "needs KUBCODE_TEST_DATABASE_URL; run with --ignored"]
+async fn a_late_tiktok_url_fills_the_receipt_without_overwriting() {
+    let db = db().await;
+    let mut store = db.store().await;
+    let fake = Arc::new(FakeProvider::default());
+    let (reg, cfg) = (registry(&fake), cfg());
+    let mut s = svc(&mut store, &reg, &cfg);
+    let owner = db.user(true).await;
+    let tt = connect(&mut s, &fake, owner, Platform::TikTok).await;
+    let (video, cover) = assets(&mut s, owner, true).await;
+    let mut req = request(video, cover, &[tt]);
+    req.targets[0].visibility = Visibility::Public;
+    let out = s.schedule(owner, req.clone(), digest(&req)).await.unwrap();
+    assert_eq!(
+        out.deliveries[0].status,
+        DeliveryStatus::Scheduled,
+        "{out:?}"
+    );
+    let post_ref: String = db
+        .owner
+        .query_one(
+            "SELECT provider_ref FROM kubcode_accounts.deliveries WHERE id = $1",
+            &[&out.deliveries[0].delivery.unwrap().0],
+        )
+        .await
+        .unwrap()
+        .get(0);
+    let store = &mut *s.store;
+    let apply = |id: &str, body: serde_json::Value| kubcode_publishing::events::VerifiedDelivery {
+        event_id: id.into(),
+        body_sha256: [id.len() as u8; 32],
+        event_type: "x".into(),
+        body,
+    };
+    use kubcode_publishing::events::ProviderEvent;
+    let published = |pid: Option<&str>, url: Option<&str>| ProviderEvent::PostPublished {
+        post: ProviderRef(post_ref.clone()),
+        platform_post_id: pid.map(str::to_owned),
+        url: url.map(str::to_owned),
+        at: None,
+    };
+    store
+        .apply_event(
+            ProviderKind::Zernio,
+            &apply("e1", serde_json::json!({})),
+            &[published(None, None)],
+        )
+        .await
+        .unwrap();
+    store
+        .apply_event(
+            ProviderKind::Zernio,
+            &apply("e-two", serde_json::json!({})),
+            &[published(
+                Some("7300000000000000001"),
+                Some("https://www.tiktok.com/@kubcode/video/7300000000000000001"),
+            )],
+        )
+        .await
+        .unwrap();
+    store
+        .apply_event(
+            ProviderKind::Zernio,
+            &apply("e-three", serde_json::json!({})),
+            &[published(Some("999"), Some("https://evil.example/x"))],
+        )
+        .await
+        .unwrap();
+    let r = db
+        .owner
+        .query_one(
+            "SELECT platform_post_id, platform_url FROM kubcode_accounts.receipts r
+               JOIN kubcode_accounts.deliveries d ON d.id = r.delivery_id WHERE d.provider_ref = $1",
+            &[&post_ref],
+        )
+        .await
+        .unwrap();
+    assert_eq!(
+        (r.get::<_, String>(0), r.get::<_, String>(1)),
+        (
+            "7300000000000000001".to_owned(),
+            "https://www.tiktok.com/@kubcode/video/7300000000000000001".to_owned()
+        )
+    );
+    db.drop().await;
+}

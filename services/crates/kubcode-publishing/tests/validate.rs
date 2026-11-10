@@ -188,3 +188,67 @@ fn every_problem_is_reported_at_once() {
     c.sort_unstable();
     assert_eq!(c, vec!["cover_missing", "publish_in_past", "title_empty"]);
 }
+
+#[test]
+fn tiktok_is_a_public_9_16_video_with_a_caption_up_to_2200() {
+    let mut d = draft(Platform::TikTok);
+    d.title = "x".repeat(500);
+    assert!(codes(&d).is_empty(), "TikTok has no separate title");
+    d.description = "ก".repeat(2_200);
+    assert!(codes(&d).is_empty());
+    d.description.push('ก');
+    assert_eq!(codes(&d), vec!["description_too_long"]);
+
+    let mut d = draft(Platform::TikTok);
+    d.visibility = Visibility::Private;
+    assert_eq!(
+        codes(&d),
+        vec!["visibility_unsupported"],
+        "Business connections post public only"
+    );
+
+    let mut d = draft(Platform::TikTok);
+    d.video.width = 1920;
+    d.video.height = 1080;
+    assert_eq!(codes(&d), vec!["video_not_9_16"]);
+    d.video.width = 1080;
+    d.video.height = 1350;
+    assert_eq!(codes(&d), vec!["video_not_9_16"], "4:5 is not 9:16");
+    for (w, h) in [(720, 1280), (1080, 1918), (1080, 1920)] {
+        d.video.width = w;
+        d.video.height = h;
+        assert!(codes(&d).is_empty(), "{w}x{h}");
+    }
+
+    let mut d = draft(Platform::TikTok);
+    d.video.seconds = Some(600.0);
+    assert!(codes(&d).is_empty());
+    d.video.seconds = Some(600.5);
+    assert_eq!(codes(&d), vec!["video_too_long"]);
+
+    let mut d = draft(Platform::TikTok);
+    d.cover = None;
+    assert_eq!(codes(&d), vec!["cover_missing"], "the designed cover");
+}
+
+#[test]
+fn tiktok_daily_cap_is_15() {
+    let cfg = PublishingConfig::default();
+    let d = draft(Platform::TikTok);
+    let at = |same_day| {
+        validate_core(
+            &d,
+            NOW,
+            Velocity {
+                same_hour: 0,
+                same_day,
+            },
+            &cfg,
+        )
+        .into_iter()
+        .map(|v| v.code)
+        .collect::<Vec<_>>()
+    };
+    assert!(at(14).is_empty());
+    assert_eq!(at(15), vec!["daily_limit"]);
+}

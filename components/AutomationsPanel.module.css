@@ -112,3 +112,12 @@
     margin-top: 8px;
   }
 }
+/* The TikTok page: a DM is not possible there, said plainly up front. */
+.notice.notice {
+  padding: 12px 14px;
+  border: 1px solid var(--line);
+  border-left: 4px solid #d97706;
+  border-radius: 12px;
+  background: var(--surface);
+  font-size: 14px;
+}
