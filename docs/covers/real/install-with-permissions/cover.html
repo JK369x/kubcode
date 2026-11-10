@@ -1,0 +1,40 @@
+<!doctype html><html lang="th"><meta charset="utf-8"><link rel="stylesheet" href="../base.css">
+<!-- Real terminal output of the article's check-setup.sh, run on our Mac on 2026-11-10 (an empty test .env), and the real PROVENANCE limits of one imported kit. -->
+<style>
+.term{position:absolute;left:70px;top:70px;width:900px;height:760px;border-radius:18px;background:#0b0912;border:2px solid #3b3056;box-shadow:0 18px 50px rgba(0,0,0,.55);overflow:hidden}
+.bar{height:46px;background:#1d1729;display:flex;align-items:center;gap:10px;padding:0 18px}
+.bar i{width:14px;height:14px;border-radius:50%;background:#4a3f63}
+.bar span{margin-left:14px;font:500 18px X;color:#9d90b8}
+pre{margin:0;padding:34px 36px;font:29px/1.6 ui-monospace,Menlo,monospace;color:#d9d0ee;white-space:pre-wrap}
+.p{color:#b48cff}.ok{color:#7be0b0}.bad{color:#ff8f8f}
+.side{position:absolute;left:1020px;top:80px;width:520px}
+.card{margin-top:28px;padding:26px 28px;border-radius:16px;background:#1d1729;border:2px solid #3b3056}
+.card h3{margin:0 0 10px;font:700 34px A}
+.li{display:flex;gap:12px;align-items:flex-start;font:400 28px/1.45 A;color:#e3daf6;margin-top:8px}
+.li b{font-weight:700}
+.y{color:#7be0b0}.n{color:#ff8f8f}
+</style>
+<div class="stage">
+ <div class="term"><div class="bar"><i></i><i></i><i></i><span>check-setup.sh</span></div>
+<pre><span class="p">$</span> node --version
+<span class="ok">v24.22.2</span>
+<span class="p">$</span> python3 -c "import numpy, PIL"
+<span class="bad">ModuleNotFoundError: No module
+named 'numpy'</span>
+<span class="p">$</span> ffmpeg -version | head -n 1
+<span class="ok">ffmpeg version 9.0.1</span>
+<span class="p">$</span> ffprobe -version | head -n 1
+<span class="ok">ffprobe version 9.0.1</span>
+<span class="p">$</span> grep -q ELEVENLABS_API_KEY .env
+<span class="ok">api key ok</span></pre></div>
+ <div class="side">
+  <div class="tag">ก่อนติดตั้ง ตรวจของจริง</div>
+  <div class="card"><h3>เครื่องมือ</h3>
+   <div class="li"><b class="y">✓</b>Node · FFmpeg · ffprobe</div>
+   <div class="li"><b class="n">✗</b>numpy ยังไม่ได้ติดตั้ง</div></div>
+  <div class="card"><h3>สิทธิ์ (PROVENANCE.json)</h3>
+   <div class="li"><b class="n">✗</b>ไม่มีไฟล์ license</div>
+   <div class="li"><b class="n">✗</b>ห้ามแจกต่อสาธารณะ</div>
+   <div class="li"><b class="y">✓</b>ใช้ศึกษาส่วนตัวได้</div></div>
+ </div>
+</div></html>
