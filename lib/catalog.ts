@@ -1,5 +1,6 @@
 import styleData from "./styles.json";
 import { publishSkills, MEDIA_POLICY } from "./publication";
+import type { StoryKey, VisualKey } from "./taxonomy";
 export const styles = styleData;
 export const PREVIEW_NOTICE = MEDIA_POLICY === "licensed-only"
   ? "PUBLIC_PREVIEW_MEDIA_WITHHELD_PENDING_RIGHTS"
@@ -28,8 +29,17 @@ export type Skill = {
   requirements: string[];
   rights: "uncleared";
   examples: Example[];
-  /** What a creator can make with it; drives the homepage filters. */
+  /** What a creator can make with it: the homepage's first filter row. */
   useCases: UseCase[];
+  /**
+   * How its clips look (แนวภาพ) and how its story is told (แนวเรื่อง), as
+   * taxonomy keys (lib/taxonomy.ts). Only for skills that are a style; tools
+   * (voice, captions, podcast cutting, coding) leave both empty and are
+   * found through their use case. A skill's published clips can add more
+   * story formats on the homepage (lib/facets.ts).
+   */
+  visual?: VisualKey;
+  story?: StoryKey;
   /**
    * "external": running it costs money outside kubcode (named in costNote).
    * "no-key": its requirements need no paid API key.
@@ -76,6 +86,8 @@ export const rawSkills: readonly Skill[] = [
       "ยังไม่ทดสอบติดตั้งจากเครื่องใหม่",
     ],
     useCases: ["story"],
+    visual: "stickman-canvas",
+    story: "money-tip",
     cost: "no-key",
     rights: "uncleared",
     examples: [
@@ -121,6 +133,9 @@ export const rawSkills: readonly Skill[] = [
       "ต้องจัดฟอนต์ไทยเอง",
     ],
     useCases: ["story"],
+    visual: "flat-room",
+    // No story format: the series maps to know-to-survive (fact), but this
+    // catalogue demo is a fictional teaser, "not survival advice".
     cost: "no-key",
     rights: "uncleared",
     examples: [
@@ -165,6 +180,8 @@ export const rawSkills: readonly Skill[] = [
       "Remotion และเสียงมีเงื่อนไขสิทธิ์แยก",
     ],
     useCases: ["story"],
+    visual: "stick-svg",
+    story: "what-if",
     cost: "external",
     costNote: "ElevenLabs (เสียงพากย์และเสียงประกอบ) ราว 150–240 เครดิตต่อตอน",
     rights: "uncleared",
@@ -199,6 +216,8 @@ export const rawSkills: readonly Skill[] = [
       "ซับรุ่นปัจจุบันต่างจากตัวอย่างเดิม",
     ],
     useCases: ["story"],
+    visual: "low-poly",
+    story: "behind-the-city",
     cost: "no-key",
     rights: "uncleared",
     examples: [
@@ -291,6 +310,8 @@ export const rawSkills: readonly Skill[] = [
       "GPU ที่ Blender ใช้ได้ · บน Mac ใช้ kubcode/mac-patch.sh",
     ],
     useCases: ["story"],
+    visual: "blender-3d",
+    story: "paradox-fact",
     cost: "no-key",
     costNote: "อัดเสียงตัวเองได้ฟรี · ถ้าใช้ ElevenLabs ราว 1 เครดิตต่อตัวอักษร",
     rights: "uncleared",

@@ -5,9 +5,12 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { existsSync, readFileSync } from "node:fs";
 import { rawSkills, styles } from "../lib/catalog";
-import { SHOWCASE_ALLOWLIST, SHOWCASE_STYLES } from "../lib/showcase-allowlist";
+import { SHOWCASE_ALLOWLIST, SHOWCASE_VISUALS } from "../lib/showcase-allowlist";
+import { classifySource } from "../lib/taxonomy";
 
-const REMOVED_SHELF_STYLES = ["soft-story", "soft-story-motion", "mystery"];
+// Old shelf keys, and the taxonomy keys their clips now map to.
+const REMOVED_SHELF_STYLES = ["soft-story", "soft-story-motion", "mystery", "soft-2d"];
+const REMOVED_STORIES = ["life-story", "mystery"];
 const REMOVED_SKILLS = ["jk-soft-story", "jk-soft-story-motion-v2"];
 const REMOVED_CLIPS = [
   "2026-11-01_jk-soft-story-motion-v2_ep02_friends-drifting-apart",
@@ -16,8 +19,12 @@ const REMOVED_CLIPS = [
 ];
 
 test("the removed styles are not on the homepage shelf", () => {
-  for (const s of REMOVED_SHELF_STYLES) assert.equal(SHOWCASE_STYLES[s], undefined, s);
-  for (const e of SHOWCASE_ALLOWLIST) assert.ok(!REMOVED_SHELF_STYLES.includes(e.style), e.id);
+  for (const s of REMOVED_SHELF_STYLES) assert.equal((SHOWCASE_VISUALS as Record<string, unknown>)[s], undefined, s);
+  for (const e of SHOWCASE_ALLOWLIST) {
+    const { visual, story } = classifySource(e.source);
+    assert.ok(!REMOVED_SHELF_STYLES.includes(visual), e.id);
+    assert.ok(!REMOVED_STORIES.includes(story), e.id);
+  }
 });
 
 test("their clips are gone from the allowlist, the showcase data and public/showcase", () => {

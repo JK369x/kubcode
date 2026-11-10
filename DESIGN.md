@@ -248,7 +248,7 @@ Catalog and hero media22px, shared unavailable/conditions controls12px. Controls
 
 ### Hero, search and selection
 
-`KineticHero` + `StyleShelf` display only genuine known-size artwork; a new style in the allowlist adds a card. Search intersects real metadata/category and has a truthful empty state. Selection opens the real `Preview`; pause, reduced-motion, offscreen and document visibility are distinct states. No playback or download success is synthesized.
+`KineticHero` + `VisualShelf` display only genuine known-size artwork; a clip in a new visual style adds a card. Homepage filters: use case, แนวภาพ (visual style) and แนวเรื่อง (story format), combined with AND (lib/facets.ts). Search intersects real metadata/category and has a truthful empty state. Selection opens the real `Preview`; pause, reduced-motion, offscreen and document visibility are distinct states. No playback or download success is synthesized.
 
 ### Cards and native preview
 

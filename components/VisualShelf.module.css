@@ -1,5 +1,5 @@
 /*
- * Homepage style shelf: one 9:16 card per style, running edge to edge and
+ * Homepage visual-style shelf: one 9:16 card per visual style (แนวภาพ), running edge to edge and
  * sliding slowly in a seamless loop. Hover, focus and the pause button stop
  * it; a muted preview fades in only while a card is hovered or focused.
  * Reduced motion: no slide, no copies, a static row that scrolls natively.
@@ -83,6 +83,47 @@
   color: var(--muted);
   font-size: 13px;
   line-height: 1.4;
+}
+
+.stories {
+  margin: 4px 0 0;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+/* The cover clip's story format (แนวเรื่อง): a pill above the agent badge,
+ * bottom-left, clear of the poster's own title and the tool icons. Hover
+ * hides it with the badge; touch screens show it in the name block only. */
+.story {
+  position: absolute;
+  bottom: 58px;
+  left: 10px;
+  z-index: 0;
+  max-width: calc(100% - 20px);
+  margin: 0;
+  padding: 3px 9px;
+  border-radius: 999px;
+  background: var(--selected, #d9c8ff);
+  color: var(--selected-ink, #120c1c);
+  box-shadow: 0 2px 8px rgb(0 0 0 / 0.35);
+  font-size: 11.5px;
+  font-weight: 600;
+  line-height: 1.35;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  pointer-events: none;
+  transition: opacity 200ms ease-out;
+}
+.card:hover .story:has(~ .overlay),
+.card:focus-within .story:has(~ .overlay) {
+  opacity: 0;
+}
+@media (hover: none) {
+  .story {
+    display: none;
+  }
 }
 
 /* Tools the style uses: small logo tiles in the media's top-right corner. */

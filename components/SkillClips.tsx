@@ -2,7 +2,7 @@
 import type { FocusEvent, PointerEvent } from "react";
 import { ArrowUpRight } from "lucide-react";
 import type { ShowcaseItem, SkillShowcase } from "@/lib/showcase";
-import { creditsOf } from "./StyleShelf";
+import { creditsOf } from "./VisualShelf";
 import { playPreview, stopPreview } from "./hoverPreview";
 import styles from "./SkillClips.module.css";
 

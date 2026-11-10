@@ -516,10 +516,37 @@ header.header {
 }
 .filter-bar {
   display: flex;
-  align-items: center;
+  align-items: flex-end;
   gap: 16px;
   justify-content: space-between;
   margin: 25px 0 26px;
+}
+/* Three filter rows that combine: use case, แนวภาพ, แนวเรื่อง. */
+.filter-rows {
+  display: grid;
+  gap: 10px;
+  min-width: 0;
+}
+.filter-row {
+  display: grid;
+  grid-template-columns: 92px 1fr;
+  align-items: start;
+  gap: 12px;
+}
+.filter-label {
+  padding-top: 12px;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 600;
+}
+@media (max-width: 720px) {
+  .filter-row {
+    grid-template-columns: 1fr;
+    gap: 6px;
+  }
+  .filter-label {
+    padding-top: 0;
+  }
 }
 .categories {
   display: flex;
@@ -548,6 +575,10 @@ header.header {
 }
 .categories button[aria-pressed="true"] span {
   color: inherit;
+}
+/* Picking this chip would show nothing with the other rows as they are. */
+.categories button[data-empty]:not([aria-pressed="true"]) {
+  opacity: 0.5;
 }
 .result-line {
   white-space: nowrap;

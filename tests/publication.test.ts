@@ -294,12 +294,12 @@ test("no-examples skills keep their own honest no-media copy", () => {
   }
 });
 
-test("hero shows the approved clips as one card per style", () => {
+test("hero shows the approved clips as one card per visual style", () => {
   const html = render(
     createElement(KineticHero, { skills, activeSlug: "", onSelectSkill: () => {} }),
   );
   assert.match(html, /คลิปแบบนี้/);
-  assert.match(html, /aria-label="ตัวอย่างคลิป สไตล์ละหนึ่งคลิป"/);
+  assert.match(html, /aria-label="ตัวอย่างคลิป แนวภาพละหนึ่งคลิป"/);
   assert.match(html, /data-motion-toggle/);
   assert.doesNotMatch(html, /data-media="none"|รอยืนยันสิทธิ์/);
 });

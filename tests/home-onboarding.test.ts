@@ -1,6 +1,6 @@
 // Homepage onboarding: the hero says what kubcode gives and which agents it
 // works with, a "first skill" section walks through install with copyable
-// prompts and an FAQ, and style names are Thai first. Every claim here is
+// prompts and an FAQ, and visual-style names are Thai first. Every claim here is
 // backed by docs/adr/0002 and the What If package README.
 import test from "node:test";
 import assert from "node:assert/strict";
@@ -15,7 +15,9 @@ NodeModule._extensions[".css"] = (m) => {
 };
 
 const { Library } = require("../components/Library") as typeof import("../components/Library");
-const { SHOWCASE_STYLES } = require("../lib/showcase-allowlist") as typeof import("../lib/showcase-allowlist");
+const { SHOWCASE_VISUALS } = require("../lib/showcase-allowlist") as typeof import("../lib/showcase-allowlist");
+const { VISUAL_STYLES } = require("../lib/taxonomy") as typeof import("../lib/taxonomy");
+type VisualKey = import("../lib/taxonomy").VisualKey;
 const html = renderToStaticMarkup(createElement(Library, { articles: [] }));
 const hero = html.slice(0, html.indexOf("</section>"));
 const start = html.match(/<section[^>]*id="get-started"[^>]*>([\s\S]*?)<\/section>/)?.[1] ?? "";
@@ -57,9 +59,15 @@ test("FAQ answers the questions people ask, in collapsible items", () => {
 });
 
 test("style names are Thai first, with the English name kept", () => {
-  for (const [slug, style] of Object.entries(SHOWCASE_STYLES)) {
-    assert.match(style.name, /^[฀-๿]/, `${slug} Thai name`);
-    assert.match(style.en, /^[A-Za-z]/, `${slug} English name`);
+  for (const slug of Object.keys(SHOWCASE_VISUALS) as VisualKey[]) {
+    const style = VISUAL_STYLES[slug];
+    assert.match(style.th, /^[฀-๿0-9]/, `${slug} Thai name`);
+    assert.match(style.en, /^[A-Za-z0-9]/, `${slug} English name`);
   }
-  for (const style of Object.values(SHOWCASE_STYLES)) assert.ok(html.includes(style.en), style.en);
+  // Shelf cards (every visual style but the podcast section) show both names.
+  for (const [slug, v] of Object.entries(SHOWCASE_VISUALS) as [VisualKey, { section?: string }][]) {
+    if (v.section === "podcast") continue;
+    assert.ok(html.includes(VISUAL_STYLES[slug].en), VISUAL_STYLES[slug].en);
+    assert.ok(html.includes(VISUAL_STYLES[slug].th), VISUAL_STYLES[slug].th);
+  }
 });
