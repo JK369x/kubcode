@@ -8,7 +8,7 @@ import { readFileSync } from "node:fs";
 import path from "node:path";
 import { connectHeaders } from "../../../lib/keys/connect-config";
 
-const require = createRequire(import.meta.url);
+const require = createRequire(__filename);
 const tick = require(path.join(__dirname, "..", "host", "worker-tick"));
 
 const URL_OK = "https://abcdefghij0123456789abcdefghij01.lambda-url.ap-southeast-1.on.aws/";
