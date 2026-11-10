@@ -15,7 +15,7 @@ NodeModule._extensions[".css"] = (m) => {
 };
 
 const { showcaseForSkill, publishedShowcase } = require("../lib/showcase") as typeof import("../lib/showcase");
-const { SHOWCASE_STYLES } = require("../lib/showcase-allowlist") as typeof import("../lib/showcase-allowlist");
+const { SHOWCASE_VISUALS } = require("../lib/showcase-allowlist") as typeof import("../lib/showcase-allowlist");
 const { skills } = require("../lib/catalog") as typeof import("../lib/catalog");
 
 const CLIPS = publishedShowcase("licensed-only");
@@ -30,10 +30,10 @@ test("showcaseForSkill: the clips of every style that names the skill, led by it
   assert.ok(what);
   assert.deepEqual(
     what.clips.map((c) => c.id).sort(),
-    CLIPS.filter((c) => SHOWCASE_STYLES[c.style]?.skill === "freshstack-what-if").map((c) => c.id).sort(),
+    CLIPS.filter((c) => SHOWCASE_VISUALS[c.visual]?.skill === "freshstack-what-if").map((c) => c.id).sort(),
   );
   assert.equal(what.cover.cover, true);
-  assert.equal(what.detail, SHOWCASE_STYLES["what-if"].detail);
+  assert.equal(what.detail, SHOWCASE_VISUALS["stick-svg"]!.detail);
   assert.equal(showcaseForSkill("thai-jk-voice", CLIPS), null);
   assert.equal(showcaseForSkill("no-such-skill", CLIPS), null);
 });

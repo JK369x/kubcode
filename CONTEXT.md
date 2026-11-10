@@ -14,6 +14,17 @@ _Avoid_: style card, template (when you mean the catalogue entry)
 The one group a skill is filed under. Podcast skills have their own category (พอดแคสต์) and their own homepage section, apart from every cartoon/animation style.
 _Avoid_: section, family (as a second grouping axis)
 
+**Visual style** (แนวภาพ):
+How a clip looks: its kit and renderer, such as Low-poly 3D or Stick SVG. Keys and Thai names come from the studio taxonomy (lib/taxonomy.json); the homepage shelf shows one card per visual style.
+_Avoid_: style (alone), look, series
+
+**Story format** (แนวเรื่อง):
+How a clip's story is told: its script formula and tone, such as What If or Satire. Independent of the visual style: one format can use many looks and one look many formats.
+_Avoid_: genre, series, style
+
+**Use case**:
+What a creator wants to make (การ์ตูนเล่าเรื่อง, คลิปสั้นจากพอดแคสต์, เสียงพากย์และซับไทย, ช่วยออกแบบแอป). The third homepage filter; the only one that reaches tools, which have no visual style or story format.
+
 **Podcast short**:
 A short vertical clip cut from someone else's podcast: the original speaker audio, reframed visuals and Thai captions, with credit to the source episode.
 _Avoid_: recut (that is a different, overlay-only skill)
@@ -96,6 +107,7 @@ _Avoid_: workflow (Zernio's word for its own flows), bot
 
 - A **Skill** has zero or more **Skill packages**; each package version has at most one **Package approval**
 - A **Download** is made by one **Member** for one approved **Skill package** version and counts toward that member's **Download limit**
+- A showcase clip has exactly one **Visual style** and one **Story format**, both from its series; a style **Skill** declares at most one of each, tools declare neither
 - **Preview media** and **Skill packages** are cleared separately: an approved package says nothing about the skill's clips
 - A **Creator** owns one **Workspace**; a **Workspace** has many **Channels**
 - A **Channel** has one or more **Connections**, at most one per **Provider**
@@ -109,6 +121,7 @@ _Avoid_: workflow (Zernio's word for its own flows), bot
 
 ## Flagged ambiguities
 
+- "style" meant both how a clip looks and how its story is told (the old shelf had "ถ้าเกิดว่า…" beside "Low-poly 3D"). Resolved (owner, 2026-11-10): **Visual style** and **Story format** are separate axes, filtered independently.
 - "template" was used for both the skill page ("ดู template") and the downloadable kit — resolved: the downloadable thing is a **Skill package**; the page is the **Skill**.
 - HANDOFF P2 "member approval" — resolved for downloads: any **Member** may download; member approval stays a separate future feature.
 - "customer" in the two-phase publishing plan (2026-11-08) meant the person paying per channel. Resolved (2026-11-09): that person is a **Creator**, and what is billed is their **Workspace**'s **Channels**.

@@ -73,9 +73,8 @@ function fixture() {
   fs.writeFileSync(path.join(dir, "showcase", id, "preview.mp4"), preview);
   const allow: ShowcaseAllowEntry = {
     id,
-    source: "studio:clip-a",
+    source: "studio:2026-10-29_mall-infection_ep09_fixture",
     label: "Clip A",
-    style: "fixture-style",
     rights: "Own work.",
     at: 1,
     madeBy: { agent: "codex-cli", model: "gpt-6.1-sol" },
@@ -84,6 +83,8 @@ function fixture() {
     id,
     title: "Clip A title",
     aspect: "portrait",
+    visual: "low-poly",
+    story: "outbreak-drama",
     poster: { src: `/showcase/${id}/poster.jpg`, width: 480, height: 854, bytes: poster.length, sha256: sha(poster), from: "frame" },
     preview: { src: `/showcase/${id}/preview.mp4`, width: 360, height: 640, seconds: 3.5, bytes: preview.length, sha256: sha(preview) },
     link: { url: "https://www.youtube.com/watch?v=abc", platform: "youtube", evidence: "clip.json" },
@@ -127,6 +128,10 @@ const cases: [string, Parameters<typeof problems>[0], RegExp][] = [
   ["cover poster cut from a frame", (f) => ({ allowlist: [{ ...f.allow, poster: "cover" }] }), /poster must come from the cover/],
   ["link to another host", (f) => ({ manifest: [{ ...f.entry, link: { ...f.entry.link!, url: "https://example.com/x" } }] }), /link/],
   ["What If style without its credit", (f) => ({ manifest: [{ ...f.entry, madeWith: { style: "freshstack-what-if (React SVG)" } }] }), /What If/],
+  ["series not in the taxonomy", (f) => ({ allowlist: [{ ...f.allow, source: "studio:2026-10-29_no-such-series_ep01_x" }] }), /map_from_series/],
+  ["visual style that disagrees with the series", (f) => ({ manifest: [{ ...f.entry, visual: "sitcom-toon" }] }), /must be low-poly\/outbreak-drama/],
+  ["story format that disagrees with the series", (f) => ({ manifest: [{ ...f.entry, story: "satire" }] }), /must be low-poly\/outbreak-drama/],
+  ["unknown visual style", (f) => ({ manifest: [{ ...f.entry, visual: "watercolour" as never }] }), /unknown visual style/],
   ["ElevenLabs voice without its credit", (f) => ({ manifest: [{ ...f.entry, madeWith: { voice: "ElevenLabs eleven_v3 Thai" } }] }), /elevenlabs\.io/],
 ];
 

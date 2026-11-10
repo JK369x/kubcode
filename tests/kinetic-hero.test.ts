@@ -31,11 +31,12 @@ const { publishedShowcase } = require("../lib/showcase") as typeof import("../li
 const hero =
   require("../components/KineticHero") as typeof import("../components/KineticHero");
 const { KineticHero } = hero;
-const { styleShelf } = require("../lib/showcase") as typeof import("../lib/showcase");
-const { SHOWCASE_STYLES } = require("../lib/showcase-allowlist") as typeof import("../lib/showcase-allowlist");
+const { visualShelf } = require("../lib/showcase") as typeof import("../lib/showcase");
+const { SHOWCASE_VISUALS } = require("../lib/showcase-allowlist") as typeof import("../lib/showcase-allowlist");
+const { VISUAL_STYLES, STORY_FORMATS } = require("../lib/taxonomy") as typeof import("../lib/taxonomy");
 
 const CLIPS = publishedShowcase("licensed-only");
-const SHELF = styleShelf(CLIPS);
+const SHELF = visualShelf(CLIPS);
 const { getContent } = require("../lib/content") as typeof import("../lib/content");
 const { styleToolsFrom } = require("../lib/showcase") as typeof import("../lib/showcase");
 const STYLE_TOOLS = styleToolsFrom(getContent().tools);
@@ -52,7 +53,7 @@ const renderHero = (activeSlug = skills[0].slug, children?: string, clips = CLIP
 /** Top-level <li> cards of the shelf track (cards contain their own lists); loop copies carry data-copy. */
 function allItems(full: string) {
   // Only the shelf track: the hero also has other lists (agent chips).
-  const html = full.slice(Math.max(0, full.indexOf('aria-label="ตัวอย่างคลิป สไตล์ละหนึ่งคลิป"')));
+  const html = full.slice(Math.max(0, full.indexOf('aria-label="ตัวอย่างคลิป แนวภาพละหนึ่งคลิป"')));
   const out: { attrs: string; body: string }[] = [];
   let depth = 0;
   let start = -1;
@@ -73,7 +74,7 @@ function allItems(full: string) {
 const cards = (html: string) => allItems(html).filter((i) => !/data-copy/.test(i.attrs));
 const cardFor = (html: string, posterSrc: string) => cards(html).find((c) => c.body.includes(`src="${posterSrc}"`));
 
-test("SSR hero: one Thai h1 and one card per style, named by its style", () => {
+test("SSR hero: one Thai h1 and one card per visual style, named by it", () => {
   const html = renderHero();
   assert.equal((html.match(/<h1\b/g) || []).length, 1);
   const h1Text = (html.match(/<h1\b[^>]*>([\s\S]*?)<\/h1>/)?.[1] ?? "").replace(/<[^>]+>/g, "").trim();
@@ -81,9 +82,12 @@ test("SSR hero: one Thai h1 and one card per style, named by its style", () => {
   assert.equal(cards(html).length, SHELF.length);
   for (const entry of SHELF) {
     const card = cardFor(html, entry.clip.poster.src);
-    assert.ok(card, entry.style);
-    assert.ok(card.body.includes(SHOWCASE_STYLES[entry.style].name), entry.style);
-    assert.match(card.body, new RegExp(`${entry.count} คลิป`), `${entry.style} clip count`);
+    assert.ok(card, entry.visual);
+    assert.ok(card.body.includes(VISUAL_STYLES[entry.visual].th), entry.visual);
+    assert.match(card.attrs, new RegExp(`data-visual="${entry.visual}"`), entry.visual);
+    // The cover clip's story format is a small label on the poster.
+    assert.match(card.body, new RegExp(`data-story="${entry.clip.story}"[^>]*>[\\s\\S]*?${STORY_FORMATS[entry.clip.story].th}`), `${entry.visual} story label`);
+    assert.match(card.body, new RegExp(`${entry.count} คลิป`), `${entry.visual} clip count`);
   }
 });
 
@@ -95,18 +99,18 @@ test("no run of episodes: a series appears once, under its style", () => {
 
 test("skill styles: see the template, download locked behind sign-in", () => {
   const html = renderHero();
-  for (const entry of SHELF.filter((e) => SHOWCASE_STYLES[e.style].skill)) {
+  for (const entry of SHELF.filter((e) => SHOWCASE_VISUALS[e.visual]?.skill)) {
     const card = cardFor(html, entry.clip.poster.src)!;
-    const skill = SHOWCASE_STYLES[entry.style].skill!;
-    assert.match(card.body, new RegExp(`<a[^>]*href="/skills/${skill}"[^>]*>[\\s\\S]*?ดู template`), entry.style);
+    const skill = SHOWCASE_VISUALS[entry.visual]!.skill!;
+    assert.match(card.body, new RegExp(`<a[^>]*href="/skills/${skill}"[^>]*>[\\s\\S]*?ดู template`), entry.visual);
     if (approvedPackageFor(skill)) {
-      assert.match(card.body, /<a[^>]*href="\/account"[^>]*>[\s\S]*?เข้าสู่ระบบเพื่อดาวน์โหลด/, entry.style);
+      assert.match(card.body, /<a[^>]*href="\/account"[^>]*>[\s\S]*?เข้าสู่ระบบเพื่อดาวน์โหลด/, entry.visual);
     } else {
       // Signing in would not help: no package is approved for this skill yet.
-      assert.match(card.body, /<button[^>]*disabled=""[^>]*>[\s\S]*?ดาวน์โหลดเร็วๆ นี้/, entry.style);
-      assert.doesNotMatch(card.body, /href="\/account"/, entry.style);
+      assert.match(card.body, /<button[^>]*disabled=""[^>]*>[\s\S]*?ดาวน์โหลดเร็วๆ นี้/, entry.visual);
+      assert.doesNotMatch(card.body, /href="\/account"/, entry.visual);
     }
-    assert.doesNotMatch(card.body, /ดูคลิป/, entry.style);
+    assert.doesNotMatch(card.body, /ดูคลิป/, entry.visual);
   }
 });
 
@@ -116,37 +120,37 @@ test("card actions sit inside the clip frame, with the style details, above the 
     const card = cardFor(html, entry.clip.poster.src)!;
     const overlay = card.body.indexOf('class="overlay"');
     const name = card.body.indexOf('class="name"');
-    assert.ok(overlay > 0 && overlay < name, `${entry.style}: overlay inside the media`);
+    assert.ok(overlay > 0 && overlay < name, `${entry.visual}: overlay inside the media`);
     for (const label of ["ดู template", "ดูคลิป", "ดาวน์โหลด"]) {
       const at = card.body.indexOf(label);
-      if (at >= 0) assert.ok(at > overlay && at < name, `${entry.style}: ${label} inside the overlay`);
+      if (at >= 0) assert.ok(at > overlay && at < name, `${entry.visual}: ${label} inside the overlay`);
     }
   }
 });
 
 test("styles without a skill: only a link to the clip, no template or download", () => {
   const html = renderHero();
-  for (const entry of SHELF.filter((e) => !SHOWCASE_STYLES[e.style].skill)) {
+  for (const entry of SHELF.filter((e) => !SHOWCASE_VISUALS[e.visual]?.skill)) {
     const card = cardFor(html, entry.clip.poster.src)!;
-    assert.doesNotMatch(card.body, /ดู template|ดาวน์โหลด/, entry.style);
+    assert.doesNotMatch(card.body, /ดู template|ดาวน์โหลด/, entry.visual);
     if (entry.clip.link) {
       const link = card.body.match(/<a\b([^>]*)>[\s\S]*?ดูคลิป/);
-      assert.ok(link?.[1].includes(`href="${entry.clip.link.url}"`), entry.style);
+      assert.ok(link?.[1].includes(`href="${entry.clip.link.url}"`), entry.visual);
       assert.match(link![1], /target="_blank"/);
       assert.match(link![1], /rel="noopener noreferrer"/);
     } else {
-      assert.doesNotMatch(card.body, /<a\b/, entry.style);
+      assert.doesNotMatch(card.body, /<a\b/, entry.visual);
     }
   }
 });
 
-const actions = (style: string, props: { signedIn: boolean | undefined; available?: boolean }) => {
-  const { CardActions } = require("../components/StyleShelf") as typeof import("../components/StyleShelf");
-  const entry = SHELF.find((e) => e.style === style)!;
+const actions = (visual: string, props: { signedIn: boolean | undefined; available?: boolean }) => {
+  const { CardActions } = require("../components/VisualShelf") as typeof import("../components/VisualShelf");
+  const entry = SHELF.find((e) => e.visual === visual)!;
   return render(createElement(CardActions, { entry, ...props }));
 };
-const PACKAGED = Object.entries(SHOWCASE_STYLES).find(([, s]) => s.skill && approvedPackageFor(s.skill))![0];
-const UNPACKAGED = Object.entries(SHOWCASE_STYLES).find(([, s]) => s.skill && !approvedPackageFor(s.skill))![0];
+const PACKAGED = Object.entries(SHOWCASE_VISUALS).find(([, s]) => s?.skill && approvedPackageFor(s.skill))![0];
+const UNPACKAGED = Object.entries(SHOWCASE_VISUALS).find(([, s]) => s?.skill && !approvedPackageFor(s.skill))![0];
 
 test("packaged skill, signed in and downloads on: a real download button", () => {
   const html = actions(PACKAGED, { signedIn: true, available: true });
@@ -176,13 +180,13 @@ test("tool icons: up to three, named, not links; more shows +N", () => {
   const html = renderHero();
   for (const entry of SHELF) {
     const card = cardFor(html, entry.clip.poster.src)!;
-    const tools = STYLE_TOOLS[entry.style] ?? [];
+    const tools = STYLE_TOOLS[entry.visual] ?? [];
     const icons = card.body.match(/<ul[^>]*aria-label="เครื่องมือที่ใช้"[^>]*>([\s\S]*?)<\/ul>/);
     if (tools.length === 0) {
-      assert.equal(icons, null, entry.style);
+      assert.equal(icons, null, entry.visual);
       continue;
     }
-    assert.ok(icons, entry.style);
+    assert.ok(icons, entry.visual);
     assert.doesNotMatch(icons[1], /<a\b/, "icons are not links");
     for (const t of tools.slice(0, 3)) assert.match(icons[1], new RegExp(`title="${t.name}"`), t.name);
     if (tools.length > 3) assert.match(icons[1], new RegExp(`\\+${tools.length - 3}`));
@@ -193,7 +197,7 @@ test("hover details: each card carries its style's description", () => {
   const html = renderHero();
   for (const entry of SHELF) {
     const card = cardFor(html, entry.clip.poster.src)!;
-    assert.ok(card.body.includes(SHOWCASE_STYLES[entry.style].detail), entry.style);
+    assert.ok(card.body.includes(SHOWCASE_VISUALS[entry.visual]!.detail), entry.visual);
   }
 });
 
@@ -262,7 +266,7 @@ test("CSS: no enclosing purple panel; reduced motion shows posters only", () => 
   const heroCss = fs.readFileSync(path.join(__dirname, "../components/KineticHero.module.css"), "utf8");
   const heroRule = heroCss.match(/(^|\n)\.hero\s*\{([^}]*)\}/)?.[2] ?? "";
   assert.doesNotMatch(heroRule, /background|border-radius/, "the hero sits on the page background");
-  const shelfCss = fs.readFileSync(path.join(__dirname, "../components/StyleShelf.module.css"), "utf8");
+  const shelfCss = fs.readFileSync(path.join(__dirname, "../components/VisualShelf.module.css"), "utf8");
   const reduced = [...shelfCss.matchAll(/@media \(prefers-reduced-motion: reduce\) \{([\s\S]*?)\n\}/g)].map((m) => m[1]).join("\n");
   assert.match(reduced, /\.video\s*\{[^}]*display:\s*none/);
   assert.match(reduced, /\.track\s*\{[^}]*animation:\s*none/, "no sliding with reduced motion");

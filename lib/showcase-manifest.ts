@@ -1,10 +1,15 @@
 import manifestData from "./showcase.json";
+import type { StoryKey, VisualKey } from "./taxonomy";
 
 /** One generated clip record (written by scripts/showcase-media.ts). */
 export type ShowcaseManifestEntry = {
   id: string;
   title: string;
   aspect: "portrait" | "landscape";
+  /** How the clip looks (taxonomy visual_styles key, from its series). */
+  visual: VisualKey;
+  /** How its story is told (taxonomy story_formats key, from its series). */
+  story: StoryKey;
   poster: {
     src: string; width: number; height: number; bytes: number; sha256: string;
     /** "cover": the clip's designed cover.jpg; "frame": the video frame at `at`. */

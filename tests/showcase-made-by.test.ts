@@ -17,8 +17,9 @@ NodeModule._extensions[".css"] = (m) => {
 
 const { SHOWCASE_ALLOWLIST, SHOWCASE_AGENTS } = require("../lib/showcase-allowlist") as typeof import("../lib/showcase-allowlist");
 const { SHOWCASE_MANIFEST } = require("../lib/showcase-manifest") as typeof import("../lib/showcase-manifest");
-const { publishedShowcase, cartoonShowcase, styleShelf } = require("../lib/showcase") as typeof import("../lib/showcase");
-const { StyleShelf } = require("../components/StyleShelf") as typeof import("../components/StyleShelf");
+const { publishedShowcase, cartoonShowcase, visualShelf } = require("../lib/showcase") as typeof import("../lib/showcase");
+const { VisualShelf } = require("../components/VisualShelf") as typeof import("../components/VisualShelf");
+const { classifySource } = require("../lib/taxonomy") as typeof import("../lib/taxonomy");
 
 const madeBy = (id: string) => SHOWCASE_ALLOWLIST.find((e) => e.id === id)?.madeBy;
 
@@ -46,12 +47,12 @@ test("published items carry madeBy", () => {
 });
 
 test("low-poly is represented by a real episode, not the silent style study", () => {
-  const cover = SHOWCASE_ALLOWLIST.find((e) => e.style === "low-poly" && e.cover);
+  const cover = SHOWCASE_ALLOWLIST.find((e) => classifySource(e.source).visual === "low-poly" && e.cover);
   assert.equal(cover?.id, "2026-10-29_mall-infection_ep01_first-night");
 });
 
 test("sitcom cards use the designed episode covers, and the manifest says so", () => {
-  for (const e of SHOWCASE_ALLOWLIST.filter((a) => a.style === "sitcom-toon")) {
+  for (const e of SHOWCASE_ALLOWLIST.filter((a) => classifySource(a.source).visual === "sitcom-toon")) {
     assert.equal(e.poster, "cover", e.id);
     assert.equal(SHOWCASE_MANIFEST.find((m) => m.id === e.id)?.poster.from, "cover", e.id);
   }
@@ -63,8 +64,8 @@ test("sitcom cards use the designed episode covers, and the manifest says so", (
 
 test("shelf cards show the cover clip's agent and model", () => {
   const items = cartoonShowcase(publishedShowcase("local-study"));
-  const html = renderToStaticMarkup(createElement(StyleShelf, { items }));
-  for (const { clip } of styleShelf(items)) {
+  const html = renderToStaticMarkup(createElement(VisualShelf, { items }));
+  for (const { clip } of visualShelf(items)) {
     const by = clip.madeBy!;
     assert.ok(html.includes(`>${SHOWCASE_AGENTS[by.agent]}<`), `${clip.id}: agent name`);
     assert.ok(html.includes(`>${by.model}<`), `${clip.id}: model id`);

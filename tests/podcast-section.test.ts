@@ -5,7 +5,8 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { existsSync, readFileSync } from "node:fs";
 import { categories, rawSkills } from "../lib/catalog";
-import { SHOWCASE_ALLOWLIST, SHOWCASE_STYLES } from "../lib/showcase-allowlist";
+import { SHOWCASE_ALLOWLIST, SHOWCASE_VISUALS } from "../lib/showcase-allowlist";
+import { classifySource } from "../lib/taxonomy";
 import { cartoonShowcase, publishedShowcase, showcaseForSkill } from "../lib/showcase";
 import { approvedPackageFor } from "../lib/packages";
 
@@ -24,25 +25,25 @@ test("podcast is its own catalog category with the podcast-tool-short skill", ()
   assert.ok(rawSkills.filter((s) => s.category === "podcast").every((s) => s.slug === "podcast-tool-short"));
 });
 
-test("the podcast style is marked as the podcast section and links the skill", () => {
-  const style = SHOWCASE_STYLES["podcast-short"];
+test("the podcast clips' visual style is the podcast section and links the skill", () => {
+  const style = SHOWCASE_VISUALS["footage-reframe"];
   assert.ok(style);
   assert.equal(style.section, "podcast");
   assert.equal(style.skill, "podcast-tool-short");
-  for (const [slug, s] of Object.entries(SHOWCASE_STYLES)) if (slug !== "podcast-short") assert.notEqual(s.section, "podcast", slug);
+  for (const [slug, s] of Object.entries(SHOWCASE_VISUALS)) if (slug !== "footage-reframe") assert.notEqual(s?.section, "podcast", slug);
 });
 
 test("all four podcast clips are allowlisted with the source episode and CC BY-SA credit", () => {
   for (const id of PODCAST_CLIPS) {
     const e = SHOWCASE_ALLOWLIST.find((a) => a.id === id);
     assert.ok(e, id);
-    assert.equal(e.style, "podcast-short", id);
+    assert.deepEqual(classifySource(e.source), { visual: "footage-reframe", story: "tool-from-podcast" }, id);
     const credits = e.credits ?? [];
     assert.ok(credits.some((c) => /jupiterbroadcasting\.com|linuxunplugged\.com/.test(c.href ?? "")), `${id}: source episode link`);
     assert.ok(credits.some((c) => c.href === "https://creativecommons.org/licenses/by-sa/4.0/"), `${id}: CC BY-SA link`);
     assert.match(e.rights, /CC BY-SA 4\.0/, id);
   }
-  assert.equal(SHOWCASE_ALLOWLIST.filter((a) => a.style === "podcast-short" && a.cover).length, 1);
+  assert.equal(SHOWCASE_ALLOWLIST.filter((a) => classifySource(a.source).visual === "footage-reframe" && a.cover).length, 1);
 });
 
 test("the homepage has no podcast section, and the cartoon shelf never shows podcast clips", () => {
@@ -51,7 +52,8 @@ test("the homepage has no podcast section, and the cartoon shelf never shows pod
   assert.doesNotMatch(readFileSync("components/Library.tsx", "utf8"), /PodcastSection/);
   const cartoon = cartoonShowcase(publishedShowcase("local-study"));
   assert.ok(cartoon.length > 0);
-  assert.ok(cartoon.every((i) => SHOWCASE_STYLES[i.style]?.section !== "podcast"));
+  assert.ok(cartoon.every((i) => SHOWCASE_VISUALS[i.visual]?.section !== "podcast"));
+  assert.ok(cartoon.every((i) => i.story !== "tool-from-podcast"));
 });
 
 test("the podcast skill page shows all four clips", () => {

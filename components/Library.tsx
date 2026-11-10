@@ -1,22 +1,75 @@
 "use client";
 import { TitleTransition } from "@/components/TitleTransition";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import {
   Search,
   ArrowUpRight,
   RotateCcw,
 } from "lucide-react";
-import { skills, useCases, filterSkills, styles, type Skill } from "@/lib/catalog";
+import { skills, useCases, styles, type Skill } from "@/lib/catalog";
 import { Preview } from "./Preview";
 import { ToolChips } from "./ToolChips";
 import { MediaSkillCard } from "./MediaSkillCard";
 import { GetStarted } from "./GetStarted";
 import { statusLabel } from "@/lib/status-labels";
 import { skillBadges } from "@/lib/skill-badges";
-import { showcaseForSkill, type StyleTool } from "@/lib/showcase";
+import { cartoonShowcase, publishedShowcase, showcaseForSkill, type StyleTool } from "@/lib/showcase";
+import {
+  facetOptions,
+  filterFromSearch,
+  filterHomeClips,
+  filterHomeSkills,
+  lookFiltered,
+  NO_FILTER,
+  searchFromFilter,
+  type HomeData,
+  type HomeFilter,
+} from "@/lib/facets";
+import { ClipResults } from "./ClipResults";
 import { KineticHero } from "./KineticHero";
 import heroStyles from "./KineticHero.module.css";
+
+const PUBLISHED = publishedShowcase();
+/** What the homepage filters: every skill, the shelf's clips. */
+const HOME: HomeData = { skills, clips: cartoonShowcase(PUBLISHED), published: PUBLISHED };
+const USE_CASE_IDS = useCases.map((u) => u.id);
+
+/** One row of toggle chips; the pressed one is the row's value. */
+function FilterRow({
+  label,
+  name,
+  options,
+  value,
+  onPick,
+}: {
+  label: string;
+  name: string;
+  options: readonly { id: string; label: string; count: number }[];
+  value: string;
+  onPick: (id: string) => void;
+}) {
+  return (
+    <div className="filter-row" data-filter={name}>
+      <span className="filter-label" aria-hidden="true">{label}</span>
+      <nav className="categories" aria-label={label}>
+        {options.map((item) => (
+          <button
+            key={item.id}
+            type="button"
+            data-value={item.id}
+            {...(item.count === 0 ? { "data-empty": "" } : {})}
+            aria-pressed={value === item.id}
+            onClick={() => onPick(item.id)}
+          >
+            {item.label}
+            <span>{item.count}</span>
+          </button>
+        ))}
+      </nav>
+    </div>
+  );
+}
 
 /** Article teaser data passed from the server page (content loads from disk). */
 export type ArticleTeaser = { slug: string; title: string; description: string };
@@ -59,13 +112,37 @@ export function Library({
   /** Homepage style cards' tools with logos (see lib/showcase styleToolsFrom). */
   styleTools?: Readonly<Record<string, readonly StyleTool[]>>;
 }) {
-  const [query, setQuery] = useState("");
-  const [useCase, setUseCase] = useState("all");
+  const [filter, setFilter] = useState<HomeFilter>(NO_FILTER);
+  const { query, useCase } = filter;
+  const set = (patch: Partial<HomeFilter>) => setFilter((f) => ({ ...f, ...patch }));
+  // Filters live in the address (?use=&visual=&story=&q=) so a filtered
+  // view can be shared; the page itself stays static.
+  const loaded = useRef(false);
+  useEffect(() => {
+    if (!loaded.current) {
+      loaded.current = true;
+      const from = filterFromSearch(window.location.search, { useCases: USE_CASE_IDS });
+      if (searchFromFilter(from)) setFilter(from);
+      return;
+    }
+    const url = window.location.pathname + searchFromFilter(filter) + window.location.hash;
+    window.history.replaceState(window.history.state, "", url);
+  }, [filter]);
   const [selected, setSelected] = useState<string | null>(null);
   const [previewOpen, setPreviewOpen] = useState(false);
   const previewOrigin = useRef<HTMLElement | null>(null);
   // Only skills with an approved clip get a full card; the rest go last.
-  const results = filterSkills(skills, query, useCase);
+  const results = filterHomeSkills(HOME, filter);
+  const clipResults = filterHomeClips(HOME.clips, filter);
+  const byLook = lookFiltered(filter);
+  const total = results.length + (byLook ? clipResults.length : 0);
+  const useCaseOptions = useCases.map((item) => ({
+    ...item,
+    count: (() => {
+      const g = { ...filter, query: "", useCase: item.id };
+      return filterHomeSkills(HOME, g).length + (lookFiltered(g) ? filterHomeClips(HOME.clips, g).length : 0);
+    })(),
+  }));
   const { withClip, without } = splitByClips(results);
   const active = skills.find((skill) => skill.slug === selected) || skills[0];
   function selectSkill(slug: string) {
@@ -85,8 +162,7 @@ export function Library({
     });
   }
   function reset() {
-    setQuery("");
-    setUseCase("all");
+    setFilter(NO_FILTER);
   }
   return (
     <main id="main" className="library-page">
@@ -153,30 +229,24 @@ export function Library({
             <span className="sr-only">ค้นหาในรายการ</span>
             <input
               value={query}
-              onChange={(event) => setQuery(event.target.value)}
+              onChange={(event) => set({ query: event.target.value })}
               placeholder="ค้นหาในรายการ"
             />
           </label>
         </div>
         <div className="filter-bar">
-          <nav className="categories" aria-label="อยากทำคลิปแบบไหน">
-            {useCases.map((item) => (
-              <button
-                key={item.id}
-                aria-pressed={useCase === item.id}
-                onClick={() => setUseCase(item.id)}
-              >
-                {item.label}
-                <span>{filterSkills(skills, "", item.id).length}</span>
-              </button>
-            ))}
-          </nav>
+          <div className="filter-rows">
+            <FilterRow label="อยากทำอะไร" name="use" options={useCaseOptions} value={useCase} onPick={(id) => set({ useCase: id })} />
+            <FilterRow label="แนวภาพ" name="visual" options={facetOptions("visual", HOME, filter)} value={filter.visual} onPick={(id) => set({ visual: id })} />
+            <FilterRow label="แนวเรื่อง" name="story" options={facetOptions("story", HOME, filter)} value={filter.story} onPick={(id) => set({ story: id })} />
+          </div>
           <span className="result-line" role="status" aria-live="polite">
-            {results.length} รายการ
+            {total} รายการ
           </span>
         </div>
-        {results.length ? (
+        {total ? (
           <>
+            {byLook && clipResults.length > 0 && <ClipResults clips={clipResults} />}
             {withClip.length > 0 && (
               <div className="skill-grid">
                 {withClip.map((skill, index) => (
@@ -203,7 +273,7 @@ export function Library({
             <p>
               {query
                 ? "ลองค้นชื่อสไตล์ หรือเครื่องมือ เช่น Canvas, Remotion, เสียง"
-                : "หมวดนี้ยังไม่มีรายการจริง เราไม่สร้าง skill ขึ้นมาเติมช่องว่าง"}
+                : "ตัวกรองชุดนี้ยังไม่มีรายการจริง เราไม่สร้าง skill ขึ้นมาเติมช่องว่าง"}
             </p>
             <button onClick={reset}>
               <RotateCcw size={16} />

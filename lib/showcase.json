@@ -3,6 +3,8 @@
     "id": "2026-10-25_zombie-condo_ep01_tomorrow-invasion",
     "title": "ซอมบี้บุกพรุ่งนี้ จะรอดหรือหิวก่อน? | ซอมบี้คอนโด EP.1",
     "aspect": "portrait",
+    "visual": "sitcom-toon",
+    "story": "zombie-sitcom",
     "poster": {
       "src": "/showcase/2026-10-25_zombie-condo_ep01_tomorrow-invasion/poster.jpg",
       "width": 480,
@@ -39,6 +41,8 @@
     "id": "2026-10-25_zombie-condo_ep02_fridge-curry-paste",
     "title": "ซอมบี้บุก แต่ตู้เย็นมีแค่พริกแกง | คอนโดวันสิ้นโลก EP.2",
     "aspect": "portrait",
+    "visual": "sitcom-toon",
+    "story": "zombie-sitcom",
     "poster": {
       "src": "/showcase/2026-10-25_zombie-condo_ep02_fridge-curry-paste/poster.jpg",
       "width": 480,
@@ -75,6 +79,8 @@
     "id": "2026-10-25_zombie-condo_ep03_mop-camera",
     "title": "ส่องทางเดินซอมบี้ ด้วยไม้ถูพื้น | คอนโดวันสิ้นโลก EP.3",
     "aspect": "portrait",
+    "visual": "sitcom-toon",
+    "story": "zombie-sitcom",
     "poster": {
       "src": "/showcase/2026-10-25_zombie-condo_ep03_mop-camera/poster.jpg",
       "width": 480,
@@ -111,6 +117,8 @@
     "id": "2026-10-25_zombie-condo_ep04_shopping-cart",
     "title": "ขโมยรถเข็นกลางดงซอมบี้ | คอนโดวันสิ้นโลก EP.4",
     "aspect": "portrait",
+    "visual": "sitcom-toon",
+    "story": "zombie-sitcom",
     "poster": {
       "src": "/showcase/2026-10-25_zombie-condo_ep04_shopping-cart/poster.jpg",
       "width": 480,
@@ -147,6 +155,8 @@
     "id": "2026-10-26_zombie-condo_ep05_tap-water-stops",
     "title": "ซอมบี้ล้อมคอนโด แล้วน้ำก๊อกก็หยุด | คอนโดวันสิ้นโลก EP.5",
     "aspect": "portrait",
+    "visual": "sitcom-toon",
+    "story": "zombie-sitcom",
     "poster": {
       "src": "/showcase/2026-10-26_zombie-condo_ep05_tap-water-stops/poster.jpg",
       "width": 480,
@@ -183,6 +193,8 @@
     "id": "2026-10-26_zombie-condo_ep06_fire-stairs-voice",
     "title": "บันไดหนีไฟที่มีเสียงเรียกเรา | คอนโดวันสิ้นโลก EP.6",
     "aspect": "portrait",
+    "visual": "sitcom-toon",
+    "story": "zombie-sitcom",
     "poster": {
       "src": "/showcase/2026-10-26_zombie-condo_ep06_fire-stairs-voice/poster.jpg",
       "width": 480,
@@ -219,6 +231,8 @@
     "id": "2026-10-26_zombie-condo_ep07_neighbor-wont-open",
     "title": "เพื่อนบ้านมีอาหาร แต่ไม่ยอมเปิดห้อง | คอนโดวันสิ้นโลก EP.7",
     "aspect": "portrait",
+    "visual": "sitcom-toon",
+    "story": "zombie-sitcom",
     "poster": {
       "src": "/showcase/2026-10-26_zombie-condo_ep07_neighbor-wont-open/poster.jpg",
       "width": 480,
@@ -255,6 +269,8 @@
     "id": "2026-10-29_mall-infection_ep01_first-night",
     "title": "ห้างติดเชื้อ! กฎ 3 ข้อที่ห้ามแหก | EP.1 — คืนแรกในห้าง",
     "aspect": "portrait",
+    "visual": "low-poly",
+    "story": "outbreak-drama",
     "poster": {
       "src": "/showcase/2026-10-29_mall-infection_ep01_first-night/poster.jpg",
       "width": 480,
@@ -288,6 +304,8 @@
     "id": "2026-10-30_mall-infection_ep02_stairs",
     "title": "ห้างติดเชื้อ! บันไดนี้…ไม่ปลอดภัย | EP.2 — ทางบันได",
     "aspect": "portrait",
+    "visual": "low-poly",
+    "story": "outbreak-drama",
     "poster": {
       "src": "/showcase/2026-10-30_mall-infection_ep02_stairs/poster.jpg",
       "width": 480,
@@ -324,6 +342,8 @@
     "id": "2026-10-28_satire-stories_ep01_elon-dream-low-poly",
     "title": "ถ้าโลกอนาคตเป็นของ Elon Musk…ชีวิตคุณจะเป็นยังไง?",
     "aspect": "portrait",
+    "visual": "low-poly",
+    "story": "satire",
     "poster": {
       "src": "/showcase/2026-10-28_satire-stories_ep01_elon-dream-low-poly/poster.jpg",
       "width": 480,
@@ -360,6 +380,8 @@
     "id": "2026-11-01_freshstack-what-if_ep03_internet-gone-week",
     "title": "ถ้าอินเทอร์เน็ตหายไปทั้งโลก 1 สัปดาห์",
     "aspect": "portrait",
+    "visual": "stick-svg",
+    "story": "what-if",
     "poster": {
       "src": "/showcase/2026-11-01_freshstack-what-if_ep03_internet-gone-week/poster.jpg",
       "width": 480,
@@ -392,6 +414,8 @@
     "id": "2026-11-01_freshstack-what-if_ep05_no-one-can-lie",
     "title": "ถ้าทุกคนโกหกไม่ได้อีกต่อไป",
     "aspect": "portrait",
+    "visual": "stick-svg",
+    "story": "what-if",
     "poster": {
       "src": "/showcase/2026-11-01_freshstack-what-if_ep05_no-one-can-lie/poster.jpg",
       "width": 480,
@@ -424,6 +448,8 @@
     "id": "2026-11-01_what-if-studio_ep01_mute-touch",
     "title": "Mute Touch — ถ้าปิดเสียงของสิ่งที่แตะได้ แต่ทุกเสียงย้อนกลับทันทีที่คุณหัวเราะ",
     "aspect": "landscape",
+    "visual": "stick-svg",
+    "story": "what-if",
     "poster": {
       "src": "/showcase/2026-11-01_what-if-studio_ep01_mute-touch/poster.jpg",
       "width": 640,
@@ -457,6 +483,8 @@
     "id": "low-poly-urban-study",
     "title": "Low-poly Urban — ตัวอย่างสไตล์ 8 วินาที",
     "aspect": "portrait",
+    "visual": "low-poly",
+    "story": "behind-the-city",
     "poster": {
       "src": "/showcase/low-poly-urban-study/poster.jpg",
       "width": 480,
@@ -488,6 +516,8 @@
     "id": "2026-10-25_tech-podcast_ep01_cliparr",
     "title": "แนะนำ Cliparr: ตัดคลิปจาก Plex / Jellyfin",
     "aspect": "portrait",
+    "visual": "footage-reframe",
+    "story": "tool-from-podcast",
     "poster": {
       "src": "/showcase/2026-10-25_tech-podcast_ep01_cliparr/poster.jpg",
       "width": 480,
@@ -520,6 +550,8 @@
     "id": "2026-10-26_tech-podcast_ep02_clean-your-tv",
     "title": "Google TV รกไปไหม? ลอง Clean Your TV",
     "aspect": "portrait",
+    "visual": "footage-reframe",
+    "story": "tool-from-podcast",
     "poster": {
       "src": "/showcase/2026-10-26_tech-podcast_ep02_clean-your-tv/poster.jpg",
       "width": 480,
@@ -552,6 +584,8 @@
     "id": "2026-10-26_tech-podcast_ep03_amazon-bee",
     "title": "Bee ของ Amazon ช่วยจำบทสนทนา แต่คนรอบตัวเลือกด้วยไหม?",
     "aspect": "portrait",
+    "visual": "footage-reframe",
+    "story": "tool-from-podcast",
     "poster": {
       "src": "/showcase/2026-10-26_tech-podcast_ep03_amazon-bee/poster.jpg",
       "width": 480,
@@ -584,6 +618,8 @@
     "id": "2026-10-26_tech-podcast_ep04_php-security",
     "title": "PHP เจอช่องโหว่ร้ายแรง คนทำเว็บต้องเช็กอัปเดต",
     "aspect": "portrait",
+    "visual": "footage-reframe",
+    "story": "tool-from-podcast",
     "poster": {
       "src": "/showcase/2026-10-26_tech-podcast_ep04_php-security/poster.jpg",
       "width": 480,

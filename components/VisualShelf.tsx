@@ -4,11 +4,12 @@ import { ArrowUpRight, Download, LockKeyhole, Pause, Play } from "lucide-react";
 import { approvedPackageFor } from "@/lib/packages";
 import { fetchAvailable, fetchSignedIn, startDownload } from "@/lib/downloads/client";
 import { downloadPhase } from "@/lib/downloads/view";
-import { styleShelf, type ShelfEntry, type ShowcaseItem, type StyleTool } from "@/lib/showcase";
+import { visualShelf, type ShelfEntry, type ShowcaseItem, type StyleTool } from "@/lib/showcase";
+import { STORY_FORMATS, VISUAL_STYLES, type StoryKey } from "@/lib/taxonomy";
 import { ToolLogo } from "./ToolLogo";
 import { playPreview as play, stopPreview as stop } from "./hoverPreview";
-import { SHOWCASE_AGENTS, SHOWCASE_STYLES, type ShowcaseCredit, type ShowcaseMadeBy } from "@/lib/showcase-allowlist";
-import styles from "./StyleShelf.module.css";
+import { SHOWCASE_AGENTS, SHOWCASE_VISUALS, type ShowcaseCredit, type ShowcaseMadeBy } from "@/lib/showcase-allowlist";
+import styles from "./VisualShelf.module.css";
 
 const PLATFORM = { youtube: "YouTube", instagram: "Instagram" } as const;
 
@@ -19,7 +20,7 @@ const MIN_HALF_WIDTH = 2600;
 /** Slow: seconds a card takes to travel its own width. */
 const SECONDS_PER_CARD = 6;
 
-/** How many times the styles repeat inside one half of the looping track. */
+/** How many times the visual styles repeat inside one half of the looping track. */
 export function repeatsFor(styleCount: number): number {
   return styleCount > 0 ? Math.max(1, Math.ceil(MIN_HALF_WIDTH / (styleCount * CARD_SPAN))) : 0;
 }
@@ -63,7 +64,7 @@ function useAvailable(skills: readonly string[]): Readonly<Record<string, boolea
 }
 
 /**
- * A card's actions. Styles with a skill: "ดู template" plus a download that
+ * A card's actions. Visual styles with a skill: "ดู template" plus a download that
  * stays locked: signed out it sends people to sign in; signed in it says
  * downloads are coming (there is no download service yet). Styles without a
  * skill only link to the clip.
@@ -78,7 +79,7 @@ export function CardActions({
   /** undefined until the server has answered. */
   available?: boolean;
 }) {
-  const style = SHOWCASE_STYLES[entry.style];
+  const style = SHOWCASE_VISUALS[entry.visual];
   const { clip } = entry;
   if (style?.skill) {
     return (
@@ -156,6 +157,16 @@ function SkillDownload({ skill, signedIn, available }: { skill: string; signedIn
   );
 }
 
+/** The clip's story format (แนวเรื่อง): a small label on the poster's top-left. */
+export function StoryLabel({ story, className = styles.story }: { story: StoryKey; className?: string }) {
+  return (
+    <p className={className} data-story={story}>
+      <span className="sr-only">แนวเรื่อง </span>
+      {STORY_FORMATS[story]?.th ?? story}
+    </p>
+  );
+}
+
 /** Which agent and model made the clip: a small label on the poster. */
 function MadeByBadge({ madeBy }: { madeBy: ShowcaseMadeBy }) {
   const agent = SHOWCASE_AGENTS[madeBy.agent] ?? madeBy.agent;
@@ -207,11 +218,12 @@ function Card({
   copy: boolean;
 }) {
   const { clip, count } = entry;
-  const style = SHOWCASE_STYLES[entry.style] ?? { name: entry.style, en: entry.style, detail: "", tools: [] };
+  const style = SHOWCASE_VISUALS[entry.visual] ?? { detail: "", tools: [] };
+  const name = VISUAL_STYLES[entry.visual] ?? { th: entry.visual, en: entry.visual };
   return (
     <li
       className={styles.card}
-      data-style={entry.style}
+      data-visual={entry.visual}
       {...(copy ? { "data-copy": "", "aria-hidden": true, inert: true } : {})}
       onPointerEnter={(e: PointerEvent<HTMLLIElement>) => e.pointerType !== "touch" && play(e.currentTarget)}
       onPointerLeave={(e: PointerEvent<HTMLLIElement>) => stop(e.currentTarget)}
@@ -243,6 +255,7 @@ function Card({
             tabIndex={-1}
           />
         )}
+        <StoryLabel story={clip.story} />
         <ToolIcons tools={tools} />
         <MadeByBadge madeBy={clip.madeBy} />
         <div className={styles.overlay}>
@@ -250,35 +263,40 @@ function Card({
           <CardActions entry={entry} signedIn={signedIn} available={available} />
         </div>
       </div>
-      <p className={styles.name}>{style.name}</p>
+      <p className={styles.name}>{name.th}</p>
       <p className={styles.meta}>
-        <span lang="en">{style.en}</span>
+        <span lang="en">{name.en}</span>
         <br />
         {count} คลิป
+      </p>
+      <p className={styles.stories}>
+        <span className="sr-only">แนวเรื่อง: </span>
+        {entry.stories.map((k) => STORY_FORMATS[k]?.th ?? k).join(" · ")}
       </p>
     </li>
   );
 }
 
 /**
- * One card per style: the style's cover clip, its name and how many clips use
- * it. The row slides slowly in a seamless loop (two equal halves; the track
+ * One card per visual style (แนวภาพ): the style's cover clip with its story
+ * format (แนวเรื่อง) as a small label, the style's name, how many clips use
+ * it and which story formats they tell. The row slides slowly in a seamless loop (two equal halves; the track
  * moves by exactly one half). Hover, focus and the pause button stop it;
  * reduced motion shows a static, scrollable row instead.
  */
-export function StyleShelf({
+export function VisualShelf({
   items,
   styleTools = {},
 }: {
   items: readonly ShowcaseItem[];
-  /** Each style's tools with their logos, resolved on the server. */
+  /** Each visual style's tools with their logos, resolved on the server. */
   styleTools?: Readonly<Record<string, readonly StyleTool[]>>;
 }) {
   const [paused, setPaused] = useState(false);
   const signedIn = useSignedIn();
-  const shelf = styleShelf(items);
+  const shelf = visualShelf(items);
   const packaged = shelf.flatMap((e) => {
-    const skill = SHOWCASE_STYLES[e.style]?.skill;
+    const skill = SHOWCASE_VISUALS[e.visual]?.skill;
     return skill && approvedPackageFor(skill) ? [skill] : [];
   });
   const available = useAvailable(packaged);
@@ -290,14 +308,14 @@ export function StyleShelf({
   return (
     <div className={styles.shelf} {...(paused ? { "data-paused": "" } : {})}>
       <div className={styles.viewport}>
-        <ul className={styles.track} style={duration} aria-label="ตัวอย่างคลิป สไตล์ละหนึ่งคลิป">
+        <ul className={styles.track} style={duration} aria-label="ตัวอย่างคลิป แนวภาพละหนึ่งคลิป">
           {track.map((entry, i) => (
             <Card
-              key={`${entry.style}-${i}`}
+              key={`${entry.visual}-${i}`}
               entry={entry}
-              tools={styleTools[entry.style] ?? []}
+              tools={styleTools[entry.visual] ?? []}
               signedIn={signedIn}
-              available={available[SHOWCASE_STYLES[entry.style]?.skill ?? ""]}
+              available={available[SHOWCASE_VISUALS[entry.visual]?.skill ?? ""]}
               eager={i < 6}
               copy={i >= shelf.length}
             />

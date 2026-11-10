@@ -3,6 +3,7 @@ import fs from "node:fs";
 import path from "node:path";
 import type { ShowcaseAllowEntry, ShowcaseCredit } from "./showcase-allowlist";
 import { SHOWCASE_LIMITS, type ShowcaseManifestEntry } from "./showcase-manifest";
+import { SERIES_MAP, isStoryKey, isVisualKey, seriesOf } from "./taxonomy";
 
 const LINK_HOSTS = new Set(["www.youtube.com", "youtube.com", "www.instagram.com"]);
 
@@ -48,6 +49,12 @@ export function validateShowcase(input: {
   for (const e of manifest) {
     const a = allowed.get(e.id);
     if (!a) { out.push(`${e.id}: media present but not in the allowlist`); continue; }
+    if (!isVisualKey(e.visual)) out.push(`${e.id}: unknown visual style ${e.visual}`);
+    if (!isStoryKey(e.story)) out.push(`${e.id}: unknown story format ${e.story}`);
+    const mapped = SERIES_MAP[seriesOf(a.source) ?? ""];
+    if (!mapped) out.push(`${e.id}: series of ${a.source} is not in taxonomy map_from_series`);
+    else if (mapped.visual !== e.visual || mapped.story !== e.story)
+      out.push(`${e.id}: visual/story must be ${mapped.visual}/${mapped.story} from its series (run npm run showcase)`);
     if (e.poster.src !== `/showcase/${e.id}/poster.jpg`) out.push(`${e.id}: poster path must be /showcase/${e.id}/poster.jpg`);
     if (e.poster.bytes > SHOWCASE_LIMITS.posterBytes) out.push(`${e.id}: poster over ${SHOWCASE_LIMITS.posterBytes} bytes`);
     out.push(...checkFile(publicDir, e.id, "poster", e.poster));

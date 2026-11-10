@@ -16,6 +16,7 @@ import os from "node:os";
 import path from "node:path";
 import { SHOWCASE_ALLOWLIST, type ShowcaseAllowEntry } from "../lib/showcase-allowlist";
 import { SHOWCASE_LIMITS, type ShowcaseManifestEntry } from "../lib/showcase-manifest";
+import { classifySource } from "../lib/taxonomy";
 
 const HOME = os.homedir();
 const STUDIO = process.env.SHOWCASE_STUDIO_ROOT ?? path.join(HOME, "Studio/clips");
@@ -53,6 +54,9 @@ type Clip = {
   madeWith: Record<string, string>;
   link: ShowcaseManifestEntry["link"];
   sourceSha: string;
+  /** clip.json visual_style / story_format, when the clip has them. */
+  visual?: string;
+  story?: string;
 };
 
 function readClip(entry: ShowcaseAllowEntry): Clip {
@@ -78,6 +82,8 @@ function readClip(entry: ShowcaseAllowEntry): Clip {
       madeWith,
       link,
       sourceSha: clip.video.sha256,
+      visual: clip.visual_style,
+      story: clip.story_format,
     };
   }
   if (kind === "style") {
@@ -100,6 +106,12 @@ function build(entry: ShowcaseAllowEntry): ShowcaseManifestEntry {
   const clip = readClip(entry);
   const size = probe(clip.src);
   const portrait = size.height > size.width;
+  // Visual style and story format follow the series (taxonomy
+  // map_from_series); clip.json must agree where it names them.
+  const { visual, story } = classifySource(entry.source);
+  if ((clip.visual && clip.visual !== visual) || (clip.story && clip.story !== story)) {
+    throw new Error(`${entry.id}: clip.json says ${clip.visual}/${clip.story}, its series maps to ${visual}/${story}`);
+  }
   const dir = path.join(OUT, entry.id);
   fs.rmSync(dir, { recursive: true, force: true });
   fs.mkdirSync(dir, { recursive: true });
@@ -155,6 +167,8 @@ function build(entry: ShowcaseAllowEntry): ShowcaseManifestEntry {
     id: entry.id,
     title: clip.title,
     aspect: portrait ? "portrait" : "landscape",
+    visual,
+    story,
     poster: {
       src: `/showcase/${entry.id}/poster.jpg`,
       width: posterSize.width,
