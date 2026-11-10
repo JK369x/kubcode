@@ -101,7 +101,7 @@ const PUBLISHING_WORKER_TABLES = [
   "comment_items",
   "dm_ledger",
 ];
-const ALL_VERSIONS = ["0001_accounts", "0002_interactions", "0003_downloads", "0004_settings_keys", "0005_owner_flag", "0006_connect_app_source", "0007_publishing_channels", "0008_publishing_posts", "0009_publishing_owner_lookup", "0010_comment_automations"];
+const ALL_VERSIONS = ["0001_accounts", "0002_interactions", "0003_downloads", "0004_settings_keys", "0005_owner_flag", "0006_connect_app_source", "0007_publishing_channels", "0008_publishing_posts", "0009_publishing_owner_lookup", "0010_comment_automations", "0011_article_interactions"];
 
 // Refuses anything that is not clearly a local test database BEFORE any
 // connection is attempted.

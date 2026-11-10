@@ -18,7 +18,9 @@ import {
   type InteractionErrorCode,
 } from "./rules";
 
-export type PageKind = "tool" | "skill";
+export const PAGE_KINDS = ["tool", "skill", "article"] as const;
+export type PageKind = (typeof PAGE_KINDS)[number];
+export const isPageKind = (v: unknown): v is PageKind => typeof v === "string" && (PAGE_KINDS as readonly string[]).includes(v);
 export type PageKey = { kind: PageKind; slug: string };
 
 export type StoreErrorCode = InteractionErrorCode | "NOT_SIGNED_IN" | "NOT_FOUND" | "FORBIDDEN" | "REPLY_DEPTH";
@@ -56,8 +58,29 @@ export type PageOptions = { limit?: number; before?: string | null };
 /** Threads per page; the route clamps caller limits to this maximum. */
 export const COMMENT_PAGE_SIZE = 20;
 
+/** One entry of the public community feed. Never carries user ids or emails. */
+export type FeedComment = {
+  id: string;
+  kind: PageKind;
+  slug: string;
+  author: string;
+  body: string;
+  isReply: boolean;
+  createdAt: string;
+};
+export type Feed = { comments: FeedComment[]; nextCursor: string | null };
+
+/** Largest feed page (/community); the articles block asks for 5. */
+export const FEED_PAGE_SIZE = 30;
+
 export interface InteractionStore {
   pageState(page: PageKey, viewer: SessionClaims | null, options?: PageOptions): Promise<PageState>;
+  /**
+   * Newest publicly visible comments across every page: status visible, and a
+   * reply only while its thread was never moderated (hidden, or deleted after
+   * being hidden). Ordered newest first; `before` is the last id of a page.
+   */
+  latestComments(options?: { limit?: number; before?: string | null }): Promise<Feed>;
   /** Public star count per page slug of one kind (pages with no stars omitted). */
   starCounts(kind: PageKind): Promise<Record<string, number>>;
   toggleStar(viewer: SessionClaims, page: PageKey): Promise<{ ok: true; starred: boolean; stars: number } | Failure>;
@@ -146,6 +169,48 @@ export function createPgInteractionStore(pool: Pool): InteractionStore {
   }
 
   return {
+    async latestComments(options = {}) {
+      const limit = Math.min(Math.max(1, options.limit ?? FEED_PAGE_SIZE), FEED_PAGE_SIZE);
+      const before = options.before && UUID.test(options.before) ? options.before : null;
+      const { rows } = await pool.query<{
+        id: string;
+        page_kind: PageKind;
+        page_slug: string;
+        parent_id: string | null;
+        body: string;
+        created_at: Date;
+        author: string | null;
+      }>(
+        `SELECT c.id, c.page_kind, c.page_slug, c.parent_id, c.body, c.created_at, ${AUTHOR_SQL} AS author
+           FROM kubcode_accounts.page_comments c
+           JOIN kubcode_accounts.users u ON u.id = c.user_id
+          WHERE c.status = 'visible'
+            -- Same rule as the page: a reply shows only under a thread that
+            -- is not hidden and was never moderated (moderated_at is cleared
+            -- when the owner un-hides).
+            AND (c.parent_id IS NULL OR EXISTS (
+                  SELECT 1 FROM kubcode_accounts.page_comments p
+                   WHERE p.id = c.parent_id AND p.moderated_at IS NULL))
+            AND ($1::uuid IS NULL OR (c.created_at, c.id) <
+                 (SELECT x.created_at, x.id FROM kubcode_accounts.page_comments x WHERE x.id = $1::uuid))
+          ORDER BY c.created_at DESC, c.id DESC
+          LIMIT $2`,
+        [before, limit + 1],
+      );
+      const page = rows.slice(0, limit);
+      return {
+        comments: page.map((r) => ({
+          id: r.id,
+          kind: r.page_kind,
+          slug: r.page_slug,
+          author: r.author ?? FALLBACK_AUTHOR,
+          body: r.body,
+          isReply: r.parent_id !== null,
+          createdAt: r.created_at.toISOString(),
+        })),
+        nextCursor: rows.length > limit ? page[page.length - 1].id : null,
+      };
+    },
     async starCounts(kind) {
       const { rows } = await pool.query<{ slug: string; n: string }>(
         "SELECT page_slug AS slug, count(*) AS n FROM kubcode_accounts.page_stars WHERE page_kind = $1 GROUP BY page_slug",

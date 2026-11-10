@@ -12,6 +12,7 @@ export function SiteFooter() {
         <Link href="/">คลังคลิป</Link>
         <Link href="/articles">บทความ</Link>
         <Link href="/tools">เครื่องมือ</Link>
+        <Link href="/community">ชุมชน</Link>
         <Link href="/terms">ข้อกำหนดการใช้งาน</Link>
         <Link href="/privacy">นโยบายความเป็นส่วนตัว</Link>
       </nav>

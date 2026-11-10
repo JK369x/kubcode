@@ -3,6 +3,8 @@ import type { Content } from "@/lib/content";
 import { articleIndex } from "@/lib/article-index";
 import { articleTools } from "@/lib/tool-index";
 import { ArticleCard } from "./ArticleCard";
+import { LatestComments } from "./Community";
+import { StarCountsProvider } from "./StarCounts";
 import styles from "./ArticleIndex.module.css";
 
 /** /articles and /articles/c/<key>: hero article, category filter, card grid. */
@@ -30,6 +32,7 @@ export function ArticleIndex({ content, category }: { content: Content; category
           ))}
         </ul>
       </nav>
+      <StarCountsProvider kind="article">
       {featured && <ArticleCard article={featured} categoryLabel={label(featured.category)} tools={articleTools(content, featured)} featured priority />}
       {rest.length > 0 && (
         <section aria-label="บทความอื่น" className={styles.grid}>
@@ -38,6 +41,8 @@ export function ArticleIndex({ content, category }: { content: Content; category
           ))}
         </section>
       )}
+      </StarCountsProvider>
+      {!category && <LatestComments />}
       <p className="source-note">เขียนด้วยคำของเราเอง และให้เครดิตต้นทางท้ายทุกบทความ ไม่ใช่การรับรองชุดเครื่องมือภายนอก</p>
     </main>
   );

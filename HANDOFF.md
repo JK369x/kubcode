@@ -60,6 +60,7 @@ Fresh readback ล่าสุด (UTC): `2026-11-03T17:48:02Z` (read-only aggre
 - บทความ/หน้า tool ใหม่ live บน kubcode.dev แล้ว
 - `0002_interactions` (additive: ดาว, คอมเมนต์, report, `users.is_owner`, public comment name) **apply โดย CI** run 41686923669 (`PLAN pending=0002_interactions` → `OK applied=0002_interactions`); grants + RLS policy ของ `kubcode_app` สำหรับตารางใหม่อยู่ในไฟล์ 0002 เอง
 - ดาว/คอมเมนต์ **ยังปิด** จนกว่า `KUBCODE_INTERACTIONS_ENABLED` จะเป็น `"true"` ตรงตัว (ตอนนี้ยังไม่มี key นี้ใน Vercel production env) ระหว่างปิด API ตอบ 503 และไม่ query ตารางใหม่
+- 2026-11-10 community (migration `0011_article_interactions`): ดาว/คอมเมนต์บนหน้าบทความด้วย (rail + mobile sheet เดียวกับ tool/skill), จำนวนดาวบนการ์ดบทความ, บล็อก "ความเคลื่อนไหวล่าสุด" (5 คอมเมนต์ล่าสุด) ใต้ grid ของ `/articles`, หน้า `/community` (30 รายการต่อหน้า + cursor, ยอดนิยม 3 รายการตามดาว), API สาธารณะ `GET /api/interactions/latest` (public name เท่านั้น ไม่มี id/email) 0011 เปลี่ยน CHECK `page_kind` (ADD NOT VALID → DROP CONSTRAINT → VALIDATE ไม่แตะข้อมูล) แต่ gate นับ `DROP` เป็น destructive จึงต้องให้เจ้าของ dispatch Production ด้วย `approve 0011_article_interactions`
 
 ## 3. งานคงเหลือ — เรียงลำดับ
 

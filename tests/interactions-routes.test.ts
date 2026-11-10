@@ -12,6 +12,9 @@ import {
   handlePublicName,
   handleStar,
   handleStarCounts,
+  handleLatestComments,
+  defaultPageExists,
+  defaultPageTitle,
   type InteractionDeps,
 } from "../lib/interactions/routes";
 
@@ -39,7 +42,8 @@ const CSRF = "C".repeat(43);
 const CID = "0b0e8a1e-0000-4000-8000-0000000000c1";
 
 const untouchable = new Proxy({}, { get: (_t, key) => () => assert.fail(`store.${String(key)} must not be called`) }) as InteractionStore;
-const pages = (p: { kind: string; slug: string }) => p.kind === "tool" && p.slug === "remotion";
+const pages = (p: { kind: string; slug: string }) =>
+  (p.kind === "tool" && p.slug === "remotion") || (p.kind === "article" && p.slug === "style-author-renderer");
 
 async function sessionCookie() {
   const token = accountToken({ userId: UID, sessionVersion: 1, provider: "google", subject: "g-1", name: "N", email: "g@example.test" });
@@ -92,7 +96,9 @@ test("writes reject bad origin, unknown pages, bad bodies and signed-out callers
   const d = deps(untouchable);
   await expectError(await handleStar(await write("/api/interactions/star", { kind: "tool", slug: "remotion" }, { origin: "https://evil.example" }), d), 403, "BAD_ORIGIN");
   await expectError(await handleStar(await write("/api/interactions/star", { kind: "tool", slug: "nope" }), d), 404, "PAGE_NOT_FOUND");
-  await expectError(await handleStar(await write("/api/interactions/star", { kind: "article", slug: "remotion" }), d), 400, "BAD_REQUEST");
+  await expectError(await handleStar(await write("/api/interactions/star", { kind: "page", slug: "remotion" }), d), 400, "BAD_REQUEST");
+  // Kinds are separate namespaces: a tool slug is not an article.
+  await expectError(await handleStar(await write("/api/interactions/star", { kind: "article", slug: "remotion" }), d), 404, "PAGE_NOT_FOUND");
   await expectError(await handleStar(await write("/api/interactions/star", { kind: "tool", slug: "remotion", extra: 1 }), d), 400, "BAD_REQUEST");
   await expectError(await handleStar(await write("/api/interactions/star", { kind: "tool", slug: "remotion" }, { signedIn: false }), d), 401, "NOT_SIGNED_IN");
   await expectError(await handleComment(await write("/api/interactions/comments", { kind: "tool", slug: "remotion", body: 5, parentId: null }), d), 400, "BAD_REQUEST");
@@ -218,7 +224,7 @@ test("star counts for the tool index: public, read without a session, unknown sl
   assert.equal(off.status, 200);
   assert.deepEqual(await off.json(), { available: false });
   assert.deepEqual(await (await handleStarCounts(read("?kind=tool"), deps(untouchable, ACCOUNTS_ONLY_ENV))).json(), { available: false });
-  await expectError(await handleStarCounts(read("?kind=article"), deps(untouchable)), 400, "BAD_REQUEST");
+  await expectError(await handleStarCounts(read("?kind=page"), deps(untouchable)), 400, "BAD_REQUEST");
   let asked: unknown;
   const res = await handleStarCounts(
     read("?kind=tool"),
@@ -228,4 +234,74 @@ test("star counts for the tool index: public, read without a session, unknown sl
   assert.equal(res.headers.get("cache-control"), "no-store");
   assert.equal(asked, "tool");
   assert.deepEqual(await res.json(), { available: true, stars: { remotion: 4 } });
+});
+
+test("article pages take stars and comments like tool pages", async () => {
+  let seen: unknown;
+  const ART = { kind: "article", slug: "style-author-renderer" };
+  const res = await handleStar(
+    await write("/api/interactions/star", ART),
+    deps({ toggleStar: async (_s, p) => ((seen = p), { ok: true, starred: true, stars: 1 }) }),
+  );
+  assert.equal(res.status, 200);
+  assert.deepEqual(seen, ART);
+  const c = await handleComment(
+    await write("/api/interactions/comments", { ...ART, body: "ดีมาก", parentId: null }),
+    deps({ addComment: async (_s, p, body) => ((seen = { p, body }), { ok: true, comment: { id: CID } }) }),
+  );
+  assert.equal(c.status, 200);
+  assert.deepEqual(seen, { p: ART, body: "ดีมาก" });
+  let asked: unknown;
+  const counts = await handleStarCounts(
+    new Request("https://kubcode.dev/api/interactions/star-counts?kind=article", { headers: { host: "kubcode.dev" } }),
+    deps({ starCounts: async (kind) => ((asked = kind), { "style-author-renderer": 2, remotion: 5 }) }),
+  );
+  assert.equal(asked, "article");
+  assert.deepEqual(await counts.json(), { available: true, stars: { "style-author-renderer": 2 } }, "a tool slug is not an article");
+});
+
+test("the real page lookup knows articles, tools and skills by kind", () => {
+  assert.equal(defaultPageExists({ kind: "article", slug: "style-author-renderer" }), true);
+  assert.equal(defaultPageExists({ kind: "article", slug: "remotion" }), false);
+  assert.equal(defaultPageExists({ kind: "tool", slug: "remotion" }), true);
+  assert.equal(defaultPageExists({ kind: "skill", slug: "freshstack-what-if" }), true);
+  assert.equal(typeof defaultPageTitle({ kind: "article", slug: "style-author-renderer" }), "string");
+});
+
+test("latest comments: public feed with page titles, validated cursor, clamped size, gone pages dropped", async () => {
+  const feedUrl = (q: string) => new Request(`https://kubcode.dev/api/interactions/latest${q}`, { headers: { host: "kubcode.dev" } });
+  assert.deepEqual(await (await handleLatestComments(feedUrl(""), deps(untouchable, AUTH_ENV))).json(), { available: false });
+  assert.deepEqual(await (await handleLatestComments(feedUrl(""), deps(untouchable, ACCOUNTS_ONLY_ENV))).json(), { available: false });
+  await expectError(await handleLatestComments(feedUrl("?before=nope"), deps(untouchable)), 400, "BAD_REQUEST");
+  await expectError(await handleLatestComments(feedUrl("?limit=abc"), deps(untouchable)), 400, "BAD_REQUEST");
+  let seen: unknown;
+  const at = "2026-11-10T10:00:00.000Z";
+  const store = {
+    latestComments: async (o: unknown) => (
+      (seen = o),
+      {
+        comments: [
+          { id: CID, kind: "article", slug: "style-author-renderer", author: "A", body: "สวัสดี", isReply: false, createdAt: at },
+          { id: UID, kind: "tool", slug: "gone-tool", author: "B", body: "x", isReply: true, createdAt: at },
+        ],
+        nextCursor: UID,
+      }
+    ),
+  };
+  const res = await handleLatestComments(feedUrl(`?limit=500&before=${CID}`), {
+    ...deps(store as never),
+    pageTitle: (p) => (p.kind === "article" ? "บทความทดสอบ" : null),
+  });
+  assert.equal(res.status, 200);
+  assert.equal(res.headers.get("cache-control"), "no-store");
+  assert.deepEqual(seen, { limit: 30, before: CID });
+  assert.deepEqual(await res.json(), {
+    available: true,
+    comments: [
+      { id: CID, kind: "article", slug: "style-author-renderer", title: "บทความทดสอบ", href: "/articles/style-author-renderer", author: "A", body: "สวัสดี", isReply: false, createdAt: at },
+    ],
+    nextCursor: UID,
+  });
+  await handleLatestComments(feedUrl("?limit=5"), deps(store as never));
+  assert.deepEqual(seen, { limit: 5, before: null });
 });
