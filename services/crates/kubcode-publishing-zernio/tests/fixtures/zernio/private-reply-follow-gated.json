@@ -1,0 +1,6 @@
+{"_source": "OpenAPI v1.529.3 private-reply 400 example followGated (error text shortened)",
+ "error": "Instagram refused this private reply because it carries a card, buttons or an attachment and the commenter does not follow this account.",
+ "type": "platform_error", "code": "platform_api_error", "platform": "instagram",
+ "platformError": {"code": 2, "error_subcode": 1545133, "is_transient": false, "message": "Service temporarily unavailable",
+                   "error_user_title": "Your message can't be delivered", "error_user_msg": "You can't send media to Someone unless they follow you."},
+ "details": {"privateReplyConsumed": true}}

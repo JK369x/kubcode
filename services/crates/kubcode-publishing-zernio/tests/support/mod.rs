@@ -55,6 +55,8 @@ struct State {
     fault: Option<Fault>,
     /// The next POST /v1/posts answers this (status, body) instead.
     next_post: Option<(u16, Value)>,
+    /// The next inbox call answers this; Err is a transport failure.
+    next_inbox: Option<Result<(u16, Value), ()>>,
     next: u64,
     log: Vec<Recorded>,
 }
@@ -93,6 +95,16 @@ impl FakeZernio {
     /// Scripts the next POST /v1/posts answer, e.g. a 207 inline failure.
     pub fn answer_next_post(&self, status: u16, body: Value) {
         self.with(|s| s.next_post = Some((status, body)));
+    }
+
+    /// Scripts the next inbox call's answer (OpenAPI examples).
+    pub fn answer_next_inbox(&self, status: u16, body: Value) {
+        self.with(|s| s.next_inbox = Some(Ok((status, body))));
+    }
+
+    /// The next inbox call never gets an answer (it may still have arrived).
+    pub fn answer_next_inbox_transport_error(&self) {
+        self.with(|s| s.next_inbox = Some(Err(())));
     }
 
     pub fn inject(&self, f: Fault) {
@@ -312,6 +324,13 @@ impl FakeZernio {
 impl Transport for FakeZernio {
     async fn send(&self, req: HttpRequest) -> Result<HttpResponse, TransportError> {
         let url = Url::parse(&req.url).unwrap();
+        let inbox =
+            url.path().starts_with("/api/v1/inbox/") || url.path().starts_with("/v1/inbox/");
+        let scripted = if inbox {
+            self.with(|s| s.next_inbox.take())
+        } else {
+            None
+        };
         let mut json = None;
         let mut uploaded = None;
         let headers = req.headers.clone();
@@ -330,15 +349,31 @@ impl Transport for FakeZernio {
                 uploaded = Some(all);
             }
         }
-        let r = self.route(
-            &HttpRequest {
-                method,
-                url: req_url,
-                headers: headers.clone(),
-                body: RequestBody::Empty,
-            },
-            json.as_ref(),
-        );
+        let r = match scripted {
+            Some(Ok((status, body))) => resp(status, body),
+            Some(Err(())) => {
+                self.with(|s| {
+                    s.log.push(Recorded {
+                        method,
+                        url: url.clone(),
+                        headers: headers.clone(),
+                        json: json.clone(),
+                        uploaded: None,
+                    })
+                });
+                return Err(TransportError);
+            }
+            None if inbox => resp(200, json!({"status": "success", "success": true})),
+            None => self.route(
+                &HttpRequest {
+                    method,
+                    url: req_url,
+                    headers: headers.clone(),
+                    body: RequestBody::Empty,
+                },
+                json.as_ref(),
+            ),
+        };
         self.with(|s| {
             s.log.push(Recorded {
                 method,

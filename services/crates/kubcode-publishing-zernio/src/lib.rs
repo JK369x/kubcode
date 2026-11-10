@@ -14,7 +14,8 @@ use kubcode_publishing::domain::{MediaKind, Platform, ProviderKind, ProviderRef,
 use kubcode_publishing::errors::{ErrorClass, PublishError, Result};
 use kubcode_publishing::ports::{
     Accepted, CallbackParams, Checked, ConnectProvider, ConnectStart, ConnectedAccount,
-    ConnectionHealth, ConnectionRef, DeliveryState, MediaSource, Publisher, WorkspaceCtx,
+    ConnectionHealth, ConnectionRef, DeliveryState, Inbox, MediaSource, PrivateReply, Publisher,
+    WorkspaceCtx,
 };
 use kubcode_publishing::validate::{DeliveryDraft, Violation};
 use serde_json::{json, Value};
@@ -503,5 +504,74 @@ impl Publisher for Zernio {
         parse::post_state(&resp)
             .map(|(_, st)| st)
             .ok_or_else(bad_response)
+    }
+}
+
+/// A platform id that goes into a URL path: letters, digits, `_`, `-`.
+fn segment(v: &str) -> Option<&str> {
+    let ok = (1..=128).contains(&v.len())
+        && v.bytes()
+            .all(|b| b.is_ascii_alphanumeric() || b == b'_' || b == b'-');
+    ok.then_some(v)
+}
+
+#[async_trait]
+impl Inbox for Zernio {
+    async fn private_reply(
+        &self,
+        account: &ProviderRef,
+        platform_post_id: &str,
+        comment_id: &str,
+        text: &str,
+    ) -> PrivateReply {
+        let (Ok(acct), Some(post), Some(comment)) = (
+            path_id(account),
+            segment(platform_post_id),
+            segment(comment_id),
+        ) else {
+            return PrivateReply::Failed(e(ErrorClass::Bug, "bad_comment_ref"));
+        };
+        // Plain text first: buttons can be refused for non-followers and the
+        // refused call still spends the comment's one private reply.
+        let body = json!({"accountId": acct, "message": text});
+        let url = self.url(
+            &format!("/v1/inbox/comments/{post}/{comment}/private-reply"),
+            &[],
+        );
+        let r = match self.send(Method::Post, url, Some(&body), None).await {
+            Ok(r) => r,
+            // It may have reached Zernio (and Instagram) before the failure.
+            Err(_) => return PrivateReply::Unknown,
+        };
+        let consumed = r.body.pointer("/details/privateReplyConsumed") == Some(&Value::Bool(true));
+        match r.status {
+            200..=299 => PrivateReply::Sent,
+            _ if consumed => PrivateReply::Consumed,
+            502 | 504 => PrivateReply::Unknown,
+            status => PrivateReply::Failed(map_error(status, r.retry_after, &r.body)),
+        }
+    }
+
+    async fn public_reply(
+        &self,
+        account: &ProviderRef,
+        platform_post_id: &str,
+        comment_id: &str,
+        text: &str,
+        key: &str,
+    ) -> Result<()> {
+        let acct = path_id(account)?;
+        let (Some(post), Some(comment)) = (segment(platform_post_id), segment(comment_id)) else {
+            return Err(e(ErrorClass::Bug, "bad_comment_ref"));
+        };
+        let body = json!({"accountId": acct, "message": text, "commentId": comment});
+        self.call(
+            Method::Post,
+            self.url(&format!("/v1/inbox/comments/{post}"), &[]),
+            Some(&body),
+            Some(key),
+        )
+        .await
+        .map(|_| ())
     }
 }

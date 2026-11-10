@@ -1,0 +1,2 @@
+{"_source": "OpenAPI v1.529.3, POST /v1/inbox/comments/{postId} 200 (schema fields)",
+ "success": true, "data": {"commentId": "17800000000000099", "isReply": true, "cid": null}}
