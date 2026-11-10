@@ -3,6 +3,7 @@
 #
 #   scripts/local-e2e/run.sh            connect YouTube, check, disconnect, clean up
 #   scripts/local-e2e/run.sh instagram  same for Instagram
+#   scripts/local-e2e/run.sh tiktok     same for TikTok (the owner's TikTok login and consent)
 #
 # Needs: the local test Postgres (KUBCODE_TEST_DATABASE_URL), `npm run build`,
 # and the owner at the keyboard: macOS asks for the login password to read the
@@ -17,6 +18,11 @@ source "$ROOT/infra/scripts/lib/keychain.sh"
 : "${KUBCODE_TEST_DATABASE_URL:?set KUBCODE_TEST_DATABASE_URL to the local test database}"
 [ -f "$ROOT/.next/BUILD_ID" ] || { echo "local-e2e: run 'npm run build' first" >&2; exit 2; }
 kc_has zernio-api-key || { echo "local-e2e: vault has no kubcode/zernio-api-key" >&2; exit 2; }
+
+case "${1:-youtube}" in
+  youtube | instagram | tiktok) ;;
+  *) echo "local-e2e: platform must be youtube, instagram or tiktok" >&2; exit 2 ;;
+esac
 
 cd "$ROOT"
 kc_get zernio-api-key | npx tsx scripts/local-e2e/connect.ts "${1:-youtube}"

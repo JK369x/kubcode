@@ -3,7 +3,7 @@
 // table accepts.
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { RULE_ERROR_MESSAGES, dmHasLink, parseRuleInput, parseRulePatch } from "../lib/automations/rules";
+import { RULE_ERROR_MESSAGES, checkFor, dmHasLink, parseRuleInput, parseRulePatch } from "../lib/automations/rules";
 
 const base = { keywords: ["ลิงก์"], dmText: "นี่ลิงก์ https://kubcode.dev/go/demo" };
 
@@ -112,4 +112,33 @@ test("every failure has a Thai message", () => {
   for (const [field, codes] of Object.entries(RULE_ERROR_MESSAGES)) {
     for (const message of Object.values(codes)) assert.match(message, /[฀-๿]/, field);
   }
+});
+
+test("TikTok: public reply only — the reply is required, any DM text is dropped", () => {
+  const tt = (body: Record<string, unknown>) => {
+    const r = parseRuleInput(body);
+    return r.ok ? checkFor("tiktok", r.value) : r;
+  };
+  assert.deepEqual(tt({ keywords: "egm" }), { ok: false, field: "publicReply", code: "REQUIRED" });
+  assert.match(RULE_ERROR_MESSAGES.publicReply.REQUIRED!, /TikTok ตอบได้แค่ในคอมเมนต์ ส่ง DM ไม่ได้/);
+  assert.deepEqual(tt({ keywords: "egm", publicReply: "ลิงก์อยู่ในไบโอนะ", dmText: "ignored", replyPolicy: "after_dm" }), {
+    ok: true,
+    value: {
+      keywords: ["egm"],
+      matchMode: "contains",
+      platformPostId: null,
+      publicReply: "ลิงก์อยู่ในไบโอนะ",
+      dmText: null,
+      replyPolicy: "always",
+      active: true,
+    },
+  });
+  assert.equal((tt({ keywords: "egm", publicReply: "x", scope: "7300000000000000001" }) as any).value.platformPostId, "7300000000000000001");
+});
+
+test("Instagram still needs the DM text", () => {
+  const r = parseRuleInput({ keywords: "egm", publicReply: "ส่งให้ใน DM แล้วนะ" });
+  assert.ok(r.ok);
+  assert.deepEqual(checkFor("instagram", r.value), { ok: false, field: "dmText", code: "REQUIRED" });
+  assert.equal(checkFor("instagram", (parseRuleInput(base) as any).value).ok, true);
 });

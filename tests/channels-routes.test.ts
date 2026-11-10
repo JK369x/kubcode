@@ -6,7 +6,7 @@ import assert from "node:assert/strict";
 import { createHash } from "node:crypto";
 import { encode } from "next-auth/jwt";
 import { accountToken } from "../lib/accounts/session";
-import { readPublishingConfig } from "../lib/channels/config";
+import { CONNECTABLE, readPublishingConfig } from "../lib/channels/config";
 import {
   CHANNEL_COOKIE,
   handleChannelCallback,
@@ -148,6 +148,18 @@ test("connect: signs the request, sends only hashes plus the state, sets the coo
   assert.match(setCookie, new RegExp(`^${CHANNEL_COOKIE}=[A-Za-z0-9_-]{43}; Path=/; Max-Age=600; HttpOnly; Secure; SameSite=Lax$`));
   const cookieValue = setCookie.split(";")[0].split("=")[1];
   assert.equal(call.body.cookie_hash, sha(cookieValue).toString("hex"), "the cookie value itself never leaves the web host");
+});
+
+test("connect: TikTok is connectable like YouTube and Instagram; other platforms are not", async () => {
+  assert.deepEqual([...CONNECTABLE], ["youtube", "instagram", "tiktok"]);
+  const l = lambda({ ok: true, auth_url: "https://www.tiktok.com/v2/auth/authorize/?client_key=x" });
+  const res = await handleChannelConnect(await post("/api/channels/connect", { platform: "tiktok" }), deps(owner, { fetch: l.fetch }));
+  assert.equal(res.status, 200);
+  assert.equal(l.calls[0].body.platform, "tiktok");
+  assert.ok(res.headers.get("set-cookie"));
+  for (const platform of ["facebook", "TikTok", "tiktokads"]) {
+    assert.equal((await handleChannelConnect(await post("/api/channels/connect", { platform }), deps(untouchable))).status, 400, platform);
+  }
 });
 
 test("connect: a Lambda failure or a non-https URL is a 503 with no cookie", async () => {

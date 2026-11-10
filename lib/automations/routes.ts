@@ -30,7 +30,7 @@ const ERRORS: Record<RouteError, { status: number; message: string }> = {
   UNAVAILABLE: { status: 503, message: "ระบบตอบคอมเมนต์อัตโนมัติใช้งานไม่ได้ชั่วคราว ลองใหม่ภายหลัง" },
   FORBIDDEN: { status: 403, message: "คุณไม่มีสิทธิ์ใช้ระบบโพสต์" },
   NOT_SIGNED_IN: ACCOUNT_ERRORS.NOT_SIGNED_IN,
-  CHANNEL_NOT_FOUND: { status: 404, message: "ไม่พบช่อง Instagram นี้" },
+  CHANNEL_NOT_FOUND: { status: 404, message: "ไม่พบช่อง Instagram หรือ TikTok นี้" },
   RULE_NOT_FOUND: { status: 404, message: "ไม่พบกฎนี้ อาจถูกลบไปแล้ว โหลดหน้าใหม่อีกครั้ง" },
   RULE_LIMIT: { status: 409, message: `ช่องนี้มีกฎครบ ${MAX_RULES_PER_CHANNEL} ข้อแล้ว ลบกฎที่ไม่ใช้ก่อน` },
 };
@@ -50,7 +50,7 @@ async function handle<T>(
   ids: string[],
   deps: AutomationRouteDeps,
   read: { body: false } | { body: true; parse: (b: Record<string, unknown>) => Parsed<T> },
-  run: (store: AutomationStore, session: SessionClaims, value: T) => Promise<({ ok: true } & Record<string, unknown>) | AutomationFailure>,
+  run: (store: AutomationStore, session: SessionClaims, value: T) => Promise<({ ok: true } & Record<string, unknown>) | AutomationFailure | RuleFailure>,
 ): Promise<Response> {
   if (!ids.every((id) => UUID.test(id))) return accountErrorResponse("BAD_REQUEST");
   const env = deps.env ?? process.env;
@@ -71,7 +71,10 @@ async function handle<T>(
   const store = deps.storeFor?.(accounts.databaseUrl) ?? getAutomationStore(accounts.databaseUrl);
   try {
     const r = await run(store, session, value);
-    return r.ok ? jsonNoStore(r) : errorResponse(r.code);
+    if (r.ok) return jsonNoStore(r);
+    // The rule does not fit the channel's platform (TikTok: public reply required).
+    if ("field" in r) return invalidRule(r);
+    return errorResponse(r.code);
   } catch (error) {
     logDbFailure("AUTOMATION_RULES", error);
     return errorResponse("UNAVAILABLE");

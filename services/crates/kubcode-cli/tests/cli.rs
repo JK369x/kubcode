@@ -205,3 +205,49 @@ fn the_summary_shows_everything_that_is_confirmed() {
     }
     let _ = MediaKind::Video;
 }
+
+#[test]
+fn tiktok_is_summarised_and_must_be_public() {
+    use kubcode_cli::schedule::check_visibility;
+    let (tt, yt) = (Uuid::new_v4(), Uuid::new_v4());
+    let channels = [
+        ChannelInfo {
+            id: tt,
+            platform: "tiktok".into(),
+            name: "kubcode".into(),
+        },
+        ChannelInfo {
+            id: yt,
+            platform: "youtube".into(),
+            name: "โลกอีกแบบ".into(),
+        },
+    ];
+    assert!(check_visibility(&[tt], &channels, Visibility::Public).is_ok());
+    assert!(check_visibility(&[yt], &channels, Visibility::Private).is_ok());
+    let err = check_visibility(&[yt, tt], &channels, Visibility::Private).unwrap_err();
+    assert!(err.contains("--visibility public"), "{err}");
+
+    let req = ScheduleRequest {
+        clip_ref: CLIP.into(),
+        video_asset: Uuid::new_v4(),
+        cover_asset: Some(Uuid::new_v4()),
+        title: "หมึกยักษ์".into(),
+        description: "คอมเมนต์ egm รับลิงก์".into(),
+        tags: vec![],
+        targets: vec![Target {
+            channel: tt,
+            publish_at: datetime!(2026-11-11 19:00 +07:00),
+            visibility: Visibility::Public,
+        }],
+    };
+    let text = render_summary(&req, &channels, "thumbnail.png");
+    for needle in [
+        "kubcode (TikTok)",
+        "public",
+        "สาธารณะ",
+        "9:16",
+        "คอมเมนต์ egm",
+    ] {
+        assert!(text.contains(needle), "summary lacks {needle}:\n{text}");
+    }
+}

@@ -41,6 +41,10 @@ const OUTCOME_LABELS: Record<string, string> = {
   rule_gone: "กฎถูกพักหรือลบก่อนส่ง",
   no_connection: "ช่องไม่ได้เชื่อมอยู่",
   no_inbox: "ระบบส่งข้อความยังไม่พร้อม",
+  // TikTok: public reply only (docs/design/tiktok-channel.md §3).
+  reply_sent: "ตอบใต้คอมเมนต์แล้ว",
+  reply_failed: "ตอบใต้คอมเมนต์ไม่สำเร็จ",
+  no_public_reply: "กฎนี้ไม่มีข้อความตอบใต้คอมเมนต์",
 };
 
 export function outcomeLabel(outcome: string | null, status: OutcomeView["status"]): string {

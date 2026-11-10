@@ -1152,8 +1152,52 @@ impl Store {
         Ok(())
     }
 
+    /// A ledger row this comment item claimed whose public reply never got
+    /// an answer (a public-only channel's run was interrupted).
+    pub async fn unfinished_reply(&self, c: &PendingComment) -> Result<Option<Uuid>> {
+        let row = self
+            .c
+            .query_opt(
+                "SELECT id FROM kubcode_accounts.dm_ledger
+                  WHERE comment_item_id = $1 AND dm_state = 'claimed' AND reply_state = 'none'",
+                &[&c.id],
+            )
+            .await?;
+        Ok(row.map(|r| r.get(0)))
+    }
+
     /// DMs this calendar month (Asia/Bangkok) that went or may have gone out.
     pub async fn dms_this_month(&self, channel: ChannelId, now: OffsetDateTime) -> Result<i64> {
+        self.month_count(
+            channel,
+            now,
+            "dm_state IN ('dm_sending', 'dm_sent', 'dm_unknown')",
+        )
+        .await
+    }
+
+    /// On a public-only channel (TikTok) the answers are public replies:
+    /// rows stay `claimed`, counted when the reply went or may have gone out.
+    pub async fn public_replies_this_month(
+        &self,
+        channel: ChannelId,
+        now: OffsetDateTime,
+    ) -> Result<i64> {
+        self.month_count(
+            channel,
+            now,
+            "dm_state = 'claimed' AND reply_state IN ('none', 'sent')",
+        )
+        .await
+    }
+
+    /// `filter` is one of the fixed strings above, never input.
+    async fn month_count(
+        &self,
+        channel: ChannelId,
+        now: OffsetDateTime,
+        filter: &'static str,
+    ) -> Result<i64> {
         let bkk = now.to_offset(time::UtcOffset::from_hms(7, 0, 0).expect("static offset"));
         let start = bkk
             .replace_day(1)
@@ -1162,9 +1206,10 @@ impl Store {
         let row = self
             .c
             .query_one(
-                "SELECT count(*) FROM kubcode_accounts.dm_ledger
-                  WHERE channel_id = $1 AND created_at >= $2
-                    AND dm_state IN ('dm_sending', 'dm_sent', 'dm_unknown')",
+                &format!(
+                    "SELECT count(*) FROM kubcode_accounts.dm_ledger
+                      WHERE channel_id = $1 AND created_at >= $2 AND {filter}"
+                ),
                 &[&channel.0, &start],
             )
             .await?;
@@ -1243,6 +1288,21 @@ impl Store {
                              VALUES ($1, $2, $3, COALESCE($4, now()))
                              ON CONFLICT (delivery_id) DO NOTHING",
                             &[&id, &short(platform_post_id), &https_url(url), at],
+                        )
+                        .await?;
+                    } else {
+                        // Already published: fill what the first event lacked
+                        // (TikTok's late video id and URL), never overwrite.
+                        tx.execute(
+                            "UPDATE kubcode_accounts.receipts r
+                                SET platform_post_id = COALESCE(r.platform_post_id, $3),
+                                    platform_url = COALESCE(r.platform_url, $4),
+                                    updated_at = now()
+                               FROM kubcode_accounts.deliveries d
+                              WHERE d.id = r.delivery_id AND d.provider = $1 AND d.provider_ref = $2
+                                AND d.status = 'published'
+                                AND (r.platform_post_id IS NULL OR r.platform_url IS NULL)",
+                            &[&p, &post.0, &short(platform_post_id), &https_url(url)],
                         )
                         .await?;
                     }

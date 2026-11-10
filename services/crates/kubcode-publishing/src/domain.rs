@@ -44,7 +44,16 @@ impl Platform {
     /// Platforms where a delivery must carry the designed cover (owner rule).
     /// Others join this list when they are added and their cover path is known.
     pub fn needs_cover(self) -> bool {
-        matches!(self, Platform::YouTube | Platform::Instagram)
+        matches!(
+            self,
+            Platform::YouTube | Platform::Instagram | Platform::TikTok
+        )
+    }
+
+    /// Platforms whose comments can be answered only in public: TikTok has
+    /// no private reply to a comment (docs/design/tiktok-channel.md §3).
+    pub fn public_reply_only(self) -> bool {
+        matches!(self, Platform::TikTok)
     }
 }
 

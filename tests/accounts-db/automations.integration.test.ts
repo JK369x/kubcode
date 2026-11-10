@@ -99,7 +99,7 @@ test("create, list, update and remove a rule on the member's own Instagram chann
   const a = await member();
   const ig = await channel(a.workspace);
   const listed = await store.rules(a.s, ig);
-  assert.deepEqual(listed, { ok: true, channel: { id: ig, displayName: "Lokeek", handle: "lokeekbaebkub" }, rules: [] });
+  assert.deepEqual(listed, { ok: true, channel: { id: ig, displayName: "Lokeek", handle: "lokeekbaebkub", platform: "instagram" }, rules: [] });
 
   const first = await store.create(a.s, ig, RULE);
   assert.ok(first.ok);
@@ -229,4 +229,43 @@ test("a channel holds at most 50 rules", async () => {
   assert.ok(last.ok);
   assert.equal(last.rule.position, 49);
   assert.deepEqual(await store.create(a.s, ig, RULE), { ok: false, code: "RULE_LIMIT" });
+});
+
+// ------------------------------------------------------------ TikTok
+
+test("TikTok: rules need a public reply, keep no DM text, and the count is public replies", async () => {
+  const a = await member();
+  const tt = await channel(a.workspace, "tiktok");
+  const listed = await store.rules(a.s, tt);
+  assert.ok(listed.ok);
+  assert.equal(listed.channel.platform, "tiktok");
+
+  const TT: RuleInput = { ...RULE, keywords: ["egm"], publicReply: null, dmText: null };
+  assert.deepEqual(await store.create(a.s, tt, TT), { ok: false, field: "publicReply", code: "REQUIRED" });
+  const made = await store.create(a.s, tt, { ...TT, publicReply: "ลิงก์อยู่ในไบโอนะ", dmText: "sneaked in" });
+  assert.ok(made.ok);
+  assert.deepEqual([made.rule.publicReply, made.rule.dmText, made.rule.replyPolicy], ["ลิงก์อยู่ในไบโอนะ", null, "always"]);
+  const stored = (await pool.query(`SELECT dm_text FROM ${S}.automation_rules WHERE id = $1`, [made.rule.id])).rows[0];
+  assert.deepEqual(stored, { dm_text: "(TikTok: no DM)" }, "a fixed placeholder, never sent");
+
+  assert.deepEqual(await store.update(a.s, tt, made.rule.id, { publicReply: null }), { ok: false, field: "publicReply", code: "REQUIRED" });
+  const paused = await store.update(a.s, tt, made.rule.id, { active: false });
+  assert.ok(paused.ok);
+  assert.deepEqual([paused.rule.active, paused.rule.publicReply], [false, "ลิงก์อยู่ในไบโอนะ"]);
+
+  // Instagram rules still need the DM text, also through an update.
+  const ig = await channel(a.workspace);
+  assert.deepEqual(await store.create(a.s, ig, { ...RULE, dmText: null }), { ok: false, field: "dmText", code: "REQUIRED" });
+
+  const now = new Date("2026-11-10T05:00:00Z");
+  const reply = async (state: string) => {
+    const item = await comment(tt, "2026-11-05T00:00:00Z", { outcome: "reply_sent" });
+    await pool.query(
+      `INSERT INTO ${S}.dm_ledger (channel_id, platform_post_id, author_id, comment_item_id, dm_state, reply_state, created_at)
+       VALUES ($1, '7300', $2, $3, 'claimed', $4, '2026-11-05T00:00:00Z')`,
+      [tt, `author-${randomUUID()}`, item, state],
+    );
+  };
+  for (const st of ["sent", "none", "failed", "skipped"]) await reply(st);
+  assert.deepEqual(await store.usage(a.s, tt, now), { ok: true, count: 2 }, "sent or in flight");
 });

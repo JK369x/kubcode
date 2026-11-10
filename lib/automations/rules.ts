@@ -11,7 +11,8 @@ export type RuleInput = {
   /** null: every post of the channel. */
   platformPostId: string | null;
   publicReply: string | null;
-  dmText: string;
+  /** null on TikTok, which has no private reply to a comment. */
+  dmText: string | null;
   replyPolicy: ReplyPolicy;
   active: boolean;
 };
@@ -26,7 +27,16 @@ export const MAX_KEYWORDS = 20;
 export const MAX_KEYWORD_CHARS = 100;
 export const MAX_PUBLIC_REPLY_CHARS = 2200;
 export const MAX_DM_CHARS = 1000;
-/** Instagram media ids are digits; the column allows up to 128 characters. */
+/** Platforms whose comments the engine answers (docs/design/tiktok-channel.md). */
+export type AutomationPlatform = "instagram" | "tiktok";
+export const AUTOMATION_PLATFORMS: readonly AutomationPlatform[] = ["instagram", "tiktok"];
+/**
+ * What a TikTok rule keeps in the NOT NULL dm_text column (migration 0010):
+ * the engine never sends it, TikTok has no private reply to a comment.
+ */
+export const TIKTOK_NO_DM = "(TikTok: no DM)";
+
+/** Instagram media and TikTok video ids are digits; the column allows up to 128 characters. */
 const POST_ID = /^[0-9]{1,64}$/;
 const LINK = /https:\/\/\S+/;
 
@@ -40,7 +50,10 @@ export const RULE_ERROR_MESSAGES: Record<RuleField, Partial<Record<RuleErrorCode
   },
   matchMode: { INVALID: "เลือกวิธีจับคีย์เวิร์ดไม่ถูกต้อง" },
   scope: { INVALID: "ใส่ ID โพสต์เป็นตัวเลขเท่านั้น หรือเลือกทุกโพสต์" },
-  publicReply: { INVALID: "ข้อความตอบใต้คอมเมนต์ไม่ถูกต้อง", TOO_LONG: "ข้อความตอบใต้คอมเมนต์ยาวได้ไม่เกิน 2,200 ตัวอักษร" },
+  publicReply: {
+    REQUIRED: "TikTok ตอบได้แค่ในคอมเมนต์ ส่ง DM ไม่ได้ ใส่ข้อความตอบใต้คอมเมนต์ด้วย",
+    INVALID: "ข้อความตอบใต้คอมเมนต์ไม่ถูกต้อง",
+    TOO_LONG: "ข้อความตอบใต้คอมเมนต์ยาวได้ไม่เกิน 2,200 ตัวอักษร" },
   dmText: {
     REQUIRED: "ใส่ข้อความ DM",
     INVALID: "ข้อความ DM ไม่ถูกต้อง",
@@ -121,12 +134,11 @@ function readPresent(body: Record<string, unknown>): Parsed<RulePatch> {
   return { ok: true, value: out as RulePatch };
 }
 
-/** A new rule: keywords and DM text required, the rest defaulted. */
+/** A new rule: keywords required, the rest defaulted; the platform's own needs are `checkFor`. */
 export function parseRuleInput(body: Record<string, unknown>): Parsed<RuleInput> {
   const r = readPresent(body);
   if (!r.ok) return r;
   if (r.value.keywords === undefined) return fail("keywords", "REQUIRED");
-  if (r.value.dmText === undefined) return fail("dmText", "REQUIRED");
   return {
     ok: true,
     value: {
@@ -134,7 +146,7 @@ export function parseRuleInput(body: Record<string, unknown>): Parsed<RuleInput>
       matchMode: r.value.matchMode ?? "contains",
       platformPostId: r.value.platformPostId ?? null,
       publicReply: r.value.publicReply ?? null,
-      dmText: r.value.dmText,
+      dmText: r.value.dmText ?? null,
       replyPolicy: r.value.replyPolicy ?? "after_dm",
       active: r.value.active ?? true,
     },
@@ -145,4 +157,18 @@ export function parseRuleInput(body: Record<string, unknown>): Parsed<RuleInput>
 export function parseRulePatch(body: Record<string, unknown>): Parsed<RulePatch> {
   if (Object.keys(body).length === 0) return fail("body", "INVALID");
   return readPresent(body);
+}
+
+/**
+ * The platform's own needs on the whole rule (after a patch is applied):
+ * Instagram sends a DM, so its text is required; TikTok can only answer in
+ * public, so the public reply is required and any DM text is dropped.
+ */
+export function checkFor(platform: AutomationPlatform, rule: RuleInput): Parsed<RuleInput> {
+  if (platform === "tiktok") {
+    if (!rule.publicReply) return fail("publicReply", "REQUIRED");
+    return { ok: true, value: { ...rule, dmText: null, replyPolicy: "always" } };
+  }
+  if (!rule.dmText) return fail("dmText", "REQUIRED");
+  return { ok: true, value: rule };
 }

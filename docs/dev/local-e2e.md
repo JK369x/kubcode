@@ -30,8 +30,20 @@ docker start kubcode-pub-test   # or: docker run -d --name kubcode-pub-test -e P
 export KUBCODE_TEST_DATABASE_URL=postgres://postgres:fixture-only@127.0.0.1:55432/kubcode_local_test
 
 npm run build                          # the web host runs the production build
-scripts/local-e2e/run.sh               # YouTube; `run.sh instagram` for Instagram
+scripts/local-e2e/run.sh               # YouTube; `run.sh instagram` / `run.sh tiktok`
 ```
+
+TikTok: sign in to the TikTok account to connect (@kubcode) in the consent
+window and accept **every** permission. If one is left out, Zernio changes
+nothing and returns `missing_tiktok_permissions`. The run also prints the
+account type TikTok reported. Zernio's free tier holds 2 accounts. The run
+adds one and removes it at the end, so a slot must be free.
+
+### Channel pages, screenshots (no provider call)
+
+`npx tsx scripts/local-e2e/channels-screens.ts` (after `npm run build`) seeds
+fixture channels and saves `/account/channels` and a TikTok automations page
+at desktop and 390 px width in `.qa/local-e2e/channels/`.
 
 `run.sh` reads `kubcode/zernio-api-key` from the Keychain (macOS asks for your
 login password) and pipes it to the harness on stdin. The key never appears in
@@ -74,7 +86,7 @@ The harness then:
 ### Wiring check without consent
 
 ```bash
-echo sk_dummy | KUBCODE_LOCAL_E2E_SMOKE=1 npx tsx scripts/local-e2e/connect.ts
+echo sk_dummy | KUBCODE_LOCAL_E2E_SMOKE=1 npx tsx scripts/local-e2e/connect.ts          # or ... connect.ts tiktok
 ```
 
 Headless; clicks connect itself and stops at Zernio's first answer. With a

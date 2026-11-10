@@ -49,7 +49,7 @@ const untouchable = new Proxy({}, { get: (_t, k) => () => assert.fail(`store.${S
 const storeOf = (s: Partial<AutomationStore>) => () => s as AutomationStore;
 
 const ready: Partial<AutomationStore> = {
-  rules: async () => ({ ok: true, channel: { id: CHANNEL, displayName: "Lokeek", handle: "lokeekbaebkub" }, rules: [RULE] }),
+  rules: async () => ({ ok: true, channel: { id: CHANNEL, displayName: "Lokeek", handle: "lokeekbaebkub", platform: "instagram" as const }, rules: [RULE] }),
   usage: async (_s, _c, now) => {
     assert.equal(now.toISOString(), NOW.toISOString());
     return { ok: true, count: 1234 };
@@ -82,7 +82,7 @@ test("ready: channel, rules, DMs this month against 5,000, and labelled outcomes
   assert.equal(DM_CAP_PER_MONTH, 5000);
   assert.deepEqual(view, {
     state: "ready",
-    channel: { id: CHANNEL, displayName: "Lokeek", handle: "lokeekbaebkub" },
+    channel: { id: CHANNEL, displayName: "Lokeek", handle: "lokeekbaebkub", platform: "instagram" as const },
     rules: [RULE],
     usage: { count: 1234, cap: 5000 },
     recent: [

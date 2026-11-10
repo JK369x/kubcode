@@ -1,0 +1,12 @@
+{"_source": "https://zernio.com/openapi.yaml (2026-11-10 copy), webhook comment.received example (WebhookPayloadComment) with the TikTok values the schema documents: platform tiktok, a TikTok video id as platformPostId, author with id only (TikTok's comment.update webhook has no username, picture or owner flag)",
+ "id": "00000000-0000-4000-8000-000000000101",
+ "event": "comment.received",
+ "timestamp": "2026-01-15T10:00:00Z",
+ "comment": {"id": "7400000000000000001", "postId": "507f1f77bcf86cd799439013", "platformPostId": "7300000000000000001",
+             "platform": "tiktok", "text": "EGM",
+             "author": {"id": "-000AbCdEfGhIjKlMnOpQrStUvWxYz"},
+             "createdAt": "2026-01-15T10:00:00.000Z", "isReply": false, "parentCommentId": null},
+ "post": {"id": "507f1f77bcf86cd799439013", "platformPostId": "7300000000000000001", "content": "Our spring collection is live!",
+          "imageUrl": null, "permalink": "https://www.tiktok.com/@sample_brand/video/7300000000000000001"},
+ "account": {"id": "507f1f77bcf86cd799439011", "accountId": "507f1f77bcf86cd799439011", "platform": "tiktok", "username": "sample_brand"},
+ "profiles": [{"id": "507f1f77bcf86cd799439012", "externalId": "cus_8f3a2"}]}

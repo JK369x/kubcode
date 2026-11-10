@@ -276,3 +276,90 @@ async fn an_inline_publish_failure_is_reported_not_taken_as_scheduled() {
         "platform_platform_rejected"
     );
 }
+
+#[tokio::test]
+async fn tiktok_is_a_public_direct_post_with_the_designed_cover() {
+    let h = Harness::default();
+    let conn = h.connection(Platform::TikTok).await;
+    let mut req = sample_request(Platform::TikTok, h.now());
+    req.draft.visibility = Visibility::Public;
+    h.zernio
+        .schedule(&conn, &checked(&h, req), &FakeMedia)
+        .await
+        .unwrap();
+    let log = h.fake.log();
+    let post = log
+        .iter()
+        .find(|r| r.method == Method::Post && r.url.path() == "/api/v1/posts")
+        .unwrap();
+    let b = post.json.as_ref().unwrap();
+    assert_eq!(b["platforms"][0]["platform"], "tiktok");
+    let psd = &b["platforms"][0]["platformSpecificData"];
+    // The OpenAPI tiktokVideo example's fields, every one stated.
+    assert_eq!(psd["privacyLevel"], "PUBLIC_TO_EVERYONE");
+    assert_eq!(psd["draft"], false);
+    assert_eq!(
+        psd["allowComment"], true,
+        "the keyword reply needs comments"
+    );
+    assert_eq!(
+        (psd["allowDuet"].as_bool(), psd["allowStitch"].as_bool()),
+        (Some(false), Some(false))
+    );
+    assert_eq!(psd["commercialContentType"], "none");
+    assert_eq!(psd["contentPreviewConfirmed"], true);
+    assert_eq!(psd["expressConsentGiven"], true);
+    assert!(psd["videoCoverImageUrl"]
+        .as_str()
+        .unwrap()
+        .ends_with("thumbnail.png"));
+    assert!(psd.get("publish_type").is_none() && psd.get("videoCoverTimestampMs").is_none());
+    assert_eq!(b["content"], "คำอธิบายคลิป", "the caption is the description");
+    assert!(b.get("tags").is_none());
+}
+
+#[tokio::test]
+async fn tiktok_refuses_private_before_any_call() {
+    let h = Harness::default();
+    let mut req = sample_request(Platform::TikTok, h.now());
+    req.draft.visibility = Visibility::Private;
+    let err = check(
+        req,
+        h.now(),
+        Velocity::default(),
+        &PublishingConfig::default(),
+        &h.zernio,
+    )
+    .unwrap_err();
+    let codes: Vec<_> = err.iter().map(|v| v.code).collect();
+    assert!(codes.contains(&"visibility_unsupported"), "{codes:?}");
+    assert!(h.fake.log().is_empty());
+}
+
+#[tokio::test]
+async fn connecting_tiktok_asks_zernio_for_the_tiktok_flow() {
+    let h = Harness::default();
+    let start = h
+        .zernio
+        .start(
+            &WorkspaceCtx {
+                workspace: WorkspaceId(Uuid::new_v4()),
+                profile: None,
+            },
+            Platform::TikTok,
+            "https://kubcode.dev/api/channels/callback?i=ab",
+        )
+        .await
+        .unwrap();
+    assert!(start.auth_url.starts_with("https://"));
+    let req = h
+        .fake
+        .log()
+        .into_iter()
+        .find(|r| r.method == Method::Get && r.url.path().starts_with("/api/v1/connect/"))
+        .unwrap();
+    assert_eq!(req.url.path(), "/api/v1/connect/tiktok");
+    let q: std::collections::HashMap<_, _> = req.url.query_pairs().into_owned().collect();
+    assert_eq!(q.get("headless").map(String::as_str), Some("true"));
+    assert!(!q.contains_key("scopes"), "every area, comments included");
+}

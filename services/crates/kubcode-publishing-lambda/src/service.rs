@@ -679,7 +679,8 @@ fn log_comment(channel: Option<ChannelId>, outcome: &str) {
     }
 }
 
-/// Instagram allows a private reply within 7 days of the comment.
+/// Instagram allows a private reply within 7 days of the comment; TikTok
+/// comments older than that are not answered either.
 const PRIVATE_REPLY_WINDOW: Duration = Duration::days(7);
 /// A ledger row left in dm_sending this long (a crash or a lost answer)
 /// becomes dm_unknown.
@@ -840,6 +841,15 @@ impl Service<'_> {
         let Some(inbox) = self.providers(c.provider)?.inbox.clone() else {
             return Ok("no_inbox");
         };
+        let platform = match self.store.channel(c.channel).await? {
+            Some(ch) => ch.platform,
+            None => return Ok("no_connection"),
+        };
+        if platform.public_reply_only() {
+            return self
+                .public_only(c, rule, &conn.provider_ref, inbox.as_ref())
+                .await;
+        }
         let used = self.store.dms_this_month(c.channel, self.now).await?;
         if used >= i64::from(self.cfg.dm_cap_per_month) {
             return Ok("cap_reached");
@@ -897,6 +907,51 @@ impl Service<'_> {
             }
         };
         self.store.set_reply(ledger, reply_state).await?;
+        Ok(outcome)
+    }
+
+    /// TikTok: no private reply to a comment exists, so the matched comment
+    /// gets only the public reply (docs/design/tiktok-channel.md §3). Same
+    /// ledger key (one answer per person per post) and the same monthly cap,
+    /// counted in public replies. The reply carries an idempotency key, so
+    /// a run interrupted after the claim may send it again safely.
+    async fn public_only(
+        &mut self,
+        c: &kubcode_publishing_store::PendingComment,
+        rule: &kubcode_publishing_store::RuleRow,
+        account: &ProviderRef,
+        inbox: &dyn Inbox,
+    ) -> Result<&'static str> {
+        let Some(text) = rule.public_reply.as_deref().filter(|t| !t.is_empty()) else {
+            return Ok("no_public_reply");
+        };
+        // This comment's own claim from an interrupted run is finished, not
+        // counted again.
+        let ledger = match self.store.unfinished_reply(c).await? {
+            Some(l) => l,
+            None => {
+                let used = self
+                    .store
+                    .public_replies_this_month(c.channel, self.now)
+                    .await?;
+                if used >= i64::from(self.cfg.dm_cap_per_month) {
+                    return Ok("cap_reached");
+                }
+                match self.store.claim_dm(c, rule.id).await? {
+                    Some(l) => l,
+                    None => return Ok("duplicate"),
+                }
+            }
+        };
+        let key = format!("kubcode-reply-{}", c.comment_id);
+        let sent = inbox
+            .public_reply(account, &c.platform_post_id, &c.comment_id, text, &key)
+            .await;
+        let (state, outcome) = match sent {
+            Ok(()) => ("sent", "reply_sent"),
+            Err(_) => ("failed", "reply_failed"),
+        };
+        self.store.set_reply(ledger, state).await?;
         Ok(outcome)
     }
 }

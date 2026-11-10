@@ -13,7 +13,7 @@ use crate::domain::{MediaMeta, Platform, Visibility};
 pub struct DeliveryDraft {
     pub platform: Platform,
     pub title: String,
-    /// YouTube description or Instagram caption.
+    /// YouTube description, Instagram or TikTok caption.
     pub description: String,
     pub tags: Vec<String>,
     pub video: MediaMeta,
@@ -48,6 +48,14 @@ struct Limits {
     video_max_bytes: u64,
     video_max_seconds: Option<f64>,
     private_allowed: bool,
+    /// The frame must be 9:16 portrait (TikTok).
+    portrait_9_16: bool,
+}
+
+/// 9:16 within 2 % (1080×1920, 720×1280, 1080×1918 from an encoder…).
+fn is_9_16(width: u32, height: u32) -> bool {
+    let (w, h) = (u64::from(width), u64::from(height));
+    w > 0 && h > 0 && (w * 16).abs_diff(h * 9) * 50 <= h * 9
 }
 
 fn limits(platform: Platform) -> Limits {
@@ -60,6 +68,7 @@ fn limits(platform: Platform) -> Limits {
             video_max_bytes: 256 * 1024 * MIB,
             video_max_seconds: None,
             private_allowed: true,
+            portrait_9_16: false,
         },
         Platform::Instagram => Limits {
             title_max: None,
@@ -69,6 +78,20 @@ fn limits(platform: Platform) -> Limits {
             video_max_bytes: 300 * MIB,
             video_max_seconds: Some(15.0 * 60.0),
             private_allowed: false,
+            portrait_9_16: false,
+        },
+        // TikTok through Zernio's TikTok for Business connection: the caption
+        // is the post text (2,200), direct posts up to 10 minutes, public only
+        // (OpenAPI TikTokPlatformData.privacyLevel). No separate title.
+        Platform::TikTok => Limits {
+            title_max: None,
+            title_required: false,
+            description_max: 2_200,
+            tags_total_max: None,
+            video_max_bytes: 4 * 1024 * MIB,
+            video_max_seconds: Some(10.0 * 60.0),
+            private_allowed: false,
+            portrait_9_16: true,
         },
         // Platforms not opened yet get conservative limits; each one gets its
         // own row (and tests) when it is added.
@@ -80,6 +103,7 @@ fn limits(platform: Platform) -> Limits {
             video_max_bytes: 300 * MIB,
             video_max_seconds: Some(10.0 * 60.0),
             private_allowed: false,
+            portrait_9_16: false,
         },
     }
 }
@@ -138,6 +162,9 @@ pub fn validate_core(
         if s > max {
             fail("video_too_long");
         }
+    }
+    if l.portrait_9_16 && !is_9_16(d.video.width, d.video.height) {
+        fail("video_not_9_16");
     }
     if d.visibility != Visibility::Public && !l.private_allowed {
         fail("visibility_unsupported");

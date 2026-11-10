@@ -43,18 +43,25 @@ const draftOf = (r: RuleView): Draft => ({
   scope: r.platformPostId ? "post" : "all",
   postId: r.platformPostId ?? "",
   publicReply: r.publicReply ?? "",
-  dmText: r.dmText,
+  dmText: r.dmText ?? "",
   afterDm: r.replyPolicy === "after_dm",
 });
 
-const bodyOf = (d: Draft) => ({
-  keywords: d.keywords,
-  mode: d.mode,
-  scope: d.scope === "all" ? "all" : d.postId,
-  publicReply: d.publicReply,
-  dmText: d.dmText,
-  replyPolicy: d.afterDm ? "after_dm" : "always",
-});
+const bodyOf = (d: Draft, tiktok: boolean) =>
+  tiktok
+    ? // TikTok has no private reply: the public reply is the whole answer.
+      { keywords: d.keywords, mode: d.mode, scope: d.scope === "all" ? "all" : d.postId, publicReply: d.publicReply }
+    : {
+        keywords: d.keywords,
+        mode: d.mode,
+        scope: d.scope === "all" ? "all" : d.postId,
+        publicReply: d.publicReply,
+        dmText: d.dmText,
+        replyPolicy: d.afterDm ? "after_dm" : "always",
+      };
+
+/** Shown on the TikTok page wherever a DM would be expected. */
+export const TIKTOK_PUBLIC_ONLY = "TikTok ตอบได้แค่ในคอมเมนต์ ส่ง DM ไม่ได้";
 
 export function AutomationsPanel({ channel, rules, usage, recent }: Props) {
   const router = useRouter();
@@ -67,13 +74,17 @@ export function AutomationsPanel({ channel, rules, usage, recent }: Props) {
   const formRef = useRef<HTMLElement>(null);
   const firstField = useRef<HTMLTextAreaElement>(null);
   const set = <K extends keyof Draft>(k: K, v: Draft[K]) => setDraft((d) => ({ ...d, [k]: v }));
-  const noLink = draft.dmText.trim() !== "" && !dmHasLink(draft.dmText);
+  const tiktok = channel.platform === "tiktok";
+  const noLink = tiktok
+    ? draft.publicReply.trim() !== "" && !dmHasLink(draft.publicReply)
+    : draft.dmText.trim() !== "" && !dmHasLink(draft.dmText);
+  const who = channel.handle ? `@${channel.handle}` : channel.displayName;
   const full = usage.count >= usage.cap;
 
   async function onSubmit(e: FormEvent) {
     e.preventDefault();
     setBusy(true);
-    const r = editing ? await send(`${base}/${editing}`, "PATCH", bodyOf(draft)) : await send(base, "POST", bodyOf(draft));
+    const r = editing ? await send(`${base}/${editing}`, "PATCH", bodyOf(draft, tiktok)) : await send(base, "POST", bodyOf(draft, tiktok));
     setBusy(false);
     if (!r.ok) return setStatus(r.message);
     setStatus(editing ? "บันทึกการแก้ไขแล้ว" : "เพิ่มกฎแล้ว");
@@ -122,23 +133,34 @@ export function AutomationsPanel({ channel, rules, usage, recent }: Props) {
 
   return (
     <div className={keys.keys}>
-      <p className={keys.lead}>
-        เมื่อมีคนคอมเมนต์คำที่ตั้งไว้ใต้โพสต์ของ {channel.handle ? `@${channel.handle}` : channel.displayName} ระบบจะส่ง DM
-        พร้อมลิงก์ให้ และตอบใต้คอมเมนต์ให้ด้วยถ้าตั้งข้อความไว้ หนึ่งคนได้ DM ได้ครั้งเดียวต่อโพสต์
-      </p>
+      {tiktok ? (
+        <>
+          <p className={keys.lead}>
+            เมื่อมีคนคอมเมนต์คำที่ตั้งไว้ใต้วิดีโอ TikTok ของ {who} ระบบจะตอบใต้คอมเมนต์นั้นให้ หนึ่งคนได้คำตอบครั้งเดียวต่อวิดีโอ
+          </p>
+          <p className={styles.notice} role="note">
+            <strong>{TIKTOK_PUBLIC_ONLY}</strong> คำตอบจะขึ้นเป็นคอมเมนต์สาธารณะที่ทุกคนเห็น ใส่ลิงก์หรือบอกให้ดูลิงก์ในไบโอได้
+          </p>
+        </>
+      ) : (
+        <p className={keys.lead}>
+          เมื่อมีคนคอมเมนต์คำที่ตั้งไว้ใต้โพสต์ของ {who} ระบบจะส่ง DM พร้อมลิงก์ให้ และตอบใต้คอมเมนต์ให้ด้วยถ้าตั้งข้อความไว้
+          หนึ่งคนได้ DM ได้ครั้งเดียวต่อโพสต์
+        </p>
+      )}
       <p className={keys.status} role="status" aria-live="polite">
         {status}
       </p>
 
       <section className={keys.section} aria-labelledby="automations-usage">
-        <h2 id="automations-usage">โควตา DM ของช่องนี้</h2>
+        <h2 id="automations-usage">{tiktok ? "โควตาคำตอบของช่องนี้" : "โควตา DM ของช่องนี้"}</h2>
         <p className={styles.usage}>
-          DM เดือนนี้: {number.format(usage.count)} / {number.format(usage.cap)}
+          {tiktok ? "คำตอบเดือนนี้" : "DM เดือนนี้"}: {number.format(usage.count)} / {number.format(usage.cap)}
         </p>
         <meter className={styles.meter} min={0} max={usage.cap} value={Math.min(usage.count, usage.cap)} aria-labelledby="automations-usage" />
         <p className={keys.meta}>
           {full
-            ? "ครบโควตาเดือนนี้แล้ว คอมเมนต์ที่ตรงกฎจะไม่ได้รับ DM จนถึงวันที่ 1 ของเดือนหน้า"
+            ? `ครบโควตาเดือนนี้แล้ว คอมเมนต์ที่ตรงกฎจะไม่ได้รับ${tiktok ? "คำตอบ" : " DM"} จนถึงวันที่ 1 ของเดือนหน้า`
             : "นับตามเวลาไทย เริ่มนับใหม่ทุกวันที่ 1 ของเดือน"}
         </p>
       </section>
@@ -161,12 +183,14 @@ export function AutomationsPanel({ channel, rules, usage, recent }: Props) {
                   <dd>{r.platformPostId ? `เฉพาะโพสต์ ID ${r.platformPostId}` : "ทุกโพสต์"}</dd>
                   <dt>ตอบใต้คอมเมนต์</dt>
                   <dd>
-                    {r.publicReply
-                      ? `${r.publicReply} (${r.replyPolicy === "after_dm" ? "เฉพาะเมื่อส่ง DM สำเร็จ" : "ทุกครั้ง"})`
-                      : "ไม่ตอบ"}
+                    {tiktok
+                      ? (r.publicReply ?? "ไม่ตอบ")
+                      : r.publicReply
+                        ? `${r.publicReply} (${r.replyPolicy === "after_dm" ? "เฉพาะเมื่อส่ง DM สำเร็จ" : "ทุกครั้ง"})`
+                        : "ไม่ตอบ"}
                   </dd>
                   <dt>ข้อความ DM</dt>
-                  <dd>{r.dmText}</dd>
+                  <dd>{tiktok ? TIKTOK_PUBLIC_ONLY : r.dmText}</dd>
                 </dl>
                 <div className={keys.actions}>
                   <button type="button" disabled={busy} onClick={() => onEdit(r)} aria-label={`แก้ไขกฎ ${r.keywords.join(", ")}`}>
@@ -230,7 +254,7 @@ export function AutomationsPanel({ channel, rules, usage, recent }: Props) {
             </label>
             {draft.scope === "post" && (
               <label htmlFor="rule-post">
-                ID ของโพสต์ใน Instagram
+                {tiktok ? "ID ของวิดีโอใน TikTok" : "ID ของโพสต์ใน Instagram"}
                 <input
                   id="rule-post"
                   value={draft.postId}
@@ -243,46 +267,61 @@ export function AutomationsPanel({ channel, rules, usage, recent }: Props) {
                   aria-describedby="rule-post-hint"
                 />
                 <span id="rule-post-hint" className={keys.meta}>
-                  ตัวเลขล้วน เช่น 17895695668004550 กฎของโพสต์เดียวจะถูกใช้ก่อนกฎทุกโพสต์
+                  {tiktok
+                    ? "ตัวเลขท้ายลิงก์วิดีโอ เช่น tiktok.com/@kubcode/video/7300000000000000001 กฎของวิดีโอเดียวจะถูกใช้ก่อนกฎทุกวิดีโอ"
+                    : "ตัวเลขล้วน เช่น 17895695668004550 กฎของโพสต์เดียวจะถูกใช้ก่อนกฎทุกโพสต์"}
                 </span>
               </label>
             )}
           </fieldset>
           <label htmlFor="rule-reply">
-            ข้อความตอบใต้คอมเมนต์ (ไม่บังคับ)
+            {tiktok ? "ข้อความตอบใต้คอมเมนต์" : "ข้อความตอบใต้คอมเมนต์ (ไม่บังคับ)"}
             <textarea
               id="rule-reply"
-              rows={2}
+              rows={tiktok ? 4 : 2}
               value={draft.publicReply}
               onChange={(e) => set("publicReply", e.target.value)}
               disabled={busy}
+              required={tiktok}
               maxLength={MAX_PUBLIC_REPLY_CHARS}
-              placeholder="ส่งให้ใน DM แล้วนะ"
+              placeholder={tiktok ? "ขอบคุณที่สนใจ ลิงก์อยู่ในไบโอนะ" : "ส่งให้ใน DM แล้วนะ"}
+              aria-describedby={tiktok ? "rule-reply-hint" : undefined}
             />
+            {tiktok && (
+              <span id="rule-reply-hint" className={keys.meta}>
+                ต้องใส่ ช่องนี้คือคำตอบทั้งหมด เพราะ {TIKTOK_PUBLIC_ONLY} ทุกคนที่เปิดคอมเมนต์จะเห็นข้อความนี้
+              </span>
+            )}
           </label>
-          <label htmlFor="rule-dm">
-            ข้อความ DM
-            <textarea
-              id="rule-dm"
-              rows={4}
-              value={draft.dmText}
-              onChange={(e) => set("dmText", e.target.value)}
-              disabled={busy}
-              required
-              maxLength={MAX_DM_CHARS}
-              placeholder={DM_PLACEHOLDER}
-              aria-describedby="rule-dm-hint"
-            />
-            <span id="rule-dm-hint" className={noLink ? `${keys.meta} ${styles.warn}` : keys.meta}>
-              {noLink
-                ? "ข้อความนี้ยังไม่มีลิงก์ https:// บันทึกได้ แต่คนที่ได้ DM จะไม่มีลิงก์ให้กด"
-                : "ส่งเป็นข้อความธรรมดา ใส่ลิงก์ไว้ในข้อความได้เลย ไม่เกิน 1,000 ตัวอักษร"}
-            </span>
-          </label>
-          <label className={styles.check}>
-            <input type="checkbox" checked={draft.afterDm} onChange={(e) => set("afterDm", e.target.checked)} disabled={busy} />
-            ตอบสาธารณะเฉพาะเมื่อส่ง DM สำเร็จ
-          </label>
+          {tiktok ? (
+            <p className={keys.meta}>ข้อความ DM: {TIKTOK_PUBLIC_ONLY}</p>
+          ) : (
+            <>
+              <label htmlFor="rule-dm">
+                ข้อความ DM
+                <textarea
+                  id="rule-dm"
+                  rows={4}
+                  value={draft.dmText}
+                  onChange={(e) => set("dmText", e.target.value)}
+                  disabled={busy}
+                  required
+                  maxLength={MAX_DM_CHARS}
+                  placeholder={DM_PLACEHOLDER}
+                  aria-describedby="rule-dm-hint"
+                />
+                <span id="rule-dm-hint" className={noLink ? `${keys.meta} ${styles.warn}` : keys.meta}>
+                  {noLink
+                    ? "ข้อความนี้ยังไม่มีลิงก์ https:// บันทึกได้ แต่คนที่ได้ DM จะไม่มีลิงก์ให้กด"
+                    : "ส่งเป็นข้อความธรรมดา ใส่ลิงก์ไว้ในข้อความได้เลย ไม่เกิน 1,000 ตัวอักษร"}
+                </span>
+              </label>
+              <label className={styles.check}>
+                <input type="checkbox" checked={draft.afterDm} onChange={(e) => set("afterDm", e.target.checked)} disabled={busy} />
+                ตอบสาธารณะเฉพาะเมื่อส่ง DM สำเร็จ
+              </label>
+            </>
+          )}
           <div className={keys.actions}>
             <button type="submit" className="primary" disabled={busy}>
               {editing ? "บันทึกการแก้ไข" : "เพิ่มกฎ"}
