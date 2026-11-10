@@ -21,7 +21,7 @@ source "$(dirname "$0")/lib/keychain.sh"
 REGION=ap-southeast-1
 ACCOUNT=955758449820
 P=/kubcode/prod
-EVENTS='["post.platform.published","post.platform.failed","post.failed","post.partial","account.connected","account.disconnected","account.permissions_changed"]'
+EVENTS='["post.platform.published","post.platform.failed","post.failed","post.partial","account.connected","account.disconnected","account.permissions_changed","comment.received"]'
 
 die() { echo "publishing-secrets: $*" >&2; exit 2; }
 usage() { awk 'NR > 1 && /^#/ { sub(/^# ?/, ""); print; next } NR > 1 { exit }' "$0" >&2; }
