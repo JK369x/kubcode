@@ -1,0 +1,12 @@
+{
+  "slug": "elephant-goldfish-model",
+  "tool": "HTML layout rendered with headless Chrome (docs/covers/real/elephant-goldfish-model/cover.html)",
+  "date": "2026-11-10",
+  "source": "own-clip",
+  "content": "Left: the owner's own reel cover about EGM (Google Drive kubcode-egm/cover-v2.jpg, a frame of egm-reel-v2.mp4: the EGM GitHub README on screen plus the owner on camera). Right: EGM's icon (assets/icon.svg, Apache-2.0, Google) to name the tool, and figures from `claude plugin details egm` run on 2026-11-10.",
+  "master": "cover.jpg",
+  "og": "og.jpg",
+  "width": 1600,
+  "height": 900,
+  "fonts": "Anuphan and Archivo (SIL OFL, @fontsource)"
+}

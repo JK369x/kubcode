@@ -38,12 +38,13 @@ export type Skill = {
   costNote?: string;
 };
 /** Homepage filters: what the creator wants to make (owner, 2026-11-06). */
-export type UseCase = "story" | "podcast" | "voice-captions";
+export type UseCase = "story" | "podcast" | "voice-captions" | "code";
 export const useCases: { id: "all" | UseCase; label: string }[] = [
   { id: "all", label: "ทั้งหมด" },
   { id: "story", label: "การ์ตูนเล่าเรื่อง" },
   { id: "podcast", label: "คลิปสั้นจากพอดแคสต์" },
   { id: "voice-captions", label: "เสียงพากย์และซับไทย" },
+  { id: "code", label: "ช่วยออกแบบแอป" },
 ];
 export const categories = [
   { id: "all", label: "ทั้งหมด" },
@@ -292,6 +293,26 @@ export const rawSkills: readonly Skill[] = [
     useCases: ["story"],
     cost: "no-key",
     costNote: "อัดเสียงตัวเองได้ฟรี · ถ้าใช้ ElevenLabs ราว 1 เครดิตต่อตัวอักษร",
+    rights: "uncleared",
+    examples: [],
+  },
+  {
+    slug: "elephant-goldfish-model",
+    name: "Elephant-Goldfish Model",
+    category: "code",
+    description:
+      "ปลั๊กอินจาก Google ให้ agent ช่วยคิดและเขียนสเปกกับคุณ (ช้าง) แล้วให้ agent ใหม่ที่ไม่เห็นบทสนทนามารีวิว (ปลาทอง) ก่อนลงมือเขียนโค้ด",
+    version: "0.1.1",
+    status: "selected",
+    approvalScope:
+      "ปลั๊กอิน Apache 2.0 ของ Google แจกต่อโดยไม่แก้ไฟล์ · เราใช้กับโปรเจกต์จริงแล้ว เหมาะกับโปรเจกต์ใหม่ ไม่คุ้มกับงานเล็ก",
+    requirements: [
+      "Claude Code (หรือ Codex, Antigravity)",
+      "agent ที่เปิด subagent ใหม่ได้",
+      "โควตาโมเดลพอสำหรับรีวิวหลายรอบ",
+    ],
+    useCases: ["code"],
+    cost: "no-key",
     rights: "uncleared",
     examples: [],
   },

@@ -10,10 +10,10 @@ const root = join(__dirname, "..");
 const KEY = /^packages\/[a-z0-9]+(-[a-z0-9]+)*\/[0-9]+\.[0-9]+\.[0-9]+\.zip$/;
 const FILENAME = /^[a-z0-9]+(-[a-z0-9]+)*-[0-9]+\.[0-9]+\.[0-9]+\.zip$/;
 
-test("packages: the approved releases are What If, Podcast Shorts and make-short 0.1.0", () => {
+test("packages: the approved releases are What If, Podcast Shorts, make-short and EGM", () => {
   assert.deepEqual(
     PACKAGES.map((p) => `${p.slug}@${p.version}`),
-    ["freshstack-what-if@0.1.0", "podcast-tool-short@0.1.0", "make-short@0.1.0"],
+    ["freshstack-what-if@0.1.0", "podcast-tool-short@0.1.0", "make-short@0.1.0", "elephant-goldfish-model@0.1.1"],
   );
 });
 
@@ -42,7 +42,9 @@ test("packages: each package's files are in the repo with its licence", () => {
   for (const p of PACKAGES) {
     const dir = join(root, "packages", p.slug, p.version);
     assert.ok(existsSync(join(dir, "LICENSE")), `${dir}/LICENSE`);
-    assert.ok(existsSync(join(dir, "SKILL.md")), `${dir}/SKILL.md`);
+    // A skill has SKILL.md at its root; a Claude Code plugin has its manifest.
+    const entry = existsSync(join(dir, "SKILL.md")) || existsSync(join(dir, ".claude-plugin", "plugin.json"));
+    assert.ok(entry, `${dir}: SKILL.md or .claude-plugin/plugin.json`);
   }
   const what = readFileSync(join(root, "packages/freshstack-what-if/0.1.0/LICENSE"), "utf8");
   assert.match(what, /MIT License/);

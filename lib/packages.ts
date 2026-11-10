@@ -66,6 +66,15 @@ export const PACKAGES: readonly SkillPackage[] = [
     maxKb: 15299,
     agents: ["claude-code"],
   }),
+  pkg({
+    slug: "elephant-goldfish-model",
+    version: "0.1.1",
+    licence: "Apache-2.0",
+    credit: "Google LLC (github.com/google/elephant-goldfish-model); not an officially supported Google product",
+    approval: { by: "owner", date: "2026-11-10" },
+    maxKb: 266,
+    agents: ["claude-code"],
+  }),
 ];
 
 /** The package members may download for a skill, or null. */

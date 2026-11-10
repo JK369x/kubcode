@@ -1,0 +1,60 @@
+---
+slug: elephant-goldfish-model
+title: "Elephant-Goldfish Model: ช้างออกแบบ ปลาทองรีวิว"
+name: "Elephant-Goldfish Model"
+description: "ปลั๊กอินโอเพนซอร์ส (Apache 2.0) จาก Google สำหรับ Claude Code, Codex และ Antigravity ช่วยคิดและเขียนสเปกกับ AI แล้วให้ agent ใหม่ที่ไม่เห็นบทสนทนามารีวิว"
+tags: [ai-agent, spec-design]
+category: script
+refs:
+  - tool:claude-code
+  - tool:codex-cli
+  - article:elephant-goldfish-model
+links:
+  website: https://egm.dev
+  repo: https://github.com/google/elephant-goldfish-model
+  docs: https://github.com/google/elephant-goldfish-model/blob/main/docs/getting_started.md
+license: "Apache 2.0 (Copyright 2026 Google LLC) · ไม่ใช่ผลิตภัณฑ์ที่ Google รองรับอย่างเป็นทางการ"
+pricing: free
+logo:
+  src: /tools/elephant-goldfish-model/logo.svg
+  alt: "โลโก้ Elephant-Goldfish Model"
+  source_url: https://github.com/google/elephant-goldfish-model/blob/main/assets/icon.svg
+  guideline_url: "none found"
+  fetched_at: 2026-11-10
+updated: 2026-11-10
+go: [egm]
+sources:
+  - title: "google/elephant-goldfish-model README"
+    url: https://github.com/google/elephant-goldfish-model
+  - title: "EGM Setup & Workflow Guide"
+    url: https://github.com/google/elephant-goldfish-model/blob/main/docs/getting_started.md
+---
+## คืออะไร
+
+ปลั๊กอินที่แบ่งงานออกแบบซอฟต์แวร์เป็นสองบทบาท **ช้าง** คือ agent ที่จำทุกอย่างในโปรเจกต์และคุยกับคุณจนได้สเปก **ปลาทอง** คือ agent ใหม่ที่ไม่เห็นบทสนทนาก่อนหน้า อ่านแค่เอกสารกับโค้ดที่อ้างถึง จึงเห็นสิ่งที่ช้างคิดว่า "รู้กันอยู่แล้ว" แต่ไม่ได้เขียนไว้ ส่วน **คุณ** เป็นคนตัดสินใจและอนุมัติสเปกก่อนสร้าง
+
+แนวคิดมาจากบทความของ Dave Rensin เรื่อง Elephants, Goldfish, and the New Golden Age of Software Engineering
+
+## skill ที่มี
+
+- `egm-brainstorm`: คุยไอเดีย แล้วปลาทองหลายตัวช่วยกันท้าทาย ได้ `concepts_brief.md`
+- `egm-draft`: เขียนเอกสารออกแบบทีละหัวข้อ หยุดถามคุณทุกหัวข้อ
+- `egm-review`: ปลาทองรีวิวเอกสารออกแบบ 5 ขั้น
+- `egm-resolve`: ไล่แก้ตามผลรีวิวทีละข้อ
+- `egm-bootstrap`: เขียนเอกสารให้โค้ดที่มีอยู่แล้ว
+- `egm-review-loop`: เลือกชุดผู้รีวิวเองสำหรับเอกสารแบบอื่น
+- `egm-drift-report`: เทียบเอกสารกับโค้ดปัจจุบันว่ายังตรงกันไหม
+
+## ติดตั้ง (Claude Code)
+
+```bash
+claude plugin marketplace add google/elephant-goldfish-model
+claude plugin install egm@egm
+```
+
+ใน Claude Code เรียกด้วย prefix เช่น `/egm:egm-brainstorm` ต้องติดตั้งทั้งปลั๊กอิน เพราะ skill อ่านไฟล์ใน `agents/` กับ `resources/` ตอนรัน และ agent ต้องเปิด subagent ใหม่ได้ ถ้าเปิดไม่ได้ EGM จะหยุดรีวิว
+
+## สิทธิ์
+
+- Apache 2.0 ใช้และแจกต่อได้ ต้องเก็บ LICENSE และประกาศลิขสิทธิ์ไว้
+- README ระบุว่าไม่ใช่ผลิตภัณฑ์ที่ Google รองรับอย่างเป็นทางการ
