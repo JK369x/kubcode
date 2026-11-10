@@ -12,6 +12,20 @@ cover:
 
 We only use images we made: no third-party photos or screenshots (`NEXT_PUBLIC_MEDIA_MODE=licensed-only`).
 
+## Prefer a real example (2026-11-10)
+
+When the article is about something we made or ran, the cover shows **the real thing**: frames from our own clip (`source: own-clip`) or real output from our own machine (`source: own-screenshot`), laid out with a short caption. The source is an HTML page under `docs/covers/real/<slug>/cover.html` (shared `base.css`, Anuphan/Archivo fonts, OFL), rendered with headless Chrome at 1600×900:
+
+```bash
+"/Applications/Google Chrome.app/Contents/MacOS/Google Chrome" --headless=new --hide-scrollbars \
+  --force-device-scale-factor=1 --window-size=1600,900 --virtual-time-budget=3000 \
+  --screenshot=/tmp/cover.png "file://$PWD/docs/covers/real/<slug>/cover.html"
+ffmpeg -i /tmp/cover.png -q:v 3 public/covers/<slug>/cover-vN.jpg
+ffmpeg -i /tmp/cover.png -vf "scale=1200:675,crop=1200:630:0:22" -q:v 3 public/covers/<slug>/og-vN.jpg
+```
+
+Only clips we may publish (on `lib/showcase-allowlist.ts`) and only our own terminal output. No third-party footage or UI. Record which clip and second each frame came from in `cover.json`. The cartoon below is the fallback when there is no real example.
+
 ## Look: cartoon, with our two mascots
 
 Covers are friendly flat-colour cartoons, not glossy 3D, glass or neon. Every cover shows our two original mascots, Kub the cat and Kode the dog, doing the article's real activity (animating a clip, unpacking a toolbox, stacking layers…). Purple is only an accent.
