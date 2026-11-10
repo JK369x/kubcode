@@ -244,3 +244,91 @@ async fn ops_commands_must_be_signed_with_the_ops_key() {
     );
     db.drop().await;
 }
+
+async fn call(s: &mut Service<'_>, headers: HeaderMap, body: Vec<u8>, now: u64) -> http::Reply {
+    http::handle(s, KEY, "POST", "/api/worker", &headers, &body, now).await
+}
+
+#[tokio::test]
+#[ignore = "needs KUBCODE_TEST_DATABASE_URL; run with --ignored"]
+async fn the_worker_tick_is_signed_single_use_and_one_at_a_time() {
+    let db = db().await;
+    let mut store = db.store().await;
+    let fake = Arc::new(FakeProvider::default());
+    let (reg, cfg) = (registry(&fake), cfg());
+    let mut s = Service {
+        store: &mut store,
+        reg: &reg,
+        cfg: &cfg,
+        media: &FakeOpener,
+        now: OffsetDateTime::now_utc(),
+    };
+    let path = "/api/worker";
+    let body = b"{}".to_vec();
+
+    let r = call(
+        &mut s,
+        signed(path, &body, "aa".repeat(16).as_str()),
+        body.clone(),
+        NOW,
+    )
+    .await;
+    assert_eq!(r.status, 200, "{}", r.body);
+    assert_eq!(r.body["ok"], true);
+    // The same signed request again (replay): refused.
+    let again = call(
+        &mut s,
+        signed(path, &body, "aa".repeat(16).as_str()),
+        body.clone(),
+        NOW,
+    )
+    .await;
+    assert_eq!(again.status, 401);
+    // Unsigned, or signed too long ago: refused.
+    assert_eq!(
+        call(&mut s, HeaderMap::new(), body.clone(), NOW)
+            .await
+            .status,
+        401
+    );
+    let stale = call(
+        &mut s,
+        signed(path, &body, "bb".repeat(16).as_str()),
+        body.clone(),
+        NOW + 3600,
+    )
+    .await;
+    assert_eq!(stale.status, 401);
+    // Only an empty object is a tick.
+    let extra = br#"{"minute":0}"#.to_vec();
+    assert_eq!(
+        call(
+            &mut s,
+            signed(path, &extra, "cc".repeat(16).as_str()),
+            extra,
+            NOW
+        )
+        .await
+        .status,
+        400
+    );
+
+    // While another tick holds the lock, this one skips.
+    let other = db.store().await;
+    assert!(other.try_worker_lock().await.unwrap());
+    let busy = call(
+        &mut s,
+        signed(path, &body, "dd".repeat(16).as_str()),
+        body.clone(),
+        NOW,
+    )
+    .await;
+    assert_eq!(
+        (busy.status, busy.body["code"].as_str()),
+        (200, Some("busy")),
+        "{}",
+        busy.body
+    );
+    other.release_worker_lock().await.unwrap();
+    db.drop().await;
+}

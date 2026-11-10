@@ -1,0 +1,10 @@
+# Runs the comment → DM worker tick at the start of every minute.
+[Unit]
+Description=kubcode comment to DM worker, every minute
+
+[Timer]
+OnCalendar=*-*-* *:*:00
+AccuracySec=1s
+
+[Install]
+WantedBy=timers.target

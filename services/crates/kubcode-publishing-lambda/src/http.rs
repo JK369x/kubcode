@@ -59,6 +59,11 @@ struct CompleteBody {
     params: Vec<(String, String)>,
 }
 
+/// The web host's timer sends `{}`: nothing else is a tick.
+#[derive(Deserialize)]
+#[serde(deny_unknown_fields)]
+struct WorkerBody {}
+
 #[derive(Deserialize)]
 #[serde(deny_unknown_fields)]
 struct DisconnectBody {
@@ -143,6 +148,15 @@ pub async fn handle(
         Ok(false) => return fail(401, "unauthorized"),
         Err(_) => return fail(503, "unavailable"),
     }
+    if path == "/api/worker" {
+        if serde_json::from_slice::<WorkerBody>(body).is_err() {
+            return fail(400, "bad_request");
+        }
+        let out = tick(svc).await;
+        // One line per tick: counts and codes only.
+        println!("[automations] tick {out}");
+        return reply(200, out);
+    }
     let mut param_keys: Option<Vec<String>> = None;
     let (route, result) = match path {
         "/api/connect/start" => {
@@ -213,6 +227,20 @@ pub async fn handle(
         Err(f) if f.code == "store_unavailable" => fail(503, "unavailable"),
         Err(f) => reply(200, json!({"ok": false, "code": f.code})),
     }
+}
+
+/// One worker tick, never two at once (an advisory lock across instances;
+/// the ledger claim already stops a second DM).
+async fn tick(svc: &mut Service<'_>) -> Value {
+    match svc.store.try_worker_lock().await {
+        Ok(true) => {}
+        Ok(false) => return json!({"ok": true, "code": "busy"}),
+        Err(_) => return json!({"ok": false, "code": "unavailable"}),
+    }
+    let out = crate::worker::run(svc, svc.now.minute()).await;
+    // The connection closes after the request anyway; release explicitly.
+    let _ = svc.store.release_worker_lock().await;
+    out
 }
 
 #[cfg(test)]

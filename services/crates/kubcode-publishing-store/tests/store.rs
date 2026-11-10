@@ -779,3 +779,30 @@ async fn comment_to_dm_bookkeeping() {
         .all(|c| c.id != p.id));
     db.drop().await;
 }
+
+#[tokio::test]
+#[ignore = "needs KUBCODE_TEST_DATABASE_URL; run with --ignored"]
+async fn one_worker_tick_at_a_time() {
+    let db = db().await;
+    let a = db.worker().await;
+    let b = db.worker().await;
+    assert!(a.try_worker_lock().await.unwrap(), "the first tick runs");
+    assert!(
+        !b.try_worker_lock().await.unwrap(),
+        "an overlapping tick skips"
+    );
+    a.release_worker_lock().await.unwrap();
+    assert!(
+        b.try_worker_lock().await.unwrap(),
+        "free again after release"
+    );
+    drop(b); // the session lock also goes with the connection
+    let c = db.worker().await;
+    for _ in 0..50 {
+        if c.try_worker_lock().await.unwrap() {
+            break;
+        }
+        tokio::time::sleep(std::time::Duration::from_millis(20)).await;
+    }
+    db.drop().await;
+}

@@ -1032,6 +1032,29 @@ impl Store {
             .collect())
     }
 
+    /// One worker tick at a time across Lambda instances: a session advisory
+    /// lock, freed by `release_worker_lock` or when the connection closes.
+    pub async fn try_worker_lock(&self) -> Result<bool> {
+        let row = self
+            .c
+            .query_one(
+                "SELECT pg_try_advisory_lock(hashtext('kubcode:comment-worker'))",
+                &[],
+            )
+            .await?;
+        Ok(row.get(0))
+    }
+
+    pub async fn release_worker_lock(&self) -> Result<()> {
+        self.c
+            .execute(
+                "SELECT pg_advisory_unlock(hashtext('kubcode:comment-worker'))",
+                &[],
+            )
+            .await?;
+        Ok(())
+    }
+
     /// The oldest comments waiting for the worker.
     pub async fn pending_comments(&self, limit: i64) -> Result<Vec<PendingComment>> {
         let rows = self
