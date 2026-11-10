@@ -546,8 +546,21 @@ async fn catch_up_finds_comments_the_webhook_missed() {
         text: "ขอลิงก์".into(),
     };
     fake.set_post_comments("p1", vec![c("k1", "a1", false), c("k2", "me", true)]);
+    // A post rule naming a post the account does not list is never read.
+    db.owner
+        .execute(
+            "INSERT INTO kubcode_accounts.automation_rules (channel_id, keywords, dm_text, platform_post_id)
+             VALUES ($1, ARRAY['ขอลิงก์'], 'x', 'someone-elses-post')",
+            &[&ig.0],
+        )
+        .await
+        .unwrap();
 
     assert_eq!(s.catch_up().await.unwrap(), 1, "one new matching comment");
+    assert!(
+        !fake.inbox_reads().iter().any(|p| p == "someone-elses-post"),
+        "only posts the account itself lists"
+    );
     assert_eq!(
         s.catch_up().await.unwrap(),
         0,

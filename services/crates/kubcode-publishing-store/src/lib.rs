@@ -996,7 +996,7 @@ impl Store {
                    (channel_id, provider, comment_id, platform_post_id, author_id, commented_at, rule_id,
                     status, outcome, processed_at)
                  VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, CASE WHEN $8 = 'done' THEN now() END)
-                 ON CONFLICT (provider, comment_id) DO NOTHING",
+                 ON CONFLICT (channel_id, provider, comment_id) DO NOTHING",
                 &[
                     &channel.0,
                     &provider.as_str(),

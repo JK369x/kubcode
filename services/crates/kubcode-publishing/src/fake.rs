@@ -41,6 +41,8 @@ struct State {
     next_private: std::collections::VecDeque<PrivateReply>,
     /// Catch-up: comments per post, newest post first.
     comments: Vec<(String, Vec<IncomingComment>)>,
+    /// Posts whose comments catch-up read.
+    reads: Vec<String>,
     next: u64,
 }
 
@@ -103,6 +105,11 @@ impl FakeProvider {
             s.comments.retain(|(p, _)| p != post);
             s.comments.insert(0, (post.to_owned(), comments));
         });
+    }
+
+    /// The posts catch-up read comments of.
+    pub fn inbox_reads(&self) -> Vec<String> {
+        self.with(|s| s.reads.clone())
     }
 
     /// Every inbox call so far: (kind, post, comment, text).
@@ -421,6 +428,7 @@ impl Inbox for FakeProvider {
         platform_post_id: &str,
     ) -> Result<Vec<IncomingComment>> {
         Ok(self.with(|s| {
+            s.reads.push(platform_post_id.to_owned());
             s.comments
                 .iter()
                 .find(|(p, _)| p == platform_post_id)

@@ -22,7 +22,8 @@ CREATE TABLE IF NOT EXISTS kubcode_accounts.automation_rules (
 );
 CREATE INDEX IF NOT EXISTS automation_rules_channel_idx ON kubcode_accounts.automation_rules (channel_id);
 
--- Inbox item: one received comment, deduplicated by the provider's comment id.
+-- Inbox item: one received comment, deduplicated by the provider's comment id
+-- within the channel (a row on one channel can never block another's).
 CREATE TABLE IF NOT EXISTS kubcode_accounts.comment_items (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   channel_id uuid NOT NULL REFERENCES kubcode_accounts.channels (id) ON DELETE CASCADE,
@@ -37,7 +38,7 @@ CREATE TABLE IF NOT EXISTS kubcode_accounts.comment_items (
   status text NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'done')),
   outcome text CHECK (outcome IS NULL OR outcome ~ '^[a-z_]{1,40}$'),
   processed_at timestamptz,
-  CONSTRAINT comment_items_ref UNIQUE (provider, comment_id)
+  CONSTRAINT comment_items_ref UNIQUE (channel_id, provider, comment_id)
 );
 CREATE INDEX IF NOT EXISTS comment_items_pending_idx
   ON kubcode_accounts.comment_items (received_at) WHERE status = 'pending';

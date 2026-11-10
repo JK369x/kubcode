@@ -686,8 +686,10 @@ const PRIVATE_REPLY_WINDOW: Duration = Duration::days(7);
 const SENDING_TIMEOUT: Duration = Duration::minutes(2);
 /// Comments handled per worker run.
 const WORK_BATCH: i64 = 25;
-/// Catch-up reads this many recently commented posts per channel.
-const CATCH_UP_POSTS: u32 = 10;
+/// Catch-up reads this many recently commented posts per channel,
+const CATCH_UP_POSTS: usize = 10;
+/// and accepts a post rule's post when it is among this many listed ones.
+const CATCH_UP_LISTED: u32 = 50;
 
 impl Service<'_> {
     /// Keeps a comment for the worker when an active rule matches it; anything
@@ -758,11 +760,21 @@ impl Service<'_> {
             let Some(inbox) = self.providers(conn.provider)?.inbox.clone() else {
                 continue;
             };
-            let mut posts = rule_posts;
-            match inbox.recent_posts(&conn.provider_ref, CATCH_UP_POSTS).await {
-                Ok(recent) => posts.extend(recent),
-                Err(e) => log_comment(Some(channel), &format!("catch_up_{}", e.code.as_str())),
-            }
+            // Only posts the account itself lists: its recent ones, and a post
+            // rule's post when it is among them (a rule cannot point the
+            // account at someone else's post).
+            let listed = match inbox
+                .recent_posts(&conn.provider_ref, CATCH_UP_LISTED)
+                .await
+            {
+                Ok(l) => l,
+                Err(e) => {
+                    log_comment(Some(channel), &format!("catch_up_{}", e.code.as_str()));
+                    continue;
+                }
+            };
+            let mut posts: Vec<String> = listed.iter().take(CATCH_UP_POSTS).cloned().collect();
+            posts.extend(rule_posts.into_iter().filter(|p| listed.contains(p)));
             posts.sort();
             posts.dedup();
             for post in posts {
