@@ -3,7 +3,7 @@
   "visual_styles": {
     "flat-room": {
       "th": "ห้องเวกเตอร์แสงอุ่น",
-      "en": "Flat Room",
+      "en": "Warm Room",
       "kit": "jk-animation-studio styles/thai-survival (kit by upstream, cat removed)",
       "renderer": "Python SVG + GSAP / HyperFrames"
     },
@@ -27,7 +27,7 @@
     },
     "low-poly": {
       "th": "3D โลว์โพลี",
-      "en": "Low-poly 3D",
+      "en": "Low Poly 3D",
       "kit": "styles/low-poly-urban",
       "renderer": "Three.js / HyperFrames"
     },
@@ -51,13 +51,13 @@
     },
     "deep-sea": {
       "th": "สารคดีใต้ทะเล",
-      "en": "Deep Sea",
+      "en": "Deep Sea Doc",
       "kit": "deep-sea-docs 0.1 (kubcode)",
       "renderer": "HyperFrames"
     },
     "footage-reframe": {
       "th": "ฟุตเทจจริง + ซับ",
-      "en": "Footage Reframe",
+      "en": "Real Footage",
       "kit": "-",
       "renderer": "HyperFrames"
     },
@@ -107,7 +107,7 @@
     },
     "money-tip": {
       "th": "เงินทองง่ายๆ",
-      "en": "Money Tip",
+      "en": "Money Tips",
       "formula": "ปัญหาเงิน → กฎ 1 ข้อ → ตัวอย่างตัวเลข",
       "kind": "fact"
     },
@@ -119,7 +119,7 @@
     },
     "outbreak-drama": {
       "th": "ห้างติดเชื้อ",
-      "en": "Outbreak",
+      "en": "Mall Outbreak",
       "formula": "ซีรีส์ต่อเนื่อง ระทึก",
       "kind": "fiction"
     },

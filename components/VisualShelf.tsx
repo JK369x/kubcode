@@ -163,6 +163,7 @@ export function StoryLabel({ story, className = styles.story }: { story: StoryKe
     <p className={className} data-story={story}>
       <span className="sr-only">แนวเรื่อง </span>
       {STORY_FORMATS[story]?.th ?? story}
+      {STORY_FORMATS[story] && <span lang="en"> · {STORY_FORMATS[story].en}</span>}
     </p>
   );
 }

@@ -88,3 +88,8 @@
     display: none;
   }
 }
+
+.en {
+  opacity: 0.7;
+  font-weight: 400;
+}
