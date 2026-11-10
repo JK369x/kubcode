@@ -309,6 +309,120 @@ async function main() {
     }
     step("browser UI (desktop rail and mobile sheet, light + dark): star, 20-thread pages + แสดงเพิ่ม, panel scrolls without moving the page, comment, delete, unstar, card star counts on /tools");
 
+    // Articles + community: a member stars an article and comments from the
+    // rail (desktop) and the sheet (mobile); the comment shows in the latest
+    // comments block on /articles and on /community; anonymous visitors get
+    // the sign-in prompt. Screenshots in .qa/ for a human look.
+    const content = loadContent();
+    const article = content.articles[0];
+    const writer = await member();
+    const commBrowser = await chromium.launch({
+      headless: true,
+      channel: "chrome",
+      args: [`--host-resolver-rules=MAP kubcode-ui.test 127.0.0.1:${port}`],
+    });
+    try {
+      const open = async (cookie: string | null, width: number, height: number, theme: "dark" | "light") => {
+        const page = await commBrowser.newPage({ viewport: { width, height } });
+        await page.addInitScript((t) => {
+          try {
+            localStorage.setItem("jk-theme", t);
+          } catch {}
+        }, theme);
+        const errors: string[] = [];
+        page.on("console", (m) => m.type() === "error" && !m.text().startsWith("Failed to load resource") && errors.push(m.text()));
+        await page.route("http://kubcode-ui.test/**", async (route) => {
+          const { pathname, search } = new URL(route.request().url());
+          const response = await route.fetch({
+            url: `http://127.0.0.1:${port}${pathname}${search}`,
+            headers: {
+              ...route.request().headers(),
+              host: "kubcode.dev",
+              origin: "https://kubcode.dev",
+              "x-forwarded-proto": "https",
+              cookie: cookie ? `${CSRF_COOKIE}=${csrfFixture}; ${cookie}` : "",
+            },
+            maxRedirects: 0,
+          });
+          await route.fulfill({ response });
+        });
+        return { page, errors };
+      };
+
+      // Anonymous: the article reads publicly, the star asks for sign-in, the
+      // empty thread invites the first comment, /community shows the prompt.
+      {
+        const { page, errors } = await open(null, 1280, 900, "dark");
+        await page.goto(`http://kubcode-ui.test/articles/${article.slug}`);
+        const rail = page.locator(".page-rail");
+        await rail.getByRole("link", { name: "เข้าสู่ระบบเพื่อให้ดาว" }).waitFor({ timeout: 15000 });
+        await rail.getByText("ยังไม่มีคอมเมนต์ เริ่มคนแรกได้เลย").waitFor();
+        await rail.getByText("เพื่อคอมเมนต์").waitFor();
+        await page.screenshot({ path: ".qa/article-anon-1280-dark.png" });
+        await page.goto("http://kubcode-ui.test/community");
+        await page.getByText("อ่านได้ทุกคน อยากร่วมคุยหรือให้ดาวหน้าที่ชอบ").waitFor();
+        assert.deepEqual(errors, [], "anonymous console errors");
+        await page.close();
+      }
+
+      for (const run of [
+        { width: 1280, height: 900, theme: "dark" },
+        { width: 390, height: 844, theme: "light" },
+      ] as const) {
+        const desktop = run.width > 1000;
+        const label = `${run.width}-${run.theme}`;
+        const { page, errors } = await open(writer, run.width, run.height, run.theme);
+        await page.goto(`http://kubcode-ui.test/articles/${article.slug}`);
+        const starScope = desktop ? page.locator(".page-rail") : page.locator("[class*=mobileBar]");
+        await starScope.getByRole("button", { name: "ให้ดาว", exact: true }).click({ timeout: 15000 });
+        await starScope.getByRole("button", { name: "ให้ดาวแล้ว" }).waitFor();
+        let panel = page.locator(".page-rail");
+        if (!desktop) {
+          await page.getByRole("button", { name: /^คอมเมนต์/ }).click();
+          panel = page.getByRole("dialog");
+          await panel.waitFor();
+        }
+        const text = `ชอบบทความนี้มาก ลองทำตามแล้วได้ผล (${label})`;
+        await panel.getByLabel(/เขียนคอมเมนต์เกี่ยวกับ/).fill(text);
+        await panel.getByRole("button", { name: "ส่ง", exact: true }).click();
+        await panel.locator("[data-comments-scroll]").getByText(text).waitFor();
+        await page.waitForTimeout(400);
+        await page.screenshot({ path: `.qa/article-interactions-${label}.png` });
+        if (!desktop) {
+          // Closing the sheet pops its history entry; let that settle first.
+          await page.keyboard.press("Escape");
+          await panel.waitFor({ state: "hidden" });
+          await page.waitForFunction(() => !history.state?.kbSheet);
+        }
+
+        await page.goto("http://kubcode-ui.test/articles");
+        const latest = page.getByRole("region", { name: "ความเคลื่อนไหวล่าสุด" });
+        await latest.getByText(text).waitFor();
+        assert.ok((await latest.locator("li").count()) <= 5, `${label}: the block shows at most 5`);
+        await latest.getByRole("link", { name: article.title }).first().waitFor();
+        const card = page.locator("main article").filter({ has: page.getByRole("link", { name: article.title, exact: true }) }).locator("[data-stars]");
+        await card.first().waitFor();
+        assert.equal(await card.first().getAttribute("data-stars"), "1", `${label}: article card star count`);
+        await page.screenshot({ path: `.qa/articles-community-${label}.png`, fullPage: true });
+
+        await page.goto("http://kubcode-ui.test/community");
+        await page.getByRole("region", { name: "ความเคลื่อนไหวล่าสุด" }).getByText(text).waitFor();
+        const popular = page.getByRole("region", { name: "ยอดนิยม" });
+        await popular.getByRole("link", { name: article.title }).waitFor();
+        await popular.getByRole("link", { name: "Remotion" }).waitFor();
+        assert.equal(await page.getByText("อ่านได้ทุกคน อยากร่วมคุยหรือให้ดาวหน้าที่ชอบ").count(), 0, "members see no sign-in prompt");
+        await page.screenshot({ path: `.qa/community-${label}.png`, fullPage: true });
+        assert.deepEqual(errors, [], `console errors at ${label}`);
+        await page.close();
+        // Unstar for the next run; keep the 20 s comment interval out of the way.
+        await db.pool.query("DELETE FROM kubcode_accounts.page_stars WHERE page_kind = 'article'");
+        await db.pool.query("UPDATE kubcode_accounts.page_comments SET created_at = created_at - interval '1 minute'");
+      }
+    } finally {
+      await commBrowser.close();
+    }
+    step("articles: star + comment from rail and sheet; article card counts; latest comments on /articles and /community; ยอดนิยม lists; anonymous sign-in prompts");
+
     // Header account control: avatar from the provider host (served locally
     // here), initial fallback, signed-out pill, and the menu's keyboard and
     // pointer behaviour.

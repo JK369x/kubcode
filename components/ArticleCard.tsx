@@ -5,6 +5,7 @@ import type { Article, Tool } from "@/lib/content";
 import { thaiDate } from "@/lib/dates";
 import { coverTransitionName, titleTransitionName } from "@/lib/view-transition-names";
 import { Morph } from "./Morph";
+import { PageStars } from "./StarCounts";
 import { ToolIconRow } from "./ToolIconRow";
 import styles from "./ArticleIndex.module.css";
 
@@ -58,6 +59,7 @@ export function ArticleCard({
               <PlayCircle size={14} aria-hidden /> มีคลิป
             </span>
           )}
+          <PageStars slug={a.slug} className={styles.stars} />
         </p>
         <ToolIconRow tools={tools} className={styles.tools} />
       </div>

@@ -48,7 +48,7 @@ export function ReadingPage({
   children: ReactNode;
   /** Sections after the prose (related links, credits). */
   after?: ReactNode;
-  /** Stars + comments in the right rail (tool and skill pages). */
+  /** Stars + comments in the right rail (article, tool and skill pages). */
   interactions?: InteractionTarget;
   /** Article cover shown as the hero image under the header. */
   cover?: { src: string; alt: string; width: number; height: number };

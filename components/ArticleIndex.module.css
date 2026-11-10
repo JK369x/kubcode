@@ -142,6 +142,11 @@
   color: var(--muted);
   font-size: 13px;
 }
+.stars {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
 .clip {
   display: inline-flex;
   align-items: center;

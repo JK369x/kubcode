@@ -47,6 +47,7 @@ export default async function Article({ params }: Props) {
       allTags={content.tags}
       toc={toc}
       cover={a.cover}
+      interactions={{ kind: "article", slug: a.slug, title: a.title }}
       headerTools={tools.length > 0 ? <ToolIconRow tools={tools} /> : undefined}
       after={
         <>

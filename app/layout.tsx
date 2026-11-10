@@ -45,6 +45,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
             <Link href="/">คลังทักษะ</Link>
             <Link href="/articles">บทความ</Link>
             <Link href="/tools">เครื่องมือ</Link>
+            <Link href="/community">ชุมชน</Link>
             <AccountMenu />
           </nav>
         </header>

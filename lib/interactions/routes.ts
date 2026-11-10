@@ -13,8 +13,17 @@ import { decodeAccountSession } from "../accounts/runtime";
 import { sessionClaims, type SessionClaims } from "../accounts/session";
 import { rawSkills } from "../catalog";
 import { getContent, slugProblem } from "../content";
+import { hrefOf } from "../content-links";
 import { guardWrite } from "./http";
-import { COMMENT_PAGE_SIZE, getInteractionStore, type InteractionStore, type PageKey, type StoreErrorCode } from "./store";
+import {
+  COMMENT_PAGE_SIZE,
+  FEED_PAGE_SIZE,
+  getInteractionStore,
+  isPageKind,
+  type InteractionStore,
+  type PageKey,
+  type StoreErrorCode,
+} from "./store";
 
 /**
  * Stars and comments stay off until this is exactly "true", independent of
@@ -28,6 +37,8 @@ export type InteractionDeps = {
   env?: AuthEnv;
   storeFor?: (databaseUrl: string) => InteractionStore;
   pageExists?: (page: PageKey) => boolean;
+  /** Title shown for a page in the community feed; null when the page is gone. */
+  pageTitle?: (page: PageKey) => string | null;
 };
 
 /** Comment text ≤2000 chars is ≤8000 UTF-8 bytes; JSON framing fits too. */
@@ -56,13 +67,17 @@ function errorResponse(code: StoreErrorCode | "PAGE_NOT_FOUND" | "INTERACTIONS_D
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
 
-export function defaultPageExists(page: PageKey): boolean {
-  if (page.kind === "skill") return rawSkills.some((s) => s.slug === page.slug);
-  return getContent().tools.some((t) => t.slug === page.slug);
+export function defaultPageTitle(page: PageKey): string | null {
+  if (page.kind === "skill") return rawSkills.find((s) => s.slug === page.slug)?.name ?? null;
+  if (page.kind === "article") return getContent().articles.find((a) => a.slug === page.slug)?.title ?? null;
+  return getContent().tools.find((t) => t.slug === page.slug)?.name ?? null;
 }
 
+export const defaultPageExists = (page: PageKey): boolean => defaultPageTitle(page) !== null;
+
+
 function pageFrom(kind: unknown, slug: unknown): PageKey | null {
-  if ((kind !== "tool" && kind !== "skill") || typeof slug !== "string" || slugProblem(slug)) return null;
+  if (!isPageKind(kind) || typeof slug !== "string" || slugProblem(slug)) return null;
   return { kind, slug };
 }
 
@@ -152,7 +167,7 @@ export async function handleStarCounts(request: Request, deps: InteractionDeps =
   if (accounts.mode === "off" || !interactionsEnabled(env)) return jsonNoStore({ available: false });
   if (accounts.mode === "broken") return accountErrorResponse("ACCOUNTS_UNAVAILABLE");
   const kind = new URL(request.url).searchParams.get("kind");
-  if (kind !== "tool" && kind !== "skill") return badRequest();
+  if (!isPageKind(kind)) return badRequest();
   const exists = deps.pageExists ?? defaultPageExists;
   try {
     const counts = await (deps.storeFor ?? getInteractionStore)(accounts.databaseUrl).starCounts(kind);
@@ -160,6 +175,38 @@ export async function handleStarCounts(request: Request, deps: InteractionDeps =
     return jsonNoStore({ available: true, stars });
   } catch (error) {
     logDbFailure("STAR_COUNTS", error);
+    return accountErrorResponse("ACCOUNTS_UNAVAILABLE");
+  }
+}
+
+/**
+ * GET /api/interactions/latest?limit=5&before=<id> — the public community feed:
+ * newest visible comments across all pages with the page title and link.
+ * No session is read; entries carry the public name only (no ids, no emails).
+ */
+export async function handleLatestComments(request: Request, deps: InteractionDeps = {}): Promise<Response> {
+  const env = deps.env ?? process.env;
+  const accounts = readAccountsConfig(env);
+  if (accounts.mode === "off" || !interactionsEnabled(env)) return jsonNoStore({ available: false });
+  if (accounts.mode === "broken") return accountErrorResponse("ACCOUNTS_UNAVAILABLE");
+  const url = new URL(request.url);
+  const before = url.searchParams.get("before");
+  if (before !== null && !UUID.test(before)) return badRequest();
+  const asked = Number(url.searchParams.get("limit") ?? FEED_PAGE_SIZE);
+  if (!Number.isInteger(asked)) return badRequest();
+  const limit = Math.min(Math.max(asked, 1), FEED_PAGE_SIZE);
+  const title = deps.pageTitle ?? defaultPageTitle;
+  try {
+    const feed = await (deps.storeFor ?? getInteractionStore)(accounts.databaseUrl).latestComments({ limit, before });
+    const comments = feed.comments.flatMap(({ id, kind, slug, author, body, isReply, createdAt }) => {
+      const page = { kind, slug };
+      const t = title(page);
+      // A page removed from the site drops out of the feed (its comments stay).
+      return t === null ? [] : [{ id, kind, slug, title: t, href: hrefOf(page), author, body, isReply, createdAt }];
+    });
+    return jsonNoStore({ available: true, comments, nextCursor: feed.nextCursor });
+  } catch (error) {
+    logDbFailure("LATEST_COMMENTS", error);
     return accountErrorResponse("ACCOUNTS_UNAVAILABLE");
   }
 }

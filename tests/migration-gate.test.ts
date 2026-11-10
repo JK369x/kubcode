@@ -10,6 +10,9 @@ const keywords = (sql: string) => findDestructiveStatements(sql).map((f) => f.ke
 // Data migrations the owner approves through the gate, with what the gate must flag.
 const APPROVED_DATA_MIGRATIONS: Record<string, string[]> = {
   "0005_owner_flag": ["UPDATE"],
+  // Widens two page_kind CHECKs to allow 'article': PostgreSQL can only drop
+  // and re-add a CHECK, so the old constraints are dropped (no data touched).
+  "0011_article_interactions": ["DROP", "DROP"],
 };
 
 test("every migration is additive except the listed data migrations", () => {

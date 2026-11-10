@@ -7,6 +7,9 @@ import { spawn } from "node:child_process";
 import { mkdirSync } from "node:fs";
 import { createServer } from "node:net";
 import { chromium, type Page } from "@playwright/test";
+import { articleIndex } from "../lib/article-index";
+import { articleTools } from "../lib/tool-index";
+import { categoryIsIndexable, stageIsIndexable } from "../lib/seo";
 import { loadContent } from "../lib/content";
 
 const ARTICLE = "/articles/free-ai-animation-opencode";
@@ -284,7 +287,7 @@ async function main() {
       page.on("response", (r) => r.url().includes("/_next/image") && images.push(r.headers()["content-type"] ?? ""));
       await page.goto(base + "/articles", { waitUntil: "networkidle" });
       const hero = page.locator("main h2").first();
-      assert.match(await hero.innerText(), /ทำแอนิเมชัน AI ฟรีแบบของเรา/, "featured: true takes the hero slot");
+      assert.equal(await hero.innerText(), articleIndex(loadContent()).featured?.title, "featured: true takes the hero slot");
       const chips = page.getByRole("navigation", { name: "หมวดบทความ" });
       assert.equal(await chips.getByRole("link", { name: /ทั้งหมด/ }).getAttribute("aria-current"), "page");
       assert.ok(images.length >= 3 && images.every((t) => /image\/(avif|webp)/.test(t)), `covers served as AVIF/WebP (${images.join(",")})`);
@@ -292,7 +295,8 @@ async function main() {
       // Tool icons: the makers' logo files from /tools, each a named link above the card link.
       const icons = page.getByRole("list", { name: "เครื่องมือที่ใช้" }).first().getByRole("link");
       const names = await icons.evaluateAll((els) => els.map((el) => [el.getAttribute("aria-label"), el.getAttribute("href"), el.querySelector("img")?.getAttribute("src") ?? "monogram"]));
-      assert.ok(names.length >= 6, `featured article shows its tools (${JSON.stringify(names)})`);
+      const featured = articleIndex(loadContent()).featured!;
+      assert.equal(names.length, articleTools(loadContent(), featured).length, `featured article shows its tools (${JSON.stringify(names)})`);
       for (const [name, href, src] of names) {
         assert.ok(name && /^\/tools\/[a-z0-9-]+$/.test(href!), `named link to a tool page: ${name} ${href}`);
         assert.ok(src === "monogram" || src === `${href}/logo.svg` || src === `${href}/logo.png`, `logo is the tool's own file: ${src}`);
@@ -307,9 +311,11 @@ async function main() {
         await chips.getByRole("link", { name: /พื้นฐานและสิทธิ์/ }).click();
         await page.waitForURL("**/articles/c/basics");
         assert.equal(await page.locator("main h1").innerText(), "พื้นฐานและสิทธิ์");
-        assert.equal(await page.locator("main article :is(h2, h3) a[href^='/articles/']").count(), 2);
+        const basics = loadContent().articles.filter((a) => a.category === "basics").length;
+        assert.equal(await page.locator("main article :is(h2, h3) a[href^='/articles/']").count(), basics);
         assert.equal(await chips.getByRole("link", { name: /พื้นฐานและสิทธิ์/ }).getAttribute("aria-current"), "page");
-        assert.match((await page.locator('meta[name="robots"]').getAttribute("content")) ?? "", /noindex/, "fewer than 3 articles: noindex");
+        if (!categoryIsIndexable(loadContent(), "basics"))
+          assert.match((await page.locator('meta[name="robots"]').getAttribute("content")) ?? "", /noindex/, "too few articles: noindex");
         await page.goto(base + "/articles", { waitUntil: "networkidle" });
         const before = await page.evaluate(() => (window as unknown as { __vt: number }).__vt);
         await page.getByRole("link", { name: /สไตล์ ผู้เขียน และ renderer/ }).click();
@@ -378,7 +384,9 @@ async function main() {
         const robots = await page.locator('meta[name="robots"]').evaluateAll((els) => els.map((el) => el.getAttribute("content")).join(" "));
         assert.doesNotMatch(robots, /noindex/, "3+ tools: indexable");
         await page.goto(base + "/tools/c/render", { waitUntil: "networkidle" });
-        assert.match((await page.locator('meta[name="robots"]').getAttribute("content")) ?? "", /noindex/, "fewer than 3 tools: noindex");
+        const renderRobots = await page.locator('meta[name="robots"]').evaluateAll((els) => els.map((el) => el.getAttribute("content")).join(" "));
+        if (!stageIsIndexable(content, "render")) assert.match(renderRobots, /noindex/, "fewer than 3 tools: noindex");
+        else assert.doesNotMatch(renderRobots, /noindex/, "3+ tools: indexable");
         assert.equal((await page.request.get(base + "/tools/c/image")).status(), 404, "empty stage 404s");
         await page.goto(base + "/tools", { waitUntil: "networkidle" });
         const before = await page.evaluate(() => (window as unknown as { __vt: number }).__vt);

@@ -3,11 +3,11 @@ import Link from "next/link";
 import { MessageCircle, Star, X } from "lucide-react";
 import { useCallback, useEffect, useId, useRef, useState, type ReactNode } from "react";
 import { send } from "@/lib/interactions/client";
-import type { PageState, PublicComment } from "@/lib/interactions/store";
+import type { PageKind, PageState, PublicComment } from "@/lib/interactions/store";
 import { CommentText } from "./CommentText";
 import styles from "./PageInteractions.module.css";
 
-export type InteractionTarget = { kind: "tool" | "skill"; slug: string; title: string };
+export type InteractionTarget = { kind: PageKind; slug: string; title: string };
 
 type Loaded = PageState & { extra: PublicComment[] };
 type Load = { state: "loading" } | { state: "closed"; message: string } | { state: "ready"; data: Loaded };
