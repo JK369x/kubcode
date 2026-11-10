@@ -209,19 +209,34 @@ function CommentForm({
 }) {
   const id = useId();
   const [text, setText] = useState(initial);
+  // Starts as a one-line box; opens with a short animation on focus or when
+  // there is text, and folds back when empty and left (owner 2026-11-11).
+  const [open, setOpen] = useState(initial !== "" || Boolean(cancel));
   return (
     <form
       className={styles.form}
+      data-open={open ? "" : undefined}
+      onFocus={() => setOpen(true)}
+      onBlur={(e) => {
+        if (!e.currentTarget.contains(e.relatedTarget as Node | null) && text.trim() === "") setOpen(false);
+      }}
       onSubmit={async (e) => {
         e.preventDefault();
         if (await submit(text)) setText("");
       }}
     >
-      <label htmlFor={id} className={styles.label}>
+      <label htmlFor={id} className={open ? styles.label : "sr-only"}>
         {label}
       </label>
-      <textarea id={id} value={text} maxLength={MAX} rows={2} onChange={(e) => setText(e.target.value)} />
-      <div className={styles.formRow}>
+      <textarea
+        id={id}
+        value={text}
+        maxLength={MAX}
+        rows={open ? 3 : 1}
+        placeholder={open ? undefined : "เขียนคอมเมนต์…"}
+        onChange={(e) => setText(e.target.value)}
+      />
+      <div className={styles.formRow} hidden={!open}>
         <span className={styles.meta}>
           {note} {note ? "· " : ""}
           {text.length.toLocaleString("th-TH")}/{MAX.toLocaleString("th-TH")}
