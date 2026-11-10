@@ -1,6 +1,6 @@
 # Instagram comment → DM (slice 3) — verification and design
 
-Status: **verification done (2026-11-10); one owner decision open (§3)**. Extends
+Status: **B chosen by the owner (2026-11-10)**; design below, two choices still to confirm (§4.8). Extends
 `docs/design/publishing-core.md` (Automation rule, Inbox item; the Automations port of ADR 0004).
 
 ## 1. Goal
@@ -90,7 +90,7 @@ team. Per-account caps for replies/DMs and Meta's own messaging caps are not doc
 subscription per event, same `X-Zernio-Signature` scheme, dedupe on the event id; 7 attempts over
 ~51 h; answer 2xx within 5 s; any other 4xx stops delivery.
 
-## 3. Open decision: Zernio automations or our own engine
+## 3. Decision: our own engine (B) — owner, 2026-11-10
 
 | | A. Zernio Comment Automations | B. Our engine on Zernio primitives |
 |---|---|---|
@@ -101,34 +101,95 @@ subscription per event, same `X-Zernio-Signature` scheme, dedupe on the event id
 | Dedupe "one DM per person per post" | per-post automation + `once`; an all-posts rule with `once` is one DM per person **ever** (stricter) | exactly as specified |
 | Leaving Zernio later (phase 2) | rules are Zernio objects; re-create natively | engine is ours; only the two send calls change |
 
-Recommendation (to confirm with the owner): **B**, because the per-channel price cannot carry
+Chosen: **B**, because the per-channel price cannot carry
 A's cost at the cap and the engine is the part we would keep in phase 2; the risks of B are
 bounded by design (§4). If the owner prefers speed now (owner-only, likely inside the free 2,000
 runs, possibly no charge for pre-balance accounts), A is acceptable for the owner's own channel and
 B before creators pay.
 
-## 4. Design sketch (B; adjusted if A is chosen)
+## 4. Design (B)
 
-- **Domain** (CONTEXT.md terms): Automation rule `{channel, keywords[], match: contains|word|exact,
-  post: one|all, public_reply, dm_text, dm_link_slug, active}`; Inbox item for each received
-  comment; a **DM ledger** row per (channel, post, author) — the dedupe key — with outcome code.
-- **Flow:** `comment.received` (signed, deduped by event id) → ignore `isOwnAccount` and replies →
-  match rules (post-scoped first) → ledger insert (unique; a conflict means already handled) →
-  public reply (with `Idempotency-Key`) → private reply, plain text with the link (never retried
-  after a 400 with `privateReplyConsumed` or a 502; recorded as `unknown`). Policy for the public
-  reply when the DM fails: owner decision (Zernio's default is reply only after a DM).
-- **Cap:** monthly count per channel from the ledger; at the cap new matches are recorded as
-  `cap_reached` and nothing is sent.
-- **Catch-up:** a scheduled read of recent comments for channels with active rules, through the same
-  path (ledger makes it idempotent).
-- **Logs:** one line per comment outcome (`[automations] channel=… outcome=<code>`), no text, ids or
-  usernames.
-- **Safety in tests:** localhost-first; the protected local runner on @lokeekbaebkub; **no real reply
-  or DM without the owner's approval in the session**, and the owner makes the test comment.
+### 4.1 Domain (CONTEXT.md terms)
+
+- **Automation rule** (per Instagram Channel): `keywords[]` (matched case-insensitively, `contains`
+  by default, `exact` optional), scope `all posts` or one post (`platform_post_id`), `public_reply`
+  text, `dm_text` (plain text; the link is written into it, default `https://kubcode.dev/go/<slug>`),
+  `reply_policy` = `after_dm` (default, owner 2026-11-10) | `always`, `active`.
+- **Inbox item**: one received comment (Zernio comment id, platform post id, author id, received at).
+  The text is used for matching and not stored beyond it.
+- **DM ledger**: one row per `(channel, platform_post_id, author_id)` — the "one DM per person per
+  post" key — with the comment it answered, the rule, and the outcome per leg.
+
+### 4.2 Flow
+
+1. `POST /webhooks/zernio` (existing route, existing signature check and event dedupe) translates
+   `comment.received` into `CommentReceived`. It only **records** the Inbox item and answers 2xx
+   (Zernio wants 2xx within 5 s; the sends happen in step 3).
+2. Ignored at record time: `author.isOwnAccount` (our own replies come back), replies to replies
+   (`isReply`), comments older than 7 days (a private reply is no longer possible), channels
+   without an active rule.
+3. A **worker** takes recorded items in order:
+   - match rules (post-scoped first, then all-posts; first match wins);
+   - **claim** the ledger row (insert; a conflict means this person already got a DM for this
+     post → `duplicate`);
+   - cap: count this channel's DMs this month (`dm_sent` + `dm_unknown`); at the cap → `cap_reached`;
+   - **private reply** first (plain text with the link);
+   - then the **public reply** if `reply_policy` says so (`after_dm`: only after `dm_sent`), with an
+     `Idempotency-Key` derived from the comment id.
+4. **Catch-up:** the same worker reads recent comments of channels with active rules every 10
+   minutes and records the ones it has not seen; the ledger makes it idempotent.
+
+### 4.3 Private reply: at most once, by us
+
+The endpoint has no `Idempotency-Key` and Instagram allows one private reply per comment. So the
+ledger row moves `claimed → dm_sending → dm_sent | dm_failed | dm_unknown`, and **`dm_sending` is
+written before the call**. A row found in `dm_sending` (crash, timeout, 502) becomes `dm_unknown`
+and is **never retried**; `400 privateReplyConsumed` is terminal (`dm_consumed`). At-most-once is
+the right trade: a duplicate DM is worse than a missing one, and Instagram refuses a second one
+anyway.
+
+### 4.4 Cap and counting
+
+`fair_use_dms_per_month` = 5,000 per channel (config). Counted from the ledger per calendar month
+(Asia/Bangkok). Matches beyond it are recorded as `cap_reached` and not sent.
+
+### 4.5 Outcome codes and logs
+
+One line per item, no text, ids or usernames:
+`[automations] channel=<uuid> outcome=<code>` with codes `dm_sent`, `dm_failed_<category>`,
+`dm_unknown`, `dm_consumed`, `duplicate`, `no_rule`, `cap_reached`, `own_account`, `too_old`,
+`reply_sent`, `reply_failed_<category>`.
+
+### 4.6 Owner UI
+
+`/account/channels/<id>/automations` (owner-only, flag `KUBCODE_AUTOMATIONS_ENABLED`): list, add,
+edit, pause rules; this month's DM count against the cap; last outcomes. Same style and guards as
+`/account/channels` (session, member, RLS, CSRF). Writes go through the web host to our DB only (no
+Zernio call), so no new Lambda route is needed for the UI.
+
+### 4.7 Setup
+
+- Zernio webhook subscription gains `comment.received` (admin step, `publishing-secrets.sh webhook`
+  updated); the existing secret signs it.
+- Read-only scope check on @lokeekbaebkub before E2E: `instagram_business_manage_comments` and
+  `instagram_business_manage_messages` granted.
+
+### 4.8 To confirm before building
+
+1. **How the worker runs.** (a) **EventBridge Scheduler every minute** invoking the publishing
+   Lambda in a `worker` mode: one mechanism for processing and catch-up, ≤ 1 min delay, no new
+   permissions beyond the schedule (recommended); or (b) the webhook also **invokes the Lambda
+   asynchronously** right after recording (seconds, needs `lambda:InvokeFunction` on itself) plus
+   the schedule for catch-up. Start with (a); add (b) if a minute feels slow.
+2. **Keyword matching for Thai.** `contains` on the lower-cased text (Thai has no spaces between
+   words, so "word" matching is unreliable); `exact` for whole-comment keywords. Emojis and spaces
+   trimmed.
 
 ## 5. Next steps
 
-1. Owner decision on §3 (A or B) and on the public-reply policy when the DM fails.
-2. Read-only check of the real IG account: granted scopes / account health.
-3. Then: grill the remaining product details, TDD the engine with OpenAPI-sourced fixtures, local
-   E2E, PR, deploy behind the flag.
+1. Confirm §4.8. Read-only scope check (Keychain prompt).
+2. TDD in slices: (i) webhook translation + Inbox item + ignore rules; (ii) matcher + ledger +
+   cap; (iii) Zernio adapter calls (OpenAPI fixtures) + worker; (iv) owner UI; (v) schedule +
+   webhook subscription.
+3. Local E2E against real Zernio in protected mode on @lokeekbaebkub; **no real reply or DM before
+   the owner approves in the session and makes the test comment**. Then PR, deploy behind the flag.
