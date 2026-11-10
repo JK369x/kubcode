@@ -63,6 +63,10 @@ const ACCOUNT_TABLES = [
   "receipts",
   "provider_events",
   "rate_windows",
+  // 0010: comment → DM (docs/design/ig-comment-dm.md).
+  "automation_rules",
+  "comment_items",
+  "dm_ledger",
 ];
 const PUBLISHING_MEMBER_TABLES = [
   "workspaces",
@@ -74,6 +78,9 @@ const PUBLISHING_MEMBER_TABLES = [
   "posts",
   "deliveries",
   "receipts",
+  "automation_rules",
+  "comment_items",
+  "dm_ledger",
 ];
 const PUBLISHING_WORKER_TABLES = [
   "workspaces",
@@ -90,8 +97,11 @@ const PUBLISHING_WORKER_TABLES = [
   "receipts",
   "provider_events",
   "rate_windows",
+  "automation_rules",
+  "comment_items",
+  "dm_ledger",
 ];
-const ALL_VERSIONS = ["0001_accounts", "0002_interactions", "0003_downloads", "0004_settings_keys", "0005_owner_flag", "0006_connect_app_source", "0007_publishing_channels", "0008_publishing_posts", "0009_publishing_owner_lookup"];
+const ALL_VERSIONS = ["0001_accounts", "0002_interactions", "0003_downloads", "0004_settings_keys", "0005_owner_flag", "0006_connect_app_source", "0007_publishing_channels", "0008_publishing_posts", "0009_publishing_owner_lookup", "0010_comment_automations"];
 
 // Refuses anything that is not clearly a local test database BEFORE any
 // connection is attempted.
