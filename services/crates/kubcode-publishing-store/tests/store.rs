@@ -443,6 +443,19 @@ async fn posts_deliveries_velocity_and_webhooks() {
     assert_eq!(r.platform_post_id.as_deref(), Some("y7AAfV8ABIo"));
     assert_eq!(r.cover_check, "pending");
 
+    // The owner's CLI records what YouTube served; only ok/mismatch are written.
+    assert!(s.set_cover_check(d, "mismatch").await.unwrap());
+    assert_eq!(s.receipt(d).await.unwrap().unwrap().cover_check, "mismatch");
+    assert!(
+        !s.set_cover_check(d, "pending").await.unwrap(),
+        "pending is never written back"
+    );
+    assert!(s.set_cover_check(d, "ok").await.unwrap());
+    let post = s.post_of(d).await.unwrap();
+    let listed = s.post_deliveries(post).await.unwrap();
+    assert_eq!(listed[0].cover_check.as_deref(), Some("ok"));
+    assert!(!listed[0].clip_ref.is_empty(), "the status names the clip");
+
     assert_eq!(
         s.apply_event(ProviderKind::Zernio, &delivery("evt_1", "a"), &[published])
             .await

@@ -31,6 +31,12 @@ pub enum Command {
     Cancel {
         delivery: Uuid,
     },
+    /// What the platform served as the thumbnail, checked by the owner's CLI
+    /// against the designed cover: `ok` or `mismatch`.
+    CoverCheck {
+        delivery: Uuid,
+        check: String,
+    },
 }
 
 fn err(f: Fail) -> Value {
@@ -166,10 +172,15 @@ pub async fn run(svc: &mut Service<'_>, event: Value, bucket: &str) -> Value {
                     "error": d.last_error_code,
                     "url": d.platform_url,
                     "cover_check": d.cover_check,
+                    "clip": d.clip_ref,
                 })).collect::<Vec<_>>()})
             }),
         Command::Cancel { delivery } => svc
             .cancel(owner, DeliveryId(delivery))
+            .await
+            .map(|()| json!({"ok": true})),
+        Command::CoverCheck { delivery, check } => svc
+            .record_cover_check(owner, DeliveryId(delivery), &check)
             .await
             .map(|()| json!({"ok": true})),
     };

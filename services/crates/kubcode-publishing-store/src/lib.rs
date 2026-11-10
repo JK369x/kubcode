@@ -140,6 +140,8 @@ pub struct DeliverySummary {
     pub last_error_code: Option<String>,
     pub platform_url: Option<String>,
     pub cover_check: Option<String>,
+    /// The studio clip the post was made from (the CLI finds its cover by it).
+    pub clip_ref: String,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -795,14 +797,46 @@ impl Store {
         Ok(row.map(|r| WorkspaceId(r.get(0))))
     }
 
+    /// The post a delivery belongs to.
+    pub async fn post_of(&self, d: DeliveryId) -> Result<PostId> {
+        let row = self
+            .c
+            .query_one(
+                "SELECT post_id FROM kubcode_accounts.deliveries WHERE id = $1",
+                &[&d.0],
+            )
+            .await?;
+        Ok(PostId(row.get(0)))
+    }
+
+    /// Records what the platform served as the thumbnail (`ok` or `mismatch`;
+    /// `pending` is the default and never written back). False when there is
+    /// no receipt yet or the value is not one of the two.
+    pub async fn set_cover_check(&self, d: DeliveryId, check: &str) -> Result<bool> {
+        if !matches!(check, "ok" | "mismatch") {
+            return Ok(false);
+        }
+        let n = self
+            .c
+            .execute(
+                "UPDATE kubcode_accounts.receipts
+                    SET cover_check = $2, cover_checked_at = now(), updated_at = now()
+                  WHERE delivery_id = $1",
+                &[&d.0, &check],
+            )
+            .await?;
+        Ok(n == 1)
+    }
+
     pub async fn post_deliveries(&self, post: PostId) -> Result<Vec<DeliverySummary>> {
         let rows = self
             .c
             .query(
                 "SELECT d.id, d.channel_id, c.display_name, d.platform, d.status, d.publish_at,
-                        d.last_error_code, r.platform_url, r.cover_check
+                        d.last_error_code, r.platform_url, r.cover_check, p.clip_ref
                    FROM kubcode_accounts.deliveries d
                    JOIN kubcode_accounts.channels c ON c.id = d.channel_id
+                   JOIN kubcode_accounts.posts p ON p.id = d.post_id
                    LEFT JOIN kubcode_accounts.receipts r ON r.delivery_id = d.id
                   WHERE d.post_id = $1 ORDER BY d.publish_at, d.id",
                 &[&post.0],
@@ -820,6 +854,7 @@ impl Store {
                     last_error_code: r.get(6),
                     platform_url: r.get(7),
                     cover_check: r.get(8),
+                    clip_ref: r.get(9),
                 })
             })
             .collect()
