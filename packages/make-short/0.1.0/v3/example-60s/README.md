@@ -1,0 +1,1 @@
+Finished 60 s Short (canned-food story) kept as a worked example: shots.json, acting.json, story.md, timing.json (word timings), cues-60s-example.json, CONTRACT.md. Read them for the exact schema. Do NOT copy the story. A new Short replaces ../shots.json and ../acting.json (v3 has none until you write them).

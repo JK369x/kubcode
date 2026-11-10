@@ -1,0 +1,2 @@
+{"_note":"Per-project sound cues. Delete the entries you do not need. cues = [sfx name, narration line number, word stem, offset seconds]; impact = verified on-screen impact frame wins over the word (30 fps); hits = [sfx, frame, volume] for visible hits without a cue word; capUp = frame ranges where captions move up. sfx names = files in sfx/*.mp3",
+ "cues":[], "impact":{}, "hits":[], "capUp":[]}

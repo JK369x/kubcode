@@ -1,0 +1,33 @@
+{
+  "name": "One Door, Ten Worlds - 25 s master (9:16 Short + 16:9 cold open)",
+  "story": "door",
+  "fps": 30,
+  "frames": 750,
+  "W": 1920,
+  "H": 1920,
+  "handle": 8,
+  "styles": [
+    { "id": "pixel",      "file": "styles/01-pixel.js",      "start": 0,   "end": 50 },
+    { "id": "blueprint",  "file": "styles/02-blueprint.js",  "start": 50,  "end": 110 },
+    { "id": "voxel",      "file": "styles/03-voxel.js",      "start": 110, "end": 170 },
+    { "id": "ascii",      "file": "styles/04-ascii.js",      "start": 170, "end": 230 },
+    { "id": "flat",       "file": "styles/05-flat.js",       "start": 230, "end": 290 },
+    { "id": "woodcut",    "file": "styles/06-woodcut.js",    "start": 290, "end": 350 },
+    { "id": "lidar",      "file": "styles/07-lidar.js",      "start": 350, "end": 410 },
+    { "id": "watercolor", "file": "styles/08-watercolor.js", "start": 410, "end": 470 },
+    { "id": "glass",      "file": "styles/09-glass.js",      "start": 470, "end": 530 },
+    { "id": "teardown",   "file": "styles/10-teardown.js",   "start": 530, "end": 690 },
+    { "id": "sheet",      "file": "styles/11-sheet.js",      "start": 690, "end": 750 }
+  ],
+  "transitions": [
+    { "id": "r1", "name": "ring",      "file": "transitions/ring.js",         "boundary": 50,  "from": "pixel",      "to": "blueprint" },
+    { "id": "r2", "name": "ring",      "file": "transitions/ring.js",         "boundary": 110, "from": "blueprint",  "to": "voxel" },
+    { "id": "r3", "name": "ring",      "file": "transitions/ring.js",         "boundary": 170, "from": "voxel",      "to": "ascii" },
+    { "id": "r4", "name": "ring",      "file": "transitions/ring.js",         "boundary": 230, "from": "ascii",      "to": "flat" },
+    { "id": "r5", "name": "ring",      "file": "transitions/ring.js",         "boundary": 290, "from": "flat",       "to": "woodcut" },
+    { "id": "t6", "name": "scan-beam", "file": "transitions/t6-scan-beam.js", "boundary": 350, "from": "woodcut",    "to": "lidar" },
+    { "id": "t7", "name": "drop-bloom","file": "transitions/t7-ink-drop.js",  "boundary": 410, "from": "lidar",      "to": "watercolor" },
+    { "id": "r8", "name": "ring",      "file": "transitions/ring.js",         "boundary": 470, "from": "watercolor", "to": "glass" },
+    { "id": "t9", "name": "shatter",   "file": "transitions/t9-shatter.js",   "boundary": 530, "from": "glass",      "to": "teardown" }
+  ]
+}

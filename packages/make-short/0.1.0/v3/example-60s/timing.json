@@ -1,0 +1,1080 @@
+{
+  "voiceId": "YOUR_ELEVENLABS_VOICE_ID",
+  "duration": 60.151,
+  "chars": 1060,
+  "lines": [
+    {
+      "line": 1,
+      "text": "Canned food existed for forty-eight years before anyone invented the can opener.",
+      "start": 0.077,
+      "end": 4.04,
+      "words": [
+        {
+          "w": "Canned",
+          "start": 0.077,
+          "end": 0.299
+        },
+        {
+          "w": "food",
+          "start": 0.373,
+          "end": 0.521
+        },
+        {
+          "w": "existed",
+          "start": 0.595,
+          "end": 0.892
+        },
+        {
+          "w": "for",
+          "start": 0.966,
+          "end": 1.188
+        },
+        {
+          "w": "forty-eight",
+          "start": 1.299,
+          "end": 1.632
+        },
+        {
+          "w": "years",
+          "start": 1.781,
+          "end": 2.077
+        },
+        {
+          "w": "before",
+          "start": 2.262,
+          "end": 2.447
+        },
+        {
+          "w": "anyone",
+          "start": 2.521,
+          "end": 2.818
+        },
+        {
+          "w": "invented",
+          "start": 2.892,
+          "end": 3.188
+        },
+        {
+          "w": "the",
+          "start": 3.225,
+          "end": 3.262
+        },
+        {
+          "w": "can",
+          "start": 3.336,
+          "end": 3.484
+        },
+        {
+          "w": "opener.",
+          "start": 3.558,
+          "end": 4.04
+        }
+      ]
+    },
+    {
+      "line": 2,
+      "text": "Forty-eight years. Just hammers and bad ideas.",
+      "start": 4.225,
+      "end": 7.706,
+      "words": [
+        {
+          "w": "Forty-eight",
+          "start": 4.225,
+          "end": 4.892
+        },
+        {
+          "w": "years.",
+          "start": 5.04,
+          "end": 5.632
+        },
+        {
+          "w": "Just",
+          "start": 5.781,
+          "end": 5.929
+        },
+        {
+          "w": "hammers",
+          "start": 6.077,
+          "end": 6.373
+        },
+        {
+          "w": "and",
+          "start": 6.447,
+          "end": 6.595
+        },
+        {
+          "w": "bad",
+          "start": 6.669,
+          "end": 6.818
+        },
+        {
+          "w": "ideas.",
+          "start": 6.966,
+          "end": 7.706
+        }
+      ]
+    },
+    {
+      "line": 3,
+      "text": "Meet Marcel, a very hungry soldier by the river.",
+      "start": 8.003,
+      "end": 10.892,
+      "words": [
+        {
+          "w": "Meet",
+          "start": 8.003,
+          "end": 8.151
+        },
+        {
+          "w": "Marcel,",
+          "start": 8.262,
+          "end": 8.818
+        },
+        {
+          "w": "a",
+          "start": 8.892,
+          "end": 9.04
+        },
+        {
+          "w": "very",
+          "start": 9.114,
+          "end": 9.336
+        },
+        {
+          "w": "hungry",
+          "start": 9.41,
+          "end": 9.632
+        },
+        {
+          "w": "soldier",
+          "start": 9.744,
+          "end": 10.003
+        },
+        {
+          "w": "by",
+          "start": 10.04,
+          "end": 10.077
+        },
+        {
+          "w": "the",
+          "start": 10.151,
+          "end": 10.225
+        },
+        {
+          "w": "river.",
+          "start": 10.373,
+          "end": 10.892
+        }
+      ]
+    },
+    {
+      "line": 4,
+      "text": "Today, the army sent him a crate of canned beef.",
+      "start": 11.077,
+      "end": 13.41,
+      "words": [
+        {
+          "w": "Today,",
+          "start": 11.077,
+          "end": 11.299
+        },
+        {
+          "w": "the",
+          "start": 11.336,
+          "end": 11.41
+        },
+        {
+          "w": "army",
+          "start": 11.484,
+          "end": 11.706
+        },
+        {
+          "w": "sent",
+          "start": 11.781,
+          "end": 11.855
+        },
+        {
+          "w": "him",
+          "start": 11.929,
+          "end": 12.003
+        },
+        {
+          "w": "a",
+          "start": 12.04,
+          "end": 12.077
+        },
+        {
+          "w": "crate",
+          "start": 12.151,
+          "end": 12.299
+        },
+        {
+          "w": "of",
+          "start": 12.373,
+          "end": 12.447
+        },
+        {
+          "w": "canned",
+          "start": 12.521,
+          "end": 12.744
+        },
+        {
+          "w": "beef.",
+          "start": 12.818,
+          "end": 13.41
+        }
+      ]
+    },
+    {
+      "line": 5,
+      "text": "Marcel tries his knife. The knife bends.",
+      "start": 13.484,
+      "end": 15.904,
+      "words": [
+        {
+          "w": "Marcel",
+          "start": 13.484,
+          "end": 13.855
+        },
+        {
+          "w": "tries",
+          "start": 13.966,
+          "end": 14.077
+        },
+        {
+          "w": "his",
+          "start": 14.151,
+          "end": 14.225
+        },
+        {
+          "w": "knife.",
+          "start": 14.521,
+          "end": 14.843
+        },
+        {
+          "w": "The",
+          "start": 14.867,
+          "end": 14.892
+        },
+        {
+          "w": "knife",
+          "start": 15.003,
+          "end": 15.114
+        },
+        {
+          "w": "bends.",
+          "start": 15.188,
+          "end": 15.904
+        }
+      ]
+    },
+    {
+      "line": 6,
+      "text": "His boot. The boot hurts more.",
+      "start": 15.954,
+      "end": 17.818,
+      "words": [
+        {
+          "w": "His",
+          "start": 15.954,
+          "end": 16.003
+        },
+        {
+          "w": "boot.",
+          "start": 16.299,
+          "end": 16.62
+        },
+        {
+          "w": "The",
+          "start": 16.644,
+          "end": 16.669
+        },
+        {
+          "w": "boot",
+          "start": 16.781,
+          "end": 16.892
+        },
+        {
+          "w": "hurts",
+          "start": 16.917,
+          "end": 17.188
+        },
+        {
+          "w": "more.",
+          "start": 17.484,
+          "end": 17.818
+        }
+      ]
+    },
+    {
+      "line": 7,
+      "text": "A rock. The rock loses.",
+      "start": 17.855,
+      "end": 19.929,
+      "words": [
+        {
+          "w": "A",
+          "start": 17.855,
+          "end": 17.929
+        },
+        {
+          "w": "rock.",
+          "start": 18.225,
+          "end": 18.558
+        },
+        {
+          "w": "The",
+          "start": 18.595,
+          "end": 18.669
+        },
+        {
+          "w": "rock",
+          "start": 18.744,
+          "end": 18.966
+        },
+        {
+          "w": "loses.",
+          "start": 19.04,
+          "end": 19.929
+        }
+      ]
+    },
+    {
+      "line": 8,
+      "text": "Chef Gaston marches over. \"Step aside, amateur.\"",
+      "start": 20.003,
+      "end": 22.706,
+      "words": [
+        {
+          "w": "Chef",
+          "start": 20.003,
+          "end": 20.077
+        },
+        {
+          "w": "Gaston",
+          "start": 20.114,
+          "end": 20.447
+        },
+        {
+          "w": "marches",
+          "start": 20.521,
+          "end": 20.744
+        },
+        {
+          "w": "over.",
+          "start": 20.818,
+          "end": 21.361
+        },
+        {
+          "w": "\"Step",
+          "start": 21.385,
+          "end": 21.558
+        },
+        {
+          "w": "aside,",
+          "start": 21.744,
+          "end": 21.966
+        },
+        {
+          "w": "amateur.\"",
+          "start": 22.003,
+          "end": 22.706
+        }
+      ]
+    },
+    {
+      "line": 9,
+      "text": "He smacks it with a frying pan. Nothing.",
+      "start": 22.744,
+      "end": 25.089,
+      "words": [
+        {
+          "w": "He",
+          "start": 22.744,
+          "end": 22.892
+        },
+        {
+          "w": "smacks",
+          "start": 22.966,
+          "end": 23.188
+        },
+        {
+          "w": "it",
+          "start": 23.225,
+          "end": 23.262
+        },
+        {
+          "w": "with",
+          "start": 23.299,
+          "end": 23.336
+        },
+        {
+          "w": "a",
+          "start": 23.484,
+          "end": 23.509
+        },
+        {
+          "w": "frying",
+          "start": 23.533,
+          "end": 23.781
+        },
+        {
+          "w": "pan.",
+          "start": 24.04,
+          "end": 24.336
+        },
+        {
+          "w": "Nothing.",
+          "start": 24.373,
+          "end": 25.089
+        }
+      ]
+    },
+    {
+      "line": 10,
+      "text": "He sits on it. Still nothing.",
+      "start": 25.139,
+      "end": 27.015,
+      "words": [
+        {
+          "w": "He",
+          "start": 25.139,
+          "end": 25.188
+        },
+        {
+          "w": "sits",
+          "start": 25.262,
+          "end": 25.41
+        },
+        {
+          "w": "on",
+          "start": 25.484,
+          "end": 25.558
+        },
+        {
+          "w": "it.",
+          "start": 25.744,
+          "end": 26.003
+        },
+        {
+          "w": "Still",
+          "start": 26.077,
+          "end": 26.299
+        },
+        {
+          "w": "nothing.",
+          "start": 26.632,
+          "end": 27.015
+        }
+      ]
+    },
+    {
+      "line": 11,
+      "text": "Marcel hurls it at a tree. The tree loses too.",
+      "start": 27.065,
+      "end": 29.966,
+      "words": [
+        {
+          "w": "Marcel",
+          "start": 27.065,
+          "end": 27.41
+        },
+        {
+          "w": "hurls",
+          "start": 27.447,
+          "end": 27.632
+        },
+        {
+          "w": "it",
+          "start": 27.706,
+          "end": 27.781
+        },
+        {
+          "w": "at",
+          "start": 27.818,
+          "end": 27.855
+        },
+        {
+          "w": "a",
+          "start": 28.003,
+          "end": 28.2
+        },
+        {
+          "w": "tree.",
+          "start": 28.398,
+          "end": 28.644
+        },
+        {
+          "w": "The",
+          "start": 28.694,
+          "end": 28.744
+        },
+        {
+          "w": "tree",
+          "start": 28.855,
+          "end": 28.966
+        },
+        {
+          "w": "loses",
+          "start": 29.04,
+          "end": 29.336
+        },
+        {
+          "w": "too.",
+          "start": 29.632,
+          "end": 29.966
+        }
+      ]
+    },
+    {
+      "line": 12,
+      "text": "Wait. Who sells food that nobody can open?",
+      "start": 30.003,
+      "end": 32.546,
+      "words": [
+        {
+          "w": "Wait.",
+          "start": 30.003,
+          "end": 30.57
+        },
+        {
+          "w": "Who",
+          "start": 30.62,
+          "end": 30.669
+        },
+        {
+          "w": "sells",
+          "start": 30.744,
+          "end": 30.966
+        },
+        {
+          "w": "food",
+          "start": 31.04,
+          "end": 31.188
+        },
+        {
+          "w": "that",
+          "start": 31.299,
+          "end": 31.41
+        },
+        {
+          "w": "nobody",
+          "start": 31.447,
+          "end": 31.706
+        },
+        {
+          "w": "can",
+          "start": 31.781,
+          "end": 31.855
+        },
+        {
+          "w": "open?",
+          "start": 32.188,
+          "end": 32.546
+        }
+      ]
+    },
+    {
+      "line": 13,
+      "text": "You see, nobody had thought that far ahead.",
+      "start": 32.57,
+      "end": 34.706,
+      "words": [
+        {
+          "w": "You",
+          "start": 32.57,
+          "end": 32.595
+        },
+        {
+          "w": "see,",
+          "start": 32.669,
+          "end": 33.077
+        },
+        {
+          "w": "nobody",
+          "start": 33.114,
+          "end": 33.336
+        },
+        {
+          "w": "had",
+          "start": 33.41,
+          "end": 33.484
+        },
+        {
+          "w": "thought",
+          "start": 33.558,
+          "end": 33.706
+        },
+        {
+          "w": "that",
+          "start": 33.781,
+          "end": 33.855
+        },
+        {
+          "w": "far",
+          "start": 33.929,
+          "end": 34.003
+        },
+        {
+          "w": "ahead.",
+          "start": 34.151,
+          "end": 34.706
+        }
+      ]
+    },
+    {
+      "line": 14,
+      "text": "The can was patented in 1810, in thick iron,",
+      "start": 34.744,
+      "end": 37.657,
+      "words": [
+        {
+          "w": "The",
+          "start": 34.744,
+          "end": 34.818
+        },
+        {
+          "w": "can",
+          "start": 34.892,
+          "end": 34.966
+        },
+        {
+          "w": "was",
+          "start": 35.04,
+          "end": 35.188
+        },
+        {
+          "w": "patented",
+          "start": 35.262,
+          "end": 35.558
+        },
+        {
+          "w": "in",
+          "start": 35.632,
+          "end": 35.706
+        },
+        {
+          "w": "1810,",
+          "start": 35.781,
+          "end": 36.669
+        },
+        {
+          "w": "in",
+          "start": 36.744,
+          "end": 36.818
+        },
+        {
+          "w": "thick",
+          "start": 36.855,
+          "end": 37.04
+        },
+        {
+          "w": "iron,",
+          "start": 37.114,
+          "end": 37.657
+        }
+      ]
+    },
+    {
+      "line": 15,
+      "text": "often heavier than the food inside.",
+      "start": 37.756,
+      "end": 39.361,
+      "words": [
+        {
+          "w": "often",
+          "start": 37.756,
+          "end": 37.855
+        },
+        {
+          "w": "heavier",
+          "start": 37.929,
+          "end": 38.151
+        },
+        {
+          "w": "than",
+          "start": 38.225,
+          "end": 38.299
+        },
+        {
+          "w": "the",
+          "start": 38.336,
+          "end": 38.373
+        },
+        {
+          "w": "food",
+          "start": 38.447,
+          "end": 38.521
+        },
+        {
+          "w": "inside.",
+          "start": 38.595,
+          "end": 39.361
+        }
+      ]
+    },
+    {
+      "line": 16,
+      "text": "The label's instructions? \"Cut round the top with a chisel and hammer.\"",
+      "start": 39.385,
+      "end": 42.769,
+      "words": [
+        {
+          "w": "The",
+          "start": 39.385,
+          "end": 39.41
+        },
+        {
+          "w": "label's",
+          "start": 39.521,
+          "end": 39.706
+        },
+        {
+          "w": "instructions?",
+          "start": 40.188,
+          "end": 40.706
+        },
+        {
+          "w": "\"Cut",
+          "start": 40.744,
+          "end": 40.818
+        },
+        {
+          "w": "round",
+          "start": 40.892,
+          "end": 40.966
+        },
+        {
+          "w": "the",
+          "start": 41.04,
+          "end": 41.114
+        },
+        {
+          "w": "top",
+          "start": 41.188,
+          "end": 41.336
+        },
+        {
+          "w": "with",
+          "start": 41.41,
+          "end": 41.484
+        },
+        {
+          "w": "a",
+          "start": 41.632,
+          "end": 41.657
+        },
+        {
+          "w": "chisel",
+          "start": 41.681,
+          "end": 41.929
+        },
+        {
+          "w": "and",
+          "start": 42.003,
+          "end": 42.077
+        },
+        {
+          "w": "hammer.\"",
+          "start": 42.151,
+          "end": 42.769
+        }
+      ]
+    },
+    {
+      "line": 17,
+      "text": "Gaston grabs a chisel and hammer. Marcel closes his eyes. Clang.",
+      "start": 42.793,
+      "end": 46.941,
+      "words": [
+        {
+          "w": "Gaston",
+          "start": 42.793,
+          "end": 43.114
+        },
+        {
+          "w": "grabs",
+          "start": 43.188,
+          "end": 43.41
+        },
+        {
+          "w": "a",
+          "start": 43.447,
+          "end": 43.484
+        },
+        {
+          "w": "chisel",
+          "start": 43.558,
+          "end": 43.781
+        },
+        {
+          "w": "and",
+          "start": 43.818,
+          "end": 43.855
+        },
+        {
+          "w": "hammer.",
+          "start": 43.929,
+          "end": 44.484
+        },
+        {
+          "w": "Marcel",
+          "start": 44.521,
+          "end": 44.966
+        },
+        {
+          "w": "closes",
+          "start": 45.04,
+          "end": 45.336
+        },
+        {
+          "w": "his",
+          "start": 45.41,
+          "end": 45.484
+        },
+        {
+          "w": "eyes.",
+          "start": 45.558,
+          "end": 46.188
+        },
+        {
+          "w": "Clang.",
+          "start": 46.225,
+          "end": 46.941
+        }
+      ]
+    },
+    {
+      "line": 18,
+      "text": "The lid pops. Marcel takes one bite, and looks betrayed.",
+      "start": 46.991,
+      "end": 50.632,
+      "words": [
+        {
+          "w": "The",
+          "start": 46.991,
+          "end": 47.04
+        },
+        {
+          "w": "lid",
+          "start": 47.151,
+          "end": 47.262
+        },
+        {
+          "w": "pops.",
+          "start": 47.336,
+          "end": 48.04
+        },
+        {
+          "w": "Marcel",
+          "start": 48.077,
+          "end": 48.447
+        },
+        {
+          "w": "takes",
+          "start": 48.558,
+          "end": 48.669
+        },
+        {
+          "w": "one",
+          "start": 48.744,
+          "end": 48.892
+        },
+        {
+          "w": "bite,",
+          "start": 49.114,
+          "end": 49.373
+        },
+        {
+          "w": "and",
+          "start": 49.41,
+          "end": 49.558
+        },
+        {
+          "w": "looks",
+          "start": 49.669,
+          "end": 49.781
+        },
+        {
+          "w": "betrayed.",
+          "start": 49.892,
+          "end": 50.632
+        }
+      ]
+    },
+    {
+      "line": 19,
+      "text": "The first American can opener came in 1858.",
+      "start": 50.669,
+      "end": 53.521,
+      "words": [
+        {
+          "w": "The",
+          "start": 50.669,
+          "end": 50.744
+        },
+        {
+          "w": "first",
+          "start": 50.818,
+          "end": 50.966
+        },
+        {
+          "w": "American",
+          "start": 51.04,
+          "end": 51.41
+        },
+        {
+          "w": "can",
+          "start": 51.521,
+          "end": 51.632
+        },
+        {
+          "w": "opener",
+          "start": 51.669,
+          "end": 51.929
+        },
+        {
+          "w": "came",
+          "start": 52.003,
+          "end": 52.151
+        },
+        {
+          "w": "in",
+          "start": 52.225,
+          "end": 52.299
+        },
+        {
+          "w": "1858.",
+          "start": 52.373,
+          "end": 53.521
+        }
+      ]
+    },
+    {
+      "line": 20,
+      "text": "Soldiers got it in the Civil War.",
+      "start": 53.558,
+      "end": 55.151,
+      "words": [
+        {
+          "w": "Soldiers",
+          "start": 53.558,
+          "end": 53.855
+        },
+        {
+          "w": "got",
+          "start": 53.929,
+          "end": 54.003
+        },
+        {
+          "w": "it",
+          "start": 54.04,
+          "end": 54.077
+        },
+        {
+          "w": "in",
+          "start": 54.151,
+          "end": 54.188
+        },
+        {
+          "w": "the",
+          "start": 54.225,
+          "end": 54.299
+        },
+        {
+          "w": "Civil",
+          "start": 54.41,
+          "end": 54.521
+        },
+        {
+          "w": "War.",
+          "start": 54.595,
+          "end": 55.151
+        }
+      ]
+    },
+    {
+      "line": 21,
+      "text": "Everyone else? Too dangerous for home use.",
+      "start": 55.188,
+      "end": 57.521,
+      "words": [
+        {
+          "w": "Everyone",
+          "start": 55.188,
+          "end": 55.41
+        },
+        {
+          "w": "else?",
+          "start": 55.484,
+          "end": 56.126
+        },
+        {
+          "w": "Too",
+          "start": 56.176,
+          "end": 56.225
+        },
+        {
+          "w": "dangerous",
+          "start": 56.299,
+          "end": 56.595
+        },
+        {
+          "w": "for",
+          "start": 56.669,
+          "end": 56.744
+        },
+        {
+          "w": "home",
+          "start": 56.855,
+          "end": 56.966
+        },
+        {
+          "w": "use.",
+          "start": 57.04,
+          "end": 57.521
+        }
+      ]
+    },
+    {
+      "line": 22,
+      "text": "Marcel, still chewing, calls that progress.",
+      "start": 57.558,
+      "end": 60.151,
+      "words": [
+        {
+          "w": "Marcel,",
+          "start": 57.558,
+          "end": 58.188
+        },
+        {
+          "w": "still",
+          "start": 58.225,
+          "end": 58.447
+        },
+        {
+          "w": "chewing,",
+          "start": 58.484,
+          "end": 59.003
+        },
+        {
+          "w": "calls",
+          "start": 59.04,
+          "end": 59.188
+        },
+        {
+          "w": "that",
+          "start": 59.262,
+          "end": 59.41
+        },
+        {
+          "w": "progress.",
+          "start": 59.669,
+          "end": 60.151
+        }
+      ]
+    }
+  ],
+  "tempo": 1.08,
+  "model": "eleven_v4"
+}

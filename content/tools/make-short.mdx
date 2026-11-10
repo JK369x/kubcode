@@ -1,0 +1,47 @@
+---
+slug: make-short
+title: "make-short: skill ทำคลิปสั้นแอนิเมชัน 3D ด้วย Blender"
+name: "make-short"
+description: "skill MIT ของ NoCodeHack ให้ Claude Code ทำคลิปสั้น 3D ใน Blender ตั้งแต่บทถึงเรนเดอร์ แล้วให้ agent อีกตัวให้คะแนนพร้อมวินาทีที่ต้องแก้"
+tags: [animation, 3d, ai-agent, renderer]
+category: render
+refs:
+  - tool:blender
+  - tool:claude-code
+  - tool:elevenlabs
+  - tool:ffmpeg
+  - skill:make-short
+  - article:make-short-blender
+links:
+  repo: https://github.com/nocodehack/make-short
+license: "MIT (Copyright 2026 NoCodeHack) · three.js MIT · ฟอนต์ Inter และ JetBrains Mono ใช้ SIL OFL"
+pricing: free
+logo:
+  fallback: monogram
+  text: MS
+  reason: "ไม่พบโลโก้ทางการ: repo ไม่มีไฟล์โลโก้ และผู้เขียนไม่ได้เผยแพร่โลโก้ของ skill นี้"
+updated: 2026-11-10
+go: [mshort]
+sources:
+  - title: "nocodehack/make-short README"
+    url: https://github.com/nocodehack/make-short
+---
+## คืออะไร
+
+skill สำหรับ [Claude Code](/tools/claude-code) ที่เปลี่ยนไอเดียหนึ่งบรรทัดเป็นคลิปสั้นแนวตั้ง ตัวละครทรงเมล็ดถั่วในโลก 3D ที่ดูเหมือนภาพวาด ทุกฉากเขียนเป็นสคริปต์ Python แล้วเรนเดอร์ด้วย [Blender](/tools/blender) ไม่ใช้โมเดลสร้างภาพหรือวิดีโอ
+
+## จุดเด่น
+
+- **critic แยกตัว:** หลังเรนเดอร์ จะเปิด agent ใหม่ที่ไม่ได้สร้างคลิปมาให้คะแนนตาม rubric และบอกวินาทีของทุกจุดที่หักคะแนน ผู้เขียนพบว่า Claude ให้คะแนนงานตัวเอง 6.5 แต่ critic ให้ 4.2
+- **ด่านตรวจ:** คุณอนุมัติเรื่อง แผนช็อต และภาพนิ่งก่อน render ทุกครั้ง และไม่มีการโพสต์จนกว่าจะพิมพ์ `go`
+- **บันทึกบทเรียน:** ทุกข้อผิดพลาดถูกเขียนเป็นกฎใน `references/lessons.md` ให้รอบต่อไปอ่านก่อน
+
+## ต้องมีอะไร
+
+Claude Code, Blender 5.x, Node 22+, Python 3.10+ (pillow, numpy), FFmpeg และการ์ดจอ ต้นทางสร้างและทดสอบบน Windows กับ Git Bash ส่วนบน Mac เราทำสคริปต์แก้ให้ อ่านใน[บทความ](/articles/make-short-blender)
+
+## สิทธิ์
+
+- โค้ดของ skill ใช้ MIT จึงแจกต่อได้ถ้าเก็บไฟล์ LICENSE และเครดิตไว้
+- เสียงประกอบใน `v3/voice/sfx/` ผู้เขียนสร้างด้วย ElevenLabs เงื่อนไขของ ElevenLabs ยังมีผลกับเสียงที่คุณสร้างเอง
+- โพสต์อัตโนมัติผ่าน Blotato เป็นบริการเสียเงินแยก ไม่จำเป็นต้องใช้

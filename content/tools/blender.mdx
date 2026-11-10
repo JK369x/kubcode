@@ -1,0 +1,51 @@
+---
+slug: blender
+title: "Blender: โปรแกรม 3D ฟรีที่ AI สั่งงานด้วย Python ได้"
+name: "Blender"
+description: "Blender โปรแกรม 3D ฟรีและโอเพนซอร์ส (GPL) สั่งงานผ่าน Python ได้ทั้งหมด AI agent จึงเขียนฉาก ตัวละคร กล้อง และสั่งเรนเดอร์ให้ได้"
+tags: [3d, renderer, animation]
+category: render
+refs:
+  - tool:make-short
+  - tool:claude-code
+  - tool:ffmpeg
+  - skill:make-short
+links:
+  website: https://www.blender.org
+  repo: https://projects.blender.org/blender/blender
+  docs: https://docs.blender.org/api/current/
+license: "GNU GPL v2 ขึ้นไป · ภาพและวิดีโอที่เรนเดอร์ออกมาเป็นของผู้สร้าง ชื่อและโลโก้ Blender เป็นเครื่องหมายการค้าของ Blender Foundation"
+pricing: free
+logo:
+  src: /tools/blender/logo.png
+  alt: "โลโก้ Blender"
+  source_url: https://www.blender.org/about/logo/
+  guideline_url: https://www.blender.org/about/logo/
+  fetched_at: 2026-11-10
+updated: 2026-11-10
+go: [blender]
+sources:
+  - title: "Blender License"
+    url: https://www.blender.org/about/license/
+  - title: "Blender Logo & Trademark"
+    url: https://www.blender.org/about/logo/
+  - title: "Blender Python API"
+    url: https://docs.blender.org/api/current/
+---
+## คืออะไร
+
+Blender เป็นโปรแกรมสร้างงาน 3D ครบวงจร ทั้งโมเดล แสง กล้อง แอนิเมชัน และเรนเดอร์ ใช้ฟรีทุกงานรวมงานเชิงพาณิชย์ และรันแบบไม่มีหน้าจอ (`blender -b -P script.py`) ได้ ทุกอย่างในฉากสั่งผ่าน Python ได้ AI agent จึงเขียนสคริปต์สร้างฉากและสั่งเรนเดอร์ให้เราได้โดยที่เราไม่ต้องรู้วิธีใช้ Blender
+
+## ใช้ทำอะไรในงานของเรา
+
+เป็นตัวเรนเดอร์ของ [make-short](/tools/make-short) ซึ่ง Claude Code เขียนสคริปต์ Python สร้างค่ายทหาร ตัวละคร และกล้องทีละช็อต แล้วสั่ง Blender เรนเดอร์ภาพแนวตั้ง 1080×1920 ด้วย EEVEE ตอนเราลองบน Mac (Apple M5, Blender 5.3) ภาพ 15 วินาที 450 เฟรมใช้เวลาเรนเดอร์ราว 7.3 นาที
+
+## สิทธิ์
+
+- ตัวโปรแกรมเป็น GPL ภาพและวิดีโอที่เราเรนเดอร์ออกมาเป็นของเรา ไม่ติดเงื่อนไข GPL
+- ชื่อ "Blender" และโลโก้ไม่ได้อยู่ใน GPL ใช้ได้เพื่อบอกว่าใช้ Blender หรือให้เครดิต และห้ามทำให้ดูเหมือนเป็นงานทางการของ Blender Foundation
+
+## ก่อนเริ่ม
+
+- ดาวน์โหลดจาก blender.org หรือบน Mac ใช้ `brew install --cask blender`
+- เครื่องควรมีการ์ดจอที่ Blender ใช้ได้ ถ้าใช้แค่ CPU จะเรนเดอร์ช้ามาก
