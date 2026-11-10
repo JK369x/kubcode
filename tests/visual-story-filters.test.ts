@@ -39,12 +39,10 @@ test("lib/taxonomy.json is the studio's file (when the studio is on this machine
   assert.deepEqual(JSON.parse(readFileSync("lib/taxonomy.json", "utf8")), JSON.parse(readFileSync(studio, "utf8")));
 });
 
-test("site-only keys are exactly blender-3d and paradox-fact, with Thai labels", () => {
-  assert.deepEqual(SITE_ONLY_KEYS, { visual: ["blender-3d"], story: ["paradox-fact"] });
+test("make-short's keys come from the studio file, with Thai labels; no site-only keys left", () => {
+  assert.deepEqual(SITE_ONLY_KEYS, { visual: [], story: [] });
   assert.equal(VISUAL_STYLES["blender-3d"].th, "3D Blender");
   assert.equal(STORY_FORMATS["paradox-fact"].th, "ข้อเท็จจริงย้อนแย้ง");
-  const studio = JSON.parse(readFileSync("lib/taxonomy.json", "utf8"));
-  assert.ok(!("blender-3d" in studio.visual_styles) && !("paradox-fact" in studio.story_formats), "site keys do not shadow studio keys");
 });
 
 test("series map as the owner set it", () => {
