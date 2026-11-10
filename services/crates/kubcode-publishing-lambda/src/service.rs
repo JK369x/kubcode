@@ -553,6 +553,28 @@ impl Service<'_> {
         Ok(self.store.post_deliveries(post).await?)
     }
 
+    /// Records the owner's thumbnail check on a published delivery.
+    pub async fn record_cover_check(
+        &mut self,
+        user: Uuid,
+        delivery: DeliveryId,
+        check: &str,
+    ) -> Result<()> {
+        if !matches!(check, "ok" | "mismatch") {
+            return Err(Fail::new("bad_request"));
+        }
+        let ws = self.store.owner_workspace(user).await?;
+        match self.store.delivery(delivery).await? {
+            Some(d) if d.workspace == ws => {}
+            _ => return Err(Fail::new("delivery_not_found")),
+        }
+        if self.store.set_cover_check(delivery, check).await? {
+            Ok(())
+        } else {
+            Err(Fail::new("no_receipt"))
+        }
+    }
+
     pub async fn cancel(&mut self, user: Uuid, delivery: DeliveryId) -> Result<()> {
         let ws = self.store.owner_workspace(user).await?;
         let d = match self.store.delivery(delivery).await? {

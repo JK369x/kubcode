@@ -15,6 +15,7 @@ use kubcode_publishing::errors::{ErrorClass, PublishError};
 use kubcode_publishing::fake::FakeProvider;
 use kubcode_publishing::ports::{CallbackParams, DeliveryState};
 use kubcode_publishing_store::Store;
+use publishing_lambda::ops;
 use publishing_lambda::service::{AssetRequest, Service, WebhookResult};
 use publishing_lambda::summary::{digest, ScheduleRequest, Target};
 use support::{cfg, db, registry, FakeOpener};
@@ -319,6 +320,21 @@ async fn webhooks_cancel_and_disconnect() {
         s.status(owner, first.post).await.unwrap()[0].status,
         DeliveryStatus::Published
     );
+    // The owner's CLI records what the platform served as the thumbnail.
+    let cover = |d: uuid::Uuid, check: &str| serde_json::json!({"op": "cover_check", "delivery": d, "check": check});
+    let recorded = ops::run(&mut s, cover(delivery.0, "mismatch"), "b").await;
+    assert_eq!(recorded["ok"], true, "{recorded}");
+    let st = s.status(owner, first.post).await.unwrap();
+    assert_eq!(st[0].cover_check.as_deref(), Some("mismatch"));
+    assert!(!st[0].clip_ref.is_empty());
+    assert_eq!(
+        ops::run(&mut s, cover(delivery.0, "maybe"), "b").await["code"],
+        "bad_request"
+    );
+    assert_eq!(
+        ops::run(&mut s, cover(uuid::Uuid::new_v4(), "ok"), "b").await["code"],
+        "delivery_not_found"
+    );
     assert_eq!(
         s.cancel(owner, delivery).await.unwrap_err().code,
         "already_final"
@@ -327,6 +343,11 @@ async fn webhooks_cancel_and_disconnect() {
     let second = s.schedule(owner, req.clone(), digest(&req)).await.unwrap();
     let d2 = second.deliveries[0].delivery.unwrap();
     s.cancel(owner, d2).await.unwrap();
+    assert_eq!(
+        ops::run(&mut s, cover(d2.0, "ok"), "b").await["code"],
+        "no_receipt",
+        "only a published delivery has a thumbnail to check"
+    );
     assert_eq!(
         s.status(owner, second.post).await.unwrap()[0].status,
         DeliveryStatus::Cancelled

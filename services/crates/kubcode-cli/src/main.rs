@@ -16,6 +16,7 @@ use std::process::ExitCode;
 use std::time::{SystemTime, UNIX_EPOCH};
 
 use kubcode_cli::clip::read_clip;
+use kubcode_cli::cover_check::{check_youtube, youtube_video_id, Verdict};
 use kubcode_cli::local::LocalOps;
 use kubcode_cli::ops::{call, Aws, AwsCli, Keychain, MacKeychain};
 use kubcode_cli::push::push;
@@ -221,6 +222,7 @@ fn run(args: &[String]) -> Result<(), String> {
                     d["url"].as_str().or(d["error"].as_str()).unwrap_or(""),
                     d["cover_check"].as_str().unwrap_or("-"),
                 );
+                check_cover(aws, keys, d);
             }
             Ok(())
         }
@@ -240,6 +242,62 @@ fn run(args: &[String]) -> Result<(), String> {
         }
         _ => Err(String::new()),
     }
+}
+
+/// A published YouTube delivery: compare what YouTube serves (Shorts card and
+/// landscape thumbnail) with the clip's designed cover, print the verdict and
+/// record ok/mismatch. Never claims ok from one thumbnail alone.
+fn check_cover(aws: &dyn Aws, keys: &dyn Keychain, d: &Value) {
+    if d["platform"].as_str() != Some("youtube") || d["status"].as_str() != Some("published") {
+        return;
+    }
+    let (Some(url), Some(clip)) = (d["url"].as_str(), d["clip"].as_str()) else {
+        return;
+    };
+    let Some(video) = youtube_video_id(url) else {
+        return;
+    };
+    let file = read_clip(&studio(), clip)
+        .ok()
+        .and_then(|c| c.cover)
+        .map(|c| c.path);
+    let cover = file.as_ref().and_then(|p| std::fs::read(p).ok());
+    let name = file
+        .as_ref()
+        .and_then(|p| p.file_name())
+        .map(|n| n.to_string_lossy().into_owned())
+        .unwrap_or_default();
+    let Some(cover) = cover else {
+        println!("  ปก: ตรวจไม่ได้ (ไม่พบ cover ของคลิป {clip} ในเครื่อง)");
+        return;
+    };
+    let verdict = check_youtube(&cover, video, fetch);
+    match verdict {
+        Verdict::Ok => println!("  ปก: ตรงกับปกที่ออกแบบ (การ์ด Shorts และภาพแนวนอน)"),
+        Verdict::Mismatch => println!(
+            "  ปก: ไม่ตรง: YouTube ยังแสดงภาพอื่น แก้ใน YouTube Studio: Change → อัปโหลด {name} → Save"
+        ),
+        Verdict::Pending => println!("  ปก: รอ YouTube แสดงภาพปก (วิดีโออาจยังไม่ public)"),
+    }
+    if verdict != Verdict::Pending && d["cover_check"].as_str() != Some(verdict.as_str()) {
+        if let Some(delivery) = d["delivery"].as_str() {
+            let cmd = json!({"op": "cover_check", "delivery": delivery, "check": verdict.as_str()});
+            if let Err(code) = call(aws, keys, &cmd, now()) {
+                println!("  ปก: บันทึกผลไม่สำเร็จ ({code})");
+            }
+        }
+    }
+}
+
+/// GET with curl; None for anything that is not a 2xx image.
+fn fetch(url: &str) -> Option<Vec<u8>> {
+    let out = std::process::Command::new("curl")
+        .args(["-sfL", "--max-time", "20", url])
+        .stdin(std::process::Stdio::null())
+        .stderr(std::process::Stdio::null())
+        .output()
+        .ok()?;
+    (out.status.success() && !out.stdout.is_empty()).then_some(out.stdout)
 }
 
 fn main() -> ExitCode {
