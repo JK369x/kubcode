@@ -557,3 +557,56 @@ async fn catch_up_finds_comments_the_webhook_missed() {
     assert!(s.work().await.unwrap().is_empty());
     db.drop().await;
 }
+
+#[tokio::test]
+#[ignore = "needs KUBCODE_TEST_DATABASE_URL; run with --ignored"]
+async fn the_scheduled_worker_catches_up_every_ten_minutes() {
+    use kubcode_publishing::events::IncomingComment;
+    use publishing_lambda::worker::run;
+    let db = db().await;
+    let mut store = db.store().await;
+    let fake = Arc::new(FakeProvider::default());
+    let (reg, cfg) = (registry(&fake), cfg());
+    let mut s = svc(&mut store, &reg, &cfg);
+    let owner = db.user(true).await;
+    let ig = connect(&mut s, &fake, owner, Platform::Instagram).await;
+    let acct = s.store.connections(ig).await.unwrap()[0]
+        .provider_ref
+        .clone();
+    db.owner
+        .execute(
+            "INSERT INTO kubcode_accounts.automation_rules (channel_id, keywords, dm_text) VALUES ($1, ARRAY['link'], 'x')",
+            &[&ig.0],
+        )
+        .await
+        .unwrap();
+    fake.set_post_comments(
+        "p1",
+        vec![IncomingComment {
+            account: acct,
+            comment_id: "k1".into(),
+            platform_post_id: "p1".into(),
+            author_id: "a1".into(),
+            own_account: false,
+            is_reply: false,
+            created_at: Some(time::OffsetDateTime::now_utc()),
+            text: "link please".into(),
+        }],
+    );
+    let quiet = run(&mut s, 3).await;
+    assert_eq!(
+        (
+            quiet["ok"].as_bool(),
+            quiet["kept"].as_u64(),
+            quiet["handled"].as_u64()
+        ),
+        (Some(true), Some(0), Some(0))
+    );
+    let tenth = run(&mut s, 10).await;
+    assert_eq!(
+        (tenth["kept"].as_u64(), tenth["handled"].as_u64()),
+        (Some(1), Some(1)),
+        "{tenth}"
+    );
+    db.drop().await;
+}

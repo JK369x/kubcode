@@ -237,6 +237,12 @@ async fn handle(
         .duration_since(UNIX_EPOCH)
         .map(|d| d.as_secs())
         .unwrap_or(0);
+    if parts.uri.path() == "/work" && local.ops_key.is_some() {
+        // The scheduled worker, on demand; catch-up every time (Zernio's
+        // webhooks go to production, so catch-up is how comments arrive here).
+        let answer = publishing_lambda::worker::run(&mut svc, 0).await;
+        return reply(200, answer.to_string());
+    }
     if parts.uri.path() == "/ops" {
         // The CLI's ops function (IAM invoke in production; loopback here).
         if parts.method != hyper::Method::POST {

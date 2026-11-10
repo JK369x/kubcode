@@ -20,7 +20,7 @@ use publishing_lambda::runtime::{
     PARAM_WEBHOOK_SECRET, PARAM_WEBHOOK_SECRET_PREVIOUS, PARAM_WORKER_DB_URL, PARAM_ZERNIO_KEY,
 };
 use publishing_lambda::service::{ProviderSet, Registry, Service};
-use publishing_lambda::{http, ops};
+use publishing_lambda::{http, ops, worker};
 use serde_json::{json, Value};
 use tokio::sync::Mutex;
 
@@ -166,6 +166,28 @@ async fn serve_ops(env: &Env, event: Value) -> Value {
     .await
 }
 
+/// The scheduled comment → DM worker (EventBridge Scheduler, every minute).
+async fn serve_worker(env: &Env) -> Value {
+    let Some(s) = env.secrets().await else {
+        return json!({"ok": false, "code": "unavailable"});
+    };
+    let Some(mut st) = store(&s).await else {
+        return json!({"ok": false, "code": "unavailable"});
+    };
+    let reg = env.registry(&s);
+    let now = time::OffsetDateTime::now_utc();
+    let mut svc = Service {
+        store: &mut st,
+        reg: &reg,
+        cfg: &env.cfg,
+        media: &env.opener,
+        now,
+    };
+    let out = worker::run(&mut svc, now.minute()).await;
+    println!("[automations] worker {out}");
+    out
+}
+
 #[tokio::main(flavor = "current_thread")]
 async fn main() -> Result<(), lambda_runtime::Error> {
     let region = std::env::var("AWS_REGION").map_err(|_| "AWS_REGION_MISSING")?;
@@ -186,6 +208,12 @@ async fn main() -> Result<(), lambda_runtime::Error> {
     };
     let env = &env;
     match std::env::var("KUBCODE_PUBLISHING_MODE").as_deref() {
+        Ok("worker") => {
+            lambda_runtime::run(service_fn(move |_: LambdaEvent<Value>| async move {
+                Ok::<_, lambda_runtime::Error>(serve_worker(env).await)
+            }))
+            .await
+        }
         Ok("ops") => {
             lambda_runtime::run(service_fn(move |e: LambdaEvent<Value>| async move {
                 Ok::<_, lambda_runtime::Error>(serve_ops(env, e.payload).await)
