@@ -51,10 +51,29 @@ pub enum ProviderEvent {
         account: ProviderRef,
         code: ErrorCode,
     },
+    /// A comment on a connected account's post (comment → DM, slice 3).
+    CommentReceived(IncomingComment),
     /// Stored for the record, changes nothing.
     Ignored {
         event_type: String,
     },
+}
+
+/// A received comment as the engine needs it. The text is used for matching
+/// only and is not stored.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct IncomingComment {
+    /// The provider's account the comment arrived on.
+    pub account: ProviderRef,
+    pub comment_id: String,
+    pub platform_post_id: String,
+    pub author_id: String,
+    /// The connected account's own comment (our replies come back as events).
+    pub own_account: bool,
+    /// A reply inside a thread, not a top-level comment.
+    pub is_reply: bool,
+    pub created_at: Option<OffsetDateTime>,
+    pub text: String,
 }
 
 pub trait EventSource: Send + Sync {

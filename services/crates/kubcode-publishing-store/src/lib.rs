@@ -953,6 +953,8 @@ impl Store {
                     )
                     .await?;
                 }
+                // Recorded by the comment engine (docs/design/ig-comment-dm.md §4.2).
+                ProviderEvent::CommentReceived(_) => {}
                 ProviderEvent::Ignored { .. } => {}
             }
         }
