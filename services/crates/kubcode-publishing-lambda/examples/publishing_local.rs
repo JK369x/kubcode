@@ -318,7 +318,8 @@ async fn main() {
     let registry = Registry {
         zernio: Some(ProviderSet {
             connect,
-            publisher: z,
+            publisher: z.clone(),
+            inbox: Some(z),
             // Webhooks are not part of the local loop: nothing verifies.
             events: Arc::new(ZernioEvents::new(Vec::new())),
         }),

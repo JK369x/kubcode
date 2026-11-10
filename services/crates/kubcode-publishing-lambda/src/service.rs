@@ -4,21 +4,23 @@
 
 use std::sync::Arc;
 
+use kubcode_publishing::automation::choose;
 use kubcode_publishing::config::PublishingConfig;
 use kubcode_publishing::domain::{
     Capability, ChannelId, DeliveryId, DeliveryStatus, MediaAssetId, MediaKind, MediaMeta,
     Platform, PostId, ProviderKind, ProviderRef, WorkspaceId,
 };
 use kubcode_publishing::errors::PublishError;
-use kubcode_publishing::events::{EventSource, Headers};
+use kubcode_publishing::events::{EventSource, Headers, IncomingComment, ProviderEvent};
 use kubcode_publishing::ports::{
-    check, CallbackParams, ConnectProvider, ConnectionRef, DeliveryRequest, MediaSource, Publisher,
-    WorkspaceCtx,
+    check, CallbackParams, ConnectProvider, ConnectionRef, DeliveryRequest, Inbox, MediaSource,
+    PrivateReply, Publisher, WorkspaceCtx,
 };
 use kubcode_publishing::routing::{resolve, ConnectionView, Resolution};
 use kubcode_publishing::validate::DeliveryDraft;
 use kubcode_publishing_store::{
-    ChannelRow, DeliverySummary, NewAsset, NewDelivery, NewIntent, NewPost, Store, StoreError,
+    ChannelRow, DeliverySummary, DmState, NewAsset, NewDelivery, NewIntent, NewPost, Store,
+    StoreError,
 };
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
@@ -35,6 +37,8 @@ pub struct ProviderSet {
     pub connect: Arc<dyn ConnectProvider>,
     pub publisher: Arc<dyn Publisher>,
     pub events: Arc<dyn EventSource>,
+    /// Comment replies (comment → DM); None for a provider without them.
+    pub inbox: Option<Arc<dyn Inbox>>,
 }
 
 /// The providers this build can use. Native adapters join here in phase 2.
@@ -631,6 +635,16 @@ impl Service<'_> {
             }
         };
         let translated = events.translate(&v);
+        // Comments first: recording is idempotent by comment id, so a failure
+        // here can answer Retry before the event is marked as seen.
+        for e in &translated {
+            if let ProviderEvent::CommentReceived(c) = e {
+                if self.record_comment(kind, c).await.is_err() {
+                    log_comment(None, "retry");
+                    return WebhookResult::Retry;
+                }
+            }
+        }
         // Event type and outcome only: never the body, ids or provider text.
         let log = |outcome: &str| {
             println!(
@@ -653,6 +667,171 @@ impl Service<'_> {
                 WebhookResult::Retry
             }
         }
+    }
+}
+
+/// One line per comment: the channel and the outcome code, never the text,
+/// ids or usernames (docs/design/ig-comment-dm.md §4.5).
+fn log_comment(channel: Option<ChannelId>, outcome: &str) {
+    match channel {
+        Some(c) => println!("[automations] channel={} outcome={outcome}", c.0),
+        None => println!("[automations] outcome={outcome}"),
+    }
+}
+
+/// Instagram allows a private reply within 7 days of the comment.
+const PRIVATE_REPLY_WINDOW: Duration = Duration::days(7);
+/// A ledger row left in dm_sending this long (a crash or a lost answer)
+/// becomes dm_unknown.
+const SENDING_TIMEOUT: Duration = Duration::minutes(2);
+/// Comments handled per worker run.
+const WORK_BATCH: i64 = 25;
+
+impl Service<'_> {
+    /// Keeps a comment for the worker when an active rule matches it; anything
+    /// else is only logged, so no commenter ids are stored for it.
+    async fn record_comment(
+        &mut self,
+        kind: ProviderKind,
+        c: &IncomingComment,
+    ) -> std::result::Result<(), StoreError> {
+        let Some(channel) = self.store.comment_channel(kind, &c.account).await? else {
+            log_comment(None, "no_channel");
+            return Ok(());
+        };
+        let skipped = if c.own_account {
+            Some("own_account")
+        } else if c.is_reply {
+            Some("thread_reply")
+        } else if c
+            .created_at
+            .is_some_and(|t| self.now - t > PRIVATE_REPLY_WINDOW)
+        {
+            Some("too_old")
+        } else {
+            None
+        };
+        if let Some(code) = skipped {
+            log_comment(Some(channel), code);
+            return Ok(());
+        }
+        let rows = self.store.rules_of(channel).await?;
+        let rules: Vec<_> = rows.iter().map(|r| r.rule.clone()).collect();
+        let Some(rule) = choose(&rules, &c.platform_post_id, &c.text) else {
+            log_comment(Some(channel), "no_rule");
+            return Ok(());
+        };
+        let rule_id = rows.iter().find(|r| r.rule.id == rule.id).map(|r| r.id);
+        self.store
+            .record_comment(channel, kind, c, rule_id, None)
+            .await?;
+        log_comment(Some(channel), "matched");
+        Ok(())
+    }
+
+    /// The worker: sends what was recorded, oldest first. Returns
+    /// (comment id, outcome) per comment handled, for tests and the caller.
+    pub async fn work(&mut self) -> Result<Vec<(String, &'static str)>> {
+        self.store.stale_sending_to_unknown(SENDING_TIMEOUT).await?;
+        let mut done = Vec::new();
+        for c in self.store.pending_comments(WORK_BATCH).await? {
+            let outcome = self.handle_comment(&c).await?;
+            self.store.finish_comment(c.id, outcome).await?;
+            log_comment(Some(c.channel), outcome);
+            done.push((c.comment_id.clone(), outcome));
+        }
+        Ok(done)
+    }
+
+    async fn handle_comment(
+        &mut self,
+        c: &kubcode_publishing_store::PendingComment,
+    ) -> Result<&'static str> {
+        if c.commented_at
+            .is_some_and(|t| self.now - t > PRIVATE_REPLY_WINDOW)
+        {
+            return Ok("too_old");
+        }
+        let rules = self.store.rules_of(c.channel).await?;
+        let Some(rule) = rules
+            .iter()
+            .find(|r| Some(r.id) == c.rule_id && r.rule.active)
+        else {
+            return Ok("rule_gone");
+        };
+        let Some(conn) = self
+            .store
+            .connections(c.channel)
+            .await?
+            .into_iter()
+            .find(|k| {
+                k.provider == c.provider
+                    && k.status != kubcode_publishing::domain::ConnectionStatus::Revoked
+            })
+        else {
+            return Ok("no_connection");
+        };
+        let Some(inbox) = self.providers(c.provider)?.inbox.clone() else {
+            return Ok("no_inbox");
+        };
+        let used = self.store.dms_this_month(c.channel, self.now).await?;
+        if used >= i64::from(self.cfg.dm_cap_per_month) {
+            return Ok("cap_reached");
+        }
+        let Some(ledger) = self.store.claim_dm(c, rule.id).await? else {
+            return Ok("duplicate");
+        };
+        // Written before the call: a crash from here on can never resend.
+        if !self
+            .store
+            .move_dm(ledger, DmState::Claimed, DmState::DmSending, None)
+            .await?
+        {
+            return Ok("duplicate");
+        }
+        let dm = inbox
+            .private_reply(
+                &conn.provider_ref,
+                &c.platform_post_id,
+                &c.comment_id,
+                &rule.dm_text,
+            )
+            .await;
+        let (state, code, outcome) = match &dm {
+            PrivateReply::Sent => (DmState::DmSent, None, "dm_sent"),
+            PrivateReply::Consumed => (DmState::DmConsumed, Some("reply_consumed"), "dm_consumed"),
+            PrivateReply::Unknown => (DmState::DmUnknown, Some("no_answer"), "dm_unknown"),
+            PrivateReply::Failed(e) => (DmState::DmFailed, Some(e.code.as_str()), "dm_failed"),
+        };
+        self.store
+            .move_dm(ledger, DmState::DmSending, state, code)
+            .await?;
+        let reply = match (&rule.public_reply, &dm) {
+            (Some(text), PrivateReply::Sent) => Some(text),
+            (Some(text), _) if !rule.reply_after_dm => Some(text),
+            _ => None,
+        };
+        let reply_state = match reply {
+            None => "skipped",
+            Some(text) => {
+                let key = format!("kubcode-reply-{}", c.comment_id);
+                match inbox
+                    .public_reply(
+                        &conn.provider_ref,
+                        &c.platform_post_id,
+                        &c.comment_id,
+                        text,
+                        &key,
+                    )
+                    .await
+                {
+                    Ok(()) => "sent",
+                    Err(_) => "failed",
+                }
+            }
+        };
+        self.store.set_reply(ledger, reply_state).await?;
+        Ok(outcome)
     }
 }
 

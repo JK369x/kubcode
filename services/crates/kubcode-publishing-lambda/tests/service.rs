@@ -395,3 +395,120 @@ async fn a_denied_consent_fails_the_intent_and_creates_nothing() {
     );
     db.drop().await;
 }
+
+#[tokio::test]
+#[ignore = "needs KUBCODE_TEST_DATABASE_URL; run with --ignored"]
+async fn comments_become_one_dm_per_person_per_post() {
+    use kubcode_publishing::ports::PrivateReply;
+    let db = db().await;
+    let mut store = db.store().await;
+    let fake = Arc::new(FakeProvider::default());
+    let (reg, mut cfg) = (registry(&fake), cfg());
+    cfg.dm_cap_per_month = 3;
+    let mut s = svc(&mut store, &reg, &cfg);
+    let owner = db.user(true).await;
+    let ig = connect(&mut s, &fake, owner, Platform::Instagram).await;
+    let acct = s.store.connections(ig).await.unwrap()[0]
+        .provider_ref
+        .clone();
+    db.owner
+        .execute(
+            "INSERT INTO kubcode_accounts.automation_rules (channel_id, keywords, dm_text, public_reply)
+             VALUES ($1, ARRAY['ขอลิงก์'], 'ลิงก์: https://kubcode.dev/go/x', 'ส่งให้ใน DM แล้วนะ')",
+            &[&ig.0],
+        )
+        .await
+        .unwrap();
+    let mut n = 0;
+    let mut comment = |id: &str, post: &str, author: &str, text: &str, own: bool| {
+        n += 1;
+        fake.signed(serde_json::json!({
+            "id": format!("evt-{n}"), "event": "comment.received", "account": acct.0,
+            "comment": id, "post": post, "author": author, "text": text, "own": own,
+        }))
+    };
+    for (id, post, author, text, own) in [
+        ("c1", "p1", "a1", "ขอลิงก์ครับ", false),
+        ("c2", "p1", "a2", "สวยมาก", false),
+        ("c3", "p1", "a1", "ขอลิงก์อีกที", false),
+        ("c4", "p1", "me", "ขอลิงก์", true),
+    ] {
+        let (h, b) = comment(id, post, author, text, own);
+        assert_eq!(
+            s.webhook(ProviderKind::Zernio, &h, &b).await,
+            WebhookResult::Accepted
+        );
+    }
+    let stored: i64 = db
+        .owner
+        .query_one("SELECT count(*) FROM kubcode_accounts.comment_items", &[])
+        .await
+        .unwrap()
+        .get(0);
+    assert_eq!(
+        stored, 2,
+        "only matching comments are kept (no ids of others)"
+    );
+
+    let out = s.work().await.unwrap();
+    assert_eq!(
+        out,
+        vec![("c1".to_owned(), "dm_sent"), ("c3".to_owned(), "duplicate")]
+    );
+    assert_eq!(
+        fake.inbox_calls(),
+        vec![
+            (
+                "private".to_owned(),
+                "p1".to_owned(),
+                "c1".to_owned(),
+                "ลิงก์: https://kubcode.dev/go/x".to_owned()
+            ),
+            (
+                "public".to_owned(),
+                "p1".to_owned(),
+                "c1".to_owned(),
+                "ส่งให้ใน DM แล้วนะ".to_owned()
+            ),
+        ]
+    );
+
+    // A spent reply is final and, after_dm, gets no public reply.
+    fake.answer_next_private(PrivateReply::Consumed);
+    let (h, b) = comment("c5", "p2", "a1", "ขอลิงก์", false);
+    s.webhook(ProviderKind::Zernio, &h, &b).await;
+    assert_eq!(
+        s.work().await.unwrap(),
+        vec![("c5".to_owned(), "dm_consumed")]
+    );
+    assert_eq!(
+        fake.inbox_calls().len(),
+        3,
+        "no public reply after a failed DM"
+    );
+
+    // No clear answer: may be out, never retried.
+    fake.answer_next_private(PrivateReply::Unknown);
+    let (h, b) = comment("c6", "p3", "a1", "ขอลิงก์", false);
+    s.webhook(ProviderKind::Zernio, &h, &b).await;
+    assert_eq!(
+        s.work().await.unwrap(),
+        vec![("c6".to_owned(), "dm_unknown")]
+    );
+    assert!(s.work().await.unwrap().is_empty());
+    assert_eq!(fake.inbox_calls().len(), 4);
+
+    // The cap counts sent and unknown DMs (2 of 3 used): one more, then stop.
+    for (id, post) in [("c7", "p4"), ("c8", "p5")] {
+        let (h, b) = comment(id, post, "a9", "ขอลิงก์", false);
+        s.webhook(ProviderKind::Zernio, &h, &b).await;
+    }
+    assert_eq!(
+        s.work().await.unwrap(),
+        vec![
+            ("c7".to_owned(), "dm_sent"),
+            ("c8".to_owned(), "cap_reached")
+        ]
+    );
+    db.drop().await;
+}
