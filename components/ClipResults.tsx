@@ -61,6 +61,7 @@ export function ClipResults({ clips }: { clips: readonly ShowcaseItem[] }) {
                 <span className={styles.story}>
                   <span className="sr-only">แนวเรื่อง </span>
                   {STORY_FORMATS[clip.story].th}
+                  <span lang="en" className={styles.en}> · {STORY_FORMATS[clip.story].en}</span>
                 </span>
               </span>
               <p className={styles.label}>
@@ -77,6 +78,7 @@ export function ClipResults({ clips }: { clips: readonly ShowcaseItem[] }) {
               <p className={styles.visual}>
                 <span className="sr-only">แนวภาพ </span>
                 {VISUAL_STYLES[clip.visual].th}
+                <span lang="en" className={styles.en}> · {VISUAL_STYLES[clip.visual].en}</span>
               </p>
             </li>
           );

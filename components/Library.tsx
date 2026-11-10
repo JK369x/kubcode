@@ -45,7 +45,7 @@ function FilterRow({
 }: {
   label: string;
   name: string;
-  options: readonly { id: string; label: string; count: number }[];
+  options: readonly { id: string; label: string; en?: string; count: number }[];
   value: string;
   onPick: (id: string) => void;
 }) {
@@ -63,6 +63,7 @@ function FilterRow({
             onClick={() => onPick(item.id)}
           >
             {item.label}
+            {item.en && <small lang="en" className="chip-en">{item.en}</small>}
             <span>{item.count}</span>
           </button>
         ))}

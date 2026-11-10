@@ -77,7 +77,8 @@ export function filterHomeClips(clips: readonly ShowcaseItem[], f: HomeFilter): 
   });
 }
 
-export type FacetOption = { id: string; label: string; count: number };
+/** `en`: the English name, shown under the Thai one (owner 2026-11-10: styles need English names). */
+export type FacetOption = { id: string; label: string; en?: string; count: number };
 
 /**
  * One filter row: "ทั้งหมด" then every key some skill or clip has, in
@@ -86,7 +87,7 @@ export type FacetOption = { id: string; label: string; count: number };
  */
 export function facetOptions(axis: Axis, data: HomeData, f: HomeFilter): FacetOption[] {
   const { skills, clips, published } = data;
-  const labels: Readonly<Record<string, { th: string }>> = axis === "visual" ? VISUAL_STYLES : STORY_FORMATS;
+  const labels: Readonly<Record<string, { th: string; en: string }>> = axis === "visual" ? VISUAL_STYLES : STORY_FORMATS;
   const present = new Set<string>();
   for (const s of skills) for (const k of skillFacets(s, published)[axis]) present.add(k);
   for (const c of clips) present.add(c[axis]);
@@ -96,7 +97,7 @@ export function facetOptions(axis: Axis, data: HomeData, f: HomeFilter): FacetOp
   };
   return [
     { id: "all", label: "ทั้งหมด", count: count("all") },
-    ...Object.keys(labels).filter((k) => present.has(k)).map((k) => ({ id: k, label: labels[k].th, count: count(k) })),
+    ...Object.keys(labels).filter((k) => present.has(k)).map((k) => ({ id: k, label: labels[k].th, en: labels[k].en, count: count(k) })),
   ];
 }
 
