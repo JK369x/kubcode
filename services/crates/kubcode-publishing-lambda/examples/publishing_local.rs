@@ -10,7 +10,8 @@
 //!   KUBCODE_LOCAL_HMAC_KEY       the key the local Next server signs with
 //!
 //! Publish mode (scripts/local-e2e/publish.ts) adds:
-//!   KUBCODE_LOCAL_OPS_KEY        hex; enables POST /ops (the CLI's ops function)
+//!   KUBCODE_LOCAL_OPS_KEY        hex; enables POST /ops (the CLI's ops function),
+//!                                POST /catch-up (read only) and POST /work (sends)
 //!   KUBCODE_LOCAL_MEDIA_DIR      stands in for the media bucket (`clips/...` keys)
 //!   KUBCODE_LOCAL_PROTECT_ACCOUNTS=1  refuses connect, complete and disconnect,
 //!       so a real account seeded from production is never changed or deleted
@@ -237,6 +238,14 @@ async fn handle(
         .duration_since(UNIX_EPOCH)
         .map(|d| d.as_secs())
         .unwrap_or(0);
+    if parts.uri.path() == "/catch-up" && local.ops_key.is_some() {
+        // Dry step of the comment → DM E2E: read and record, never send.
+        let answer = match svc.catch_up().await {
+            Ok(kept) => json!({"ok": true, "kept": kept}),
+            Err(f) => json!({"ok": false, "code": f.code}),
+        };
+        return reply(200, answer.to_string());
+    }
     if parts.uri.path() == "/work" && local.ops_key.is_some() {
         // The scheduled worker, on demand; catch-up every time (Zernio's
         // webhooks go to production, so catch-up is how comments arrive here).
