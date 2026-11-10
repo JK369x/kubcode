@@ -1,0 +1,87 @@
+---
+slug: elephant-goldfish-model
+title: "Elephant-Goldfish Model: สกิล AI ที่ทีม Google ใช้ออกแบบงาน"
+description: "ช้างจำภาพรวมโปรเจกต์และเขียนสเปก ปลาทองความจำสั้นมารีวิวด้วยตาใหม่ ปลั๊กอินฟรีจาก Google ที่เหมาะกับตอนเริ่มโปรเจกต์ใหม่ ถามเยอะแต่ได้ของครบ"
+tags: [ai-agent, spec-design]
+refs:
+  - tool:elephant-goldfish-model
+  - tool:claude-code
+  - tool:codex-cli
+  - skill:elephant-goldfish-model
+category: tools
+featured: true
+cover:
+  src: /covers/elephant-goldfish-model/cover.jpg
+  og: /covers/elephant-goldfish-model/og.jpg
+  alt: "ภาพจากคลิปรีวิวของเรา: หน้า README ของ Elephant-Goldfish Model ที่มีโลโก้ช้างสีฟ้ากับปลาทองสีส้ม ข้าง ๆ เป็นรายการ 7 skill และค่า token จริงจากคำสั่ง claude plugin details"
+  source: own-clip
+updated: 2026-11-10
+go: [elephant]
+sources:
+  - title: "google/elephant-goldfish-model (Apache 2.0, v0.1.1)"
+    url: https://github.com/google/elephant-goldfish-model
+  - title: "EGM Setup & Workflow Guide"
+    url: https://github.com/google/elephant-goldfish-model/blob/main/docs/getting_started.md
+  - title: "Dave Rensin: Elephants, Goldfish, and the New Golden Age of Software Engineering"
+    url: https://medium.com/@drensin/elephants-goldfish-and-the-new-golden-age-of-software-engineering-c33641a48874
+sourceNote: "สรุปด้วยคำของเราจาก README และเอกสารต้นทาง ประสบการณ์ใช้งานมาจากการลองของเราเองในคลิป ค่า token มาจาก claude plugin details เมื่อ 10 พ.ย. 2026"
+---
+## ช้างกับปลาทองคืออะไร
+
+[Elephant-Goldfish Model](/tools/elephant-goldfish-model) หรือ EGM เป็นปลั๊กอินฟรี (Apache 2.0) จาก Google สำหรับ [Claude Code](/tools/claude-code), [Codex](/tools/codex-cli) และ Antigravity แบ่งงานออกแบบซอฟต์แวร์เป็นสามบทบาท:
+
+- **ช้าง:** agent ที่จำทุกอย่างในโปรเจกต์ คุยกับคุณเรื่องความต้องการ แล้วเขียนสเปก
+- **ปลาทอง:** agent ใหม่ที่ไม่เห็นบทสนทนาก่อนหน้าเลย อ่านแค่เอกสารกับโค้ดที่อ้างถึง สมชื่อปลาทองที่ความจำสั้น จึงเจอสิ่งที่ช้างคิดว่ารู้กันอยู่แล้วแต่ไม่ได้เขียนไว้
+- **คุณ:** ตัดสินใจเรื่อง trade-off และอนุมัติสเปกก่อนให้ AI ลงมือสร้าง
+
+แนวคิดมาจากบทความของ Dave Rensin ที่ทีม engineering ของ Google นำมาทำเป็นปลั๊กอิน README ระบุว่าไม่ใช่ผลิตภัณฑ์ที่ Google รองรับอย่างเป็นทางการ
+
+## เราลองแล้วรู้สึกยังไง
+
+เราลองกับแอปจองสนามฟุตบอลของบริษัท ถ้าสั่ง AI แบบไม่มี skill มันขึ้นหน้าเว็บมาให้ภายในไม่กี่นาที แต่เป็นแอปที่ไม่มีกฎธุรกิจ ไม่ใช่สิ่งที่เราอยากได้
+
+พอใช้ EGM มัน**ถามเยอะมาก** ทำนานกว่าเดิมมาก แต่เป็นคำถามที่ควรถามจริง ๆ เช่น:
+
+- คนที่ล็อกอินเป็นใคร ใครเป็นผู้รักษาประตู เป็นได้กี่ครั้ง
+- ทำยังไงให้ทุกคนได้ลงเล่นเฉลี่ยเท่า ๆ กัน
+- คนมาถึงสนามต้องเช็กอินแบบไหน
+
+ข้อไหนที่เรามองว่าเกินไปก็ตัดออกได้ หลังถามรอบแรกเสร็จ ได้สเปกที่ครบมาก แล้วปลาทองก็ไปตรวจว่าสิ่งที่เขียนตรงกับที่คุยกันจริงไหม เอกสารที่ได้ยังทำให้ session ถัดไปอ่านแล้วทำงานต่อได้เลย
+
+## เหมาะกับงานแบบไหน
+
+- **เหมาะ:** ขึ้นโปรเจกต์ใหม่ที่ยังไม่มีเอกสารอะไรเลย หรือฟีเจอร์ใหญ่ที่มีกฎธุรกิจเยอะ
+- **ไม่คุ้ม:** งานเล็ก ๆ หรือแก้บั๊กง่าย ๆ เอกสารต้นทางเองก็บอกว่าอย่าฝืนใช้กระบวนการออกแบบก่อนถ้าแก้ทีเดียวจบได้
+
+## ติดตั้งใน Claude Code
+
+```bash title="install-egm.sh"
+claude plugin marketplace add google/elephant-goldfish-model
+claude plugin install egm@egm
+```
+
+เปิด session ใหม่หลังติดตั้ง แล้วเรียกด้วย prefix `/egm:` ต้องติดตั้งทั้งปลั๊กอิน เพราะ skill อ่านไฟล์ผู้รีวิวใน `agents/` และมาตรฐานเอกสารใน `resources/` ตอนรัน ถ้าลอกไปแค่โฟลเดอร์ `skills/` จะใช้ไม่ได้
+
+## ลองครั้งแรก
+
+1. **คุยไอเดีย:** `/egm:egm-brainstorm Add webhook delivery to this project.` ช้างคุยกับคุณ ปลาทองหลายตัวช่วยกันท้าทาย ได้ไฟล์ `concepts_brief.md`
+2. **เขียนสเปก:** `/egm:egm-draft` เขียนเอกสารออกแบบทีละหัวข้อ หยุดถามคุณทุกหัวข้อ
+3. **รีวิว:** `/egm:egm-review design_draft.md` ปลาทองตรวจ 5 ขั้น ทั้งการออกแบบ ความชัดเจน ความเข้ากับโค้ด และแผนลงมือ
+4. **แก้ตามรีวิว:** `/egm:egm-resolve` เลือกเองว่าข้อไหนจะแก้ รีวิวจะให้ข้อเสนอเยอะโดยตั้งใจ เอาเฉพาะที่ใช้ได้
+5. **สร้าง:** อนุมัติสเปกแล้วค่อยสั่ง AI ลงมือทำตามเอกสาร
+
+มี skill อื่นอีก 3 ตัว: `egm-bootstrap` เขียนเอกสารให้โค้ดที่มีอยู่แล้ว, `egm-review-loop` เลือกผู้รีวิวเองสำหรับเอกสารแบบอื่น และ `egm-drift-report` เทียบเอกสารกับโค้ดว่ายังตรงกันไหม
+
+## ค่า token
+
+เราดูด้วย `claude plugin details egm` (เป็นค่าประมาณจาก Claude Code ไม่ใช่การวัดจากงานจริง):
+
+- **ติดตั้งไว้เฉย ๆ:** ราว 464 token ต่อ session
+- **ทุกครั้งที่เรียก skill:** โหลดคำสั่งของ skill เพิ่ม เช่น review ราว 6k, bootstrap ราว 5.9k, draft ราว 4.3k, brainstorm ราว 3.7k token
+- งานจริงจะกินมากกว่านี้มาก เพราะปลาทองแต่ละตัวเป็น subagent ที่อ่านเอกสารและโค้ดเอง ยิ่งถามยิ่งรีวิวหลายรอบยิ่งใช้โควตาเยอะ
+
+## สรุป
+
+> ถ้ากำลังเริ่มโปรเจกต์ใหม่ ลองให้พี่ช้างกับพี่ปลาทองช่วย มันถามเยอะจนเมื่อยจริง แต่ได้สเปกที่ครบกว่าสั่ง AI ตรง ๆ มาก งานเล็กไม่ต้องใช้
+
+แนวคิดเดียวกันนี้อยู่ใน [make-short](/articles/make-short-blender) ด้วย คืออย่าให้ AI รีวิวงานตัวเอง ให้ agent ตัวใหม่ที่ไม่ได้ทำงานนั้นเป็นคนตรวจ

@@ -72,6 +72,7 @@ export const PACKAGES: readonly { slug: string; version: string }[] = [
   { slug: "freshstack-what-if", version: "0.1.0" },
   { slug: "podcast-tool-short", version: "0.1.0" },
   { slug: "make-short", version: "0.1.0" },
+  { slug: "elephant-goldfish-model", version: "0.1.1" },
 ];
 
 export const packageObjectKey = (p: { slug: string; version: string }) => `packages/${p.slug}/${p.version}.zip`;

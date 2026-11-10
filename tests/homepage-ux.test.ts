@@ -64,7 +64,7 @@ const { showcaseForSkill } = require("../lib/showcase") as typeof import("../lib
 const slugsFor = (useCase: string) => filterSkills(skills, "", useCase).map((s) => s.slug).sort();
 
 test("filters are by what the creator wants to make, each one non-empty", () => {
-  assert.deepEqual(useCases.map((u) => u.label), ["ทั้งหมด", "การ์ตูนเล่าเรื่อง", "คลิปสั้นจากพอดแคสต์", "เสียงพากย์และซับไทย"]);
+  assert.deepEqual(useCases.map((u) => u.label), ["ทั้งหมด", "การ์ตูนเล่าเรื่อง", "คลิปสั้นจากพอดแคสต์", "เสียงพากย์และซับไทย", "ช่วยออกแบบแอป"]);
   assert.deepEqual(slugsFor("story"), ["freshstack-what-if", "growkaz-stickman", "low-poly-urban", "make-short", "thai-survival"]);
   assert.deepEqual(slugsFor("podcast"), ["podcast-tool-short"]);
   assert.deepEqual(slugsFor("voice-captions"), ["captions-overlay", "thai-jk-voice"]);

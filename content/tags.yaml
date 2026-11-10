@@ -36,3 +36,7 @@ voice:
   th: 3D
   en: 3D
   description: ฉากและตัวละคร 3 มิติที่สร้างด้วยโค้ด เช่น Blender หรือ Three.js
+spec-design:
+  th: ออกแบบก่อนเขียนโค้ด
+  en: Spec & design
+  description: เขียนสเปกและเอกสารออกแบบให้ครบก่อนให้ AI ลงมือสร้าง แล้วรีวิวด้วยตาใหม่

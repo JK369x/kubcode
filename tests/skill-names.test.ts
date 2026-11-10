@@ -12,6 +12,7 @@ const catalogNames: Record<string, string> = {
   "captions-overlay": "Captions Overlay",
   "podcast-tool-short": "Podcast Shorts",
   "make-short": "Bean Shorts 3D",
+  "elephant-goldfish-model": "Elephant-Goldfish Model",
 };
 
 const styleNames: Record<string, string> = {

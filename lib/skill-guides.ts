@@ -47,6 +47,13 @@ const GUIDES: Readonly<Record<string, readonly GuideStep[]>> = {
     },
     { text: "อนุมัติเรื่อง แผนช็อต และภาพนิ่งก่อนสั่ง render ทุกครั้ง skill จะไม่โพสต์อะไรจนกว่าคุณจะพิมพ์ go" },
   ],
+  "elephant-goldfish-model": [
+    { text: "ทางที่ง่ายที่สุด: ติดตั้งจาก marketplace ทางการของ Google ใน Claude Code (ได้อัปเดตด้วย)", code: "claude plugin marketplace add google/elephant-goldfish-model && claude plugin install egm@egm" },
+    { text: "หรือเข้าสู่ระบบ กด “ดาวน์โหลด skill” แล้วแตกไฟล์ เปิด Claude Code ด้วย --plugin-dir ชี้ไปที่โฟลเดอร์นั้น", code: "claude --plugin-dir ~/plugins/egm" },
+    { text: "เปิด session ใหม่ในโปรเจกต์ แล้วเริ่มคุยไอเดียด้วยคำสั่งนี้ (ใน Claude Code เติม /egm: ข้างหน้า เช่น /egm:egm-brainstorm)", prompt: "/egm-brainstorm Add webhook delivery to this project." },
+    { text: "ตอบคำถามของช้างให้ครบ แล้วเขียนสเปกต่อด้วย /egm:egm-draft", code: "/egm:egm-draft" },
+    { text: "ให้ปลาทองรีวิวสเปก เลือกเองว่าข้อไหนจะแก้ แล้วค่อยสั่งให้ลงมือสร้าง", code: "/egm:egm-review design_draft.md" },
+  ],
 };
 
 /** The steps for a skill: its own guide, or three plain steps. */
