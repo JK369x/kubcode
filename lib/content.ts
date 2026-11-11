@@ -3,7 +3,7 @@ import path from "node:path";
 import { imageSize } from "image-size";
 import { parse as parseYaml } from "yaml";
 import { rawSkills } from "./catalog";
-import { PACKAGES } from "./packages";
+import { ALL_PACKAGES as PACKAGES } from "./packages";
 import { isProductLogoPath } from "./publication";
 
 export type Tag = { slug: string; th: string; en: string; description: string };

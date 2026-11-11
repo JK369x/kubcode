@@ -23,7 +23,7 @@ const ON_ENV = Object.freeze({
 });
 const UID = "6f0f5e1c-0000-4000-8000-00000000f1a1";
 const CSRF = "C".repeat(43);
-const S3_URL = "https://kubcode-media-955758449820.s3.ap-southeast-1.amazonaws.com/packages/freshstack-what-if/0.1.0.zip?X-Amz-Signature=x";
+const S3_URL = "https://kubcode-media-955758449820.s3.ap-southeast-1.amazonaws.com/packages/freshstack-what-if/0.2.0.zip?X-Amz-Signature=x";
 
 const untouchableStore = new Proxy({}, { get: (_t, key) => () => assert.fail(`store.${String(key)} must not be called`) }) as DownloadStore;
 const untouchableSigner = async () => assert.fail("signer must not be called");
@@ -109,9 +109,9 @@ test("download: a member gets a short-lived URL for the approved package", async
   );
   assert.equal(res.status, 200);
   assert.equal(res.headers.get("cache-control"), "no-store");
-  assert.deepEqual(await res.json(), { ok: true, url: S3_URL, filename: "freshstack-what-if-0.1.0.zip" });
-  assert.deepEqual(recorded, [{ uid: UID, slug: "freshstack-what-if", version: "0.1.0" }]);
-  assert.deepEqual(signed, [{ key: "packages/freshstack-what-if/0.1.0.zip", filename: "freshstack-what-if-0.1.0.zip", user: UID }]);
+  assert.deepEqual(await res.json(), { ok: true, url: S3_URL, filename: "freshstack-what-if-0.2.0.zip" });
+  assert.deepEqual(recorded, [{ uid: UID, slug: "freshstack-what-if", version: "0.2.0" }]);
+  assert.deepEqual(signed, [{ key: "packages/freshstack-what-if/0.2.0.zip", filename: "freshstack-what-if-0.2.0.zip", user: UID }]);
 });
 
 test("download: over the limit answers 429 with when to retry, and never signs", async () => {
@@ -165,4 +165,30 @@ test("status: available only for an approved package while downloads are on", as
   assert.deepEqual(await status("growkaz-stickman", ON_ENV), { available: false });
   assert.deepEqual(await status("freshstack-what-if", AUTH_ENV), { available: false });
   assert.deepEqual(await status("freshstack-what-if", { ...ON_ENV, KUBCODE_PACKAGE_SIGNER_URL: "http://x/" }), { available: false });
+});
+
+test("download: a members-only package whose object is missing answers 404, not a dead link", async () => {
+  const okStore = () => ({ recordDownload: async () => ({ ok: true as const }) });
+  const url = "https://kubcode-media-955758449820.s3.ap-southeast-1.amazonaws.com/packages/deep-sea-docs/0.1.0.zip?X-Amz-Signature=x";
+  const sign = async () => ({ ok: true as const, url });
+  const probed: string[] = [];
+  const missing = await handleDownload(
+    await post("deep-sea-docs"),
+    "deep-sea-docs",
+    deps({ storeFor: okStore, sign, probe: async (u) => (probed.push(u), "missing") }),
+  );
+  await expectError(missing, 404, "PACKAGE_NOT_FOUND");
+  assert.deepEqual(probed, [url]);
+  const broken = await handleDownload(await post("deep-sea-docs"), "deep-sea-docs", deps({ storeFor: okStore, sign, probe: async () => "error" }));
+  await expectError(broken, 502, "DOWNLOAD_UNAVAILABLE");
+  const present = await handleDownload(await post("deep-sea-docs"), "deep-sea-docs", deps({ storeFor: okStore, sign, probe: async () => "present" }));
+  assert.equal(present.status, 200);
+  assert.deepEqual(await present.json(), { ok: true, url, filename: "deep-sea-docs-0.1.0.zip" });
+  // Repo-built packages are uploaded by the stack: no probe.
+  const repo = await handleDownload(
+    await post("freshstack-what-if"),
+    "freshstack-what-if",
+    deps({ storeFor: okStore, sign: async () => ({ ok: true as const, url: S3_URL }), probe: async () => { throw new Error("must not probe"); } }),
+  );
+  assert.equal(repo.status, 200);
 });

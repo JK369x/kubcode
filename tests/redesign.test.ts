@@ -40,8 +40,9 @@ test("catalog media references and distribution boundaries are explicit", () => 
   }
   // Voice, captions, podcast shorts (whose clips come from the showcase) and
   // make-short (its test render is shown in its article, not as a preview)
-  // and EGM (a coding plugin, no clip).
-  assert.equal(skills.filter((skill) => !skill.examples.length).length, 5);
+  // and EGM (a coding plugin, no clip), and Deep Sea Docs (members-only kit;
+  // its clips are on the owner's channel, not bundled as a preview).
+  assert.equal(skills.filter((skill) => !skill.examples.length).length, 6);
 });
 
 test("featured author switches have distinct real sources, not runtime labels", () => {

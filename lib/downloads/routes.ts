@@ -3,7 +3,8 @@
 //
 // POST order: accounts on → downloads on → guardWrite (Origin, CSRF) →
 // approved package → signed session → limit + log (DB-checked session) →
-// presigned URL from the signer Lambda. Nothing past a failed step runs.
+// presigned URL from the signer Lambda → (private packages) object exists.
+// Nothing past a failed step runs.
 import type { AuthEnv } from "../auth-policy";
 import { SESSION_COOKIE_NAME, providerReadiness, readAuthConfig } from "../auth-policy";
 import { readAccountsConfig } from "../accounts/config";
@@ -23,7 +24,33 @@ export type DownloadDeps = {
   env?: AuthEnv;
   storeFor?: (databaseUrl: string) => DownloadStore;
   sign?: typeof requestSignedUrl;
+  /** Does the presigned object exist? Only asked for owner-uploaded private packages. */
+  probe?: (url: string) => Promise<"present" | "missing" | "error">;
 };
+
+/**
+ * Private packages are uploaded by hand (scripts/upload-private-package.ts), so
+ * the object can be missing even when lib/packages.ts pins it. One ranged GET
+ * of a single byte on the presigned URL tells; S3 answers 403/404 for a missing
+ * key. The URL is never logged.
+ */
+export async function probeObject(url: string, fetchImpl: typeof fetch = fetch): Promise<"present" | "missing" | "error"> {
+  try {
+    const res = await fetchImpl(url, {
+      method: "GET",
+      headers: { Range: "bytes=0-0" },
+      redirect: "error",
+      cache: "no-store",
+      signal: AbortSignal.timeout(4000),
+    });
+    await res.body?.cancel();
+    if (res.status === 206 || res.status === 200) return "present";
+    if (res.status === 403 || res.status === 404) return "missing";
+    return "error";
+  } catch {
+    return "error";
+  }
+}
 
 type DownloadErrorCode =
   | "DOWNLOADS_DISABLED"
@@ -96,6 +123,14 @@ export async function handleDownload(request: Request, slug: string, deps: Downl
   if (!signed.ok) {
     console.error("[kubcode-downloads] SIGNER_FAILED");
     return errorResponse("DOWNLOAD_UNAVAILABLE");
+  }
+  if (pkg.kind === "private") {
+    const state = await (deps.probe ?? probeObject)(signed.url);
+    if (state === "missing") {
+      console.error(`[kubcode-downloads] PRIVATE_OBJECT_MISSING ${pkg.key}`);
+      return errorResponse("PACKAGE_NOT_FOUND");
+    }
+    if (state === "error") return errorResponse("DOWNLOAD_UNAVAILABLE");
   }
   return jsonNoStore({ ok: true, url: signed.url, filename: pkg.filename });
 }

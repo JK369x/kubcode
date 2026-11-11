@@ -10,6 +10,7 @@ import {
   GITHUB_OIDC_PROVIDER_ARN,
   NAMES,
   PACKAGES,
+  RETAINED_PACKAGES,
   PACKAGE_SIGNER_BINARY,
   PUBLISHING_PARAMETERS,
   REGION,
@@ -340,23 +341,27 @@ test("package signer key must be at least 32 bytes (the Lambda rejects shorter k
 test("package objects: packages/<slug>/<version>.zip, SSE-S3, zipped from the package directory", async () => {
   await build();
   const objects = byType("aws:s3/bucketObjectv2:BucketObjectv2");
-  assert.equal(objects.length, PACKAGES.length);
+  assert.equal(objects.length, PACKAGES.length + RETAINED_PACKAGES.length);
   const o = objects[0].inputs;
   assert.equal(o.bucket, NAMES.mediaBucket);
-  assert.equal(o.key, "packages/freshstack-what-if/0.1.0.zip");
+  assert.equal(o.key, "packages/freshstack-what-if/0.2.0.zip");
   assert.equal(o.serverSideEncryption, "AES256");
   assert.equal(o.contentType, "application/zip");
   assert.equal(o.tags.package, "freshstack-what-if");
-  assert.equal(o.tags.version, "0.1.0");
-  assert.ok(seen({ kind: "FileArchive", path: "../packages/freshstack-what-if/0.1.0" }));
+  assert.equal(o.tags.version, "0.2.0");
+  assert.ok(seen({ kind: "FileArchive", path: "../packages/freshstack-what-if/0.2.0" }));
+  // The superseded 0.1.0 object is kept (same resource name), so the release is not a delete.
+  assert.ok(objects.some((x) => x.name === "package-freshstack-what-if-0.1.0" && x.inputs.key === "packages/freshstack-what-if/0.1.0.zip"));
+  // Members-only kits are uploaded by the owner, never by this stack.
+  assert.ok(!objects.some((x) => String(x.inputs.key).includes("deep-sea-docs")));
   assert.ok(!assetCalls.some((c) => c.kind === "FileAsset"), "no signer binary without the secret");
 });
 
 test("package list: key format matches the signer contract, directories exist, denylisted skills absent", () => {
   assert.ok(PACKAGES.length >= 1);
-  const keys = PACKAGES.map(packageObjectKey);
+  const keys = [...PACKAGES, ...RETAINED_PACKAGES].map(packageObjectKey);
   assert.equal(new Set(keys).size, keys.length, "no duplicates");
-  for (const p of PACKAGES) {
+  for (const p of [...PACKAGES, ...RETAINED_PACKAGES]) {
     // Same pattern the Lambda enforces (docs/design/package-signer.md).
     assert.match(packageObjectKey(p), /^packages\/[a-z0-9]+(-[a-z0-9]+)*\/[0-9]+\.[0-9]+\.[0-9]+\.zip$/);
     const dir = path.resolve(__dirname, "..", packageSourceDir(p));
@@ -370,9 +375,9 @@ test("package list: key format matches the signer contract, directories exist, d
 
 test("package objects do not depend on the signer secret", async () => {
   await build();
-  assert.equal(byType("aws:s3/bucketObjectv2:BucketObjectv2").length, PACKAGES.length);
+  assert.equal(byType("aws:s3/bucketObjectv2:BucketObjectv2").length, PACKAGES.length + RETAINED_PACKAGES.length);
   await build({ packageSignerKey: SIGNER_KEY });
-  assert.equal(byType("aws:s3/bucketObjectv2:BucketObjectv2").length, PACKAGES.length);
+  assert.equal(byType("aws:s3/bucketObjectv2:BucketObjectv2").length, PACKAGES.length + RETAINED_PACKAGES.length);
 });
 
 test("wrap key: RSA_4096 for encryption, no rotation (asymmetric), 30-day deletion window, aliased", async () => {

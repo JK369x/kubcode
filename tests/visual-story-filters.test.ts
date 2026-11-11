@@ -148,8 +148,8 @@ test("each row lists ทั้งหมด then only keys that have a skill or c
   const story = facetOptions("story", HOME, NO_FILTER);
   assert.equal(visual[0].label, "ทั้งหมด");
   assert.equal(story[0].label, "ทั้งหมด");
-  assert.deepEqual(visual.slice(1).map((o) => o.id).sort(), ["blender-3d", "flat-room", "low-poly", "sitcom-toon", "stick-svg", "stickman-canvas"].sort());
-  assert.deepEqual(story.slice(1).map((o) => o.id).sort(), ["behind-the-city", "money-tip", "outbreak-drama", "paradox-fact", "satire", "what-if", "zombie-sitcom"].sort());
+  assert.deepEqual(visual.slice(1).map((o) => o.id).sort(), ["blender-3d", "deep-sea", "flat-room", "low-poly", "sitcom-toon", "stick-svg", "stickman-canvas"].sort());
+  assert.deepEqual(story.slice(1).map((o) => o.id).sort(), ["behind-the-city", "deep-dive-doc", "money-tip", "outbreak-drama", "paradox-fact", "satire", "what-if", "zombie-sitcom"].sort());
   for (const o of [...visual, ...story].slice(1)) assert.ok(o.count > 0, o.id);
   // Not shown anywhere on the homepage: no chip.
   assert.ok(!visual.some((o) => o.id === "footage-reframe" || o.id === "soft-2d"));

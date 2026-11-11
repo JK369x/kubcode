@@ -14,13 +14,24 @@ export type GuideStep = {
 
 const GUIDES: Readonly<Record<string, readonly GuideStep[]>> = {
   "freshstack-what-if": [
-    { text: "เข้าสู่ระบบ แล้วกด “ดาวน์โหลด skill” ในกล่องดาวน์โหลด (ไฟล์ .zip)" },
-    { text: "แตกไฟล์ไว้ในโฟลเดอร์ skill ของ Claude Code", code: "~/.claude/skills/what-if-animation/" },
-    { text: "ติดตั้ง Node 18+, ffmpeg และ Python 3.9+ (numpy, Pillow) แล้วตั้งคีย์ ElevenLabs", code: "ELEVENLABS_API_KEY" },
-    { text: "ตั้ง studio ครั้งแรกตาม README.md ในชุด skill (ชุดนี้ไม่มี studio มาด้วย) ถ้าใช้ OpenCode ดูหัวข้อ “Use it in OpenCode”" },
+    { text: "เข้าสู่ระบบ แล้วกด “ดาวน์โหลด skill” ในกล่องดาวน์โหลด (ไฟล์ .zip) แล้วแตกไฟล์ไว้ในโฟลเดอร์งาน" },
+    { text: "Windows ใช้ WSL2 Ubuntu (เก็บโฟลเดอร์ไว้ใน ~/ ไม่ใช่ /mnt/c) แล้วติดตั้ง Node 24, ffmpeg, Python 3 กับ numpy และ Pillow ตาม README.md" },
+    { text: "ติดตั้ง studio แล้วเช็กเครื่อง", code: "cd studio && npm ci && npx remotion browser ensure && cd .. && sh check.sh" },
+    { text: "สร้างไฟล์ .env ใส่คีย์และชื่อเสียงของคุณเอง (ไม่มีเสียงตั้งต้น ห้ามวางคีย์ในแชต)", code: "ELEVENLABS_API_KEY=…  ELEVENLABS_VOICE_NAME=<ชื่อเสียงของคุณ>" },
     {
-      text: "เปิด Claude Code ในโฟลเดอร์ studio แล้ววางคำสั่งนี้ เปลี่ยนคำถามเป็นเรื่องที่อยากทำได้",
-      prompt: "Make a What If episode: what if you could pause everyone but you?",
+      text: "เปิด Claude Code หรือ OpenCode ในโฟลเดอร์นั้น แล้ววางคำสั่งนี้ เปลี่ยนคำถามเป็นเรื่องที่อยากทำได้",
+      prompt: "Make a vertical Thai What If episode with this package: what if all bees vanished tomorrow?",
+    },
+    { text: "สั่งเสียงแบบ --dry-run ก่อนทุกครั้ง แล้วทำต่อตามลำดับใน README (host_integrate.sh → render.mjs → host_qa.sh → make_cover.py)" },
+  ],
+  "deep-sea-docs": [
+    { text: "เข้าสู่ระบบ แล้วกด “ดาวน์โหลด skill” (ชุดสำหรับสมาชิก ห้ามแจกต่อ อ่าน LICENSE-kubcode-members.txt)" },
+    { text: "แตกไฟล์ไว้ในโฟลเดอร์งาน Windows ใช้ WSL2 Ubuntu แล้วติดตั้ง Node 22+, ffmpeg และ Chrome ตาม README.md" },
+    { text: "เช็กเครื่องด้วยสคริปต์ในชุด", code: "sh check.sh" },
+    { text: "ใส่คีย์และชื่อเสียงของคุณเองใน .env (ห้ามวางคีย์ในแชต)", code: "ELEVENLABS_API_KEY=…  ELEVENLABS_VOICE_NAME=<ชื่อเสียงของคุณ>" },
+    {
+      text: "เปิด Claude Code หรือ OpenCode ในโฟลเดอร์นั้น แล้ววางคำสั่งนี้ เปลี่ยนสัตว์เป็นเรื่องที่อยากทำได้",
+      prompt: "Make a Deep Sea Docs episode with this kit about the anglerfish, checking every fact against a source.",
     },
   ],
   "podcast-tool-short": [

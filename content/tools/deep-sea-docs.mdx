@@ -1,0 +1,49 @@
+---
+slug: deep-sea-docs
+title: "Deep Sea Docs — ชุดทำสารคดีสั้นใต้ทะเลลึกสำหรับสมาชิก"
+name: "Deep Sea Docs"
+description: "ชุดของ kubcode สำหรับสมาชิก ทำสารคดีสั้นแนวตั้งเรื่องทะเลลึก ภาพเวกเตอร์วาดด้วยโค้ด เรนเดอร์ด้วย HyperFrames เสียงบรรยายไทยด้วยเสียงของคุณเอง"
+tags: [animation, ai-agent, renderer]
+category: render
+refs:
+  - tool:claude-code
+  - tool:opencode
+  - tool:elevenlabs
+  - tool:ffmpeg
+  - skill:deep-sea-docs
+license: "kubcode members only: ใช้ทำและเผยแพร่คลิปของคุณเองได้ ห้ามแจกต่อหรือขายชุด"
+pricing: free
+logo:
+  fallback: monogram
+  text: DSD
+  reason: "ชุดของ kubcode เอง ยังไม่มีโลโก้"
+updated: 2026-11-11
+sources:
+  - title: "Deep Sea Docs บน kubcode.dev"
+    url: https://kubcode.dev/skills/deep-sea-docs
+agentInstall:
+  agents: [claude-code, opencode]
+  source: skill:deep-sea-docs
+  prompt: |
+    ช่วยติดตั้งชุด Deep Sea Docs ที่ฉันดาวน์โหลดจาก https://kubcode.dev/skills/deep-sea-docs (ต้องเข้าสู่ระบบ ห้ามดาวน์โหลดแทนฉัน)
+    1. ถาม path ของไฟล์ zip หรือโฟลเดอร์ที่แตกแล้ว อ่าน README.md และ SKILL.md แล้วอธิบายว่าจะติดตั้งอะไร ไว้ที่ไหน และขออนุญาตฉันก่อนรันทุกคำสั่ง
+    2. เช็ก OS: รองรับ macOS, Linux และ Windows ผ่าน WSL2 Ubuntu เท่านั้น ถ้าเป็นระบบอื่นที่ไม่รองรับ ให้หยุดแล้วบอกฉัน
+    3. รัน sh check.sh แล้วสรุปว่าขาด Node 22+, ffmpeg, Python 3 หรือ HyperFrames ตัวไหน พร้อมคำสั่งติดตั้งจาก README
+    4. ห้ามขอ API key ในแชต ให้บอกฉันใส่ ELEVENLABS_API_KEY และ ELEVENLABS_VOICE_NAME (ชื่อเสียงของฉันเอง) ในไฟล์ .env เอง ห้ามเลือกเสียงอื่นแทน
+    5. ชุดนี้ห้ามแจกต่อ: ห้ามอัปโหลดหรือ commit ไฟล์ในชุดขึ้น repo สาธารณะ
+    6. เสร็จแล้วบอกวิธีเริ่ม: เปิด session ใหม่ในโฟลเดอร์ชุด แล้วรอให้ฉันบอกหัวข้อ (สั่งเสียงแบบ --dry-run ก่อนทุกครั้ง)
+---
+## คืออะไร
+
+ชุดทำคลิปสารคดีสั้นแนวตั้ง (9:16) เรื่องสัตว์และสถานที่ใต้ทะเลลึก ภาพทุกช็อตวาดด้วยโค้ดจากชุดเวกเตอร์ของ kubcode (ไม่มีฟุตเทจหรือภาพสต็อก) เรนเดอร์ด้วย HyperFrames ซับไทยเน้นคำสำคัญพร้อมบรรทัดอังกฤษเล็ก และเสียงบรรยายไทยจาก ElevenLabs ด้วยเสียงของคุณเอง
+
+## ในชุดมีอะไร
+
+- ชุดวาด `dsd-kit.js` และคู่มือสไตล์
+- ตัวอย่างตอนเต็ม (หมึกยักษ์) ทั้งโปรเจกต์ ไม่รวมไฟล์เสียง
+- สคริปต์ทำเสียงทีละบรรทัดที่หาเสียงจากชื่อ (ไม่มีเสียงตั้งต้น)
+- `check.sh` เช็กเครื่องก่อนเริ่ม
+
+## เงื่อนไข
+
+สำหรับสมาชิกที่เข้าสู่ระบบเท่านั้น ใช้ทำและเผยแพร่คลิปของคุณเองได้ รวมถึงเชิงพาณิชย์ แต่ห้ามแชร์ อัปโหลด หรือขายชุดต่อ ข้อเท็จจริงทุกข้อต้องมีแหล่งอ้างอิง

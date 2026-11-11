@@ -7,6 +7,7 @@ const catalogNames: Record<string, string> = {
   "growkaz-stickman": "Stickman Cinema",
   "thai-survival": "Survival Stories",
   "freshstack-what-if": "What If Lab",
+  "deep-sea-docs": "Deep Sea Docs",
   "low-poly-urban": "Low-poly Urban",
   "thai-narrator": "Thai Calm Narrator",
   "captions-overlay": "Captions Overlay",
