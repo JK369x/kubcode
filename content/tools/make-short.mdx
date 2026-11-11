@@ -25,6 +25,18 @@ go: [mshort]
 sources:
   - title: "nocodehack/make-short README"
     url: https://github.com/nocodehack/make-short
+agentInstall:
+  agents: [claude-code]
+  source: https://github.com/nocodehack/make-short
+  prompt: |
+    ช่วยติดตั้ง skill make-short จาก https://github.com/nocodehack/make-short ให้ Claude Code ของฉัน
+    1. ก่อนเริ่ม อ่าน README กับ INSTALL.md แล้วอธิบายว่าจะติดตั้งอะไร ไว้ที่ไหน และขออนุญาตฉันก่อนรันทุกคำสั่ง
+    2. เช็ก OS: ต้นทางทำมาสำหรับ Windows (Git Bash) และเราทดสอบบน macOS แล้ว ถ้าเป็นระบบอื่นที่ไม่รองรับ ให้หยุดแล้วบอกฉัน
+    3. clone ไว้ที่ ~/.claude/skills/make-short
+    4. เช็ก Blender 5.x, Node 22+, Python 3.10+ (pillow, numpy) และ ffmpeg แล้วสรุปว่าขาดอะไรพร้อมคำสั่งติดตั้ง
+    5. ถ้าเป็น Mac: ต้องใช้ kubcode/mac-patch.sh จากชุดที่ฉันดาวน์โหลดจาก https://kubcode.dev/skills/make-short (เข้าสู่ระบบก่อน) ถาม path ของไฟล์ .zip หรือโฟลเดอร์ที่แตกแล้ว อ่าน KUBCODE-NOTICE.md คัดลอก kubcode/ ไปไว้ใน ~/.claude/skills/make-short/ แล้วทุกครั้งที่สร้างโปรเจกต์ใหม่ (สำเนาของ v3) ให้รัน bash ~/.claude/skills/make-short/kubcode/mac-patch.sh <โฟลเดอร์โปรเจกต์>
+    6. ห้ามขอ API key ในแชต ถ้าจะใช้ ElevenLabs ให้บอกวิธีตั้ง ELEVENLABS_API_KEY เองในเทอร์มินัล
+    7. เสร็จแล้วบอกให้ฉันเปิด Claude Code ใหม่ แล้วรอฉันเล่าไอเดียคลิป
 ---
 ## คืออะไร
 

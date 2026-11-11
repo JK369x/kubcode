@@ -46,7 +46,11 @@ const slugs = (items: Array<{ kind: string; slug: string }>) => items.map((i) =>
 
 test("related pages are computed from refs in both directions without duplicates", () => {
   const content = load(
-    page("article", "how-we-animate", { refs: ["tool:remotion", "skill:freshstack-what-if"] }),
+    // A download-package ref requires an agent prompt (lib/content.ts).
+    page("article", "how-we-animate", {
+      refs: ["tool:remotion", "skill:freshstack-what-if"],
+      agentInstall: { agents: ["remotion"], prompt: "https://kubcode.dev/skills/freshstack-what-if" },
+    }),
     page("tool", "remotion", { refs: ["skill:freshstack-what-if", "article:how-we-animate"] }),
   );
   assert.deepEqual(slugs(related(content, { kind: "tool", slug: "remotion" })), [

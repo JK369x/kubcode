@@ -31,6 +31,19 @@ sources:
   - title: "OpenCode Zen — free models"
     url: https://opencode.ai/docs/zen/
 sourceNote: "เรียบเรียงใหม่ด้วยคำของเรา ไม่ได้คัดลอกข้อความหรือโค้ดจากต้นทาง ตรวจเงื่อนไขบริการเมื่อ 3 พ.ย. 2026"
+agentInstall:
+  agents: [opencode, claude-code]
+  source: https://github.com/kelano86/what-if-animation
+  prompt: |
+    ช่วยติดตั้ง skill What If animation จาก https://github.com/kelano86/what-if-animation ตาม README
+    1. ก่อนเริ่ม อ่าน README แล้วอธิบายว่าจะติดตั้งอะไร ไว้ที่ไหน และขออนุญาตฉันก่อนรันทุกคำสั่ง
+    2. เช็ก OS: README มีคำสั่งแค่ macOS, Linux และ Windows ถ้าเป็นระบบอื่นที่ไม่รองรับ ให้หยุดแล้วบอกฉัน
+    3. เช็ก Node 18+, ffmpeg (มี ffprobe), Python 3.9+ กับ numpy และ Pillow แล้วสรุปว่าขาดอะไรพร้อมคำสั่งติดตั้ง
+    4. ถ้าคุณคือ OpenCode: ถามว่าจะใช้โฟลเดอร์งานไหน clone ไว้ที่ <โฟลเดอร์>/.claude/skills/what-if-animation แล้วคัดลอก opencode/commands/what-if.md ไปไว้ที่ <โฟลเดอร์>/.opencode/commands/
+    5. ถ้าคุณคือ Claude Code: clone ไว้ที่ ~/.claude/skills/what-if-animation คัดลอก studio ไปเป็น ./what-if-studio แล้วรัน npm install ในนั้น
+    6. ถ้าฉันบอกว่าดาวน์โหลดชุด What If Lab จาก https://kubcode.dev/skills/freshstack-what-if แล้ว (ต้องเข้าสู่ระบบ) ให้ถาม path แล้วใช้ชุดนั้นแทนการ clone (ชุดนี้ไม่มี studio ให้ตั้งตาม README ในชุด)
+    7. ห้ามขอ API key ในแชต ให้บอกฉันใส่ ELEVENLABS_API_KEY เองในไฟล์ .env
+    8. เสร็จแล้วบอกวิธีเริ่มตอนแรก (OpenCode ให้เปิดจากในโฟลเดอร์นั้นแล้วพิมพ์ /what-if ตามด้วยคำถาม)
 ---
 ## ต้นทางของบทความนี้
 

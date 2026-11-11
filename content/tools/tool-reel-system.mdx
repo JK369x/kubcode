@@ -20,6 +20,17 @@ go: [reel]
 sources:
   - title: "kelano86/tool-reel-system README"
     url: https://github.com/kelano86/tool-reel-system
+agentInstall:
+  agents: [claude-code, codex-cli]
+  source: https://github.com/kelano86/tool-reel-system
+  prompt: |
+    ช่วยตั้งค่า Tool Reel System จาก https://github.com/kelano86/tool-reel-system ให้ฉัน
+    1. ก่อนเริ่ม อ่าน README และ CLAUDE.md (หรือ AGENTS.md) แล้วอธิบายว่าจะติดตั้งอะไร ไว้ที่ไหน และขออนุญาตฉันก่อนรันทุกคำสั่ง
+    2. repo นี้ไม่มีไฟล์ไลเซนส์: ใช้ส่วนตัวได้ แต่อย่าแจกต่อ และเตือนฉันให้ถามเจ้าของก่อนใช้เชิงพาณิชย์
+    3. ถามว่าจะ clone ไว้ที่ไหน clone แล้วทำงานในโฟลเดอร์นั้นตามขั้น "First session protocol" ใน CLAUDE.md
+    4. เช็ก Node 18+, ffmpeg, Python 3.10+ กับ numpy, faster-whisper และ Pillow แล้วสรุปว่าขาดอะไรพร้อมคำสั่งติดตั้งสำหรับ OS ของฉัน ถ้า OS ไม่รองรับให้หยุดแล้วบอกฉัน
+    5. ห้ามขอ API key ในแชต ถ้าต้องใช้ key ให้บอกฉันใส่เองในไฟล์ .env
+    6. เสร็จแล้วอธิบาย pipeline สั้น ๆ แล้วรอฉันบอกเครื่องมือที่อยากทำคลิปแรก
 ---
 ## คืออะไร
 

@@ -10,6 +10,8 @@ import { RelatedLinks } from "@/components/RelatedLinks";
 import { SourceCredits } from "@/components/SourceCredits";
 import { ToolIconRow } from "@/components/ToolIconRow";
 import { articleTools } from "@/lib/tool-index";
+import { AgentInstall } from "@/components/AgentInstall";
+import { tocWithAgentInstall } from "@/lib/agent-install";
 
 export const dynamicParams = false;
 
@@ -45,8 +47,9 @@ export default async function Article({ params }: Props) {
       lead={a.description}
       tags={a.tags}
       allTags={content.tags}
-      toc={toc}
+      toc={tocWithAgentInstall(a, toc)}
       cover={a.cover}
+      intro={a.agentInstall ? <AgentInstall install={a.agentInstall} tools={content.tools} /> : undefined}
       interactions={{ kind: "article", slug: a.slug, title: a.title }}
       headerTools={tools.length > 0 ? <ToolIconRow tools={tools} /> : undefined}
       after={

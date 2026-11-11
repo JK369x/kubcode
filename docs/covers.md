@@ -1,5 +1,7 @@
 # Article covers
 
+For the rest of the frontmatter, including the required `agentInstall` prompt, see [content.md](content.md).
+
 Every article needs a cover (the content schema fails `npm test` and `next build` without one):
 
 ```yaml

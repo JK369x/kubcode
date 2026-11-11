@@ -21,3 +21,7 @@ Default vocabulary (`needs-triage`, `needs-info`, `ready-for-agent`, `ready-for-
 ### Domain docs
 
 Single-context: `CONTEXT.md` + `docs/adr/` at the repo root (created lazily). See `docs/agents/domain.md`.
+
+### Writing content
+
+Articles and tool pages: `docs/content.md`. Any post with a repo or a skill bundle needs an `agentInstall` prompt (copy-paste install for the reader's own AI agent).
