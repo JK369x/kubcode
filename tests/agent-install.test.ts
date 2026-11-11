@@ -7,7 +7,7 @@ import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { stringify as stringifyYaml } from "yaml";
 import { ContentError, LIMITS, loadContent } from "../lib/content";
-import { PACKAGES } from "../lib/packages";
+import { ALL_PACKAGES as PACKAGES } from "../lib/packages";
 import { AGENT_INSTALL_ID, AGENT_INSTALL_TITLE, tocWithAgentInstall } from "../lib/agent-install";
 import { AgentInstall } from "../components/AgentInstall";
 import { fakePng } from "./fixtures/images";
@@ -27,7 +27,7 @@ test("the pages that point at an installable kit carry an agent prompt", () => {
   ]);
   // Kit tools: skills, plugins and kits installed from a repo. Agents and
   // apps (Claude Code, Blender, FFmpeg…) have repos but are not kits.
-  assert.deepEqual(withPrompt(content.tools), ["elephant-goldfish-model", "make-short", "tool-reel-system", "what-if-animation"]);
+  assert.deepEqual(withPrompt(content.tools), ["deep-sea-docs", "elephant-goldfish-model", "make-short", "tool-reel-system", "what-if-animation"]);
   // install-with-permissions is a concept article with no kit refs.
   assert.equal(content.articles.find((a) => a.slug === "install-with-permissions")!.agentInstall, undefined);
 });
@@ -53,7 +53,9 @@ test("every prompt is safe and complete: asks first, no keys in chat, stops on a
     assert.match(ai.prompt, /ขออนุญาตฉันก่อนรันทุกคำสั่ง/, `${where}: ask before running`);
     assert.match(ai.prompt, /ห้ามขอ.*(API key|key).*ในแชต/, `${where}: never ask for keys in chat`);
     assert.match(ai.prompt, /ไม่รองรับ.*หยุด|หยุด.*ไม่รองรับ/s, `${where}: stop on unsupported`);
-    assert.match(ai.prompt, /https:\/\/github\.com\/[\w.-]+\/[\w.-]+/, `${where}: upstream repo URL`);
+    // Members-only kits have no public repo: their source is the kubcode.dev download page.
+    if (ai.source?.startsWith("skill:")) assert.ok(ai.prompt.includes(`https://kubcode.dev/skills/${ai.source.slice(6)}`), `${where}: download page`);
+    else assert.match(ai.prompt, /https:\/\/github\.com\/[\w.-]+\/[\w.-]+/, `${where}: upstream repo URL`);
     for (const slug of ai.packages) assert.ok(ai.prompt.includes(`https://kubcode.dev/skills/${slug}`), `${where}: ${slug}`);
   }
 });

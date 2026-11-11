@@ -41,8 +41,8 @@ test("panel: download, version, file size, licence and a requirements checklist"
   assert.ok(panel, "skill page has a side panel");
   assert.match(panel, /id="download"/);
   const t = text(panel);
-  assert.match(t, /เวอร์ชัน 0\.1\.0/);
-  assert.match(t, /ขนาดไฟล์ ไม่เกิน 113 KB/);
+  assert.match(t, /เวอร์ชัน 0\.2\.0/);
+  assert.match(t, /ขนาดไฟล์ ไม่เกิน 859 KB/);
   assert.match(t, /สัญญาอนุญาต MIT/);
   assert.match(t, /โหลดฟรี/);
   const checklist = panel.match(/<ul[^>]*class="checklist"[^>]*>([\s\S]*?)<\/ul>/)?.[1] ?? "";

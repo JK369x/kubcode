@@ -1,0 +1,173 @@
+[
+  {
+    "line": "l1",
+    "spoken": "ถ้าพรุ่งนี้ ผึ้งทุกตัวบนโลก หายไปพร้อมกันล่ะ?",
+    "pre": "ถ้าพรุ่งนี้ ",
+    "key": "ผึ้งทุกตัว",
+    "post": "บนโลก หายไปพร้อมกันล่ะ?",
+    "color": "#f2c35b",
+    "en": "WHAT IF ALL BEES"
+  },
+  {
+    "line": "l2",
+    "spoken": "ฤดูหน้า สวนลิ้นจี่",
+    "pre": "",
+    "key": "ฤดูหน้า",
+    "post": " สวนลิ้นจี่",
+    "color": "#f2c35b",
+    "en": "NEXT SEASON"
+  },
+  {
+    "line": "l2",
+    "spoken": "ดอกบานเต็มต้น",
+    "pre": "",
+    "key": "ดอกบานเต็มต้น",
+    "post": "",
+    "color": "#ff8271",
+    "en": "FLOWERS EVERYWHERE"
+  },
+  {
+    "line": "l2",
+    "spoken": "แต่ผลแทบไม่ติด",
+    "pre": "แต่",
+    "key": "ผลแทบไม่ติด",
+    "post": "",
+    "color": "#ff8271",
+    "en": "ALMOST NO FRUIT"
+  },
+  {
+    "line": "l3",
+    "spoken": "กฎมีข้อเดียว",
+    "pre": "",
+    "key": "กฎมีข้อเดียว",
+    "post": "",
+    "color": "#f2c35b",
+    "en": "ONE RULE"
+  },
+  {
+    "line": "l3",
+    "spoken": "หายไปแค่ผึ้ง",
+    "pre": "",
+    "key": "หายไปแค่ผึ้ง",
+    "post": "",
+    "color": "#f2c35b",
+    "en": "ONLY THE BEES GO"
+  },
+  {
+    "line": "l3",
+    "spoken": "แมลงกับสัตว์อื่น ยังอยู่ครบ",
+    "pre": "แมลงกับสัตว์อื่น ",
+    "key": "ยังอยู่ครบ",
+    "post": "",
+    "color": "#87dbd6",
+    "en": "EVERYTHING ELSE STAYS"
+  },
+  {
+    "line": "l4",
+    "spoken": "ในโลกจริง พืชอาหารหลักของโลก",
+    "pre": "",
+    "key": "ในโลกจริง",
+    "post": " พืชอาหารหลักของโลก",
+    "color": "#f2c35b",
+    "en": "THE WORLD'S LEADING FOOD CROPS"
+  },
+  {
+    "line": "l4",
+    "spoken": "มากกว่าสามในสี่",
+    "pre": "",
+    "key": "มากกว่าสามในสี่",
+    "post": "",
+    "color": "#f2c35b",
+    "en": "MORE THAN 3 IN 4"
+  },
+  {
+    "line": "l4",
+    "spoken": "พึ่งสัตว์ช่วยผสมเกสร ไม่มากก็น้อย",
+    "pre": "พึ่งสัตว์ช่วยผสมเกสร ",
+    "key": "ไม่มากก็น้อย",
+    "post": "",
+    "color": "#87dbd6",
+    "en": "RELY ON POLLINATORS TO SOME EXTENT"
+  },
+  {
+    "line": "l5",
+    "spoken": "งานวิจัยในไทย",
+    "pre": "",
+    "key": "งานวิจัยในไทย",
+    "post": "",
+    "color": "#f2c35b",
+    "en": "A REAL THAI STUDY"
+  },
+  {
+    "line": "l5",
+    "spoken": "ลองคลุมดอกลิ้นจี่ ไม่ให้แมลงเข้า",
+    "pre": "ลอง",
+    "key": "คลุมดอกลิ้นจี่",
+    "post": " ไม่ให้แมลงเข้า",
+    "color": "#f2c35b",
+    "en": "BAG THE BLOSSOMS"
+  },
+  {
+    "line": "l5",
+    "spoken": "ผลที่ติด เหลือแค่ราวหนึ่งในห้า",
+    "pre": "ผลที่ติด เหลือแค่",
+    "key": "ราวหนึ่งในห้า",
+    "post": "",
+    "color": "#ff8271",
+    "en": "FRUIT SET FELL TO ~1/5"
+  },
+  {
+    "line": "l6",
+    "spoken": "แต่ข้าวยังอยู่",
+    "pre": "แต่",
+    "key": "ข้าวยังอยู่",
+    "post": "",
+    "color": "#87dbd6",
+    "en": "RICE SURVIVES"
+  },
+  {
+    "line": "l6",
+    "spoken": "เพราะข้าวผสมเกสรในดอกตัวเองเป็นส่วนใหญ่",
+    "pre": "เพราะข้าว",
+    "key": "ผสมเกสรในดอกตัวเอง",
+    "post": "เป็นส่วนใหญ่",
+    "color": "#87dbd6",
+    "en": "RICE SELF-POLLINATES"
+  },
+  {
+    "line": "l6",
+    "spoken": "ส่วนทุเรียน",
+    "pre": "ส่วน",
+    "key": "ทุเรียน",
+    "post": "",
+    "color": "#f2c35b",
+    "en": "BUT DURIAN?"
+  },
+  {
+    "line": "l6",
+    "spoken": "คนผสมเกสรตัวจริง คือค้างคาว",
+    "pre": "คนผสมเกสรตัวจริง คือ",
+    "key": "ค้างคาว",
+    "post": "",
+    "color": "#f2c35b",
+    "en": "THE POLLINATOR IS THE BAT"
+  },
+  {
+    "line": "l7",
+    "spoken": "แล้วถ้าคืนพรุ่งนี้",
+    "pre": "แล้วถ้า",
+    "key": "คืนพรุ่งนี้",
+    "post": "",
+    "color": "#f2c35b",
+    "en": "AND TOMORROW NIGHT"
+  },
+  {
+    "line": "l7",
+    "spoken": "ค้างคาวหายไปด้วยล่ะ?",
+    "pre": "",
+    "key": "ค้างคาวหายไปด้วย",
+    "post": "ล่ะ?",
+    "color": "#ff8271",
+    "en": "WHAT IF THE BATS WENT TOO?"
+  }
+]

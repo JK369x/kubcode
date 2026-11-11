@@ -201,6 +201,28 @@ export const rawSkills: readonly Skill[] = [
     ],
   },
   {
+    slug: "deep-sea-docs",
+    name: "Deep Sea Docs",
+    category: "video",
+    description: "สารคดีสั้นใต้ทะเลลึก ภาพเวกเตอร์แบนวาดด้วยโค้ด ข้อเท็จจริงมีแหล่งอ้างอิง เสียงบรรยายไทย",
+    version: "0.1.0",
+    status: "draft",
+    approvalScope:
+      "ชุดของ kubcode สำหรับสมาชิกเท่านั้น ใช้ทำและเผยแพร่คลิปของคุณเองได้ ห้ามแจกต่อหรือขายชุด ภาพยังไม่ผ่านการอนุมัติขั้นสุดท้าย",
+    requirements: [
+      "Node 22+ · HyperFrames",
+      "FFmpeg · Chrome",
+      "ElevenLabs (เสียงของคุณเอง) หรือเสียงไทยในเครื่อง",
+    ],
+    useCases: ["story"],
+    visual: "deep-sea",
+    story: "deep-dive-doc",
+    cost: "external",
+    costNote: "ElevenLabs (เสียงบรรยาย) ราว 300–500 เครดิตต่อตอน 10 บรรทัด",
+    rights: "uncleared",
+    examples: [],
+  },
+  {
     slug: "low-poly-urban",
     name: "Low-poly Urban",
     category: "video",

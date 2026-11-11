@@ -183,9 +183,9 @@ async function main() {
     assert.equal(ok.status, 200);
     assert.equal(ok.headers["cache-control"], "no-store");
     const body = ok.json();
-    assert.equal(body.filename, "freshstack-what-if-0.1.0.zip");
-    assert.ok(body.url.startsWith(`${S3_ORIGIN}/packages/freshstack-what-if/0.1.0.zip?`));
-    assert.deepEqual(signed, [{ user: a.id, key: "packages/freshstack-what-if/0.1.0.zip" }]);
+    assert.equal(body.filename, "freshstack-what-if-0.2.0.zip");
+    assert.ok(body.url.startsWith(`${S3_ORIGIN}/packages/freshstack-what-if/0.2.0.zip?`));
+    assert.deepEqual(signed, [{ user: a.id, key: "packages/freshstack-what-if/0.2.0.zip" }]);
     step("member download: HMAC accepted by an independent verifier, S3 URL returned");
 
     for (let i = 1; i < 20; i++) assert.equal((await download("freshstack-what-if", a.cookie)).status, 200);
@@ -242,7 +242,7 @@ async function main() {
       await page.locator("#download").screenshot({ path: ".qa/downloads-signed-in.png" });
       await button.click();
       for (let i = 0; i < 50 && !fileRequested; i++) await page.waitForTimeout(100);
-      assert.ok(fileRequested.startsWith(`${S3_ORIGIN}/packages/freshstack-what-if/0.1.0.zip?`), fileRequested);
+      assert.ok(fileRequested.startsWith(`${S3_ORIGIN}/packages/freshstack-what-if/0.2.0.zip?`), fileRequested);
       step("browser signed in: click fetches the presigned package URL");
     } finally {
       await browser.close();

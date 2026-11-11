@@ -16,6 +16,7 @@ import {
   PUBLISHING_BINARY,
   PUBLISHING_PARAMETERS,
   PACKAGES,
+  RETAINED_PACKAGES,
   PACKAGE_LOG_RETENTION_DAYS,
   PACKAGE_SIGNER_BINARY,
   PROJECT_TAG,
@@ -333,7 +334,7 @@ export function createStack(cfg: StackConfig) {
   // --- Skill package objects: zipped from packages/<slug>/<version>/ and stored
   // with SSE-S3 (not the bucket's SSE-KMS default) so the signer role needs no
   // KMS access. Independent of the signer secret.
-  for (const pkg of PACKAGES) {
+  for (const pkg of [...PACKAGES, ...RETAINED_PACKAGES]) {
     new aws.s3.BucketObjectv2(
       `package-${pkg.slug}-${pkg.version}`,
       {

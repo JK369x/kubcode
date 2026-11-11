@@ -69,10 +69,20 @@ export const PACKAGE_SIGNER_KEY_MIN_BYTES = 32;
  * have no licence and must never appear here.
  */
 export const PACKAGES: readonly { slug: string; version: string }[] = [
-  { slug: "freshstack-what-if", version: "0.1.0" },
+  { slug: "freshstack-what-if", version: "0.2.0" },
   { slug: "podcast-tool-short", version: "0.1.0" },
   { slug: "make-short", version: "0.1.0" },
   { slug: "elephant-goldfish-model", version: "0.1.1" },
+];
+
+/**
+ * Superseded package versions whose objects stay in the bucket (removing them
+ * would be a delete, which the infra gate stops). Not downloadable: the web
+ * app's allowlist only names current versions. Private (members-only) packages
+ * are uploaded by the owner and are never managed by this stack.
+ */
+export const RETAINED_PACKAGES: readonly { slug: string; version: string }[] = [
+  { slug: "freshstack-what-if", version: "0.1.0" },
 ];
 
 export const packageObjectKey = (p: { slug: string; version: string }) => `packages/${p.slug}/${p.version}.zip`;

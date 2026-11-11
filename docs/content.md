@@ -28,7 +28,7 @@ agentInstall:
 
 ### Rules for the prompt
 
-- One block, at most 1,200 characters, Thai instructions, the upstream repo URL (and `https://kubcode.dev/skills/<slug>` when it uses our package). If `source` is set, the prompt must contain it.
+- One block, at most 1,200 characters, Thai instructions, the upstream repo URL (and `https://kubcode.dev/skills/<slug>` when it uses our package). If `source` is set, the prompt must contain it. Members-only kits (`PRIVATE_PACKAGES`, e.g. deep-sea-docs) have no public repo: `source: skill:<slug>` and the kubcode.dev page is the source.
 - Copy commands and paths **from the upstream README as it is today**: fetch it, do not write from memory. Give each agent its own command when they differ.
 - It must make the agent: explain what it will install and where; ask before running each command; never ask for API keys or passwords in chat (tell the user to set them in their own terminal or `.env`); stop and say so if the OS or agent is unsupported. The test checks for these phrases:
   `อธิบายว่าจะติดตั้งอะไร ไว้ที่ไหน`, `ขออนุญาตฉันก่อนรันทุกคำสั่ง`, `ห้ามขอ … key … ในแชต`, `ไม่รองรับ … หยุด`.

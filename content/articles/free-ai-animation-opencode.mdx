@@ -41,8 +41,8 @@ agentInstall:
     3. เช็ก Node 18+, ffmpeg (มี ffprobe), Python 3.9+ กับ numpy และ Pillow แล้วสรุปว่าขาดอะไรพร้อมคำสั่งติดตั้ง
     4. ถ้าคุณคือ OpenCode: ถามว่าจะใช้โฟลเดอร์งานไหน clone ไว้ที่ <โฟลเดอร์>/.claude/skills/what-if-animation แล้วคัดลอก opencode/commands/what-if.md ไปไว้ที่ <โฟลเดอร์>/.opencode/commands/
     5. ถ้าคุณคือ Claude Code: clone ไว้ที่ ~/.claude/skills/what-if-animation คัดลอก studio ไปเป็น ./what-if-studio แล้วรัน npm install ในนั้น
-    6. ถ้าฉันบอกว่าดาวน์โหลดชุด What If Lab จาก https://kubcode.dev/skills/freshstack-what-if แล้ว (ต้องเข้าสู่ระบบ) ให้ถาม path แล้วใช้ชุดนั้นแทนการ clone (ชุดนี้ไม่มี studio ให้ตั้งตาม README ในชุด)
-    7. ห้ามขอ API key ในแชต ให้บอกฉันใส่ ELEVENLABS_API_KEY เองในไฟล์ .env
+    6. ถ้าฉันบอกว่าดาวน์โหลดชุด What If Lab จาก https://kubcode.dev/skills/freshstack-what-if แล้ว (ต้องเข้าสู่ระบบ) ให้ถาม path แล้วใช้ชุดนั้นแทนการ clone ชุดนี้มี studio คลิปแนวตั้งไทยแล้ว ให้ตั้งตาม README.md และรัน sh check.sh
+    7. ห้ามขอ API key ในแชต ให้บอกฉันใส่ ELEVENLABS_API_KEY เองในไฟล์ .env (ชุด What If Lab ต้องใส่ ELEVENLABS_VOICE_NAME เป็นชื่อเสียงของฉันเองด้วย)
     8. เสร็จแล้วบอกวิธีเริ่มตอนแรก (OpenCode ให้เปิดจากในโฟลเดอร์นั้นแล้วพิมพ์ /what-if ตามด้วยคำถาม)
 ---
 ## ต้นทางของบทความนี้

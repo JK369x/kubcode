@@ -101,7 +101,7 @@ test("detail: a packaged skill states its licence, credit, contents and limit", 
   assert.match(html, /id="download"/);
   assert.match(html, /MIT/);
   assert.match(html, /FreshStack/);
-  assert.match(html, /0\.1\.0/);
+  assert.match(html, /0\.2\.0/);
   assert.match(html, /20 ครั้ง/);
   assert.doesNotMatch(html, /ยังไม่มีชุดดาวน์โหลด/);
 });
@@ -110,4 +110,11 @@ test("detail: a skill without a package still says there is nothing to download"
   const html = renderToStaticMarkup(createElement(DownloadAction, { slug: "growkaz-stickman" }));
   assert.match(html, /ยังไม่มีชุดดาวน์โหลด/);
   assert.doesNotMatch(html, /MIT|FreshStack/);
+});
+
+test("detail: a members-only package says no redistribution instead of the LICENSE note", () => {
+  const html = renderToStaticMarkup(createElement(DownloadAction, { slug: "deep-sea-docs" }));
+  assert.match(html, /kubcode members only/);
+  assert.match(html, /ห้ามแชร์ อัปโหลด หรือขายชุดต่อ/);
+  assert.doesNotMatch(html, /ต้องคงไฟล์ LICENSE ไว้เมื่อแจกต่อ/);
 });
