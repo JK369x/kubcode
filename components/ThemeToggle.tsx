@@ -20,8 +20,9 @@ export function ThemeToggle() {
   return (
     <button
       className="theme-toggle"
+      // The visible word stays in the name (WCAG 2.5.3 label in name).
       aria-label={
-        theme === "dark" ? "เปลี่ยนเป็นธีมสว่าง" : "เปลี่ยนเป็นธีมมืด"
+        theme === "dark" ? "Light: เปลี่ยนเป็นธีมสว่าง" : "Dark: เปลี่ยนเป็นธีมมืด"
       }
       aria-pressed={theme === "light"}
       onClick={toggle}

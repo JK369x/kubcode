@@ -122,7 +122,7 @@
   font: inherit;
   color: var(--ink);
   background: var(--bg);
-  border: 1px solid var(--line);
+  border: 1px solid var(--field-line);
   border-radius: 10px;
   padding: 11px 14px;
 }
