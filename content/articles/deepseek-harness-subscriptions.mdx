@@ -33,7 +33,19 @@ sources:
     url: https://code.claude.com/docs/en/legal-and-compliance#authentication-and-credential-use
   - title: "anomalyco/opencode issue #6930 (รายงานบัญชีถูกแบนและปลดแบน)"
     url: https://github.com/anomalyco/opencode/issues/6930
-sourceNote: "ผลติดตั้งและหน้าจอมาจากการลองของเราบน Mac เมื่อ 10 พ.ย. 2026 ฟีเจอร์ที่ยังไม่ได้ลองเราเขียนตามเอกสารต้นทางและบอกไว้ชัดในบทความ"
+sourceNote: "ผลจากการลองบน Mac ของเรา 10–11 พ.ย. 2026 (ติดตั้งจากซอร์ส และลองขั้นตอนแอปเดสก์ท็อปในโปรไฟล์แยก) ฟีเจอร์ที่ยังไม่ได้ลองเขียนตามเอกสารต้นทาง"
+agentInstall:
+  agents: [claude-code, codex-cli]
+  source: https://github.com/V1ki/dsh-plugin-subscriptions
+  prompt: |
+    ช่วยติดตั้งแอป DeepSeek Harness กับปลั๊กอิน https://github.com/V1ki/dsh-plugin-subscriptions บน Mac ฉันไม่ใช่ dev ไม่มี git, Node, Python และไม่ต้องลงเพิ่ม
+    1. ก่อนเริ่ม อธิบายว่าจะติดตั้งอะไร ไว้ที่ไหน และขออนุญาตฉันก่อนรันทุกคำสั่ง
+    2. เช็ก uname -m ต้องเป็น arm64 และ macOS 13 ขึ้นไป ถ้าไม่รองรับ ให้หยุดแล้วบอกฉัน
+    3. ใช้ curl โหลด https://download.deepseek.com/desktop/dsh-latest-macos-arm64.dmg ไว้ใน ~/Downloads แล้ว hdiutil attach ตรวจด้วย spctl -a -vv ว่าเป็นของ Hangzhou DeepSeek (NAN929V4UM) ไม่ตรงให้หยุด คัดลอก DeepSeek Harness.app ไป /Applications แล้ว detach
+    4. open -a "DeepSeek Harness" รอจนมี ~/.dsh/profiles/desktop/package.json แล้วปิดแอปให้สนิทด้วย osascript -e 'quit app "DeepSeek Harness"'
+    5. รัน "/Applications/DeepSeek Harness.app/Contents/Resources/runtime/cli/bin/dsh" plugin --profile desktop add dsh-plugin-subscriptions@0.9.12 แล้วยืนยันด้วย plugin --profile desktop list
+    6. ห้ามขอ API key รหัสผ่าน หรือโค้ดล็อกอินในแชต
+    7. เสร็จแล้วบอกฉันว่า: เปิดแอป กด Add API Key แล้ว Set up later ไป Settings → Subscriptions กด Log in ของ Claude และ ChatGPT แล้วยืนยันในเบราว์เซอร์ จากนั้น New session เลือกโฟลเดอร์และโมเดล แล้วรอฉัน
 ---
 ## ทำไมถึงลอง
 
@@ -47,26 +59,51 @@ Harness เป็นโปรแกรมที่รันบน Mac ของ�
 
 ข้อที่ควรเข้าใจให้ตรง: **หน้าเว็บอยู่ในเครื่อง แต่ตัวโมเดลไม่ได้รันในเครื่อง** ทุกครั้งที่คุยกับ Claude หรือ Codex คำขอยังถูกส่งไปที่บริการของแต่ละเจ้าเหมือนเดิม ตอนนี้ Harness ยังเป็นรุ่น developer preview ส่วนต่าง ๆ อาจเปลี่ยนได้
 
-## ติดตั้งบน Mac
+## ติดตั้งบน Mac แบบไม่ต้องเป็น dev
 
-เครื่องที่เราใช้เป็น Mac ชิป Apple Silicon มี Node.js 24.22.2 และใช้ pnpm 11.28.5 ตามรุ่นที่ repo กำหนด (เรียกผ่าน `corepack`) ตัว Harness ที่ได้คือรุ่น 0.2.2-rc.1
+กล่อง **ติดตั้งด้วย AI agent ของคุณ** ด้านบนเขียนไว้สำหรับคนที่ไม่เคยใช้ git, Node หรือ Python เลย ใช้ได้กับ Mac ชิป Apple (M1 ขึ้นไป) และ macOS 13 ขึ้นไป สิ่งที่ต้องมีคือ AI agent สักตัว เช่น [Claude Code](/tools/claude-code) หรือ [Codex](/tools/codex-cli) คัดลอก prompt ไปวางในแชต แล้วกดอนุญาตทีละคำสั่ง
 
-```bash title="install-harness.sh"
+agent จะทำสิ่งเหล่านี้ให้:
+
+1. โหลดแอป DeepSeek Harness จาก[หน้าดาวน์โหลดของ DeepSeek](https://deepseek.com/download/) และตรวจว่าเป็นไฟล์ที่ DeepSeek เซ็นจริง
+2. ติดตั้งแอปลงในโฟลเดอร์ Applications
+3. เปิดแอปหนึ่งครั้งเพื่อให้แอปสร้างโฟลเดอร์ตั้งค่า แล้วปิด
+4. เพิ่มปลั๊กอิน dsh-plugin-subscriptions ด้วยคำสั่ง `dsh` ที่มากับแอปเอง จึงไม่ต้องลง Node หรือ git เพิ่ม
+
+หลังจากนั้นเหลือแค่คลิกเอง:
+
+1. เปิดแอป **DeepSeek Harness** ถ้ายังไม่มีบัญชี DeepSeek ให้กด **Add API Key** แล้วกด **Set up later** (ข้ามได้ ถ้าจะใช้แค่ Claude กับ ChatGPT)
+2. ไปที่ **Settings → Subscriptions** กด **Log in** ของ Claude และ ChatGPT (Codex) แล้วยืนยันในเบราว์เซอร์
+3. กด **New session** เลือกโฟลเดอร์งาน แล้วเลือกโมเดลในเมนูโมเดล
+
+ต้องมีแผน Claude แบบเสียเงิน (Pro หรือ Max) และ/หรือ ChatGPT Plus ขึ้นไป แผนฟรีใช้ไม่ได้
+
+เราลองขั้นตอนนี้บน Mac ของเราเมื่อ 11 พ.ย. 2026 ในโปรไฟล์แยกที่ไม่ปนกับของเดิม: แอปที่โหลดจากลิงก์ทางการผ่านการตรวจลายเซ็นของ Apple (Notarized Developer ID ของ DeepSeek) เปิดครั้งแรกแล้วสร้างโปรไฟล์ได้ คำสั่ง `dsh` ที่มากับแอปเพิ่มปลั๊กอินได้ใน 4 วินาที และเปิดแอปรอบสองแล้วโหลดปลั๊กอินขึ้นมา ส่วนการล็อกอินในโปรไฟล์ทดสอบนี้เราไม่ได้ทำซ้ำ
+
+### ถ้าไม่มี AI agent
+
+ทำเองได้ด้วยมือ: โหลดแอปจาก[หน้าดาวน์โหลด](https://deepseek.com/download/) ลากลง Applications เปิดหนึ่งครั้งแล้วปิด จากนั้นเปิดแอป Terminal วางคำสั่งนี้
+
+```bash title="add-plugin.sh"
+# Run while DeepSeek Harness is fully quit (Cmd+Q). Uses the dsh that ships inside the app.
+"/Applications/DeepSeek Harness.app/Contents/Resources/runtime/cli/bin/dsh" \
+  plugin --profile desktop add dsh-plugin-subscriptions@0.9.12
+```
+
+### ทางสำหรับ dev: ติดตั้งจากซอร์ส
+
+เครื่องที่เราใช้ทำคลิปติดตั้งแบบนี้ ต้องมี git และ Node.js 24.9 ขึ้นไป ตัว Harness ที่ได้คือรุ่น 0.2.2-rc.1
+
+```bash title="install-from-source.sh"
 git clone https://github.com/deepseek-ai/deepseek-harness.git
 cd deepseek-harness
 corepack pnpm install      # Done in 22.5s
 corepack pnpm run build    # run-gates: 10 passed, 0 failed, 0 skipped in 90.37s
 corepack pnpm dsh web      # opens the local web UI at 127.0.0.1:3080
+corepack pnpm dsh plugin --profile web add dsh-plugin-subscriptions@0.9.12
 ```
 
-ผลที่ได้:
-
-- ติดตั้ง dependency ใช้เวลา 22.5 วินาที และ build ผ่านทั้ง 10 ขั้นใน 90.37 วินาที
-- หน้าเว็บเปิดที่ `http://127.0.0.1:3080/` ถ้ายังไม่ได้ยืนยันตัวตน หน้าเว็บจะตอบ 401 แปลว่าคนอื่นเปิดโดยไม่มีสิทธิ์ไม่ได้
-- เซิร์ฟเวอร์ผูกกับ loopback ของเครื่องเท่านั้น ไม่ได้เปิดเป็นเว็บสาธารณะ
-- ลิงก์ที่เปิดตอนเริ่มโปรแกรมมีโทเคนเข้าระบบอยู่ อย่าแชร์ลิงก์นี้ให้คนอื่นหรือแปะลงในคลิป
-
-คำสั่งด้านบนเป็นรุ่นที่เราใช้เมื่อ 10 พ.ย. 2026 ก่อนทำตามให้เปิด [README ล่าสุด](https://github.com/deepseek-ai/deepseek-harness#run-from-source) ด้วย เพราะรุ่น preview อาจเปลี่ยนขั้นตอน
+หน้าเว็บเปิดที่ `127.0.0.1:3080` ผูกกับเครื่องเราเท่านั้น ไม่ได้เปิดเป็นเว็บสาธารณะ ลิงก์ที่เปิดตอนเริ่มมีโทเคนเข้าระบบอยู่ อย่าแชร์หรือแปะลงในคลิป ก่อนทำตามให้เปิด [README ล่าสุด](https://github.com/deepseek-ai/deepseek-harness#run-from-source) ด้วย เพราะรุ่น preview อาจเปลี่ยนขั้นตอน
 
 ## โมเดลหลักกับผู้ช่วยย่อย ไม่ใช่เรื่องเดียวกัน
 
@@ -81,16 +118,7 @@ corepack pnpm dsh web      # opens the local web UI at 127.0.0.1:3080
 
 ปลั๊กอินที่ใช้คือ [dsh-plugin-subscriptions](https://github.com/V1ki/dsh-plugin-subscriptions) ของ V1ki ซึ่ง**เป็นปลั๊กอินจากชุมชน ไม่ใช่ของ DeepSeek** เราติดตั้งรุ่น 0.9.12 แบบระบุรุ่นแน่นอน และตรวจแล้วว่าไฟล์ที่ได้ตรงกับค่า SHA-512 ที่ npm ประกาศ
 
-```bash title="add-subscriptions.sh"
-# Same as Plugins → Add plugin in the web UI. Pin the version you checked.
-corepack pnpm dsh plugin --profile web add dsh-plugin-subscriptions@0.9.12
-```
-
-หลังติดตั้ง ไม่ต้อง restart เพราะหน้าเว็บโหลดปลั๊กอินใหม่ให้เอง จากนั้น:
-
-1. เปิด **Settings → Subscriptions** แล้วกดเชื่อมบัญชีของแต่ละเจ้า
-2. ยืนยันสิทธิ์ในเบราว์เซอร์ ไม่ต้องใส่ API key ของ Anthropic หรือ OpenAI
-3. เปิด **New session** เลือก workspace แล้วเลือกโมเดลจากเจ้าที่เชื่อมแล้วในเมนูโมเดล
+ไม่ต้องใส่ API key ของ Anthropic หรือ OpenAI ล็อกอินผ่านเบราว์เซอร์อย่างเดียว ถ้าปุ่ม Log in ของ Claude กดแล้วเงียบ ดูวิธีแก้ในหัวข้อถัดไป
 
 ผลล่าสุดในเครื่องเรา: ChatGPT/Codex เชื่อม 1 บัญชี Claude เชื่อม 1 บัญชี ทั้งสองอ่านโควตาได้ และแชตใหม่เลือก Claude Opus 5.5 เป็นโมเดลหลักได้
 
