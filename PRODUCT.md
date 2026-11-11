@@ -72,7 +72,7 @@ Replace the circular Play badge over catalog thumbnails with a full-card-width �
 
 ## Descriptive skill naming — 2026-11-02
 
-The user authorized replacing creator/person/upstream-branded public skill names with names describing the work, and delegated the choices. New display names: Stickman Cinema, Survival Stories, What If Lab, Soft Story, Soft Story Motion, Thai Voice, Midnight Stories and Map Stories. Low-poly Urban and Captions Overlay remain descriptive. Apply names consistently to catalog, style register and original explanatory articles, but preserve stable slugs/ids/media paths and truthful author, model, voice, source/license attribution. This is presentation naming, not a transfer of ownership or rights.
+The user authorized replacing creator/person/upstream-branded public skill names with names describing the work, and delegated the choices. New display names: Stickman Cinema, Survival Stories, What If Lab, Soft Story, Soft Story Motion, Thai Voice (renamed Thai Calm Narrator, slug thai-narrator, 2026-11-11), Midnight Stories and Map Stories. Low-poly Urban and Captions Overlay remain descriptive. Apply names consistently to catalog, style register and original explanatory articles, but preserve stable slugs/ids/media paths and truthful author, model, voice, source/license attribution. This is presentation naming, not a transfer of ownership or rights.
 
 ## Accepted free-first hosting direction — 2026-11-02
 

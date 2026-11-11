@@ -1,0 +1,25 @@
+{
+  "schema": "jk-visual-style/1",
+  "id": "low-poly",
+  "name_th": "3D โลว์โพลี",
+  "name_en": "Low Poly 3D",
+  "axis": "visual_style",
+  "direction": "VISUAL.md",
+  "decided": "2026-11-10",
+  "note": "Pointer only: the kit stays under styles/; nothing is moved or copied. Pair with any formats/<story_format>.",
+  "kit": [
+    "styles/low-poly-urban"
+  ],
+  "kit_contained": true,
+  "renderer": "Three.js 0.170.0 + GSAP / HyperFrames",
+  "status": "selected v0.3",
+  "provenance": "styles/low-poly-urban/STYLE.md",
+  "license": "Own procedural build (JK)",
+  "credit": "JK Animation Studio",
+  "legacy_series": [
+    "low-poly-urban",
+    "mall-infection",
+    "satire-stories"
+  ],
+  "first_format": "behind-the-city"
+}

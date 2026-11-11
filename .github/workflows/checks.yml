@@ -21,6 +21,12 @@ jobs:
       - run: npm ci --ignore-scripts
       - run: npm test
       - run: npm run typecheck
+      # Studio engine (studio/): node:test + manifest check, no npm install and
+      # no local media needed (media-dependent tests skip; docs/adr/0005). The
+      # pipeline validators probe audio fixtures with ffprobe.
+      - run: sudo apt-get update -qq && sudo apt-get install -y -qq --no-install-recommends ffmpeg
+      - run: npm --prefix studio test
+      - run: npm --prefix studio run check
       # Source-only build: private preview binaries are intentionally not in Git.
       - run: npm run build
         env:

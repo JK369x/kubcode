@@ -8,7 +8,7 @@ const catalogNames: Record<string, string> = {
   "thai-survival": "Survival Stories",
   "freshstack-what-if": "What If Lab",
   "low-poly-urban": "Low-poly Urban",
-  "thai-jk-voice": "Thai Voice",
+  "thai-narrator": "Thai Calm Narrator",
   "captions-overlay": "Captions Overlay",
   "podcast-tool-short": "Podcast Shorts",
   "make-short": "Bean Shorts 3D",
@@ -145,7 +145,7 @@ test("article prose uses the new display names", () => {
     "Stickman Cinema",
     "Survival Stories",
     "What If Lab",
-    "Thai Voice",
+    "Thai Calm Narrator",
   ]) {
     assert.ok(prose.includes(name), `article mentions ${name}`);
   }

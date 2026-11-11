@@ -1,0 +1,196 @@
+{
+  "github": {
+    "source": "svgl",
+    "url": "https://svgl.app/library/github_light.svg",
+    "file": "github.svg",
+    "bytes": 997,
+    "dark_file": "github_dark.svg",
+    "dark_url": "https://svgl.app/library/github_dark.svg"
+  },
+  "nextjs": {
+    "source": "svgl",
+    "url": "https://svgl.app/library/nextjs_icon_dark.svg",
+    "file": "nextjs.svg",
+    "bytes": 1091
+  },
+  "rust": {
+    "source": "svgl",
+    "url": "https://svgl.app/library/rust.svg",
+    "file": "rust.svg",
+    "bytes": 5425,
+    "dark_file": "rust_dark.svg",
+    "dark_url": "https://svgl.app/library/rust_dark.svg"
+  },
+  "supabase": {
+    "source": "svgl",
+    "url": "https://svgl.app/library/supabase.svg",
+    "file": "supabase.svg",
+    "bytes": 1082
+  },
+  "youtube": {
+    "source": "svgl",
+    "url": "https://svgl.app/library/youtube.svg",
+    "file": "youtube.svg",
+    "bytes": 516
+  },
+  "google": {
+    "source": "svgl",
+    "url": "https://svgl.app/library/google.svg",
+    "file": "google.svg",
+    "bytes": 8169
+  },
+  "tiktok": {
+    "source": "svgl",
+    "url": "https://svgl.app/library/tiktok-icon-light.svg",
+    "file": "tiktok.svg",
+    "bytes": 1847,
+    "dark_file": "tiktok_dark.svg",
+    "dark_url": "https://svgl.app/library/tiktok-icon-dark.svg"
+  },
+  "nodejs": {
+    "source": "svgl",
+    "url": "https://svgl.app/library/nodejs.svg",
+    "file": "nodejs.svg",
+    "bytes": 2491
+  },
+  "aws": {
+    "source": "aws",
+    "url": "https://d1.awsstatic.com/onedam/marketing-channels/website/public/shared/architecture-icon-release/Icon-package_07312026.5846e92413caa21490223536cc97f1269e44fa92.zip#Architecture-Group-Icons_07312026/AWS-Cloud-logo_32.svg",
+    "file": "aws.svg",
+    "bytes": 6364,
+    "dark_file": "aws_dark.svg",
+    "dark_url": "https://d1.awsstatic.com/onedam/marketing-channels/website/public/shared/architecture-icon-release/Icon-package_07312026.5846e92413caa21490223536cc97f1269e44fa92.zip#Architecture-Group-Icons_07312026/AWS-Cloud-logo_32_Dark.svg"
+  },
+  "lambda": {
+    "source": "aws",
+    "url": "https://d1.awsstatic.com/onedam/marketing-channels/website/public/shared/architecture-icon-release/Icon-package_07312026.5846e92413caa21490223536cc97f1269e44fa92.zip#Architecture-Service-Icons_07312026/Arch_Compute/64/Arch_AWS-Lambda_64.svg",
+    "file": "lambda.svg",
+    "bytes": 1810
+  },
+  "s3": {
+    "source": "aws",
+    "url": "https://d1.awsstatic.com/onedam/marketing-channels/website/public/shared/architecture-icon-release/Icon-package_07312026.5846e92413caa21490223536cc97f1269e44fa92.zip#Architecture-Service-Icons_07312026/Arch_Storage/64/Arch_Amazon-Simple-Storage-Service_64.svg",
+    "file": "s3.svg",
+    "bytes": 2010
+  },
+  "kms": {
+    "source": "aws",
+    "url": "https://d1.awsstatic.com/onedam/marketing-channels/website/public/shared/architecture-icon-release/Icon-package_07312026.5846e92413caa21490223536cc97f1269e44fa92.zip#Architecture-Service-Icons_07312026/Arch_Security-Identity/64/Arch_AWS-Key-Management-Service_64.svg",
+    "file": "kms.svg",
+    "bytes": 5333
+  },
+  "ssm": {
+    "source": "aws",
+    "url": "https://d1.awsstatic.com/onedam/marketing-channels/website/public/shared/architecture-icon-release/Icon-package_07312026.5846e92413caa21490223536cc97f1269e44fa92.zip#Architecture-Service-Icons_07312026/Arch_Management-Tools/64/Arch_AWS-Systems-Manager_64.svg",
+    "file": "ssm.svg",
+    "bytes": 7018
+  },
+  "route53": {
+    "source": "aws",
+    "url": "https://d1.awsstatic.com/onedam/marketing-channels/website/public/shared/architecture-icon-release/Icon-package_07312026.5846e92413caa21490223536cc97f1269e44fa92.zip#Architecture-Service-Icons_07312026/Arch_Networking-Content-Delivery/64/Arch_Amazon-Route-53_64.svg",
+    "file": "route53.svg",
+    "bytes": 6663
+  },
+  "lightsail": {
+    "source": "aws",
+    "url": "https://d1.awsstatic.com/onedam/marketing-channels/website/public/shared/architecture-icon-release/Icon-package_07312026.5846e92413caa21490223536cc97f1269e44fa92.zip#Architecture-Service-Icons_07312026/Arch_Compute/64/Arch_Amazon-Lightsail_64.svg",
+    "file": "lightsail.svg",
+    "bytes": 2162
+  },
+  "browser": {
+    "source": "lucide",
+    "url": "https://cdn.jsdelivr.net/npm/lucide-static/icons/monitor-smartphone.svg",
+    "file": "browser.svg",
+    "bytes": 475
+  },
+  "timer": {
+    "source": "lucide",
+    "url": "https://cdn.jsdelivr.net/npm/lucide-static/icons/timer.svg",
+    "file": "timer.svg",
+    "bytes": 400
+  },
+  "zernio": {
+    "source": "lucide",
+    "url": "https://cdn.jsdelivr.net/npm/lucide-static/icons/share-2.svg",
+    "file": "zernio.svg",
+    "bytes": 493
+  },
+  "laptop": {
+    "source": "lucide",
+    "url": "https://cdn.jsdelivr.net/npm/lucide-static/icons/laptop.svg",
+    "file": "laptop.svg",
+    "bytes": 479
+  },
+  "film": {
+    "source": "lucide",
+    "url": "https://cdn.jsdelivr.net/npm/lucide-static/icons/film.svg",
+    "file": "film.svg",
+    "bytes": 504
+  },
+  "postgres": {
+    "source": "svgl",
+    "url": "https://svgl.app/library/postgresql.svg",
+    "file": "postgres.svg",
+    "bytes": 3944
+  },
+  "pulumi": {
+    "source": "svgl",
+    "url": "https://svgl.app/library/pulumi.svg",
+    "file": "pulumi.svg",
+    "bytes": 2094
+  },
+  "actions": {
+    "source": "devicon",
+    "url": "https://raw.githubusercontent.com/devicons/devicon/master/icons/githubactions/githubactions-original.svg",
+    "file": "actions.svg",
+    "bytes": 2854
+  },
+  "elevenlabs": {
+    "source": "gilbarbara",
+    "url": "https://cdn.jsdelivr.net/gh/gilbarbara/logos/logos/elevenlabs-icon.svg",
+    "file": "elevenlabs.svg",
+    "bytes": 453
+  },
+  "shield": {
+    "source": "lucide",
+    "url": "https://cdn.jsdelivr.net/npm/lucide-static/icons/shield-check.svg",
+    "file": "shield.svg",
+    "bytes": 495
+  },
+  "terminal": {
+    "source": "lucide",
+    "url": "https://cdn.jsdelivr.net/npm/lucide-static/icons/terminal.svg",
+    "file": "terminal.svg",
+    "bytes": 337
+  },
+  "caddy": {
+    "source": "lucide",
+    "url": "https://cdn.jsdelivr.net/npm/lucide-static/icons/lock-keyhole.svg",
+    "file": "caddy.svg",
+    "bytes": 417
+  },
+  "line": {
+    "source": "lucide",
+    "url": "https://cdn.jsdelivr.net/npm/lucide-static/icons/message-circle.svg",
+    "file": "line.svg",
+    "bytes": 429
+  },
+  "users": {
+    "source": "lucide",
+    "url": "https://cdn.jsdelivr.net/npm/lucide-static/icons/users.svg",
+    "file": "users.svg",
+    "bytes": 456
+  },
+  "worker": {
+    "source": "lucide",
+    "url": "https://cdn.jsdelivr.net/npm/lucide-static/icons/cpu.svg",
+    "file": "worker.svg",
+    "bytes": 661
+  },
+  "instagram": {
+    "source": "svgl",
+    "url": "https://svgl.app/library/instagram-icon.svg",
+    "file": "instagram.svg",
+    "bytes": 7047
+  }
+}

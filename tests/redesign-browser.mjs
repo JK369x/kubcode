@@ -146,7 +146,7 @@ try {
   await page.getByRole("button", { name: "ล้างตัวกรอง", exact: true }).click();
   await page.locator(".categories button").filter({ hasText: "เสียง" }).click();
   assert.equal(await page.locator(".skill-card").count(), 1);
-  assert.match(await page.locator(".skill-card").innerText(), /Thai Voice/);
+  assert.match(await page.locator(".skill-card").innerText(), /Thai Calm Narrator/);
   assert.match(
     await page.locator(".skill-card").innerText(),
     /ยังไม่มีสื่อพรีวิว/,
@@ -323,7 +323,7 @@ try {
   // Check inherited surfaces at narrow width; no screenshots beyond the bounded batch.
   for (const path of [
     "/skills/growkaz-stickman",
-    "/skills/thai-jk-voice",
+    "/skills/thai-narrator",
     "/articles",
     ...articleHrefs,
     "/account",

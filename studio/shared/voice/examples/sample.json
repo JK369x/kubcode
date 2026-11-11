@@ -1,0 +1,9 @@
+{
+  "voice_profile": "approved-calm-male-v1",
+  "text": "นี่คือเสียงไทย เจเค พร้อมเล่าเรื่องให้คุณฟัง",
+  "duration_s": 3.2001666666666666,
+  "model_repository": "mlx-community/VoxCPM2-4bit",
+  "model_revision": "dc9e5c187858da5f4a13dc4c247e297339216381",
+  "reference_sha256": "37bbd18ea77e97a0072289b8ef30f5d2721367de9de15e5982d4b88af53869d0",
+  "note": "Generated successfully in the new dedicated environment; no full-speed human quality comparison claimed. Spoken text predates the 2026-11-11 rename to “ผู้บรรยายไทย สุขุม”; audio unchanged."
+}

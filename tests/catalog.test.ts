@@ -13,7 +13,7 @@ test("search uses actual style and renderer metadata with use-case intersection"
   );
   assert.equal(
     filterSkills(skills, "เสียง", "voice-captions")[0]?.slug,
-    "thai-jk-voice",
+    "thai-narrator",
   );
   assert.equal(filterSkills(skills, "canvas", "voice-captions").length, 0);
   assert.equal(filterSkills(skills, "", "no-such-use-case").length, 0);

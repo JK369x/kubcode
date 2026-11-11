@@ -1,0 +1,4 @@
+interface:
+  display_name: "YouTube"
+  short_description: "Choose a channel, then use YouTube APIs"
+  default_prompt: "Use $youtube, select my target channel first, then carry out the requested YouTube task."

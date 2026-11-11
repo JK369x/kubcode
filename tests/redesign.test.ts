@@ -119,7 +119,7 @@ test("author switch shows real brand marks but keeps names Claude / Codex", () =
 });
 
 test("no-media featured entry stays honest and does not repeat its title", () => {
-  const skill = bySlug("thai-jk-voice");
+  const skill = bySlug("thai-narrator");
   const html = featured(skill);
   assert.match(html, /data-shape="none"/);
   assert.match(html, /ยังไม่มีสื่อพรีวิว/);
@@ -136,7 +136,7 @@ test("detail-page Preview keeps its original flat structure and notice", () => {
   assert.ok(!html.includes("data-shape"));
   assert.match(html, /สิทธิ์เผยแพร่ยังไม่ยืนยัน/);
   const none = renderToStaticMarkup(
-    createElement(Preview, { skill: bySlug("thai-jk-voice") }),
+    createElement(Preview, { skill: bySlug("thai-narrator") }),
   );
   assert.match(none, /<h2>/);
 });

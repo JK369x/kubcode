@@ -1,0 +1,24 @@
+{
+  "schema": "jk-visual-style/1",
+  "id": "satellite-map",
+  "name_th": "แผนที่ดาวเทียม 3D",
+  "name_en": "Satellite Map",
+  "axis": "visual_style",
+  "direction": "VISUAL.md",
+  "decided": "2026-11-10",
+  "note": "Pointer only: the kit stays under styles/; nothing is moved or copied. Pair with any formats/<story_format>.",
+  "kit": [
+    "styles/genhaha-map-story"
+  ],
+  "kit_contained": false,
+  "kit_external": "~/Downloads/genhaha-map-story",
+  "renderer": "Three.js / HyperFrames",
+  "status": "draft",
+  "provenance": "styles/genhaha-map-story/STYLE.md",
+  "license": "Genhaha licence (personal/team use, kit not redistributed); imagery EOX Sentinel-2 cloudless CC BY 4.0; geoBoundaries / Natural Earth",
+  "credit": "Genhaha map-story kit; EOX; geoBoundaries; Natural Earth",
+  "legacy_series": [
+    "genhaha-map-story"
+  ],
+  "first_format": "map-fact"
+}

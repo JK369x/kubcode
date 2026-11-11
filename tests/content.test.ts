@@ -133,12 +133,12 @@ test("loaded tags carry their labels", () => {
 
 test("refs resolve to existing articles, tools or catalog skills; unknown refs fail", () => {
   const ok = tree({
-    "articles/good-article.mdx": article({ refs: ["skill:thai-jk-voice", "article:other-article"] }),
+    "articles/good-article.mdx": article({ refs: ["skill:thai-narrator", "article:other-article"] }),
     "articles/other-article.mdx": article({ slug: "other-article" }),
   });
   const good = loadContent(ok).articles.find((a) => a.slug === "good-article")!;
   assert.deepEqual(good.refs, [
-    { kind: "skill", slug: "thai-jk-voice" },
+    { kind: "skill", slug: "thai-narrator" },
     { kind: "article", slug: "other-article" },
   ]);
 

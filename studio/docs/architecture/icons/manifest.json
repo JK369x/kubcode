@@ -1,0 +1,62 @@
+{
+  "hyperframes": {
+    "source": "lucide",
+    "url": "https://cdn.jsdelivr.net/npm/lucide-static/icons/film.svg",
+    "file": "hyperframes.svg",
+    "bytes": 504
+  },
+  "browser": {
+    "source": "lucide",
+    "url": "https://cdn.jsdelivr.net/npm/lucide-static/icons/panel-top.svg",
+    "file": "browser.svg",
+    "bytes": 361
+  },
+  "gallery": {
+    "source": "lucide",
+    "url": "https://cdn.jsdelivr.net/npm/lucide-static/icons/images.svg",
+    "file": "gallery.svg",
+    "bytes": 519
+  },
+  "voice": {
+    "source": "lucide",
+    "url": "https://cdn.jsdelivr.net/npm/lucide-static/icons/audio-waveform.svg",
+    "file": "voice.svg",
+    "bytes": 408
+  },
+  "social": {
+    "source": "lucide",
+    "url": "https://cdn.jsdelivr.net/npm/lucide-static/icons/share-2.svg",
+    "file": "social.svg",
+    "bytes": 493
+  },
+  "styles": {
+    "source": "lucide",
+    "url": "https://cdn.jsdelivr.net/npm/lucide-static/icons/palette.svg",
+    "file": "styles.svg",
+    "bytes": 646
+  },
+  "nodejs": {
+    "source": "svgl",
+    "url": "https://svgl.app/library/nodejs.svg",
+    "file": "nodejs.svg",
+    "bytes": 2491
+  },
+  "bun": {
+    "source": "svgl",
+    "url": "https://svgl.app/library/bun.svg",
+    "file": "bun.svg",
+    "bytes": 3547
+  },
+  "python": {
+    "source": "svgl",
+    "url": "https://svgl.app/library/python.svg",
+    "file": "python.svg",
+    "bytes": 1126
+  },
+  "ffmpeg": {
+    "source": "gilbarbara",
+    "url": "https://cdn.jsdelivr.net/gh/gilbarbara/logos/logos/ffmpeg-icon.svg",
+    "file": "ffmpeg.svg",
+    "bytes": 4132
+  }
+}

@@ -1,0 +1,32 @@
+{
+  "name": "jk-animation-studio",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "node --test tests/*.test.mjs",
+    "check": "node scripts/cli.mjs check",
+    "styles": "node scripts/cli.mjs list",
+    "new-style": "node scripts/cli.mjs add",
+    "gallery": "node scripts/cli.mjs gallery",
+    "preview": "node scripts/cli.mjs preview",
+    "doctor": "node scripts/doctor.mjs",
+    "setup:voice": "node scripts/setup-voice.mjs",
+    "hf:check": "hyperframes check styles/jk-soft-story/examples/still --json",
+    "hf:snapshot": "hyperframes snapshot styles/jk-soft-story/examples/still --at 0.5 --output .qa/still",
+    "voice:plan": "python3 shared/voice/scripts/narrate.py --lines shared/voice/example-lines.json --out outputs/voice --dry-run",
+    "test:social": "bun test social-api/app.test.ts",
+    "social:dev": "bun --cwd social-api run dev"
+  },
+  "devDependencies": {
+    "@fontsource/anuphan": "^5.3.0",
+    "hyperframes": "0.8.192",
+    "three": "0.170.0"
+  },
+  "engines": {
+    "node": ">=22"
+  },
+  "dependencies": {
+    "@yusufceng1z/ding": "^0.0.4"
+  }
+}

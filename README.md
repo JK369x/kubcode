@@ -116,7 +116,7 @@ Results and screenshots are in `.qa/project-visual-audit/`, `.qa/kinetic-browser
 
 ## Honest functional boundaries
 
-Seven catalog skills and the article routes use local metadata. Source videos/images are actual local samples; no unrelated art stands in for absent media. Thai Voice and Captions Overlay have no real preview media and say so.
+Seven catalog skills and the article routes use local metadata. Source videos/images are actual local samples; no unrelated art stands in for absent media. Thai Calm Narrator and Captions Overlay have no real preview media and say so.
 
 Backend account/approval/download infrastructure is not connected. Downloads remain fail-closed (`503`) and visibly unavailable. No signup, approval, source-kit delivery, voice-provider validation, paid generation or API-key storage success is simulated. The API-key management page is a recorded requirement, not implemented functionality.
 

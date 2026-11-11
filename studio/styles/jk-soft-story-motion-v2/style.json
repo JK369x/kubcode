@@ -1,0 +1,13 @@
+{
+  "id": "jk-soft-story-motion-v2",
+  "name": "JK Soft Story — Motion Beats v2",
+  "status": "draft",
+  "version": "0.1",
+  "approvalScope": "ทดลองจังหวะเล่าและกล้องจาก motion study เดิม · ยังรอตรวจ",
+  "direction": "STYLE.md",
+  "preview": null,
+  "source": "examples/pilot/index.html",
+  "components": [],
+  "example": "examples/pilot/index.html",
+  "tags": ["2d", "storytelling", "motion-pilot"]
+}

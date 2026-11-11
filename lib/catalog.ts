@@ -236,8 +236,8 @@ export const rawSkills: readonly Skill[] = [
     ],
   },
   {
-    slug: "thai-jk-voice",
-    name: "Thai Voice",
+    slug: "thai-narrator",
+    name: "Thai Calm Narrator",
     category: "audio",
     description:
       "เสียงบรรยายไทยสังเคราะห์ ใช้ shared voice เพียงแหล่งเดียว ไม่ใช่เสียงบันทึกของเจ้าของเว็บ",
@@ -340,6 +340,11 @@ export const rawSkills: readonly Skill[] = [
 ];
 /** Catalog as published by this build (see lib/publication.ts). */
 export const skills: Skill[] = publishSkills(rawSkills);
+
+/** Old skill slugs that were linked publicly, mapped to their current slug (301 in next.config.ts). */
+export const RENAMED_SKILLS: Readonly<Record<string, string>> = {
+  "thai-jk-voice": "thai-narrator",
+};
 export function filterSkills(items: Skill[], query: string, useCase: string) {
   const q = query.trim().toLocaleLowerCase();
   return items.filter(

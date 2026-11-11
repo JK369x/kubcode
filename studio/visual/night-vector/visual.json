@@ -1,0 +1,24 @@
+{
+  "schema": "jk-visual-style/1",
+  "id": "night-vector",
+  "name_th": "เวกเตอร์มืด หมอก แสงไฟดวงเดียว",
+  "name_en": "Night Vector",
+  "axis": "visual_style",
+  "direction": "VISUAL.md",
+  "decided": "2026-11-10",
+  "note": "Pointer only: the kit stays under styles/; nothing is moved or copied. Pair with any formats/<story_format>.",
+  "kit": [
+    "styles/genhaha-horror-story"
+  ],
+  "kit_contained": false,
+  "kit_external": "~/Downloads/genhaha-horror-story",
+  "renderer": "HyperFrames",
+  "status": "draft",
+  "provenance": "styles/genhaha-horror-story/STYLE.md",
+  "license": "Genhaha licence: personal/team use, no resale/re-upload of kit files; kit not redistributed",
+  "credit": "Genhaha horror-story kit",
+  "legacy_series": [
+    "genhaha-horror-story"
+  ],
+  "first_format": "ghost-story"
+}

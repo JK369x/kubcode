@@ -1,0 +1,38 @@
+{
+  "id": "approved-calm-male-v1",
+  "reference": "narrator-reference.wav",
+  "reference_sha256": "37bbd18ea77e97a0072289b8ef30f5d2721367de9de15e5982d4b88af53869d0",
+  "reference_text": "ใต้ผืนน้ำแข็งที่ดูเงียบสงบ มีทะเลสาบซ่อนอยู่จริง แต่เรื่องลึกลับที่เราได้ยินกัน มีหลักฐานแค่ไหน",
+  "source": "Original synthetic voice designed locally with VoxCPM2 from a warm calm Thai male description; approved by the user. No recorded person was used for the initial voice design.",
+  "model_repository": "mlx-community/VoxCPM2-4bit",
+  "model_revision": "dc9e5c187858da5f4a13dc4c247e297339216381",
+  "parameters": {
+    "seed_base": 43,
+    "max_tokens": 600,
+    "inference_timesteps": 10,
+    "cfg_value": 2
+  },
+  "normalization": {
+    "integrated_lufs": -17,
+    "true_peak_dbfs": -2.5,
+    "loudness_range": 9,
+    "sample_rate": 48000,
+    "channels": 1
+  },
+  "display_name": "ผู้บรรยายไทย สุขุม",
+  "aliases": [
+    "ผู้บรรยายไทย สุขุม",
+    "Thai Calm Narrator",
+    "thai-narrator",
+    "เสียงไทย JK",
+    "Thai JK",
+    "JK Thai"
+  ],
+  "generation_workflow": "original-direct-voxcpm2",
+  "display_name_en": "Thai Calm Narrator",
+  "renamed": {
+    "from": "เสียงไทย JK",
+    "on": "2026-11-11",
+    "reason": "neutral product name; voice, reference and id unchanged"
+  }
+}

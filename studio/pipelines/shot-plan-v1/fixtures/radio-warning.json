@@ -1,0 +1,8 @@
+{
+  "version": 1, "title": "The warning at the window", "scene": "jk-window", "duration": 8,
+  "shots": [
+    {"start":0,"end":2.8,"camera":"window","effect":"hand","caption":{"thai":"เงาหลังหน้าต่าง เข้ามาใกล้","english":"A SHADOW MOVES CLOSER","highlight":"เข้ามาใกล้"}},
+    {"start":2.8,"end":5.2,"camera":"hero","effect":"blink","caption":{"thai":"เขาหยุด และมองอีกครั้ง","english":"HE PAUSES AND LOOKS AGAIN","highlight":"มองอีกครั้ง"}},
+    {"start":5.2,"end":8,"camera":"window","effect":"latch","caption":{"thai":"มือของเขา แตะกลอนเบาๆ","english":"HIS HAND TOUCHES THE LATCH","highlight":"แตะกลอน"}}
+  ]
+}

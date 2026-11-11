@@ -1,0 +1,9 @@
+{
+  "id": "thai-en-keyword-highlight",
+  "preset": "../../shared/captions/thai-en-keyword-highlight.json",
+  "guide": "../../shared/captions/STYLE.md",
+  "approvedOn": "2026-10-29",
+  "placement": "bilingual overlay; Thai key phrase highlighted, small English below; no reserved band",
+  "timing": "align to approved narration",
+  "override": "Use another caption treatment only when the user requests it"
+}

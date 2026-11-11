@@ -1,0 +1,173 @@
+[
+  {
+    "line": "l1",
+    "spoken": "ถ้าตั้งแต่พรุ่งนี้ คุณจำทุกอย่างได้",
+    "pre": "ถ้าตั้งแต่พรุ่งนี้ ",
+    "key": "คุณจำทุกอย่างได้",
+    "post": "",
+    "color": "#f2c35b",
+    "en": "WHAT IF YOU"
+  },
+  {
+    "line": "l1",
+    "spoken": "ไม่ลืมอะไรเลยสักอย่าง",
+    "pre": "",
+    "key": "ไม่ลืมอะไรเลย",
+    "post": "สักอย่าง",
+    "color": "#f2c35b",
+    "en": "NEVER FORGOT ANYTHING?"
+  },
+  {
+    "line": "l2",
+    "spoken": "รหัสไวไฟ",
+    "pre": "",
+    "key": "รหัสไวไฟ",
+    "post": "",
+    "color": "#ff8271",
+    "en": "PASSWORDS"
+  },
+  {
+    "line": "l2",
+    "spoken": "ชั้นที่จอดรถ",
+    "pre": "",
+    "key": "ชั้นที่จอดรถ",
+    "post": "",
+    "color": "#ff8271",
+    "en": "PARKING"
+  },
+  {
+    "line": "l2",
+    "spoken": "วันเกิดเพื่อนทุกคน",
+    "pre": "",
+    "key": "วันเกิดเพื่อน",
+    "post": "ทุกคน",
+    "color": "#ff8271",
+    "en": "BIRTHDAYS"
+  },
+  {
+    "line": "l2",
+    "spoken": "จำได้หมด",
+    "pre": "",
+    "key": "จำได้หมด",
+    "post": "",
+    "color": "#ff8271",
+    "en": "ALL OF IT"
+  },
+  {
+    "line": "l3",
+    "spoken": "กฎมีข้อเดียว อะไรที่จำแล้ว",
+    "pre": "กฎมีข้อเดียว ",
+    "key": "อะไรที่จำแล้ว",
+    "post": "",
+    "color": "#f2c35b",
+    "en": "ONE RULE"
+  },
+  {
+    "line": "l3",
+    "spoken": "ลบไม่ได้",
+    "pre": "",
+    "key": "ลบไม่ได้",
+    "post": "",
+    "color": "#87dbd6",
+    "en": "NOTHING EVER GETS DELETED"
+  },
+  {
+    "line": "l4",
+    "spoken": "ในโลกจริง เราลืมเร็วมาก",
+    "pre": "ในโลกจริง ",
+    "key": "ลืมเร็วมาก",
+    "post": "",
+    "color": "#f2c35b",
+    "en": "IN REAL LIFE, WE FORGET FAST"
+  },
+  {
+    "line": "l4",
+    "spoken": "การทดลองท่องพยางค์ไร้ความหมาย",
+    "pre": "",
+    "key": "การทดลอง",
+    "post": "ท่องพยางค์ไร้ความหมาย",
+    "color": "#f2c35b",
+    "en": "NONSENSE-SYLLABLE EXPERIMENTS"
+  },
+  {
+    "line": "l4",
+    "spoken": "ผ่านไปวันเดียว",
+    "pre": "",
+    "key": "ผ่านไปวันเดียว",
+    "post": "",
+    "color": "#f2c35b",
+    "en": "AFTER ONE DAY"
+  },
+  {
+    "line": "l4",
+    "spoken": "ต้องใช้เวลาท่องใหม่ราวสองในสาม",
+    "pre": "ต้องใช้เวลาท่องใหม่ ",
+    "key": "ราวสองในสาม",
+    "post": "",
+    "color": "#f2c35b",
+    "en": "~2/3 OF THE EFFORT TO RELEARN"
+  },
+  {
+    "line": "l5",
+    "spoken": "แต่มีคนแค่ห้าสิบกว่าคน ที่ยืนยันแล้ว",
+    "pre": "แต่มีคนแค่ ",
+    "key": "ห้าสิบกว่าคน",
+    "post": " ที่ยืนยันแล้ว",
+    "color": "#f2c35b",
+    "en": "ONLY 50+ CONFIRMED CASES"
+  },
+  {
+    "line": "l5",
+    "spoken": "ว่าจำเรื่องในชีวิตตัวเองได้แทบทุกวัน",
+    "pre": "",
+    "key": "จำเรื่องในชีวิตตัวเองได้",
+    "post": "แทบทุกวัน",
+    "color": "#f2c35b",
+    "en": "EVERY DAY OF THEIR LIVES"
+  },
+  {
+    "line": "l6",
+    "spoken": "แต่แบบทดสอบความจำทั่วไปในแล็บ",
+    "pre": "แต่",
+    "key": "แบบทดสอบความจำทั่วไป",
+    "post": "ในแล็บ",
+    "color": "#f2c35b",
+    "en": "MOST STANDARD MEMORY TESTS"
+  },
+  {
+    "line": "l6",
+    "spoken": "พวกเขาทำได้พอๆ กับเรา",
+    "pre": "พวกเขาทำได้ ",
+    "key": "พอๆ กับเรา",
+    "post": "",
+    "color": "#87dbd6",
+    "en": "SAME AS EVERYONE"
+  },
+  {
+    "line": "l6",
+    "spoken": "และยังจำผิดได้ด้วย",
+    "pre": "และยัง",
+    "key": "จำผิดได้",
+    "post": "ด้วย",
+    "color": "#87dbd6",
+    "en": "FALSE MEMORIES TOO"
+  },
+  {
+    "line": "l7",
+    "spoken": "แล้วถ้าคุณจำได้ทุกคำ",
+    "pre": "แล้วถ้าคุณจำได้",
+    "key": "ทุกคำ",
+    "post": "",
+    "color": "#ff8271",
+    "en": "EVERY WORD"
+  },
+  {
+    "line": "l7",
+    "spoken": "ที่แฟนเก่าเคยพูดล่ะ?",
+    "pre": "ที่",
+    "key": "แฟนเก่า",
+    "post": "เคยพูดล่ะ?",
+    "color": "#ff8271",
+    "en": "YOUR EX EVER SAID?"
+  }
+]

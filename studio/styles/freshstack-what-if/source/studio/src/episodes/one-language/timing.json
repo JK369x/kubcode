@@ -1,0 +1,265 @@
+{
+ "total": 1044,
+ "segments": [
+  {
+   "shot": "S1",
+   "a": 0,
+   "b": 111,
+   "line_start": 4,
+   "line_end": 101
+  },
+  {
+   "shot": "S2",
+   "a": 111,
+   "b": 250,
+   "line_start": 111,
+   "line_end": 241
+  },
+  {
+   "shot": "S3",
+   "a": 250,
+   "b": 430,
+   "line_start": 250,
+   "line_end": 418
+  },
+  {
+   "shot": "S4",
+   "a": 430,
+   "b": 582,
+   "line_start": 430,
+   "line_end": 569
+  },
+  {
+   "shot": "S5",
+   "a": 582,
+   "b": 751,
+   "line_start": 582,
+   "line_end": 741
+  },
+  {
+   "shot": "S6",
+   "a": 751,
+   "b": 866,
+   "line_start": 751,
+   "line_end": 852
+  },
+  {
+   "shot": "S7",
+   "a": 866,
+   "b": 1044,
+   "line_start": 866,
+   "line_end": 1005
+  }
+ ],
+ "lines": [
+  {
+   "id": "l1",
+   "a": 4,
+   "b": 101,
+   "text": "ถ้าพรุ่งนี้ตื่นมา ทุกคนบนโลก พูดภาษาเดียวกันหมด"
+  },
+  {
+   "id": "l2",
+   "a": 111,
+   "b": 241,
+   "text": "ไปเที่ยวต่างประเทศ สั่งราเมนคล่อง ลุงเจ้าของร้านเล่ามุก ก็ขำทันที"
+  },
+  {
+   "id": "l3",
+   "a": 250,
+   "b": 418,
+   "text": "กฎมีข้อเดียว ทุกคนพูดภาษากลางภาษาเดียว และภาษาเดิม ค่อยๆ ไม่มีใครใช้"
+  },
+  {
+   "id": "l4",
+   "a": 430,
+   "b": 569,
+   "text": "ปีหนึ่งพันแปดร้อยแปดสิบเจ็ด เคยมีคนสร้างภาษากลางของโลกมาแล้ว ชื่อเอสเปรันโต"
+  },
+  {
+   "id": "l5",
+   "a": 582,
+   "b": 741,
+   "text": "แต่วันนี้ โลกยังมีภาษามากกว่าเจ็ดพันภาษา และเกือบครึ่ง เสี่ยงจะหายไป"
+  },
+  {
+   "id": "l6",
+   "a": 751,
+   "b": 852,
+   "text": "แค่ในไทย ก็มีคนพูดกันราวเจ็ดสิบภาษา"
+  },
+  {
+   "id": "l7",
+   "a": 866,
+   "b": 1005,
+   "text": "แล้วถ้าภาษาไทยหายไป คำว่าเกรงใจ จะแปลเป็นภาษาใหม่ว่าอะไรดี?"
+  }
+ ],
+ "cues": [
+  {
+   "a": 4,
+   "b": 58,
+   "pre": "ถ้าพรุ่งนี้ตื่นมา ",
+   "key": "ทุกคนบนโลก",
+   "post": "",
+   "color": "#f2c35b",
+   "en": "WHAT IF EVERYONE SPOKE ONE LANGUAGE?"
+  },
+  {
+   "a": 58,
+   "b": 108,
+   "pre": "พูด",
+   "key": "ภาษาเดียวกัน",
+   "post": "หมด",
+   "color": "#f2c35b",
+   "en": "WHAT IF EVERYONE SPOKE ONE LANGUAGE?"
+  },
+  {
+   "a": 111,
+   "b": 152,
+   "pre": "",
+   "key": "ไปเที่ยวต่างประเทศ",
+   "post": "",
+   "color": "#f2c35b",
+   "en": "NO TRANSLATOR NEEDED"
+  },
+  {
+   "a": 152,
+   "b": 181,
+   "pre": "",
+   "key": "สั่งราเมนคล่อง",
+   "post": "",
+   "color": "#ff8271",
+   "en": "NO TRANSLATOR NEEDED"
+  },
+  {
+   "a": 181,
+   "b": 248,
+   "pre": "ลุงเจ้าของร้านเล่ามุก ก็",
+   "key": "ขำทันที",
+   "post": "",
+   "color": "#ff8271",
+   "en": "NO TRANSLATOR NEEDED"
+  },
+  {
+   "a": 250,
+   "b": 278,
+   "pre": "",
+   "key": "กฎมีข้อเดียว",
+   "post": "",
+   "color": "#f2c35b",
+   "en": "ONE RULE: ONE SHARED LANGUAGE"
+  },
+  {
+   "a": 278,
+   "b": 348,
+   "pre": "ทุกคนพูด",
+   "key": "ภาษากลางภาษาเดียว",
+   "post": "",
+   "color": "#f2c35b",
+   "en": "ONE RULE: ONE SHARED LANGUAGE"
+  },
+  {
+   "a": 348,
+   "b": 425,
+   "pre": "และภาษาเดิม ค่อยๆ ",
+   "key": "ไม่มีใครใช้",
+   "post": "",
+   "color": "#87dbd6",
+   "en": "ONE RULE: ONE SHARED LANGUAGE"
+  },
+  {
+   "a": 430,
+   "b": 476,
+   "pre": "",
+   "key": "ปี 1887",
+   "post": "",
+   "color": "#f2c35b",
+   "en": "1887: ESPERANTO WAS INVENTED FOR THIS"
+  },
+  {
+   "a": 476,
+   "b": 543,
+   "pre": "เคยมีคนสร้าง",
+   "key": "ภาษากลางของโลก",
+   "post": "มาแล้ว",
+   "color": "#f2c35b",
+   "en": "1887: ESPERANTO WAS INVENTED FOR THIS"
+  },
+  {
+   "a": 543,
+   "b": 576,
+   "pre": "ชื่อ",
+   "key": "เอสเปรันโต",
+   "post": "",
+   "color": "#f2c35b",
+   "en": "1887: ESPERANTO WAS INVENTED FOR THIS"
+  },
+  {
+   "a": 582,
+   "b": 598,
+   "pre": "แต่",
+   "key": "วันนี้",
+   "post": "",
+   "color": "#f2c35b",
+   "en": "7,000+ LANGUAGES · ABOUT HALF ENDANGERED"
+  },
+  {
+   "a": 598,
+   "b": 675,
+   "pre": "โลกยังมี",
+   "key": "มากกว่าเจ็ดพันภาษา",
+   "post": "",
+   "color": "#f2c35b",
+   "en": "7,000+ LANGUAGES · ABOUT HALF ENDANGERED"
+  },
+  {
+   "a": 675,
+   "b": 748,
+   "pre": "และ",
+   "key": "เกือบครึ่ง",
+   "post": " เสี่ยงจะหายไป",
+   "color": "#ff8271",
+   "en": "7,000+ LANGUAGES · ABOUT HALF ENDANGERED"
+  },
+  {
+   "a": 751,
+   "b": 777,
+   "pre": "แค่",
+   "key": "ในไทย",
+   "post": "",
+   "color": "#f2c35b",
+   "en": "THAILAND ALONE: ~70 LANGUAGES"
+  },
+  {
+   "a": 777,
+   "b": 860,
+   "pre": "ก็มีคนพูดกัน",
+   "key": "ราวเจ็ดสิบภาษา",
+   "post": "",
+   "color": "#f2c35b",
+   "en": "THAILAND ALONE: ~70 LANGUAGES"
+  },
+  {
+   "a": 866,
+   "b": 913,
+   "pre": "แล้วถ้า",
+   "key": "ภาษาไทยหายไป",
+   "post": "",
+   "color": "#ff8271",
+   "en": "HOW WOULD YOU TRANSLATE \"KRENG JAI\"?"
+  },
+  {
+   "a": 913,
+   "b": 1012,
+   "pre": "คำว่า",
+   "key": "เกรงใจ",
+   "post": " จะแปลเป็นภาษาใหม่ว่าอะไรดี?",
+   "color": "#f2c35b",
+   "en": "HOW WOULD YOU TRANSLATE \"KRENG JAI\"?"
+  }
+ ],
+ "flashes": [
+  20
+ ]
+}

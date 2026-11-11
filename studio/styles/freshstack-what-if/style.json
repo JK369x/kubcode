@@ -1,0 +1,34 @@
+{
+  "id": "freshstack-what-if",
+  "name": "FreshStack What If — OpenCode / GLM",
+  "status": "draft",
+  "version": "0.1.0",
+  "direction": "STYLE.md",
+  "preview": "assets/poster.jpg",
+  "source": "source/studio/src/episodes/mute-touch/index.tsx",
+  "components": [],
+  "video": "examples/glm/demo.mp4",
+  "tags": [
+    "what-if",
+    "svg",
+    "remotion",
+    "opencode",
+    "glm",
+    "landscape"
+  ],
+  "approvalScope": "Imported real tested samples are available for selection/study only; no user style, motion, voice, factual, production or publication approval inferred.",
+  "examples": [
+    {
+      "id": "glm",
+      "label": "OpenCode / GLM — Mute Touch",
+      "video": "examples/glm/demo.mp4",
+      "author": "OpenCode",
+      "model": "opencode/glm-5.3-flash-free",
+      "renderer": "React SVG / Remotion 4.0.530 + host FFmpeg master",
+      "voice": "ElevenLabs eleven_v3 Thai narration; ElevenLabs sound assets",
+      "notes": "OpenCode/GLM authored episode; local host safety/alignment/mastering/QA patches are separate, not claimed as GLM authorship. Existing approval is completed and does not authorize new paid runs."
+    }
+  ],
+  "provenance": "PROVENANCE.json",
+  "runtime": "Node 18+, Remotion 4.0.530, React 19, FFmpeg, Google Fonts connection + Thai fonts; paid generation closed"
+}

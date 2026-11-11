@@ -1,0 +1,267 @@
+{
+ "slug": "mute-touch",
+ "title": "WHAT IF YOU COULD SILENCE UNTIL LAUGHTER?",
+ "fps": 30,
+ "total": 717,
+ "segments": [
+  {
+   "shot": "S1",
+   "a": 0,
+   "b": 40,
+   "t0": 0,
+   "t1": 40,
+   "line": "แตะนาฬิกาปลุก",
+   "look": "mute"
+  },
+  {
+   "shot": "S2",
+   "a": 40,
+   "b": 83,
+   "t0": 0,
+   "t1": 43,
+   "line": "เงียบ",
+   "look": "mute"
+  },
+  {
+   "shot": "S3",
+   "a": 83,
+   "b": 126,
+   "t0": 0,
+   "t1": 43,
+   "line": "แตะเครื่องเจาะ",
+   "look": "mute"
+  },
+  {
+   "shot": "S4",
+   "a": 126,
+   "b": 147,
+   "t0": 0,
+   "t1": 21,
+   "line": "เงียบ",
+   "look": "mute"
+  },
+  {
+   "shot": "S5",
+   "a": 147,
+   "b": 206,
+   "t0": 0,
+   "t1": 59,
+   "line": "แตะแตรรถตรงหน้า",
+   "look": "mute"
+  },
+  {
+   "shot": "S6",
+   "a": 206,
+   "b": 286,
+   "t0": 0,
+   "t1": 80,
+   "line": "เงียบ แต่รถก็ยังวิ่งมา",
+   "look": "mute"
+  },
+  {
+   "shot": "S7",
+   "a": 286,
+   "b": 349,
+   "t0": 0,
+   "t1": 63,
+   "line": "ถ้าปิดเสียงของสิ่งที่แตะได้"
+  },
+  {
+   "shot": "S8",
+   "a": 349,
+   "b": 440,
+   "t0": 0,
+   "t1": 91,
+   "line": "แต่ทุกเสียงย้อนกลับทันทีที่คุณหัวเราะ"
+  },
+  {
+   "shot": "S9",
+   "a": 440,
+   "b": 501,
+   "t0": 0,
+   "t1": 61,
+   "line": "ในอากาศราว 20 องศาเซลเซียส"
+  },
+  {
+   "shot": "S10",
+   "a": 501,
+   "b": 596,
+   "t0": 0,
+   "t1": 95,
+   "line": "เสียงวิ่งราว 343 เมตรต่อวินาที"
+  },
+  {
+   "shot": "S11",
+   "a": 596,
+   "b": 628,
+   "t0": 0,
+   "t1": 32,
+   "line": "อันนี้ของจริง"
+  },
+  {
+   "shot": "S12",
+   "a": 628,
+   "b": 717,
+   "t0": 0,
+   "t1": 89,
+   "line": "แล้วคุณจะกลั้นขำได้อีกนานแค่ไหน?",
+   "look": "mute"
+  }
+ ],
+ "shots": [
+  {
+   "id": "S1",
+   "size": "wide",
+   "key": 34,
+   "len": 40,
+   "first": 0,
+   "line": "แตะนาฬิกาปลุก",
+   "note": "asleep → wake flinch → windup → tap lands t35 after the phrase, foreground mitten pinned on the alarm through the cut"
+  },
+  {
+   "id": "S2",
+   "size": "macro insert",
+   "key": 40,
+   "len": 43,
+   "first": 40,
+   "line": "เงียบ",
+   "note": "the tapped alarm, dead; Pip's sleeve withdraws from the collapsed rings"
+  },
+  {
+   "id": "S3",
+   "size": "wide",
+   "key": 42,
+   "len": 43,
+   "first": 83,
+   "line": "แตะเครื่องเจาะ",
+   "note": "drill rides on the road at feet level; worker's two sleeve-hands grip the bar ends; Pip closes right up and lands the slap at t40"
+  },
+  {
+   "id": "S4",
+   "size": "macro low",
+   "key": 19,
+   "len": 21,
+   "first": 126,
+   "line": "เงียบ",
+   "note": "macro: same drill prop, hand still on the handle from the cut (press-recoil then holds); rings dry while the bit keeps chewing"
+  },
+  {
+   "id": "S5",
+   "size": "wide low angle",
+   "key": 55,
+   "len": 59,
+   "first": 147,
+   "line": "แตะแตรรถตรงหน้า",
+   "note": "the truck closes blaring from its own brass trumpet; Pip sprints, winds up — the tap lands at t57 after the phrase, held on the horn; truck still creeping"
+  },
+  {
+   "id": "S6",
+   "size": "medium",
+   "key": 74,
+   "len": 80,
+   "first": 206,
+   "line": "เงียบ แต่รถก็ยังวิ่งมา",
+   "note": "the silenced horn but the truck rolls silently past; Pip recoils"
+  },
+  {
+   "id": "S7",
+   "size": "title, wide",
+   "key": 58,
+   "len": 63,
+   "first": 286,
+   "line": "ถ้าปิดเสียงของสิ่งที่แตะได้",
+   "note": "WHAT IF YOU COULD / SILENCE UNTIL LAUGHTER? over the dusk city"
+  },
+  {
+   "id": "S8",
+   "size": "wide",
+   "key": 88,
+   "len": 91,
+   "first": 349,
+   "line": "แต่ทุกเสียงย้อนกลับทันทีที่คุณหัวเราะ",
+   "note": "the rule demonstrated: a real open-mouth laugh at t52 releases ALL stored sounds at once — they expand and fade FOREVER, no return-to-storage; caught, he clamps his face"
+  },
+  {
+   "id": "S9",
+   "size": "schematic",
+   "key": 58,
+   "len": 61,
+   "first": 440,
+   "line": "ในอากาศราว 20 องศาเซลเซียส",
+   "note": "sound in air at ~20°C spreads as expanding rings over a ruler"
+  },
+  {
+   "id": "S10",
+   "size": "schematic",
+   "key": 90,
+   "len": 95,
+   "first": 501,
+   "line": "เสียงวิ่งราว 343 เมตรต่อวินาที",
+   "note": "~343 m/s counts up; ring dots march along the tick column"
+  },
+  {
+   "id": "S11",
+   "size": "medium",
+   "key": 30,
+   "len": 32,
+   "first": 596,
+   "line": "อันนี้ของจริง",
+   "note": "settled factual schematic from frame 0: ~343 m/s · ~20 °C ในอากาศ · ของจริง (no rings, no character, no look)"
+  },
+  {
+   "id": "S12",
+   "size": "close-up",
+   "key": 88,
+   "len": 89,
+   "first": 628,
+   "line": "แล้วคุณจะกลั้นขำได้อีกนานแค่ไหน?",
+   "note": "cheeks-in cliffhanger: sweat runs, rings crowd in and freeze at the very edge of his mouth; unresolved"
+  }
+ ],
+ "fx": [
+  {
+   "kind": "flash",
+   "color": "#FFF3DC",
+   "o": 0.35,
+   "f": 35
+  },
+  {
+   "kind": "flash",
+   "color": "#FFF3DC",
+   "o": 0.3,
+   "f": 123
+  },
+  {
+   "kind": "flash",
+   "color": "#FFF3DC",
+   "o": 0.4,
+   "f": 204
+  },
+  {
+   "kind": "flash",
+   "color": "#FFE7B3",
+   "o": 0.55,
+   "f": 401
+  },
+  {
+   "kind": "shake",
+   "len": 8,
+   "amp": 6,
+   "f": 401
+  },
+  {
+   "kind": "shake",
+   "len": 10,
+   "amp": 7,
+   "f": 678
+  }
+ ],
+ "audio": {
+  "voice": "mute-touch/voice.wav",
+  "sfx": "mute-touch/sfx.wav",
+  "voiceVol": 0.8,
+  "sfxVol": 0.046,
+  "music": "mute-touch/music.wav",
+  "musicVol": 0.044
+ }
+}

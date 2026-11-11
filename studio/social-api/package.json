@@ -1,0 +1,13 @@
+{
+  "name": "jk-social-api",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "bun --watch server.ts",
+    "start": "bun server.ts",
+    "test": "bun test"
+  },
+  "dependencies": {
+    "elysia": "1.4.30"
+  }
+}

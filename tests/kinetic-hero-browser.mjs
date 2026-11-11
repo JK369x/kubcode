@@ -60,7 +60,7 @@ try{
  const query=page.getByRole('textbox',{name:'ค้นหาในรายการ',exact:true});await query.fill('ไม่มีผลค้นหาแน่นอน zzz');
  await page.getByRole('heading',{name:'ยังไม่มีรายการที่ตรงกัน'}).waitFor();await page.getByRole('button',{name:'ล้างตัวกรอง'}).click();
  assert.equal(await page.locator('.skill-card').count(),7);check('search, empty-state reset and real catalog preserved');
- const card=page.locator('.skill-card').filter({hasText:'Thai Voice'});await card.locator('.card-preview').click();await page.getByText('ยังไม่มีสื่อพรีวิว',{exact:true}).first().waitFor();check('no-media selection stays honest');
+ const card=page.locator('.skill-card').filter({hasText:'Thai Calm Narrator'});await card.locator('.card-preview').click();await page.getByText('ยังไม่มีสื่อพรีวิว',{exact:true}).first().waitFor();check('no-media selection stays honest');
  const disabled=page.locator('.skill-card button').filter({hasText:'ดาวน์โหลด skill'});assert.equal(await disabled.count(),7);
  for(const button of await disabled.all())assert.equal(await button.isDisabled(),true);check('catalog downloads remain disabled and full-width status available');
  for(const width of [1440,1280,768,390,375]){

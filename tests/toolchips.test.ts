@@ -93,7 +93,7 @@ test("every author chip matches a genuine example author in the catalog", () => 
 });
 
 test("no-example audio and captions entries render no author chips", () => {
-  for (const slug of ["thai-jk-voice", "captions-overlay"]) {
+  for (const slug of ["thai-narrator", "captions-overlay"]) {
     const skill = bySlug(slug);
     assert.equal(skill.examples.length, 0);
     assert.deepEqual(getSkillTools(skill, true), []);
@@ -102,7 +102,7 @@ test("no-example audio and captions entries render no author chips", () => {
 });
 
 test("audio runtime names only VoxCPM2 / MLX, never an AI coding tool", () => {
-  const html = render(bySlug("thai-jk-voice"));
+  const html = render(bySlug("thai-narrator"));
   assert.deepEqual(chipNames(html), ["VoxCPM2 / MLX"]);
   for (const agent of AGENT_NAMES) assert.ok(!html.includes(agent));
   assert.match(html, /data-tool-mark="voice-synthesis"/);
@@ -116,7 +116,7 @@ test("runtime grouping follows renderer and requirements", () => {
     "thai-survival": ["GSAP", "HyperFrames"],
     "freshstack-what-if": ["React", "Remotion"],
     "low-poly-urban": ["Three.js", "HyperFrames"],
-    "thai-jk-voice": ["VoxCPM2 / MLX"],
+    "thai-narrator": ["VoxCPM2 / MLX"],
     "captions-overlay": ["Renderer adapter"],
   };
   for (const [slug, names] of Object.entries(expected)) {

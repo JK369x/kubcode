@@ -1,0 +1,55 @@
+{
+  "id": "thai-en-keyword-highlight",
+  "version": "1.0",
+  "status": "selected",
+  "approvedOn": "2026-10-29",
+  "approvalScope": "Caption treatment approved on mall infection EP1 v2; independent of scene and voice approval",
+  "defaultFor": "New Thai-narrated JK Animation Studio videos unless the user requests another caption treatment or no captions",
+  "thai": {
+    "font": "Chakra Petch SemiBold",
+    "fontPxAt1080": 65,
+    "lineHeight": 1.28,
+    "color": "#fffaf0",
+    "outline": "#0b1015",
+    "outlinePxAt1080": 5
+  },
+  "english": {
+    "font": "Chakra Petch SemiBold",
+    "fontPxAt1080": 30,
+    "color": "#e5e7df",
+    "background": "#0b1015b8",
+    "case": "uppercase",
+    "letterSpacingPxAt1080": 1.1,
+    "placement": "smaller secondary line directly below Thai",
+    "content": "concise faithful translation; not a second voice track"
+  },
+  "highlight": {
+    "selection": "one meaningful word or short phrase per cue, not the whole line",
+    "amber": "#f2c35b",
+    "danger": "#ff8271",
+    "cyan": "#87dbd6",
+    "semantics": "amber key information; coral threats/prohibitions; cyan clues or contrasting options"
+  },
+  "motion": {
+    "enterSeconds": 0.14,
+    "enterYPxAt1080": 9,
+    "keywordFromScale": 1.06,
+    "keywordSettleSeconds": 0.18,
+    "exitSeconds": 0.08,
+    "ease": "power2.out",
+    "bounce": false
+  },
+  "layout": {
+    "referenceFrame": [
+      1080,
+      1920
+    ],
+    "left": 108,
+    "right": 150,
+    "top": 1190,
+    "englishGapPx": 9,
+    "placement": "overlay on full-frame scene; adapt around faces, signs and platform UI without reserving a band"
+  },
+  "timing": "use real narration; estimates are phrase timing, not word-level karaoke",
+  "preview": "preview.jpg"
+}
