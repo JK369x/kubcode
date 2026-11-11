@@ -1,10 +1,11 @@
 "use client";
-import { useRef, useState, type FormEvent } from "react";
+import { useEffect, useRef, useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { send } from "@/lib/interactions/client";
 import { MAX_DM_CHARS, MAX_PUBLIC_REPLY_CHARS, dmHasLink, type MatchMode } from "@/lib/automations/rules";
 import type { AutomationChannel, RuleView } from "@/lib/automations/store";
 import type { RecentOutcome } from "@/lib/automations/view";
+import type { PickerPost } from "@/lib/automations/posts";
 import keys from "./KeysSettings.module.css";
 import styles from "./AutomationsPanel.module.css";
 
@@ -63,6 +64,58 @@ const bodyOf = (d: Draft, tiktok: boolean) =>
 /** Shown on the TikTok page wherever a DM would be expected. */
 export const TIKTOK_PUBLIC_ONLY = "TikTok ตอบได้แค่ในคอมเมนต์ ส่ง DM ไม่ได้";
 
+const day = (iso: string) =>
+  new Intl.DateTimeFormat("th-TH", { dateStyle: "medium", timeZone: "Asia/Bangkok" }).format(new Date(iso));
+
+type PostsState = { state: "idle" | "loading" } | { state: "ready"; posts: PickerPost[]; complete: boolean } | { state: "failed"; message: string };
+
+/** The channel's recent posts, read once when something needs them. */
+function useChannelPosts(channelId: string, wanted: boolean) {
+  const [posts, setPosts] = useState<PostsState>({ state: "idle" });
+  const [attempt, setAttempt] = useState(0);
+  useEffect(() => {
+    if (!wanted) return;
+    let live = true;
+    setPosts({ state: "loading" });
+    fetch(`/api/channels/${channelId}/posts`, { credentials: "same-origin" })
+      .then(async (res) => {
+        const body = (await res.json().catch(() => ({}))) as { posts?: PickerPost[]; complete?: boolean; message?: string };
+        if (!live) return;
+        if (res.ok && Array.isArray(body.posts)) setPosts({ state: "ready", posts: body.posts, complete: body.complete === true });
+        else setPosts({ state: "failed", message: body.message ?? "โหลดโพสต์ของช่องนี้ไม่ได้ตอนนี้" });
+      })
+      .catch(() => live && setPosts({ state: "failed", message: "โหลดโพสต์ของช่องนี้ไม่ได้ตอนนี้" }));
+    return () => {
+      live = false;
+    };
+  }, [channelId, wanted, attempt]);
+  return { posts, retry: () => setAttempt((n) => n + 1) };
+}
+
+/** A post as the owner recognises it: thumbnail and caption, else its id. */
+function PostSummary({ post, id, tiktok }: { post: PickerPost | undefined; id: string; tiktok: boolean }) {
+  if (!post) return <>{`เฉพาะ${tiktok ? "วิดีโอ" : "โพสต์"} ID ${id}`}</>;
+  return (
+    <span className={styles.summary}>
+      {post.thumbnailUrl && <img src={post.thumbnailUrl} alt="" referrerPolicy="no-referrer" width={48} height={48} />}
+      <span>
+        {post.caption || `${tiktok ? "วิดีโอ" : "โพสต์"}ที่ไม่มีคำบรรยาย`}
+        <span className={styles.postMeta}>
+          {post.createdAt ? day(post.createdAt) : `ID ${id}`}
+          {post.permalink && (
+            <>
+              {" · "}
+              <a href={post.permalink} target="_blank" rel="noopener noreferrer">
+                เปิดดู
+              </a>
+            </>
+          )}
+        </span>
+      </span>
+    </span>
+  );
+}
+
 export function AutomationsPanel({ channel, rules, usage, recent }: Props) {
   const router = useRouter();
   const base = `/api/channels/${channel.id}/automations`;
@@ -80,6 +133,14 @@ export function AutomationsPanel({ channel, rules, usage, recent }: Props) {
     : draft.dmText.trim() !== "" && !dmHasLink(draft.dmText);
   const who = channel.handle ? `@${channel.handle}` : channel.displayName;
   const full = usage.count >= usage.cap;
+  const [manual, setManual] = useState(false);
+  const needPosts = draft.scope === "post" || rules.some((r) => r.platformPostId);
+  const { posts, retry } = useChannelPosts(channel.id, needPosts);
+  const listed = posts.state === "ready" ? posts.posts : [];
+  const postById = (id: string) => listed.find((p) => p.platformPostId === id);
+  const noun = tiktok ? "วิดีโอ" : "โพสต์";
+  // An edited rule whose post is not in the list keeps its id in the manual field.
+  const showManual = manual || posts.state === "failed" || (posts.state === "ready" && draft.postId !== "" && !postById(draft.postId));
 
   async function onSubmit(e: FormEvent) {
     e.preventDefault();
@@ -90,6 +151,7 @@ export function AutomationsPanel({ channel, rules, usage, recent }: Props) {
     setStatus(editing ? "บันทึกการแก้ไขแล้ว" : "เพิ่มกฎแล้ว");
     setEditing(null);
     setDraft(EMPTY);
+    setManual(false);
     router.refresh();
   }
 
@@ -97,6 +159,7 @@ export function AutomationsPanel({ channel, rules, usage, recent }: Props) {
     setEditing(rule.id);
     setConfirmDelete(null);
     setDraft(draftOf(rule));
+    setManual(false);
     setStatus("");
     formRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
     firstField.current?.focus({ preventScroll: true });
@@ -105,6 +168,7 @@ export function AutomationsPanel({ channel, rules, usage, recent }: Props) {
   function onCancelEdit() {
     setEditing(null);
     setDraft(EMPTY);
+    setManual(false);
   }
 
   async function onToggle(rule: RuleView) {
@@ -180,7 +244,7 @@ export function AutomationsPanel({ channel, rules, usage, recent }: Props) {
                   <dt>จับคำแบบ</dt>
                   <dd>{MODE_LABEL[r.matchMode]}</dd>
                   <dt>โพสต์</dt>
-                  <dd>{r.platformPostId ? `เฉพาะโพสต์ ID ${r.platformPostId}` : "ทุกโพสต์"}</dd>
+                  <dd>{r.platformPostId ? <PostSummary post={postById(r.platformPostId)} id={r.platformPostId} tiktok={tiktok} /> : `ทุก${noun}`}</dd>
                   <dt>ตอบใต้คอมเมนต์</dt>
                   <dd>
                     {tiktok
@@ -253,25 +317,102 @@ export function AutomationsPanel({ channel, rules, usage, recent }: Props) {
               เฉพาะโพสต์เดียว
             </label>
             {draft.scope === "post" && (
-              <label htmlFor="rule-post">
-                {tiktok ? "ID ของวิดีโอใน TikTok" : "ID ของโพสต์ใน Instagram"}
-                <input
-                  id="rule-post"
-                  value={draft.postId}
-                  onChange={(e) => set("postId", e.target.value)}
-                  required
-                  inputMode="numeric"
-                  pattern="[0-9]{1,64}"
-                  autoComplete="off"
-                  spellCheck={false}
-                  aria-describedby="rule-post-hint"
-                />
-                <span id="rule-post-hint" className={keys.meta}>
-                  {tiktok
-                    ? "ตัวเลขท้ายลิงก์วิดีโอ เช่น tiktok.com/@kubcode/video/7300000000000000001 กฎของวิดีโอเดียวจะถูกใช้ก่อนกฎทุกวิดีโอ"
-                    : "ตัวเลขล้วน เช่น 17895695668004550 กฎของโพสต์เดียวจะถูกใช้ก่อนกฎทุกโพสต์"}
-                </span>
-              </label>
+              <div className={styles.picker}>
+                <p id="rule-post-hint" className={keys.meta}>
+                  เลือก{noun}ที่ต้องการ กฎของ{noun}เดียวจะถูกใช้ก่อนกฎทุก{noun}
+                </p>
+                {posts.state === "loading" || posts.state === "idle" ? (
+                  <p className={keys.meta} role="status">
+                    กำลังโหลด{noun}ล่าสุดของช่องนี้…
+                  </p>
+                ) : posts.state === "failed" ? (
+                  <p className={keys.meta} role="status">
+                    {posts.message}{" "}
+                    <button type="button" className={styles.linkButton} onClick={retry}>
+                      ลองอีกครั้ง
+                    </button>
+                  </p>
+                ) : listed.length === 0 ? (
+                  <p className={keys.meta}>ยังไม่พบ{noun}ของช่องนี้ ใส่ ID เองได้ด้านล่าง</p>
+                ) : (
+                  <div role="radiogroup" aria-labelledby="rule-post-legend" aria-describedby="rule-post-hint" className={styles.posts}>
+                    <span id="rule-post-legend" className={styles.visuallyHidden}>
+                      {noun}ล่าสุดของช่องนี้
+                    </span>
+                    {listed.map((p) => {
+                      const chosen = draft.postId === p.platformPostId && !showManual;
+                      return (
+                        <div key={p.platformPostId} className={chosen ? `${styles.post} ${styles.chosen}` : styles.post}>
+                          <label className={styles.postPick}>
+                            <input
+                              type="radio"
+                              name="rule-post-pick"
+                              value={p.platformPostId}
+                              checked={chosen}
+                              onChange={() => {
+                                setManual(false);
+                                set("postId", p.platformPostId);
+                              }}
+                              required={!showManual}
+                            />
+                            {p.thumbnailUrl && <img className={styles.thumb} src={p.thumbnailUrl} alt="" referrerPolicy="no-referrer" loading="lazy" />}
+                            <span className={p.thumbnailUrl ? styles.caption : `${styles.caption} ${styles.captionOnly}`}>
+                              {p.caption || `${noun}ที่ไม่มีคำบรรยาย`}
+                            </span>
+                            <span className={styles.postMeta}>
+                              {p.createdAt ? day(p.createdAt) : `ID ${p.platformPostId}`}
+                              {p.kubcode ? " · โพสต์จาก kubcode" : ""}
+                            </span>
+                          </label>
+                          {p.permalink && (
+                            <a className={styles.open} href={p.permalink} target="_blank" rel="noopener noreferrer">
+                              เปิดดูใน{tiktok ? " TikTok" : " Instagram"}
+                              <span className={styles.visuallyHidden}>: {p.caption || p.platformPostId}</span>
+                            </a>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+                {posts.state === "ready" && !posts.complete && (
+                  <p className={keys.meta}>แสดงเฉพาะ{noun}ที่โพสต์ผ่าน kubcode เพราะโหลดรายการจาก{tiktok ? " TikTok" : " Instagram"} ไม่ได้ตอนนี้</p>
+                )}
+                {showManual ? (
+                  <label htmlFor="rule-post">
+                    {tiktok ? "ID ของวิดีโอใน TikTok" : "ID ของโพสต์ใน Instagram"}
+                    <input
+                      id="rule-post"
+                      value={draft.postId}
+                      onChange={(e) => set("postId", e.target.value)}
+                      required
+                      inputMode="numeric"
+                      pattern="[0-9]{1,64}"
+                      autoComplete="off"
+                      spellCheck={false}
+                      aria-describedby="rule-post-manual-hint"
+                    />
+                    <span id="rule-post-manual-hint" className={keys.meta}>
+                      {tiktok
+                        ? "ตัวเลขท้ายลิงก์วิดีโอ เช่น tiktok.com/@kubcode/video/7300000000000000001"
+                        : "media id ตัวเลขล้วน เช่น 17895695668004550 (ไม่ใช่ตัวอักษรในลิงก์ instagram.com)"}
+                    </span>
+                  </label>
+                ) : null}
+                <button
+                  type="button"
+                  className={styles.linkButton}
+                  aria-expanded={showManual}
+                  aria-controls={showManual ? "rule-post" : undefined}
+                  onClick={() => {
+                    if (showManual && posts.state === "ready" && postById(draft.postId) === undefined) set("postId", "");
+                    setManual(!showManual);
+                  }}
+                  disabled={posts.state === "failed"}
+                >
+                  {showManual ? `เลือกจาก${noun}ล่าสุดแทน` : "ใส่ ID เอง"}
+                </button>
+              </div>
             )}
           </fieldset>
           <label htmlFor="rule-reply">
@@ -345,7 +486,7 @@ export function AutomationsPanel({ channel, rules, usage, recent }: Props) {
               <li key={`${o.receivedAt}-${i}`}>
                 <strong>{o.label}</strong>
                 <span className={keys.meta}>
-                  {time(o.receivedAt)} · โพสต์ ID {o.platformPostId}
+                  {time(o.receivedAt)} · {postById(o.platformPostId)?.caption || `${noun} ID ${o.platformPostId}`}
                 </span>
               </li>
             ))}

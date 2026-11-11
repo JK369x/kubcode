@@ -121,3 +121,117 @@
   background: var(--surface);
   font-size: 14px;
 }
+/* Post picker: the channel's recent posts as cards. */
+.picker {
+  display: grid;
+  gap: 10px;
+  min-width: 0;
+}
+.posts {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 12px;
+  /* 24 posts stay in a scrollable box instead of stretching the form. */
+  max-height: min(70vh, 640px);
+  overflow-y: auto;
+  padding: 4px;
+  overscroll-behavior: contain;
+}
+.post {
+  position: relative;
+  display: grid;
+  gap: 6px;
+  align-content: start;
+  padding: 8px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: var(--surface-soft);
+  min-width: 0;
+}
+.chosen {
+  border-color: var(--purple);
+  box-shadow: 0 0 0 2px var(--purple);
+}
+.post:has(input:focus-visible) {
+  outline: 3px solid var(--purple);
+  outline-offset: 3px;
+}
+.form .postPick {
+  display: grid;
+  gap: 6px;
+  cursor: pointer;
+  min-width: 0;
+}
+.form .postPick input {
+  position: absolute;
+  top: 14px;
+  left: 14px;
+  width: 20px;
+  height: 20px;
+  margin: 0;
+  accent-color: var(--purple);
+}
+.thumb {
+  width: 100%;
+  aspect-ratio: 4 / 5;
+  border-radius: 10px;
+  object-fit: cover;
+  background: var(--surface);
+}
+.caption {
+  font-size: 14px;
+  line-height: 1.4;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  overflow-wrap: anywhere;
+}
+/* No thumbnail: the caption alone, room for more of it beside the radio. */
+.captionOnly.captionOnly {
+  padding: 2px 0 0 30px;
+  -webkit-line-clamp: 6;
+}
+.postMeta {
+  display: block;
+  font-size: 12px;
+  color: var(--muted);
+}
+.open {
+  font-size: 12px;
+}
+.linkButton.linkButton {
+  justify-self: start;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--purple);
+  font: inherit;
+  font-size: 14px;
+  text-decoration: underline;
+  cursor: pointer;
+}
+.linkButton:disabled {
+  display: none;
+}
+.summary {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  white-space: normal;
+}
+.summary img {
+  width: 48px;
+  height: 48px;
+  border-radius: 8px;
+  object-fit: cover;
+  flex: none;
+}
+.visuallyHidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}

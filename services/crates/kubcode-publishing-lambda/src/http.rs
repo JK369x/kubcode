@@ -64,6 +64,7 @@ struct CompleteBody {
 #[serde(deny_unknown_fields)]
 struct WorkerBody {}
 
+/// Disconnect and the post list: one of the member's channels.
 #[derive(Deserialize)]
 #[serde(deny_unknown_fields)]
 struct DisconnectBody {
@@ -206,6 +207,19 @@ pub async fn handle(
                 .await
                 .map(|()| json!({"ok": true}));
             ("/api/channels/disconnect", r)
+        }
+        "/api/channels/posts" => {
+            // The web host's GET /api/channels/{id}/posts. Signed requests are
+            // POSTs (KUBCODE-HMAC-V1 signs the method as POST); this one reads
+            // only.
+            let Ok(b) = serde_json::from_slice::<DisconnectBody>(body) else {
+                return fail(400, "bad_request");
+            };
+            let r = svc
+                .channel_posts(b.user_id, ChannelId(b.channel_id))
+                .await
+                .map(|p| json!({"ok": true, "posts": p.posts, "complete": p.complete}));
+            ("/api/channels/posts", r)
         }
         _ => return fail(404, "not_found"),
     };

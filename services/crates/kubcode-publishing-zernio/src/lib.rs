@@ -15,8 +15,8 @@ use kubcode_publishing::errors::{ErrorClass, PublishError, Result};
 use kubcode_publishing::events::IncomingComment;
 use kubcode_publishing::ports::{
     Accepted, CallbackParams, Checked, ConnectProvider, ConnectStart, ConnectedAccount,
-    ConnectionHealth, ConnectionRef, DeliveryState, Inbox, MediaSource, PrivateReply, Publisher,
-    WorkspaceCtx,
+    ConnectionHealth, ConnectionRef, DeliveryState, Inbox, MediaSource, OwnPost, PrivateReply,
+    Publisher, WorkspaceCtx,
 };
 use kubcode_publishing::validate::{DeliveryDraft, Violation};
 use serde_json::{json, Value};
@@ -600,6 +600,19 @@ impl Inbox for Zernio {
             .filter(|id| !id.is_empty() && id.len() <= 64 && id.bytes().all(|b| b.is_ascii_digit()))
             .map(str::to_owned)
             .collect())
+    }
+
+    async fn account_posts(&self, account: &ProviderRef, limit: u32) -> Result<Vec<OwnPost>> {
+        let acct = path_id(account)?;
+        let v = self
+            .call(
+                Method::Get,
+                self.url(&format!("/v1/accounts/{acct}/posts"), &[]),
+                None,
+                None,
+            )
+            .await?;
+        Ok(parse::own_posts(&v, limit as usize))
     }
 
     async fn post_comments(

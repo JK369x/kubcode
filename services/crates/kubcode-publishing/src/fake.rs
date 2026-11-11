@@ -43,6 +43,10 @@ struct State {
     comments: Vec<(String, Vec<IncomingComment>)>,
     /// Posts whose comments catch-up read.
     reads: Vec<String>,
+    /// What `account_posts` lists, newest first.
+    own_posts: Vec<crate::ports::OwnPost>,
+    /// How many times `account_posts` was called.
+    own_post_reads: usize,
     next: u64,
 }
 
@@ -105,6 +109,16 @@ impl FakeProvider {
             s.comments.retain(|(p, _)| p != post);
             s.comments.insert(0, (post.to_owned(), comments));
         });
+    }
+
+    /// What the account lists as its own posts (newest first).
+    pub fn set_own_posts(&self, posts: Vec<crate::ports::OwnPost>) {
+        self.with(|s| s.own_posts = posts);
+    }
+
+    /// How many times the account's posts were read.
+    pub fn own_post_reads(&self) -> usize {
+        self.with(|s| s.own_post_reads)
     }
 
     /// The posts catch-up read comments of.
@@ -419,6 +433,17 @@ impl Inbox for FakeProvider {
                 .take(limit as usize)
                 .map(|(p, _)| p.clone())
                 .collect()
+        }))
+    }
+
+    async fn account_posts(
+        &self,
+        _account: &ProviderRef,
+        limit: u32,
+    ) -> Result<Vec<crate::ports::OwnPost>> {
+        Ok(self.with(|s| {
+            s.own_post_reads += 1;
+            s.own_posts.iter().take(limit as usize).cloned().collect()
         }))
     }
 

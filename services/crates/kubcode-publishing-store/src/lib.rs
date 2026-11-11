@@ -145,6 +145,16 @@ pub struct DeliverySummary {
     pub clip_ref: String,
 }
 
+/// A post kubcode published, as its receipt recorded it.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct PublishedPost {
+    pub platform_post_id: String,
+    pub platform_url: Option<String>,
+    pub published_at: OffsetDateTime,
+    pub title: String,
+    pub description: String,
+}
+
 /// A rule as the matcher needs it, with what to send.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct RuleRow {
@@ -916,6 +926,41 @@ impl Store {
                 })
             })
             .collect()
+    }
+
+    /// Posts published to `channel` through kubcode that have a platform id,
+    /// newest first: the post picker shows them before the platform lists
+    /// them.
+    pub async fn published_posts(
+        &self,
+        channel: ChannelId,
+        limit: i64,
+    ) -> Result<Vec<PublishedPost>> {
+        let rows = self
+            .c
+            .query(
+                "SELECT r.platform_post_id, r.platform_url, COALESCE(r.published_at, d.publish_at),
+                        p.title, p.description
+                   FROM kubcode_accounts.deliveries d
+                   JOIN kubcode_accounts.receipts r ON r.delivery_id = d.id
+                   JOIN kubcode_accounts.posts p ON p.id = d.post_id
+                  WHERE d.channel_id = $1 AND d.status = 'published'
+                    AND r.platform_post_id IS NOT NULL
+                  ORDER BY 3 DESC, d.id
+                  LIMIT $2",
+                &[&channel.0, &limit],
+            )
+            .await?;
+        Ok(rows
+            .iter()
+            .map(|r| PublishedPost {
+                platform_post_id: r.get(0),
+                platform_url: r.get(1),
+                published_at: r.get(2),
+                title: r.get(3),
+                description: r.get(4),
+            })
+            .collect())
     }
 
     // ------------------------------------------------------------ comment → DM

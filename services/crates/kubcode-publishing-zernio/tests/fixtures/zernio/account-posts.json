@@ -1,0 +1,9 @@
+{"_source": "OpenAPI v1.529.3, GET /v1/accounts/{accountId}/posts 200: the YouTube example row verbatim (skipped: not a numeric id), Instagram and TikTok rows built from the documented field list; one collab post (isOwner false) and one non-https picture",
+ "status": "success",
+ "posts": [
+   {"id": "17900000000000002", "platform": "instagram", "message": "\n  ทำ AI วิดีโอใน 5 นาที\n\nลิงก์ในไบโอ #kubcode", "createdTime": "2026-11-10T09:14:03.000Z", "permalink": "https://www.instagram.com/reel/DAbCdEfGhIj/", "picture": "https://scontent.cdninstagram.com/v/t51.2885-15/fixture.jpg?stp=dst-jpg", "mediaType": "VIDEO", "commentCount": 12, "likeCount": 340},
+   {"id": "7300000000000000001", "platform": "tiktok", "message": "", "createdTime": "2026-11-09T09:14:03.000Z", "permalink": "https://www.tiktok.com/@kubcode/video/7300000000000000001", "picture": "http://p16-sign.tiktokcdn.com/fixture.jpeg", "mediaType": "video"},
+   {"id": "17900000000000003", "platform": "instagram", "message": "collab by another account", "createdTime": "2026-11-08T09:14:03.000Z", "permalink": "https://www.instagram.com/p/x/", "isOwner": false},
+   {"id": "dQw4w9WgXcQ", "platform": "youtube", "message": "How to schedule a post\n\nA short walkthrough.", "createdTime": "2026-08-21T09:14:03.000Z", "permalink": "https://www.youtube.com/watch?v=dQw4w9WgXcQ", "picture": "https://i.ytimg.com/vi/dQw4w9WgXcQ/maxresdefault.jpg", "mediaType": "video", "commentCount": 12, "likeCount": 340}
+ ],
+ "lastUpdated": "2026-11-10T11:02:44.512Z"}
