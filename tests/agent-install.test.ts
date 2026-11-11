@@ -81,7 +81,7 @@ test("prompts use the upstream install commands we verified (README, 2026-11-11)
   // Non-dev path: the signed desktop app from DeepSeek, then its bundled dsh adds the plugin (no git/Node/Python).
   assert.match(dsh.prompt, /https:\/\/download\.deepseek\.com\/desktop\/dsh-latest-macos-arm64\.dmg/);
   assert.match(dsh.prompt, /NAN929V4UM/);
-  assert.match(dsh.prompt, /Contents\/Resources\/runtime\/cli\/bin\/dsh" plugin --profile desktop add dsh-plugin-subscriptions@0\.9\.12/);
+  assert.match(dsh.prompt, /APP\/Contents\/Resources\/runtime\/cli\/bin\/dsh" plugin --profile desktop add dsh-plugin-subscriptions@0\.9\.12/);
   assert.doesNotMatch(dsh.prompt, /git clone|pnpm install|brew install/);
   // The same kit gets the same prompt on its article and its tool page.
   assert.equal(get("tool", "make-short").prompt, ms.prompt);
