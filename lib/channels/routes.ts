@@ -59,9 +59,9 @@ export const sessionBinding = (s: SessionClaims) =>
   createHash("sha256").update(`kubcode-channel-binding|${s.uid}|${s.sid}`, "utf8").digest();
 
 /** Calls the Lambda; null on any failure (network, timeout, non-200, bad JSON). */
-async function callLambda(
+export async function callLambda(
   config: Extract<PublishingConfig, { mode: "on" }>,
-  path: "/api/connect/start" | "/api/connect/complete" | "/api/channels/disconnect",
+  path: "/api/connect/start" | "/api/connect/complete" | "/api/channels/disconnect" | "/api/channels/posts",
   payload: unknown,
   deps: ChannelRouteDeps,
 ): Promise<Record<string, unknown> | null> {

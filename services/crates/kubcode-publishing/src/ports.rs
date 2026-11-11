@@ -202,6 +202,32 @@ pub enum PrivateReply {
     Unknown,
 }
 
+/// One of the account's own posts as the platform lists it (the automation
+/// page's post picker). Only plain values: the caller shows them as text.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct OwnPost {
+    /// The id a rule and the comment webhook use (Instagram media id, TikTok
+    /// video id).
+    pub platform_post_id: String,
+    pub permalink: Option<String>,
+    pub thumbnail_url: Option<String>,
+    /// At most 120 characters of the first caption line.
+    pub caption: String,
+    pub created_at: Option<OffsetDateTime>,
+}
+
+/// The first line of a caption, at most 120 characters.
+pub fn caption_line(text: &str) -> String {
+    text.lines()
+        .map(str::trim)
+        .find(|l| !l.is_empty())
+        .unwrap_or("")
+        .chars()
+        .filter(|c| !c.is_control())
+        .take(120)
+        .collect()
+}
+
 /// Replies to comments: the comment → DM engine's capability.
 #[async_trait]
 pub trait Inbox: Send + Sync {
@@ -216,6 +242,8 @@ pub trait Inbox: Send + Sync {
     /// Catch-up: the platform ids of the account's most recently commented
     /// posts.
     async fn recent_posts(&self, account: &ProviderRef, limit: u32) -> Result<Vec<String>>;
+    /// The account's own most recent posts, newest first (at most `limit`).
+    async fn account_posts(&self, account: &ProviderRef, limit: u32) -> Result<Vec<OwnPost>>;
     /// Catch-up: a post's top-level comments (replies are not answered).
     async fn post_comments(
         &self,

@@ -324,8 +324,10 @@ impl FakeZernio {
 impl Transport for FakeZernio {
     async fn send(&self, req: HttpRequest) -> Result<HttpResponse, TransportError> {
         let url = Url::parse(&req.url).unwrap();
-        let inbox =
-            url.path().starts_with("/api/v1/inbox/") || url.path().starts_with("/v1/inbox/");
+        // Inbox calls and an account's post list answer what a test scripted.
+        let inbox = url.path().starts_with("/api/v1/inbox/")
+            || url.path().starts_with("/v1/inbox/")
+            || (url.path().contains("/v1/accounts/") && url.path().ends_with("/posts"));
         let scripted = if inbox {
             self.with(|s| s.next_inbox.take())
         } else {

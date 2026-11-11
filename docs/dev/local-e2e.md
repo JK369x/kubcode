@@ -145,6 +145,23 @@ a cancel minutes after scheduling leaves nothing on YouTube.
 Wiring check with no Zernio call and no key:
 `echo sk_dummy | KUBCODE_LOCAL_E2E_OFFLINE=1 KUBCODE_LOCAL_E2E_CLIP=<clip-id> npx tsx scripts/local-e2e/publish.ts`.
 
+## Post picker (automation rules, read only)
+
+```bash
+npm run build
+scripts/local-e2e/run-post-picker.sh
+```
+
+Finds the production Instagram and TikTok accounts with GET calls only
+(`zernio-guard.ts`), seeds them into a throwaway database, starts the
+protected runner (connect, complete and disconnect refused) and the production
+web build, and screenshots `/account/channels/<id>/automations` with the
+picker open (desktop and 390 px) into `.qa/local-e2e/post-picker/`. The page's
+only Zernio call is `GET /v1/accounts/{accountId}/posts`. Nothing is posted,
+replied, sent or deleted. `KUBCODE_LOCAL_E2E_FIXTURE=1 npx tsx
+scripts/local-e2e/post-picker.ts` runs the same page against a stub Lambda,
+with no key.
+
 ## Zernio quota
 
 Zernio's first 2 connected accounts are free; each further one is billed. A

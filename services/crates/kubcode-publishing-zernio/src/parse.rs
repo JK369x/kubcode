@@ -186,3 +186,42 @@ pub fn post_state(v: &Value) -> Option<(String, DeliveryState)> {
         },
     ))
 }
+
+/// An https URL short enough to show; anything else is dropped.
+fn https(v: &Value, key: &str, max: usize) -> Option<String> {
+    str_of(v, &[key]).filter(|u| {
+        u.starts_with("https://")
+            && u.len() <= max
+            && !u.bytes().any(|b| b.is_ascii_control() || b == b' ')
+    })
+}
+
+/// From `GET /v1/accounts/{accountId}/posts` (`{posts: [...]}`, newest
+/// first). Only posts with a numeric platform id (an Instagram media id or a
+/// TikTok video id, what a rule and the comment webhook carry) are kept;
+/// a post the account does not own (`isOwner: false`) is skipped.
+pub fn own_posts(v: &Value, limit: usize) -> Vec<kubcode_publishing::ports::OwnPost> {
+    v.get("posts")
+        .and_then(Value::as_array)
+        .into_iter()
+        .flatten()
+        .filter(|p| p.get("isOwner").and_then(Value::as_bool) != Some(false))
+        .filter_map(|p| {
+            let id = str_of(p, &["id"])
+                .filter(|id| id.len() <= 64 && id.bytes().all(|b| b.is_ascii_digit()))?;
+            Some(kubcode_publishing::ports::OwnPost {
+                platform_post_id: id,
+                permalink: https(p, "permalink", 500),
+                thumbnail_url: https(p, "picture", 2000),
+                caption: kubcode_publishing::ports::caption_line(
+                    p.get("message").and_then(Value::as_str).unwrap_or(""),
+                ),
+                created_at: str_of(p, &["createdTime"]).and_then(|t| {
+                    time::OffsetDateTime::parse(&t, &time::format_description::well_known::Rfc3339)
+                        .ok()
+                }),
+            })
+        })
+        .take(limit)
+        .collect()
+}

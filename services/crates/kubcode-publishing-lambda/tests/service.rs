@@ -826,3 +826,96 @@ async fn a_late_tiktok_url_fills_the_receipt_without_overwriting() {
     );
     db.drop().await;
 }
+
+#[tokio::test]
+#[ignore = "needs KUBCODE_TEST_DATABASE_URL; run with --ignored"]
+async fn the_post_picker_lists_the_channels_posts_and_ours_first() {
+    use kubcode_publishing::events::{ProviderEvent, VerifiedDelivery};
+    use kubcode_publishing::ports::OwnPost;
+    let db = db().await;
+    let mut store = db.store().await;
+    let fake = Arc::new(FakeProvider::default());
+    let (reg, cfg) = (registry(&fake), cfg());
+    let mut s = svc(&mut store, &reg, &cfg);
+    let (owner, other) = (db.user(true).await, db.user(false).await);
+    let ig = connect(&mut s, &fake, owner, Platform::Instagram).await;
+    let yt = connect(&mut s, &fake, owner, Platform::YouTube).await;
+    let theirs = connect(&mut s, &fake, other, Platform::Instagram).await;
+    fake.set_own_posts(vec![OwnPost {
+        platform_post_id: "17900000000000001".into(),
+        permalink: Some("https://www.instagram.com/reel/A/".into()),
+        thumbnail_url: Some("https://cdn.example/a.jpg".into()),
+        caption: "โพสต์เก่า".into(),
+        created_at: Some(OffsetDateTime::now_utc() - Duration::days(3)),
+    }]);
+
+    // Published through kubcode a moment ago; the platform does not list it yet.
+    let (video, cover) = assets(&mut s, owner, true).await;
+    let mut req = request(video, cover, &[ig]);
+    req.description = "คลิปใหม่\nบรรทัดสอง".into();
+    req.targets[0].visibility = Visibility::Public;
+    let out = s.schedule(owner, req.clone(), digest(&req)).await.unwrap();
+    assert_eq!(
+        out.deliveries[0].status,
+        DeliveryStatus::Scheduled,
+        "{out:?}"
+    );
+    let post_ref: String = db
+        .owner
+        .query_one(
+            "SELECT provider_ref FROM kubcode_accounts.deliveries WHERE id = $1",
+            &[&out.deliveries[0].delivery.unwrap().0],
+        )
+        .await
+        .unwrap()
+        .get(0);
+    s.store
+        .apply_event(
+            ProviderKind::Zernio,
+            &VerifiedDelivery {
+                event_id: "pub-1".into(),
+                body_sha256: [7; 32],
+                event_type: "post.platform.published".into(),
+                body: serde_json::json!({}),
+            },
+            &[ProviderEvent::PostPublished {
+                post: ProviderRef(post_ref),
+                platform_post_id: Some("17900000000000009".into()),
+                url: Some("https://www.instagram.com/reel/NEW/".into()),
+                at: Some(OffsetDateTime::now_utc()),
+            }],
+        )
+        .await
+        .unwrap();
+
+    let got = s.channel_posts(owner, ig).await.unwrap();
+    assert!(got.complete);
+    let ids: Vec<&str> = got
+        .posts
+        .iter()
+        .map(|p| p.platform_post_id.as_str())
+        .collect();
+    assert_eq!(ids, vec!["17900000000000009", "17900000000000001"]);
+    assert_eq!(got.posts[0].caption, "คลิปใหม่");
+    assert!(got.posts[0].kubcode);
+    assert_eq!(
+        got.posts[0].permalink.as_deref(),
+        Some("https://www.instagram.com/reel/NEW/")
+    );
+    assert_eq!(fake.own_post_reads(), 1);
+    s.channel_posts(owner, ig).await.unwrap();
+    assert_eq!(fake.own_post_reads(), 1, "cached briefly");
+
+    for (user, ch) in [(owner, theirs), (owner, yt), (other, ig)] {
+        assert_eq!(
+            s.channel_posts(user, ch).await.unwrap_err().code,
+            "channel_not_found"
+        );
+    }
+    assert_eq!(
+        fake.own_post_reads(),
+        1,
+        "no provider call for a refused channel"
+    );
+    db.drop().await;
+}

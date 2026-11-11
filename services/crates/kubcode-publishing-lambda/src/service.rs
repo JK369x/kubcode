@@ -14,13 +14,13 @@ use kubcode_publishing::errors::PublishError;
 use kubcode_publishing::events::{EventSource, Headers, IncomingComment, ProviderEvent};
 use kubcode_publishing::ports::{
     check, CallbackParams, ConnectProvider, ConnectionRef, DeliveryRequest, Inbox, MediaSource,
-    PrivateReply, Publisher, WorkspaceCtx,
+    OwnPost, PrivateReply, Publisher, WorkspaceCtx,
 };
 use kubcode_publishing::routing::{resolve, ConnectionView, Resolution};
 use kubcode_publishing::validate::DeliveryDraft;
 use kubcode_publishing_store::{
-    ChannelRow, DeliverySummary, DmState, NewAsset, NewDelivery, NewIntent, NewPost, Store,
-    StoreError,
+    ChannelRow, DeliverySummary, DmState, NewAsset, NewDelivery, NewIntent, NewPost, PublishedPost,
+    Store, StoreError,
 };
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
@@ -94,6 +94,105 @@ impl From<PublishError> for Fail {
 }
 
 pub type Result<T> = std::result::Result<T, Fail>;
+
+/// At most this many posts in the picker.
+pub const POSTS_MAX: usize = 24;
+/// The provider's list is reused this long per channel (warm Lambda only).
+pub const POSTS_CACHE_TTL: Duration = Duration::seconds(60);
+
+type PostsKey = (ChannelId, String);
+type PostsCache = std::collections::HashMap<PostsKey, (OffsetDateTime, Vec<OwnPost>)>;
+static POSTS_CACHE: std::sync::Mutex<Option<PostsCache>> = std::sync::Mutex::new(None);
+
+fn posts_cache_get(key: &PostsKey, now: OffsetDateTime) -> Option<Vec<OwnPost>> {
+    let mut slot = POSTS_CACHE.lock().ok()?;
+    let cache = slot.get_or_insert_with(Default::default);
+    cache.retain(|_, (at, _)| now - *at < POSTS_CACHE_TTL && *at <= now);
+    cache.get(key).map(|(_, p)| p.clone())
+}
+
+fn posts_cache_put(key: PostsKey, now: OffsetDateTime, posts: Vec<OwnPost>) {
+    if let Ok(mut slot) = POSTS_CACHE.lock() {
+        slot.get_or_insert_with(Default::default)
+            .insert(key, (now, posts));
+    }
+}
+
+/// One post in the picker.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+pub struct PickerPost {
+    #[serde(rename = "platformPostId")]
+    pub platform_post_id: String,
+    pub permalink: Option<String>,
+    #[serde(rename = "thumbnailUrl")]
+    pub thumbnail_url: Option<String>,
+    pub caption: String,
+    #[serde(rename = "createdAt", with = "time::serde::rfc3339::option")]
+    pub created_at: Option<OffsetDateTime>,
+    /// Published through kubcode.
+    pub kubcode: bool,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+pub struct ChannelPosts {
+    pub posts: Vec<PickerPost>,
+    /// False when the platform's own list could not be read.
+    pub complete: bool,
+}
+
+/// The platform's list first (it has thumbnails), kubcode's posts added
+/// when missing from it, newest first, at most POSTS_MAX.
+pub fn merge_posts(
+    listed: Option<&[OwnPost]>,
+    ours: &[PublishedPost],
+    complete: bool,
+) -> ChannelPosts {
+    let mut posts: Vec<PickerPost> = Vec::new();
+    for p in listed.unwrap_or_default() {
+        if posts
+            .iter()
+            .any(|x| x.platform_post_id == p.platform_post_id)
+        {
+            continue;
+        }
+        let mine = ours
+            .iter()
+            .any(|o| o.platform_post_id == p.platform_post_id);
+        posts.push(PickerPost {
+            platform_post_id: p.platform_post_id.clone(),
+            permalink: p.permalink.clone(),
+            thumbnail_url: p.thumbnail_url.clone(),
+            caption: p.caption.clone(),
+            created_at: p.created_at,
+            kubcode: mine,
+        });
+    }
+    for o in ours {
+        if posts
+            .iter()
+            .any(|x| x.platform_post_id == o.platform_post_id)
+        {
+            continue;
+        }
+        let caption = kubcode_publishing::ports::caption_line(&o.description);
+        posts.push(PickerPost {
+            platform_post_id: o.platform_post_id.clone(),
+            permalink: o.platform_url.clone(),
+            thumbnail_url: None,
+            caption: if caption.is_empty() {
+                kubcode_publishing::ports::caption_line(&o.title)
+            } else {
+                caption
+            },
+            created_at: Some(o.published_at),
+            kubcode: true,
+        });
+    }
+    // Newest first; a post without a date goes last, in listed order.
+    posts.sort_by(|a, b| b.created_at.cmp(&a.created_at));
+    posts.truncate(POSTS_MAX);
+    ChannelPosts { posts, complete }
+}
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct AssetRequest {
@@ -279,6 +378,53 @@ impl Service<'_> {
             self.store.revoke_connection(c.id).await?;
         }
         Ok(())
+    }
+
+    /// The channel's own recent posts for the automation page's post picker:
+    /// what the platform lists (through the provider, cached briefly) plus
+    /// what kubcode published there, so a post just published shows before
+    /// the provider lists it. A provider failure still answers with ours,
+    /// marked incomplete.
+    pub async fn channel_posts(&mut self, user: Uuid, channel: ChannelId) -> Result<ChannelPosts> {
+        let ws = self.store.owner_workspace(user).await?;
+        let ch = self.own_channel(ws, channel).await?;
+        if !matches!(ch.platform, Platform::Instagram | Platform::TikTok) {
+            return Err(Fail::new("channel_not_found"));
+        }
+        let ours = self
+            .store
+            .published_posts(channel, POSTS_MAX as i64)
+            .await?;
+        let listed = self.listed_posts(channel).await;
+        Ok(merge_posts(
+            listed.as_ref().ok().map(Vec::as_slice),
+            &ours,
+            listed.is_ok(),
+        ))
+    }
+
+    async fn listed_posts(&mut self, channel: ChannelId) -> Result<Vec<OwnPost>> {
+        let conn = self
+            .store
+            .connections(channel)
+            .await?
+            .into_iter()
+            .find(|k| k.status != kubcode_publishing::domain::ConnectionStatus::Revoked)
+            .ok_or_else(|| Fail::new("no_connection"))?;
+        let key = (channel, conn.provider_ref.0.clone());
+        if let Some(hit) = posts_cache_get(&key, self.now) {
+            return Ok(hit);
+        }
+        let inbox = self
+            .providers(conn.provider)?
+            .inbox
+            .clone()
+            .ok_or_else(|| Fail::new("no_inbox"))?;
+        let posts = inbox
+            .account_posts(&conn.provider_ref, POSTS_MAX as u32)
+            .await?;
+        posts_cache_put(key, self.now, posts.clone());
+        Ok(posts)
     }
 
     pub async fn channels(&mut self, user: Uuid) -> Result<Vec<ChannelRow>> {
@@ -958,6 +1104,69 @@ impl Service<'_> {
 
 #[cfg(test)]
 mod tests {
+    use super::{merge_posts, OwnPost, PublishedPost, POSTS_MAX};
+    use time::macros::datetime;
+
+    fn listed(id: &str, day: u8) -> OwnPost {
+        OwnPost {
+            platform_post_id: id.into(),
+            permalink: Some(format!("https://www.instagram.com/reel/{id}/")),
+            thumbnail_url: Some(format!("https://cdn.example/{id}.jpg")),
+            caption: format!("caption {id}"),
+            created_at: Some(datetime!(2026-11-01 00:00 UTC) + time::Duration::days(day.into())),
+        }
+    }
+
+    fn ours(id: &str, day: u8, description: &str) -> PublishedPost {
+        PublishedPost {
+            platform_post_id: id.into(),
+            platform_url: None,
+            published_at: datetime!(2026-11-01 00:00 UTC) + time::Duration::days(day.into()),
+            title: "Title line".into(),
+            description: description.into(),
+        }
+    }
+
+    #[test]
+    fn a_post_published_through_kubcode_shows_before_the_platform_lists_it() {
+        let out = merge_posts(
+            Some(&[listed("2", 2), listed("1", 1)]),
+            &[ours("3", 3, "\nใหม่ล่าสุด\nบรรทัดสอง"), ours("2", 2, "dup")],
+            true,
+        );
+        let ids: Vec<&str> = out
+            .posts
+            .iter()
+            .map(|p| p.platform_post_id.as_str())
+            .collect();
+        assert_eq!(ids, vec!["3", "2", "1"]);
+        assert_eq!(out.posts[0].caption, "ใหม่ล่าสุด");
+        assert!(out.posts[0].kubcode && out.posts[1].kubcode && !out.posts[2].kubcode);
+        assert_eq!(
+            out.posts[1].caption, "caption 2",
+            "the platform's copy wins"
+        );
+        assert_eq!(out.posts[0].thumbnail_url, None);
+        let none = merge_posts(None, &[ours("9", 1, "")], false);
+        assert_eq!(
+            none.posts[0].caption, "Title line",
+            "the title when there is no description"
+        );
+        assert!(!none.complete);
+    }
+
+    #[test]
+    fn at_most_24_posts() {
+        let many: Vec<OwnPost> = (0..30).map(|i| listed(&i.to_string(), i)).collect();
+        let out = merge_posts(Some(&many), &[], true);
+        assert_eq!(out.posts.len(), POSTS_MAX);
+        assert_eq!(out.posts[0].platform_post_id, "29");
+        let json = serde_json::to_value(&out.posts[0]).unwrap();
+        assert_eq!(json["platformPostId"], "29");
+        assert_eq!(json["createdAt"], "2026-11-30T00:00:00Z");
+        assert!(json.get("thumbnailUrl").is_some());
+    }
+
     #[test]
     fn only_plain_event_types_reach_the_logs() {
         assert_eq!(super::log_safe("account.connected"), "account.connected");

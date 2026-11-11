@@ -332,3 +332,43 @@ async fn the_worker_tick_is_signed_single_use_and_one_at_a_time() {
     other.release_worker_lock().await.unwrap();
     db.drop().await;
 }
+
+#[tokio::test]
+#[ignore = "needs KUBCODE_TEST_DATABASE_URL; run with --ignored"]
+async fn the_post_list_is_signed_and_for_the_members_own_channel() {
+    let db = db().await;
+    let mut store = db.store().await;
+    let fake = Arc::new(FakeProvider::default());
+    let (reg, cfg) = (registry(&fake), cfg());
+    let mut s = Service {
+        store: &mut store,
+        reg: &reg,
+        cfg: &cfg,
+        media: &FakeOpener,
+        now: OffsetDateTime::now_utc(),
+    };
+    let owner = db.user(true).await;
+    let path = "/api/channels/posts";
+    let call = |body: serde_json::Value, nonce: &'static str| {
+        let body = serde_json::to_vec(&body).unwrap();
+        (signed(path, &body, nonce), body)
+    };
+    let (h, b) = call(
+        json!({"user_id": owner, "channel_id": uuid::Uuid::new_v4()}),
+        "0000000000000000000000000000aa01",
+    );
+    let r = http::handle(&mut s, KEY, "POST", path, &h, &b, NOW).await;
+    assert_eq!(r.status, 200);
+    assert_eq!(r.body, json!({"ok": false, "code": "channel_not_found"}));
+
+    let (h, b) = call(
+        json!({"user_id": owner, "channel_id": uuid::Uuid::new_v4(), "extra": 1}),
+        "0000000000000000000000000000aa02",
+    );
+    let r = http::handle(&mut s, KEY, "POST", path, &h, &b, NOW).await;
+    assert_eq!(r.status, 400);
+
+    let r = http::handle(&mut s, KEY, "POST", path, &HeaderMap::new(), &b, NOW).await;
+    assert_eq!(r.status, 401, "unsigned");
+    db.drop().await;
+}

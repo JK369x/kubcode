@@ -170,3 +170,69 @@ async fn catch_up_reads_commented_posts_and_their_top_level_comments() {
         req.url
     );
 }
+
+#[tokio::test]
+async fn the_post_picker_lists_the_accounts_own_posts_with_their_media_ids() {
+    let h = Harness::default();
+    h.fake.answer_next_inbox(200, fixture("account-posts"));
+    let posts = h
+        .zernio
+        .account_posts(&ProviderRef(ACCOUNT.into()), 24)
+        .await
+        .unwrap();
+    let req = h.fake.log().into_iter().last().unwrap();
+    assert_eq!(req.method, Method::Get);
+    assert!(
+        req.url
+            .path()
+            .ends_with(&format!("/v1/accounts/{ACCOUNT}/posts")),
+        "{}",
+        req.url
+    );
+    let ids: Vec<&str> = posts.iter().map(|p| p.platform_post_id.as_str()).collect();
+    assert_eq!(
+        ids,
+        vec!["17900000000000002", "7300000000000000001"],
+        "numeric platform ids only, never another account's collab post"
+    );
+    let ig = &posts[0];
+    assert_eq!(ig.caption, "ทำ AI วิดีโอใน 5 นาที", "first non-empty line");
+    assert_eq!(
+        ig.permalink.as_deref(),
+        Some("https://www.instagram.com/reel/DAbCdEfGhIj/")
+    );
+    assert!(ig
+        .thumbnail_url
+        .as_deref()
+        .unwrap()
+        .starts_with("https://scontent.cdninstagram.com/"));
+    assert_eq!(
+        ig.created_at.unwrap().unix_timestamp(),
+        time::macros::datetime!(2026-11-10 09:14:03 UTC).unix_timestamp()
+    );
+    let tt = &posts[1];
+    assert_eq!(tt.caption, "");
+    assert_eq!(tt.thumbnail_url, None, "only https thumbnails");
+
+    h.fake.answer_next_inbox(200, fixture("account-posts"));
+    let one = h
+        .zernio
+        .account_posts(&ProviderRef(ACCOUNT.into()), 1)
+        .await
+        .unwrap();
+    assert_eq!(one.len(), 1);
+}
+
+#[tokio::test]
+async fn an_expired_token_on_the_post_list_is_an_error() {
+    let h = Harness::default();
+    h.fake.answer_next_inbox(
+        401,
+        serde_json::json!({"error": "Token expired", "code": "TOKEN_EXPIRED"}),
+    );
+    assert!(h
+        .zernio
+        .account_posts(&ProviderRef(ACCOUNT.into()), 24)
+        .await
+        .is_err());
+}
