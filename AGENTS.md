@@ -25,3 +25,7 @@ Single-context: `CONTEXT.md` + `docs/adr/` at the repo root (created lazily). Se
 ### Writing content
 
 Articles and tool pages: `docs/content.md`. Any post with a repo or a skill bundle needs an `agentInstall` prompt (copy-paste install for the reader's own AI agent).
+
+### Design system
+
+Before any UI change read `design-system/kubcode/MASTER.md` (brand tokens mapped to shadcn/ui + Tailwind v4 variables, type scale, touch/contrast/focus rules) and a `design-system/kubcode/pages/<page>.md` override if one exists. Brand source: `DESIGN.md` + `tokens.json`. Latest audit: `docs/design/uiux-audit-2026-11-11.md`.

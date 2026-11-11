@@ -7,6 +7,9 @@
   --ink: #f5f1fb;
   --muted: #b8adca;
   --line: #38303f;
+  /* Form-control outlines: >=3:1 against bg/surface/surface-soft (WCAG 1.4.11).
+     --line (~1.5:1) is for dividers only. */
+  --field-line: #807394;
   --purple: #bb98ff;
   --field: #6c38b6;
   --on-field: #fff;
@@ -24,6 +27,7 @@
   --ink: #271c34;
   --muted: #6c5f7d;
   --line: #e0d9e9;
+  --field-line: #857896;
   --purple: #7136b9;
   --field: #7136b9;
   --selected: #e9dbff;
@@ -212,7 +216,7 @@ header.header {
   min-height: 32px;
 }
 .search {
-  border: 1px solid var(--line);
+  border: 1px solid var(--field-line);
   display: flex;
   align-items: center;
   gap: 12px;
@@ -1339,7 +1343,7 @@ p[role="status"]:empty {
 }
 .account-form input {
   padding: 13px;
-  border: 1px solid var(--line);
+  border: 1px solid var(--field-line);
   border-radius: 12px;
   background: var(--surface);
 }
@@ -3029,5 +3033,61 @@ img[data-img-state="loading"] {
   }
   img[data-img-state] {
     transition: none;
+  }
+}
+
+/* ---------- route loading UI (components/RouteSkeleton.tsx) ----------
+   Same outer boxes as the real pages (reading-page, detail-page,
+   account-page reuse their classes; the index/community boxes mirror
+   ArticleIndex.module.css / Community.module.css). */
+.route-skeleton-stack {
+  display: grid;
+  gap: 12px;
+  align-content: start;
+}
+.route-skeleton-media {
+  position: relative;
+  overflow: hidden;
+  width: 100%;
+  background: var(--surface-soft);
+}
+.route-skeleton-index,
+.route-skeleton-narrow {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 44px 32px 96px;
+}
+.route-skeleton-narrow {
+  max-width: 960px;
+}
+.route-skeleton-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 12px 0 20px;
+}
+.route-skeleton-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 40px 28px;
+}
+.route-skeleton-detail {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 55px;
+  margin-top: 20px;
+}
+.route-skeleton-detail > .route-skeleton-media {
+  max-width: 440px;
+}
+@media (max-width: 760px) {
+  .route-skeleton-index,
+  .route-skeleton-narrow {
+    padding: 28px 20px 72px;
+  }
+  .route-skeleton-grid,
+  .route-skeleton-detail {
+    grid-template-columns: 1fr;
+    gap: 24px;
   }
 }
