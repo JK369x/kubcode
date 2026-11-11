@@ -202,6 +202,8 @@ components:
 
 ## Overview
 
+Implementation rules (shadcn/Tailwind mapping, minimum text size, touch targets, focus, contrast pairs) live in [design-system/kubcode/MASTER.md](design-system/kubcode/MASTER.md).
+
 **Creative North Star: Living library / kinetic work stage.** Real work leads; browsing and operational states stay precise. Purple/black dark and purple/white light themes persist across catalog, detail, article and account routes. Actual authors, tools, source credits and stable slugs are not renamed with public display names.
 
 This is a local preview, not a production membership, generation or download service. Ignored private media is not part of source-only CI or cleared for redistribution. Technical checks and reviewer verdicts do not establish user creative acceptance. Earlier rejected showcases/specimens are archived evidence, not designs to restore.
