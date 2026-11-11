@@ -12,6 +12,8 @@ import { SourceCredits } from "@/components/SourceCredits";
 import { ToolLogo } from "@/components/ToolLogo";
 import { PRICING_LABELS } from "@/lib/kb-labels";
 import { stageHref } from "@/lib/tool-index";
+import { AgentInstall } from "@/components/AgentInstall";
+import { tocWithAgentInstall } from "@/lib/agent-install";
 
 export const dynamicParams = false;
 
@@ -50,9 +52,10 @@ export default async function ToolPage({ params }: Props) {
       lead={t.description}
       tags={t.tags}
       allTags={content.tags}
-      toc={toc}
+      toc={tocWithAgentInstall(t, toc)}
       interactions={{ kind: "tool", slug: t.slug, title: t.name }}
       intro={
+        <>
         <dl className="tool-facts">
           <div>
             <dt>ราคา</dt>
@@ -73,6 +76,8 @@ export default async function ToolPage({ params }: Props) {
             </div>
           ))}
         </dl>
+        {t.agentInstall && <AgentInstall install={t.agentInstall} tools={content.tools} />}
+        </>
       }
       after={
         <>

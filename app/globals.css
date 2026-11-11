@@ -2652,6 +2652,119 @@ html[data-theme="light"] .shiki span {
   margin: 0 0 40px;
 }
 
+/* "ติดตั้งด้วย AI agent ของคุณ": one prompt to paste into the reader's agent,
+   at the top of the reading column (article and tool pages). */
+.agent-install {
+  margin: 0 0 40px;
+  padding: 22px 24px 18px;
+  border: 1px solid var(--line);
+  border-left: 4px solid var(--purple);
+  border-radius: 18px;
+  background: var(--surface-soft);
+}
+.agent-install h2 {
+  margin: 0 0 4px;
+  font-size: 22px;
+  line-height: 1.4;
+  scroll-margin-top: 6rem;
+}
+.agent-install h2:focus {
+  outline: none;
+}
+.agent-install-lead {
+  margin: 0 0 12px;
+  color: var(--muted);
+  font-size: 15px;
+  line-height: 1.7;
+}
+.agent-install-agents {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 0 0 14px;
+  padding: 0;
+  list-style: none;
+}
+.agent-install-agents a {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 3px 12px 3px 3px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--surface);
+  color: var(--ink);
+  font-size: 14px;
+  font-weight: 500;
+  text-decoration: none;
+}
+.agent-install-agents a:hover {
+  border-color: var(--purple);
+}
+.agent-install-agents a:focus-visible {
+  outline: 2px solid var(--purple);
+  outline-offset: 2px;
+}
+.agent-install-agents .tool-logo-icon {
+  width: 28px;
+  height: 28px;
+  padding: 4px;
+  border-radius: 8px;
+}
+.agent-install .code-block {
+  margin: 0 0 12px;
+}
+.agent-install .code-block pre {
+  max-height: 18rem;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  font-size: 13.5px;
+  line-height: 1.75;
+}
+.code-copy.code-copy-big {
+  min-height: 40px;
+  padding: 8px 18px;
+  border: 0;
+  border-radius: 10px;
+  background: var(--selected);
+  color: var(--selected-ink);
+  font-size: 14px;
+  font-weight: 600;
+}
+.code-copy.code-copy-big:hover {
+  background: var(--purple);
+  color: var(--action-hover-ink);
+}
+.code-copy.code-copy-big[data-state="copied"] {
+  background: var(--purple);
+  color: var(--action-hover-ink);
+}
+.agent-install-notes {
+  margin: 0;
+  padding-left: 1.2em;
+  color: var(--muted);
+  font-size: 14px;
+  line-height: 1.7;
+}
+.agent-install-notes a {
+  color: var(--purple);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+@media (max-width: 760px) {
+  .agent-install {
+    margin-left: -6px;
+    margin-right: -6px;
+    padding: 18px 16px 14px;
+  }
+  .agent-install h2 {
+    font-size: 20px;
+  }
+  .agent-install .code-head {
+    flex-wrap: wrap;
+  }
+}
+
 /* Tool logos: the maker's file as supplied, on a white tile in both themes
    so no mark needs recolouring; padding keeps clear space around it. */
 .tool-logo {

@@ -28,6 +28,18 @@ sources:
     url: https://github.com/google/elephant-goldfish-model
   - title: "EGM Setup & Workflow Guide"
     url: https://github.com/google/elephant-goldfish-model/blob/main/docs/getting_started.md
+agentInstall:
+  agents: [claude-code, codex-cli]
+  source: https://github.com/google/elephant-goldfish-model
+  prompt: |
+    ช่วยติดตั้งปลั๊กอิน Elephant-Goldfish Model (EGM) จาก https://github.com/google/elephant-goldfish-model
+    1. ก่อนเริ่ม อธิบายว่าจะติดตั้งอะไร ไว้ที่ไหน และขออนุญาตฉันก่อนรันทุกคำสั่ง
+    2. ปลั๊กอินนี้ไม่ต้องใช้ API key ห้ามขอ key หรือรหัสผ่านใด ๆ ในแชต
+    3. ดูว่าคุณคือ agent ตัวไหน แล้วใช้คำสั่งตาม README:
+       - Claude Code: claude plugin marketplace add google/elephant-goldfish-model แล้ว claude plugin install egm@egm
+       - Codex CLI: codex plugin marketplace add google/elephant-goldfish-model แล้ว codex plugin add egm@egm
+    4. ถ้าไม่ใช่สองตัวนี้ คำสั่ง plugin ไม่มีในเวอร์ชันของฉัน หรือระบบไม่รองรับ ให้หยุดแล้วบอกฉัน อย่าเดาคำสั่งเอง
+    5. เสร็จแล้วบอกให้ฉันเปิด session ใหม่ในโฟลเดอร์โปรเจกต์ แล้วเริ่มด้วย /egm:egm-brainstorm ตามด้วยไอเดีย (ใน Codex เลือก egm-brainstorm จาก skill picker)
 ---
 ## คืออะไร
 

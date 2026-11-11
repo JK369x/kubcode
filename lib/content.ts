@@ -3,6 +3,7 @@ import path from "node:path";
 import { imageSize } from "image-size";
 import { parse as parseYaml } from "yaml";
 import { rawSkills } from "./catalog";
+import { PACKAGES } from "./packages";
 import { isProductLogoPath } from "./publication";
 
 export type Tag = { slug: string; th: string; en: string; description: string };
@@ -10,6 +11,21 @@ export type Tag = { slug: string; th: string; en: string; description: string };
 export const REF_KINDS = ["article", "tool", "skill"] as const;
 export type RefKind = (typeof REF_KINDS)[number];
 export type Ref = { kind: RefKind; slug: string };
+
+/**
+ * "Install with your own AI agent": one prompt the reader pastes into their
+ * agent, which then installs the skill/plugin/kit itself (docs/content.md).
+ */
+export type AgentInstall = {
+  /** Tool slugs of the agents the prompt is written for, e.g. claude-code. */
+  agents: string[];
+  /** The exact text to paste; Thai instructions plus the URL to install from. */
+  prompt: string;
+  /** Upstream repo (https) or skill:<slug> for one of our download packages. */
+  source?: string;
+  /** Our packages the prompt sends the reader to (they must sign in to download). */
+  packages: string[];
+};
 
 /** Fields shared by every MDX page type. */
 type PageBase = {
@@ -24,6 +40,7 @@ type PageBase = {
   redirects: string[];
   /** Short share codes: /go/<code> 301s to this page (for clip descriptions). */
   go: string[];
+  agentInstall?: AgentInstall;
   body: string;
 };
 
@@ -121,7 +138,7 @@ export class ContentError extends Error {
 
 const DEFAULT_ROOT = path.join(process.cwd(), "content");
 
-export const LIMITS = { title: 60, description: 155, slugWords: 5 } as const;
+export const LIMITS = { title: 60, description: 155, slugWords: 5, agentPrompt: 1200 } as const;
 
 const SLUG = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 const GO_CODE = /^[a-z0-9-]{2,16}$/;
@@ -387,6 +404,37 @@ class FieldReader {
     return value.map(String);
   }
 
+  /** Shape of agentInstall; agent slugs and the requirement are checked in loadContent. */
+  agentInstall(): AgentInstall | undefined {
+    const raw = this.data.agentInstall;
+    if (raw === undefined) return undefined;
+    const r = asRecord(raw);
+    const agents = Array.isArray(r.agents) && r.agents.every((a) => typeof a === "string") ? (r.agents as string[]) : [];
+    if (agents.length === 0) this.problem("agentInstall.agents", "must be a non-empty list of tool slugs");
+    const prompt = typeof r.prompt === "string" ? r.prompt.trim() : "";
+    if (!prompt) this.problem("agentInstall.prompt", "is required");
+    else if ([...prompt].length > LIMITS.agentPrompt) {
+      this.problem("agentInstall.prompt", `must be at most ${LIMITS.agentPrompt} characters (${[...prompt].length})`);
+    }
+    let source: string | undefined;
+    if (r.source !== undefined) {
+      const pkg = typeof r.source === "string" && r.source.startsWith("skill:") ? r.source.slice(6) : null;
+      if (pkg !== null) {
+        if (!PACKAGES.some((p) => p.slug === pkg)) this.problem("agentInstall.source", `skill:${pkg} is not a download package (lib/packages.ts)`);
+        else if (!prompt.includes(`kubcode.dev/skills/${pkg}`)) this.problem("agentInstall.prompt", `must give the download page https://kubcode.dev/skills/${pkg}`);
+      } else if (!isHttpsUrl(r.source)) this.problem("agentInstall.source", "must be an https repo URL or skill:<slug>");
+      else if (!prompt.includes(r.source)) this.problem("agentInstall.prompt", `must contain the source URL ${r.source}`);
+      if (typeof r.source === "string") source = r.source;
+    }
+    for (const key of Object.keys(r)) {
+      if (!["agents", "prompt", "source"].includes(key)) this.problem("agentInstall", `has unknown field "${key}"`);
+    }
+    const packages = PACKAGES.map((p) => p.slug).filter(
+      (slug) => source === `skill:${slug}` || new RegExp(`kubcode\\.dev/skills/${slug}(?![a-z0-9-])`).test(prompt),
+    );
+    return { agents, prompt, ...(source ? { source } : {}), packages };
+  }
+
   redirects(): string[] {
     const value = this.data.redirects ?? [];
     if (!Array.isArray(value)) {
@@ -510,6 +558,7 @@ function readPages<T extends Page>(
     );
     const record = asRecord(data);
     const fm = new FieldReader(`${dir}/${file}`, record, problems);
+    const agentInstall = fm.agentInstall();
     const base: PageBase = {
       slug: fm.slug(path.basename(file, ".mdx")),
       title: fm.text("title", LIMITS.title),
@@ -521,6 +570,7 @@ function readPages<T extends Page>(
       sourceNote: fm.optionalText("sourceNote", LIMITS.description),
       redirects: fm.redirects(),
       go: fm.goCodes(),
+      ...(agentInstall ? { agentInstall } : {}),
       body,
     };
     return { fm, page: build(fm, base) };
@@ -572,6 +622,23 @@ export function loadContent(root: string = DEFAULT_ROOT): Content {
         fm.problem("refs", `has unknown entry "${ref.kind}:${ref.slug}"`);
       }
     }
+  }
+
+  // Agent install prompts: agents are real tool pages, and every article that
+  // points readers at something installable carries a prompt. Installable =
+  // one of our download packages, or a kit tool: a tool page with a repo and
+  // its own agentInstall (skills, plugins and kits; tests/agent-install.test.ts
+  // pins which tools those are). Agents and apps such as Claude Code or FFmpeg
+  // have repos too but are not kits, so mentioning them needs no prompt.
+  const kitTools = new Set(tools.filter((p) => p.page.links.repo && p.page.agentInstall).map((p) => p.page.slug));
+  const packageSlugs = new Set(PACKAGES.map((p) => p.slug));
+  for (const { fm, page } of pages) {
+    for (const agent of page.agentInstall?.agents ?? []) {
+      if (!known.tool.has(agent)) fm.problem("agentInstall.agents", `has unknown tool "${agent}"`);
+    }
+    if (page.kind !== "article" || page.agentInstall) continue;
+    const kit = page.refs.find((r) => (r.kind === "tool" && kitTools.has(r.slug)) || (r.kind === "skill" && packageSlugs.has(r.slug)));
+    if (kit) fm.problem("agentInstall", `is required: refs include ${kit.kind}:${kit.slug} (a skill kit or download package)`);
   }
 
   // A redirect must never shadow a live page or point two ways.

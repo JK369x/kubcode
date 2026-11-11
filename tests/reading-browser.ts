@@ -141,16 +141,36 @@ async function main() {
       assert.ok(await box.evaluate((el) => el.scrollTop > 0), "the box scrolled to follow later sections");
       checks.push("fixed-height TOC follows the reader (active entry always visible) without moving the page");
 
-      const copy = page.locator(".code-block .code-copy").first();
+      const copy = page.locator(".prose .code-block .code-copy").first();
       await copy.scrollIntoViewIfNeeded();
       await copy.click();
-      await page.waitForFunction(() => document.querySelector(".code-copy")?.textContent === "คัดลอกแล้ว");
+      await page.waitForFunction(() => document.querySelector(".prose .code-copy")?.textContent === "คัดลอกแล้ว");
       const clip = await page.evaluate(() => navigator.clipboard.readText());
       assert.match(clip, /^# Each line prints a version/);
       assert.match(clip, /ffprobe -version/);
-      assert.equal(await page.locator(".code-block .code-lang").first().innerText(), "bash");
-      assert.equal(await page.locator(".code-block .code-file").first().innerText(), "check-setup.sh");
+      assert.equal(await page.locator(".prose .code-block .code-lang").first().innerText(), "bash");
+      assert.equal(await page.locator(".prose .code-block .code-file").first().innerText(), "check-setup.sh");
       checks.push("copy button copies the exact code and confirms");
+
+      // "ติดตั้งด้วย AI agent ของคุณ": first TOC entry, before the first H2, big copy button.
+      const agent = page.locator(".agent-install");
+      assert.equal(await page.locator("[data-toc-scroll] a").first().innerText(), "ติดตั้งด้วย AI agent ของคุณ");
+      assert.ok(
+        await agent.evaluate((el) => !!(el.compareDocumentPosition(document.querySelector(".prose h2")!) & Node.DOCUMENT_POSITION_FOLLOWING)),
+        "agent section sits before the first H2",
+      );
+      // By class: the button's accessible name changes once it confirms.
+      const agentCopy = agent.locator("button.code-copy-big");
+      assert.equal(await agentCopy.innerText(), "คัดลอก prompt");
+      await agentCopy.scrollIntoViewIfNeeded();
+      await agentCopy.click();
+      await agent.getByRole("status").filter({ hasText: "คัดลอกแล้ว" }).waitFor();
+      assert.equal(await agentCopy.innerText(), "คัดลอกแล้ว");
+      const prompt = await page.evaluate(() => navigator.clipboard.readText());
+      assert.equal(prompt, await agent.locator("pre code").innerText());
+      assert.match(prompt, /https:\/\/github\.com\/kelano86\/what-if-animation/);
+      await agent.screenshot({ path: ".qa/agent-install-1280-dark.png" });
+      checks.push("agent install prompt: first TOC entry, before the first H2, copy button copies the prompt and announces คัดลอกแล้ว");
 
       assert.equal(await page.locator(".font-size span").innerText(), "100%", "fresh readers start at 100%");
       const size = () => page.locator(".prose").evaluate((el) => parseFloat(getComputedStyle(el).fontSize));
