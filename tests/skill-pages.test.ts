@@ -42,7 +42,7 @@ test("a skill page with approved clips shows them, never a 'no preview' placehol
   const html = await renderSkillPage("freshstack-what-if");
   const what = showcaseForSkill("freshstack-what-if", CLIPS)!;
   assert.match(html, /<h2[^>]*>คลิปที่ทำด้วยสกิลนี้<\/h2>/);
-  for (const clip of what.clips) assert.ok(html.includes(`src="${clip.poster.src}"`), clip.id);
+  for (const clip of what.clips) assert.ok(html.includes(`url=${encodeURIComponent(clip.poster.src)}&`), clip.id);
   assert.doesNotMatch(html, /ยังไม่มีสื่อพรีวิว/);
   assert.match(html, /What If Animation ของ FreshStack/, "credit shown with the clips");
   for (const v of [...html.matchAll(/<video\b[^>]*>/g)].map((m) => m[0])) {
@@ -100,7 +100,7 @@ test("catalog: skills with clips first, with their real cover, linking to the sk
   for (const slug of withClips) {
     const card = catalog.match(new RegExp(`<article[^>]*data-skill="${slug}"[\\s\\S]*?</article>`))?.[0] ?? "";
     const cover = showcaseForSkill(slug, CLIPS)!.cover;
-    assert.ok(card.includes(`src="${cover.poster.src}"`), `${slug} uses its approved cover`);
+    assert.ok(card.includes(`url=${encodeURIComponent(cover.poster.src)}&`), `${slug} uses its approved cover`);
     const hit = [...card.matchAll(/<a\b[^>]*>/g)].map((m) => m[0]).find((t) => /card-preview/.test(t)) ?? "";
     assert.match(hit, new RegExp(`href="/skills/${slug}"`), `${slug} cover opens the skill page`);
     assert.doesNotMatch(card, /รอยืนยันสิทธิ์/);

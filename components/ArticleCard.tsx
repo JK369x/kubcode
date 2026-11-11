@@ -1,4 +1,3 @@
-import Image from "next/image";
 import Link from "next/link";
 import { PlayCircle } from "lucide-react";
 import type { Article, Tool } from "@/lib/content";
@@ -7,6 +6,7 @@ import { coverTransitionName, titleTransitionName } from "@/lib/view-transition-
 import { Morph } from "./Morph";
 import { PageStars } from "./StarCounts";
 import { ToolIconRow } from "./ToolIconRow";
+import { SkeletonImage } from "./SkeletonImage";
 import styles from "./ArticleIndex.module.css";
 
 /**
@@ -32,11 +32,12 @@ export function ArticleCard({
       <Morph name={coverTransitionName(a.slug)}>
         <div className={styles.cover}>
           {/* The title is the link text; the cover is decorative here. */}
-          <Image
+          <SkeletonImage
             src={a.cover.src}
             alt=""
             fill
-            priority={priority}
+            preload={priority}
+            fetchPriority={priority ? "high" : undefined}
             sizes={featured ? "(min-width: 900px) 640px, 100vw" : "(min-width: 1100px) 360px, (min-width: 700px) 50vw, 100vw"}
           />
         </div>

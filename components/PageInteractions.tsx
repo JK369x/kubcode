@@ -5,6 +5,7 @@ import { useCallback, useEffect, useId, useRef, useState, type ReactNode } from 
 import { send } from "@/lib/interactions/client";
 import type { PageKind, PageState, PublicComment } from "@/lib/interactions/store";
 import { CommentText } from "./CommentText";
+import { SkeletonRows } from "./SkeletonImage";
 import styles from "./PageInteractions.module.css";
 
 export type InteractionTarget = { kind: PageKind; slug: string; title: string };
@@ -122,7 +123,17 @@ export function StarControl({ target, it, compact = false }: { target: Interacti
 
 /** Comment list (own scroll) with the composer pinned at the bottom. */
 export function CommentsPanel({ target, it, headingId }: { target: InteractionTarget; it: Interactions; headingId: string }) {
-  if (it.load.state === "loading") return <section className={styles.panel} aria-busy="true" aria-labelledby={headingId} />;
+  if (it.load.state === "loading")
+    return (
+      <section className={styles.panel} aria-busy="true" aria-labelledby={headingId}>
+        <h2 id={headingId} className={styles.panelHead}>
+          คอมเมนต์
+        </h2>
+        <div className={styles.skeleton}>
+          <SkeletonRows rows={3} label="กำลังโหลดคอมเมนต์" />
+        </div>
+      </section>
+    );
   if (it.load.state === "closed")
     return (
       <section className={`${styles.panel} ${styles.panelClosed}`} aria-labelledby={headingId}>

@@ -68,6 +68,9 @@
   overscroll-behavior: contain;
   padding: 14px 16px;
 }
+.skeleton {
+  padding: 0 16px;
+}
 .empty {
   padding: 14px 16px;
 }

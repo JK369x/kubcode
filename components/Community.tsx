@@ -5,6 +5,7 @@ import { useCallback, useEffect, useState } from "react";
 import type { PageKind } from "@/lib/interactions/store";
 import { relativeTime } from "@/lib/relative-time";
 import { fetchStarCounts } from "./StarCounts";
+import { SkeletonRows } from "./SkeletonImage";
 import styles from "./Community.module.css";
 
 /** One feed entry as /api/interactions/latest returns it (public fields only). */
@@ -133,6 +134,7 @@ export function CommunityFeed() {
           <MessageCircle size={20} aria-hidden /> ความเคลื่อนไหวล่าสุด
         </h2>
       </div>
+      {feed.state === "loading" && <SkeletonRows rows={5} label="กำลังโหลดคอมเมนต์ล่าสุด" />}
       {feed.state === "closed" && <p className={styles.meta}>{feed.message}</p>}
       {feed.state === "ready" && (feed.items.length === 0 ? <EmptyFeed /> : <FeedList items={feed.items} />)}
       {feed.state === "ready" && feed.nextCursor && (
@@ -150,18 +152,31 @@ const TOP_N = 5;
 
 /** "ยอดนิยม": the most-starred pages per kind; pages without stars are left out. */
 export function PopularLists({ groups }: { groups: Array<{ kind: PageKind; label: string; pages: PopularPage[] }> }) {
-  const [counts, setCounts] = useState<Partial<Record<PageKind, Record<string, number>>> | null>(null);
+  // undefined while loading; null when the counts could not be read (the block hides).
+  const [counts, setCounts] = useState<Partial<Record<PageKind, Record<string, number>>> | null | undefined>(undefined);
   useEffect(() => {
     let live = true;
     void Promise.all(groups.map(async (g) => [g.kind, await fetchStarCounts(g.kind)] as const)).then((all) => {
-      if (!live || all.some(([, c]) => c === null)) return;
+      if (!live) return;
+      if (all.some(([, c]) => c === null)) return setCounts(null);
       setCounts(Object.fromEntries(all) as Partial<Record<PageKind, Record<string, number>>>);
     });
     return () => {
       live = false;
     };
   }, [groups]);
-  if (!counts) return null;
+  if (counts === null) return null;
+  if (counts === undefined)
+    return (
+      <section className={styles.block} aria-labelledby="popular" aria-busy="true">
+        <div className={styles.blockHead}>
+          <h2 id="popular">
+            <Star size={20} aria-hidden /> ยอดนิยม
+          </h2>
+        </div>
+        <SkeletonRows rows={2} label="กำลังโหลดหน้ายอดนิยม" />
+      </section>
+    );
   return (
     <section className={styles.block} aria-labelledby="popular">
       <div className={styles.blockHead}>

@@ -120,7 +120,7 @@ test("only skills with an approved clip get a full card, and every one can play 
   for (const [card, slug] of cards) {
     assert.match(card, /<img\b/, `${slug} poster`);
     const preview = showcaseForSkill(slug)!.cover.preview;
-    if (preview) assert.match(card, new RegExp(`<video[^>]*data-src="${preview.src}"`), `${slug} preview`);
+    if (preview) assert.ok(new RegExp(`<video[^>]*data-src="([^"]+)"`).exec(card)?.[1] === preview.src, `${slug} preview`);
     for (const b of skillBadges(skills.find((s) => s.slug === slug)!)) assert.ok(card.includes(b.label), `${slug}: ${b.label}`);
   }
   assert.doesNotMatch(grid, /สิ่งที่ต้องมี/, "no requirement-list placeholders in the main grid");

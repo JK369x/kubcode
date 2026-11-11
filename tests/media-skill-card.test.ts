@@ -66,7 +66,8 @@ test("poster card: one full-card preview button wraps the real poster", () => {
     "";
   const img = tags(inner, "img");
   assert.equal(img.length, 1);
-  assert.equal(attr(img[0], "src"), coverFor(withPoster));
+  // Through the image optimiser (next/image), resized and AVIF/WebP.
+  assert.ok(attr(img[0], "src")?.includes(`url=${encodeURIComponent(coverFor(withPoster)!)}&`), attr(img[0], "src"));
   assert.equal(attr(img[0], "class"), "poster");
   assert.equal(attr(img[0], "alt"), "", "button label names the work");
 });

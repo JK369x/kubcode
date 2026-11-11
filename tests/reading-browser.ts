@@ -369,6 +369,10 @@ async function main() {
       const content = loadContent();
       assert.equal(await cards.count(), content.tools.length);
       // Every logo is a local file that actually loaded (or a monogram).
+      // Logos below the fold are lazy: bring each into view, then wait for it.
+      for (const el of await page.locator("main article .tool-logo").all()) await el.scrollIntoViewIfNeeded();
+      await page.waitForFunction(() => [...document.querySelectorAll("main article .tool-logo img")].every((i) => (i as HTMLImageElement).complete));
+      await page.evaluate(() => window.scrollTo(0, 0));
       const logos = await page.locator("main article .tool-logo").evaluateAll((els) =>
         els.map((el) => {
           const img = el.querySelector("img");

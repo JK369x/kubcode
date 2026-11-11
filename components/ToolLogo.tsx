@@ -25,7 +25,7 @@ export function ToolLogo({
         {logo.kind === "image" ? (
           // Plain <img>: a small local file; SVGs must not go through the optimiser.
           // eslint-disable-next-line @next/next/no-img-element
-          <img src={logo.src} alt="" width={px} height={px} decoding="async" />
+          <img src={logo.src} alt="" width={px} height={px} decoding="async" loading={size === "page" ? "eager" : "lazy"} />
         ) : (
           // Drawn by CSS so the letters never become part of a link's name.
           <span data-monogram={logo.text} />

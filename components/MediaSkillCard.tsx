@@ -9,6 +9,7 @@ import { playPreview, stopPreview } from "./hoverPreview";
 import { CardDownloadAction } from "./CardDownloadAction";
 import { SkillIcon, getSkillTools } from "./ToolChips";
 import { ToolMark, resolveToolMark } from "./ToolMark";
+import { SkeletonImage } from "./SkeletonImage";
 import styles from "./MediaSkillCard.module.css";
 
 /*
@@ -29,6 +30,9 @@ import styles from "./MediaSkillCard.module.css";
  * build withheld existing media), and the declared requirements — no
  * substitute artwork.
  */
+
+/** Card width in the catalog grid (.skill-grid: 4, 3, then 2 columns). */
+const CARD_SIZES = "(max-width: 850px) 50vw, (max-width: 1180px) 33vw, 300px";
 
 /** Workflow name for the no-media cover, from the skill's own category. */
 function emptyTitle(category: string): string {
@@ -73,12 +77,13 @@ export function MediaSkillCard({
     >
       {showcase && poster ? (
         <Link className={"card-preview " + styles.hit} href={detailHref} aria-label={"ดูคลิปตัวอย่าง " + skill.name}>
-          <img
+          <SkeletonImage
             className={styles.poster}
             src={poster}
             alt=""
+            fill
+            sizes={CARD_SIZES}
             loading={eager ? "eager" : "lazy"}
-            decoding="async"
             draggable={false}
           />
           {preview && (
@@ -104,12 +109,13 @@ export function MediaSkillCard({
           onClick={() => onSelectSkill(skill.slug)}
         >
           {poster ? (
-            <img
+            <SkeletonImage
               className={styles.poster}
               src={poster}
               alt=""
+              fill
+              sizes={CARD_SIZES}
               loading={eager ? "eager" : "lazy"}
-              decoding="async"
               draggable={false}
             />
           ) : (

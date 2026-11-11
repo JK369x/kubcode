@@ -2961,3 +2961,73 @@ html[data-theme="light"] .shiki span {
   font-weight: 400;
   letter-spacing: 0.01em;
 }
+
+/* ---------- loading skeletons (components/SkeletonImage.tsx) ----------
+   A soft shimmer in the image box until the image loads, and placeholder
+   rows for lists fetched on the client. Theme tokens, so light and dark both
+   work; reduced motion gets a still block. */
+:root {
+  --skeleton-base: color-mix(in srgb, var(--surface-soft) 82%, var(--ink) 4%);
+  --skeleton-shine: color-mix(in srgb, var(--surface-soft) 70%, var(--ink) 14%);
+}
+.img-skeleton,
+.skeleton-line {
+  background: linear-gradient(100deg, var(--skeleton-base) 30%, var(--skeleton-shine) 50%, var(--skeleton-base) 70%) var(--skeleton-base);
+  background-size: 300% 100%;
+  animation: skeleton-shimmer 1.4s ease-in-out infinite;
+}
+.img-skeleton {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  border-radius: inherit;
+  pointer-events: none;
+}
+/* The image paints over the shimmer (a static image is lifted to positioned
+   so it stacks above it; zero specificity, so component positioning wins). */
+:where(.img-skeleton) + img {
+  position: relative;
+}
+/* Lazy images fade in once loaded. */
+img[data-img-state] {
+  transition: opacity 260ms ease-out;
+}
+img[data-img-state="loading"] {
+  opacity: 0;
+}
+.skeleton-rows {
+  display: grid;
+  gap: 0;
+}
+.skeleton-row {
+  display: grid;
+  gap: 10px;
+  padding: 16px 0;
+  border-bottom: 1px solid var(--line);
+}
+.skeleton-line {
+  display: block;
+  height: 12px;
+  border-radius: 6px;
+}
+.skeleton-line-short {
+  width: 18%;
+  height: 10px;
+}
+@keyframes skeleton-shimmer {
+  from {
+    background-position: 100% 0;
+  }
+  to {
+    background-position: 0 0;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .img-skeleton,
+  .skeleton-line {
+    animation: none;
+  }
+  img[data-img-state] {
+    transition: none;
+  }
+}

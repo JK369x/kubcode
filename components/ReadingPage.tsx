@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { TitleTransition } from "@/components/TitleTransition";
-import Image from "next/image";
+import { SkeletonImage } from "./SkeletonImage";
 import { Morph } from "./Morph";
 import { coverTransitionName } from "@/lib/view-transition-names";
 import type { CSSProperties, ReactNode } from "react";
@@ -127,7 +127,7 @@ export function ReadingPage({
           {cover && (
             <Morph name={coverTransitionName(slug)}>
               <figure className="reading-hero">
-                <Image src={cover.src} alt={cover.alt} fill priority sizes="(min-width: 1180px) 760px, 100vw" />
+                <SkeletonImage src={cover.src} alt={cover.alt} fill preload fetchPriority="high" sizes="(min-width: 1180px) 760px, 100vw" />
               </figure>
             </Morph>
           )}

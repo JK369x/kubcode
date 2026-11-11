@@ -1,3 +1,4 @@
+import { readFileSync } from "node:fs";
 import test from "node:test";
 import assert from "node:assert/strict";
 
@@ -72,7 +73,8 @@ function allItems(full: string) {
   return out;
 }
 const cards = (html: string) => allItems(html).filter((i) => !/data-copy/.test(i.attrs));
-const cardFor = (html: string, posterSrc: string) => cards(html).find((c) => c.body.includes(`src="${posterSrc}"`));
+// Posters go through the image optimiser (next/image): match the source URL inside it.
+const cardFor = (html: string, posterSrc: string) => cards(html).find((c) => c.body.includes(`url=${encodeURIComponent(posterSrc)}&`));
 
 test("SSR hero: one Thai h1 and one card per visual style, named by it", () => {
   const html = renderHero();
@@ -217,15 +219,23 @@ test("previews never autoplay or download before someone hovers or focuses", () 
   assert.ok(videos.length > 0);
   for (const v of videos) {
     assert.doesNotMatch(v, /\ssrc=|autoplay/i);
-    assert.match(v, /data-src="\/showcase\/[^"]+\/preview\.mp4"/);
+    assert.match(v, /data-src="\/showcase\/[^"]+\/preview\.mp4\?v=[0-9a-f]{12}"/);
     assert.match(v, /muted=""/);
     assert.match(v, /playsInline=""|playsinline=""/);
     assert.match(v, /preload="none"/);
   }
+  // No layout shift: an image either has its size, or fills a box whose
+  // aspect ratio is fixed in CSS (.media { aspect-ratio: 9 / 16 }) and says
+  // how wide it renders (sizes) so the optimiser picks a small file.
   for (const img of [...html.matchAll(/<img\b[^>]*>/g)].map((m) => m[0])) {
+    if (/data-nimg="fill"/.test(img)) {
+      assert.match(img, /sizes="[^"]+"/);
+      continue;
+    }
     assert.match(img, /width="\d+"/);
     assert.match(img, /height="\d+"/);
   }
+  assert.match(readFileSync("components/VisualShelf.module.css", "utf8"), /\.media \{[^}]*aspect-ratio: 9 \/ 16/);
 });
 
 test("the row loops: copies are hidden from assistive tech and keyboard", () => {
