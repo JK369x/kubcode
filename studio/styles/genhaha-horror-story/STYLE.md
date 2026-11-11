@@ -1,0 +1,7 @@
+# Genhaha Horror Story
+
+Draft; no visual, motion or audio approval yet. Source: the locally supplied Genhaha Horror Story skill at `~/Downloads/genhaha-horror-story`, `SKILL.md`, `LICENSE.md` and `template/`. Genhaha permits personal/team use but asks users not to resell or re-upload the downloaded files as a product. The original kit is not copied into this repository; install/locate it separately on another machine.
+
+Vertical 9:16 dark flat-vector scenes, warm isolated lamp, fog, rear silhouettes, slow purposeful movement and a quiet turn. No gore or jump scare; fictional stories identify themselves as fiction. Use real, sourced evidence and an appropriate label for true stories. Original `captions.js`, `scenes.js`, `video.json`, `index.html` and kit define the pipeline. Use the actual audio duration to time scenes. The source skill defaults to edge-tts; The Thai narrator is a separate adapter that must be explicitly implemented and tested before claiming compatibility. Do not silently substitute voice.
+
+Create an editable starter with `node scripts/genhaha-scaffold.mjs horror <slug>`. It invokes the local source's `new` command and writes under ignored `outputs/genhaha-projects/`. It does not generate voice, render, download, publish or call a paid service. See the source skill for `voice`, `check`, `frames`, `cover` and `render`; review their network, provider and output behavior before invoking. Do not embed or commit source kit files or credentials. Caption presets remain style-specific; don't overwrite JK caption settings.

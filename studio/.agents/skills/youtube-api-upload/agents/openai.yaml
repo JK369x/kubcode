@@ -1,0 +1,4 @@
+interface:
+  display_name: "YouTube Upload Module"
+  short_description: "Upload finished clips to the connected YouTube channel"
+  default_prompt: "Use $youtube-api-upload through $youtube, select the target channel first, then upload my finished clip."

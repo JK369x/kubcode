@@ -1,0 +1,23 @@
+{
+  "id": "jk-soft-story",
+  "name": "JK Soft Story",
+  "status": "selected",
+  "version": "2",
+  "selectedAt": "2026-10-28",
+  "approvalScope": "เลือกแนวภาพนิ่ง v2 แล้ว · animation และเสียงรอตรวจแยก",
+  "direction": "STYLE.md",
+  "preview": "assets/selected-v2.png",
+  "source": "assets/scene-v2.svg",
+  "components": [
+    "components/hero.svg",
+    "components/radio.svg"
+  ],
+  "tags": [
+    "2d",
+    "soft-shading",
+    "storytelling"
+  ],
+  "example": "examples/still/index.html",
+  "video": "examples/motion/demo.mp4",
+  "captions": "captions.json"
+}

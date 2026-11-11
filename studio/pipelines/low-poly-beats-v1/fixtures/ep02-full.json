@@ -1,0 +1,2038 @@
+{
+  "version": 1,
+  "scene": "mall-v1",
+  "title": "ห้างติดเชื้อ · EP2 v2 · บันได",
+  "duration": 86.39116666666666,
+  "anchors": {
+    "stop": 4.21,
+    "rail": 7.930166666666666,
+    "hand": 9.060166666666667,
+    "handSlide": 10.030166666666666,
+    "torchRaise": 11.470166666666668,
+    "lightHit": 12.820166666666667,
+    "turn": 14.110166666666668,
+    "lightOff": 15.800166666666668,
+    "freeze": 16.780166666666666,
+    "silence": 18.270166666666668,
+    "openingEnd": 19.87016666666667,
+    "end": 86.39116666666666,
+    "three-count": 21.130166666666664,
+    "almost-touch": 22.210166666666666,
+    "fear-shoe": 21.790166666666664,
+    "want-run": 23.460166666666666,
+    "sound-gives-away": 24.680166666666665,
+    "drip-start": 27.900166666666667,
+    "drip-hit": 29.690166666666666,
+    "sound-turn": 30.680166666666665,
+    "wait-below": 32.01016666666667,
+    "arrive-three": 33.530166666666666,
+    "pa-start": 36.13033333333334,
+    "pa-name": 37.66033333333334,
+    "pa-mother": 38.96033333333334,
+    "no-answer": 41.43033333333334,
+    "answer-word": 42.970333333333336,
+    "door-start": 44.5905,
+    "monitors": 46.3605,
+    "figure": 48.4505,
+    "who-inside": 50.240500000000004,
+    "map-start": 53.970666666666666,
+    "parking": 55.590666666666664,
+    "basement": 56.39066666666667,
+    "locked": 57.42066666666667,
+    "unlock": 59.160666666666664,
+    "two-start": 61.100833333333334,
+    "same-tracks": 64.40083333333332,
+    "upper-door": 67.87083333333332,
+    "options-start": 71.45083333333332,
+    "unlock-option": 72.91083333333333,
+    "avoid-inside": 74.15083333333332,
+    "continue-option": 75.61083333333333,
+    "vote-start": 77.56099999999999,
+    "vote-two": 79.891,
+    "your-choice": 81.981,
+    "freezeEnd": 27.250166666666665,
+    "dripEnd": 35.60033333333333,
+    "speakerEnd": 44.0305,
+    "doorEnd": 53.31066666666667,
+    "clueEnd": 61.060833333333335,
+    "pressureEnd": 70.83083333333333,
+    "optionsEnd": 77.30099999999999,
+    "voteEnd": 85.49116666666667,
+    "handRaised": 9.610166666666668,
+    "handSlid": 10.930166666666667,
+    "turnedToHero": 14.390166666666667,
+    "reachBegins": 14.270166666666668,
+    "reachEnds": 14.670166666666669,
+    "turnedToDrip": 31.280166666666666,
+    "descentEnds": 33.41016666666667,
+    "heroLookBack": 68.22083333333332,
+    "lookSettled": 71.40083333333332
+  },
+  "beats": [
+    {
+      "id": "quiet-route",
+      "start": 0,
+      "end": 1.12,
+      "world": "step",
+      "camera": {
+        "from": [
+          0.8,
+          0.75,
+          2.4
+        ],
+        "to": [
+          0.65,
+          0.8,
+          2.2
+        ],
+        "lookFrom": [
+          -0.35,
+          0.0,
+          0.25
+        ],
+        "lookTo": [
+          -0.35,
+          0.0,
+          0.25
+        ],
+        "ease": "smooth"
+      },
+      "purpose": "walk"
+    },
+    {
+      "id": "empty-below",
+      "start": 1.12,
+      "end": "stop",
+      "world": "step",
+      "camera": {
+        "from": [
+          1.15,
+          2.5,
+          4.4
+        ],
+        "to": [
+          1.1,
+          2.35,
+          4.2
+        ],
+        "lookFrom": [
+          0,
+          -0.2,
+          -2.4
+        ],
+        "lookTo": [
+          0,
+          -0.2,
+          -2.4
+        ],
+        "ease": "smooth"
+      },
+      "purpose": "withhold"
+    },
+    {
+      "id": "stop-with-you",
+      "start": "stop",
+      "end": 5.430167,
+      "world": "step",
+      "camera": {
+        "from": [
+          0.75,
+          0.35,
+          -0.4
+        ],
+        "to": [
+          0.68,
+          0.35,
+          -0.52
+        ],
+        "lookFrom": [
+          -0.25,
+          -0.8,
+          -2.0
+        ],
+        "lookTo": [
+          -0.25,
+          -0.8,
+          -2.0
+        ],
+        "ease": "smooth"
+      },
+      "purpose": "stop"
+    },
+    {
+      "id": "tracks-stop",
+      "start": 5.430167,
+      "end": "rail",
+      "world": "step",
+      "camera": {
+        "from": [
+          0.7,
+          0.1,
+          -0.65
+        ],
+        "to": [
+          0.64,
+          0.05,
+          -0.78
+        ],
+        "lookFrom": [
+          -0.05,
+          -1.08,
+          -2.5
+        ],
+        "lookTo": [
+          -0.05,
+          -1.08,
+          -2.5
+        ],
+        "ease": "smooth"
+      },
+      "purpose": "clue"
+    },
+    {
+      "id": "empty-rail",
+      "start": "rail",
+      "end": "hand",
+      "world": "step",
+      "camera": {
+        "from": [
+          1.0,
+          -0.25,
+          -1.6
+        ],
+        "to": [
+          0.98,
+          -0.25,
+          -1.72
+        ],
+        "lookFrom": [
+          1.25,
+          -0.75,
+          -4.0
+        ],
+        "lookTo": [
+          1.25,
+          -0.75,
+          -4.0
+        ],
+        "ease": "smooth"
+      },
+      "purpose": "anticipate"
+    },
+    {
+      "id": "hand-emerges",
+      "start": "hand",
+      "end": "handSlide",
+      "world": "step",
+      "camera": {
+        "from": [
+          1.0,
+          -0.23,
+          -1.6
+        ],
+        "to": [
+          0.94,
+          -0.23,
+          -1.8
+        ],
+        "lookFrom": [
+          1.28,
+          -0.75,
+          -4.0
+        ],
+        "lookTo": [
+          1.28,
+          -0.75,
+          -4.0
+        ],
+        "ease": "smooth"
+      },
+      "purpose": "reveal-hand"
+    },
+    {
+      "id": "hand-slides",
+      "start": "handSlide",
+      "end": "torchRaise",
+      "world": "step",
+      "camera": {
+        "from": [
+          0.9,
+          -0.25,
+          -2.0
+        ],
+        "to": [
+          0.85,
+          -0.24,
+          -2.1
+        ],
+        "lookFrom": [
+          1.25,
+          -0.65,
+          -4.0
+        ],
+        "lookTo": [
+          1.25,
+          -0.65,
+          -4.0
+        ],
+        "ease": "smooth"
+      },
+      "purpose": "hand-slide"
+    },
+    {
+      "id": "torch-raised",
+      "start": "torchRaise",
+      "end": "lightHit",
+      "world": "step",
+      "camera": {
+        "from": [
+          1.35,
+          0.7,
+          -0.8
+        ],
+        "to": [
+          1.25,
+          0.65,
+          -0.9
+        ],
+        "lookFrom": [
+          -0.1,
+          -0.05,
+          -3.5
+        ],
+        "lookTo": [
+          -0.1,
+          -0.05,
+          -3.5
+        ],
+        "ease": "smooth"
+      },
+      "purpose": "raise"
+    },
+    {
+      "id": "face-in-beam",
+      "start": "lightHit",
+      "end": "turn",
+      "world": "step",
+      "camera": {
+        "from": [
+          0.45,
+          -0.1,
+          -2.5
+        ],
+        "to": [
+          0.45,
+          -0.1,
+          -2.6
+        ],
+        "lookFrom": [
+          0.35,
+          -0.17,
+          -4.2
+        ],
+        "lookTo": [
+          0.35,
+          -0.17,
+          -4.2
+        ],
+        "ease": "smooth"
+      },
+      "purpose": "face-reveal"
+    },
+    {
+      "id": "eye-contact",
+      "start": "turn",
+      "end": "lightOff",
+      "world": "step",
+      "camera": {
+        "from": [
+          0.45,
+          -0.1,
+          -2.6
+        ],
+        "to": [
+          0.45,
+          -0.1,
+          -2.68
+        ],
+        "lookFrom": [
+          0.35,
+          -0.17,
+          -4.2
+        ],
+        "lookTo": [
+          0.35,
+          -0.17,
+          -4.2
+        ],
+        "ease": "smooth"
+      },
+      "purpose": "head-turn"
+    },
+    {
+      "id": "switch-off",
+      "start": "lightOff",
+      "end": "freeze",
+      "world": "step",
+      "camera": {
+        "from": [
+          1.35,
+          0.9,
+          0.6
+        ],
+        "to": [
+          1.3,
+          0.88,
+          0.5
+        ],
+        "lookFrom": [
+          -0.05,
+          -0.1,
+          -3.4
+        ],
+        "lookTo": [
+          -0.05,
+          -0.1,
+          -3.4
+        ],
+        "ease": "smooth"
+      },
+      "purpose": "light-out"
+    },
+    {
+      "id": "hold-still",
+      "start": "freeze",
+      "end": "openingEnd",
+      "world": "step",
+      "camera": {
+        "from": [
+          1.35,
+          0.9,
+          0.6
+        ],
+        "to": [
+          1.27,
+          0.88,
+          0.48
+        ],
+        "lookFrom": [
+          -0.05,
+          -0.1,
+          -3.4
+        ],
+        "lookTo": [
+          -0.05,
+          -0.1,
+          -3.4
+        ],
+        "ease": "smooth"
+      },
+      "purpose": "freeze"
+    },
+    {
+      "id": "three-steps",
+      "start": "openingEnd",
+      "end": "fear-shoe",
+      "world": "step",
+      "camera": {
+        "from": [
+          1.35,
+          0.9,
+          0.6
+        ],
+        "to": [
+          1.3,
+          0.88,
+          0.5
+        ],
+        "lookFrom": [
+          -0.05,
+          -0.1,
+          -3.4
+        ],
+        "lookTo": [
+          -0.05,
+          -0.1,
+          -3.4
+        ],
+        "ease": "smooth"
+      },
+      "purpose": "hold the established three-step gap"
+    },
+    {
+      "id": "near-shoe",
+      "start": "fear-shoe",
+      "end": "want-run",
+      "world": "shoe",
+      "camera": {
+        "from": [
+          0.65,
+          0.55,
+          -0.75
+        ],
+        "to": [
+          0.62,
+          0.54,
+          -0.73
+        ],
+        "lookFrom": [
+          -0.15,
+          0.13,
+          0.25
+        ],
+        "lookTo": [
+          -0.15,
+          0.13,
+          0.25
+        ],
+        "ease": "smooth"
+      },
+      "purpose": "fingers approach the shoe without contact"
+    },
+    {
+      "id": "do-not-run",
+      "start": "want-run",
+      "end": "drip-start",
+      "world": "close",
+      "camera": {
+        "from": [
+          0.1,
+          1.65,
+          2.35
+        ],
+        "to": [
+          0.1,
+          1.65,
+          2.22
+        ],
+        "lookFrom": [
+          -0.8,
+          1.48,
+          0.3
+        ],
+        "lookTo": [
+          -0.8,
+          1.48,
+          0.3
+        ],
+        "ease": "smooth"
+      },
+      "purpose": "hero suppresses running; no reset of the three rules"
+    },
+    {
+      "id": "drip-source",
+      "start": "drip-start",
+      "end": "sound-turn",
+      "world": "step",
+      "camera": {
+        "from": [
+          0.3,
+          -1.5,
+          -4.6
+        ],
+        "to": [
+          0.25,
+          -1.5,
+          -4.7
+        ],
+        "lookFrom": [
+          -1,
+          -2.35,
+          -7
+        ],
+        "lookTo": [
+          -1,
+          -2.35,
+          -7
+        ],
+        "ease": "smooth"
+      },
+      "purpose": "show the physical source of the metallic drip"
+    },
+    {
+      "id": "listen-turn",
+      "start": "sound-turn",
+      "end": "wait-below",
+      "world": "step",
+      "camera": {
+        "from": [
+          0.9,
+          -0.2,
+          -2
+        ],
+        "to": [
+          0.82,
+          -0.2,
+          -2.1
+        ],
+        "lookFrom": [
+          0.25,
+          -0.3,
+          -4.3
+        ],
+        "lookTo": [
+          0.25,
+          -0.3,
+          -4.3
+        ],
+        "ease": "smooth"
+      },
+      "purpose": "head turns first toward the sound"
+    },
+    {
+      "id": "wait-and-descend",
+      "start": "wait-below",
+      "end": "arrive-three",
+      "world": "step",
+      "camera": {
+        "from": [
+          0.95,
+          -0.2,
+          -2
+        ],
+        "to": [
+          0.9,
+          -0.22,
+          -2.1
+        ],
+        "lookFrom": [
+          0.2,
+          -0.7,
+          -4.7
+        ],
+        "lookTo": [
+          0.2,
+          -0.7,
+          -4.7
+        ],
+        "ease": "smooth"
+      },
+      "purpose": "infected moves away before hero advances"
+    },
+    {
+      "id": "floor-three",
+      "start": "arrive-three",
+      "end": "pa-start",
+      "world": "landing",
+      "camera": {
+        "from": [
+          0.9,
+          2.2,
+          6.5
+        ],
+        "to": [
+          0.85,
+          2.15,
+          6.3
+        ],
+        "lookFrom": [
+          0.2,
+          1.35,
+          0
+        ],
+        "lookTo": [
+          0.2,
+          1.35,
+          0
+        ],
+        "ease": "smooth"
+      },
+      "purpose": "establish the third-floor landing without entering either route"
+    },
+    {
+      "id": "pa-calls-name",
+      "start": "pa-start",
+      "end": "no-answer",
+      "world": "landing",
+      "camera": {
+        "from": [
+          0.4,
+          3.5,
+          -0.5
+        ],
+        "to": [
+          0.3,
+          3.45,
+          -0.65
+        ],
+        "lookFrom": [
+          0,
+          3.5,
+          -3.3
+        ],
+        "lookTo": [
+          0,
+          3.5,
+          -3.3
+        ],
+        "ease": "smooth"
+      },
+      "purpose": "PA and red LED hold attention while the voice calls"
+    },
+    {
+      "id": "keep-silent",
+      "start": "no-answer",
+      "end": "door-start",
+      "world": "landing",
+      "camera": {
+        "from": [
+          0.75,
+          1.65,
+          3.8
+        ],
+        "to": [
+          0.7,
+          1.65,
+          3.7
+        ],
+        "lookFrom": [
+          0.2,
+          1.48,
+          1.8
+        ],
+        "lookTo": [
+          0.2,
+          1.48,
+          1.8
+        ],
+        "ease": "smooth"
+      },
+      "purpose": "closed mouth; protagonist does not answer"
+    },
+    {
+      "id": "ajar-door",
+      "start": "door-start",
+      "end": "monitors",
+      "world": "landing",
+      "camera": {
+        "from": [
+          -0.4,
+          2.1,
+          0.5
+        ],
+        "to": [
+          -0.4,
+          2.1,
+          0.3
+        ],
+        "lookFrom": [
+          -1.3,
+          1.6,
+          -4.5
+        ],
+        "lookTo": [
+          -1.3,
+          1.6,
+          -4.5
+        ],
+        "ease": "smooth"
+      },
+      "purpose": "door frames the empty upper monitor area"
+    },
+    {
+      "id": "screens-first",
+      "start": "monitors",
+      "end": "figure",
+      "world": "landing",
+      "camera": {
+        "from": [
+          0.05,
+          2.35,
+          -2.6
+        ],
+        "to": [
+          0.05,
+          2.3,
+          -2.7
+        ],
+        "lookFrom": [
+          -1.35,
+          1.65,
+          -5.9
+        ],
+        "lookTo": [
+          -1.35,
+          1.65,
+          -5.9
+        ],
+        "ease": "smooth"
+      },
+      "purpose": "screens before the seated figure is revealed"
+    },
+    {
+      "id": "figure-reveal",
+      "start": "figure",
+      "end": "who-inside",
+      "world": "landing",
+      "camera": {
+        "from": [
+          -0.1,
+          1.6,
+          -3.1
+        ],
+        "to": [
+          -0.1,
+          1.6,
+          -3.2
+        ],
+        "lookFrom": [
+          -1.3,
+          1.1,
+          -5
+        ],
+        "lookTo": [
+          -1.3,
+          1.1,
+          -5
+        ],
+        "ease": "smooth"
+      },
+      "purpose": "the unknown figure appears with the spoken clue"
+    },
+    {
+      "id": "operator-or-survivor",
+      "start": "who-inside",
+      "end": "map-start",
+      "world": "landing",
+      "camera": {
+        "from": [
+          -0.1,
+          1.5,
+          -3.15
+        ],
+        "to": [
+          -0.1,
+          1.5,
+          -3.28
+        ],
+        "lookFrom": [
+          -1.3,
+          1.1,
+          -5
+        ],
+        "lookTo": [
+          -1.3,
+          1.1,
+          -5
+        ],
+        "ease": "smooth"
+      },
+      "purpose": "hold the unanswered identity question"
+    },
+    {
+      "id": "route-map",
+      "start": "map-start",
+      "end": "locked",
+      "world": "landing",
+      "camera": {
+        "from": [
+          -2.4,
+          1.9,
+          -0.8
+        ],
+        "to": [
+          -2.5,
+          1.85,
+          -1
+        ],
+        "lookFrom": [
+          -3.2,
+          1.9,
+          -3.48
+        ],
+        "lookTo": [
+          -3.2,
+          1.9,
+          -3.48
+        ],
+        "ease": "smooth"
+      },
+      "purpose": "read the route to the car at B1"
+    },
+    {
+      "id": "gate-lock",
+      "start": "locked",
+      "end": "two-start",
+      "world": "landing",
+      "camera": {
+        "from": [
+          -2.65,
+          1.5,
+          -1.6
+        ],
+        "to": [
+          -2.7,
+          1.5,
+          -1.65
+        ],
+        "lookFrom": [
+          -3.2,
+          1.6,
+          -3.48
+        ],
+        "lookTo": [
+          -3.2,
+          1.6,
+          -3.48
+        ],
+        "ease": "smooth"
+      },
+      "purpose": "direct the eye to the locking constraint before the alternative"
+    },
+    {
+      "id": "other-exit",
+      "start": "two-start",
+      "end": "same-tracks",
+      "world": "landing",
+      "camera": {
+        "from": [
+          1.0,
+          2.5,
+          0.7
+        ],
+        "to": [
+          1.1,
+          2.45,
+          0.5
+        ],
+        "lookFrom": [
+          1.8,
+          0.4,
+          -5
+        ],
+        "lookTo": [
+          1.8,
+          0.4,
+          -5
+        ],
+        "ease": "smooth"
+      },
+      "purpose": "show actual stairs and the floor-two door"
+    },
+    {
+      "id": "tracks-continue",
+      "start": "same-tracks",
+      "end": "upper-door",
+      "world": "landing",
+      "camera": {
+        "from": [
+          2.2,
+          1.4,
+          -1.9
+        ],
+        "to": [
+          2.15,
+          1.35,
+          -2
+        ],
+        "lookFrom": [
+          1.8,
+          -0.5,
+          -5.6
+        ],
+        "lookTo": [
+          1.8,
+          -0.5,
+          -5.6
+        ],
+        "ease": "smooth"
+      },
+      "purpose": "wet track clue carries into the alternative route"
+    },
+    {
+      "id": "impact-behind",
+      "start": "upper-door",
+      "end": "options-start",
+      "world": "landing",
+      "camera": {
+        "from": [
+          -1.1,
+          1.9,
+          4
+        ],
+        "to": [
+          -1.05,
+          1.9,
+          3.9
+        ],
+        "lookFrom": [
+          0.2,
+          1.45,
+          1.8
+        ],
+        "lookTo": [
+          0.2,
+          1.45,
+          1.8
+        ],
+        "ease": "smooth"
+      },
+      "purpose": "sound first, then hero turns back"
+    },
+    {
+      "id": "control-option",
+      "start": "options-start",
+      "end": "continue-option",
+      "world": "landing",
+      "camera": {
+        "from": [
+          -1.3,
+          2.8,
+          4.4
+        ],
+        "to": [
+          -1.3,
+          2.75,
+          4.25
+        ],
+        "lookFrom": [
+          -1.3,
+          2,
+          -3.4
+        ],
+        "lookTo": [
+          -1.3,
+          2,
+          -3.4
+        ],
+        "ease": "smooth"
+      },
+      "purpose": "control-room benefit and unknown person share a physical frame"
+    },
+    {
+      "id": "stairs-option",
+      "start": "continue-option",
+      "end": "vote-start",
+      "world": "landing",
+      "camera": {
+        "from": [
+          1.8,
+          2.8,
+          4.4
+        ],
+        "to": [
+          1.8,
+          2.75,
+          4.25
+        ],
+        "lookFrom": [
+          1.8,
+          2,
+          -3.4
+        ],
+        "lookTo": [
+          1.8,
+          2,
+          -3.4
+        ],
+        "ease": "smooth"
+      },
+      "purpose": "longer stairs route and threat visible together"
+    },
+    {
+      "id": "final-choice",
+      "start": "vote-start",
+      "end": "end",
+      "world": "landing",
+      "camera": {
+        "from": [
+          0.25,
+          2.7,
+          10.5
+        ],
+        "to": [
+          0.25,
+          2.7,
+          10.35
+        ],
+        "lookFrom": [
+          0.2,
+          1.1,
+          -3.55
+        ],
+        "lookTo": [
+          0.2,
+          1.1,
+          -3.55
+        ],
+        "ease": "smooth"
+      },
+      "purpose": "both named routes remain visible; no next branch is entered"
+    }
+  ],
+  "channels": {
+    "heroStep": {
+      "ease": "smooth",
+      "keys": [
+        {
+          "at": 0,
+          "value": 0
+        },
+        {
+          "at": "stop",
+          "value": 5
+        }
+      ]
+    },
+    "heroWalking": {
+      "ease": "step",
+      "keys": [
+        {
+          "at": 0,
+          "value": 1
+        },
+        {
+          "at": "stop",
+          "value": 0
+        }
+      ]
+    },
+    "heroTorchRaise": {
+      "ease": "smooth",
+      "keys": [
+        {
+          "at": 0,
+          "value": 0
+        },
+        {
+          "at": "torchRaise",
+          "value": 0
+        },
+        {
+          "at": "lightHit",
+          "value": 1
+        }
+      ]
+    },
+    "heroFreeze": {
+      "ease": "step",
+      "keys": [
+        {
+          "at": 0,
+          "value": 0
+        },
+        {
+          "at": "freeze",
+          "value": 1
+        }
+      ]
+    },
+    "infectedVisible": {
+      "ease": "step",
+      "keys": [
+        {
+          "at": 0,
+          "value": 0
+        },
+        {
+          "at": "lightHit",
+          "value": 1
+        }
+      ]
+    },
+    "handVisible": {
+      "ease": "step",
+      "keys": [
+        {
+          "at": 0,
+          "value": 0
+        },
+        {
+          "at": "hand",
+          "value": 1
+        },
+        {
+          "at": "lightHit",
+          "value": 0
+        }
+      ]
+    },
+    "shoeReach": {
+      "ease": "smooth",
+      "keys": [
+        {
+          "at": 0,
+          "value": 0
+        },
+        {
+          "at": "fear-shoe",
+          "value": 0
+        },
+        {
+          "at": "want-run",
+          "value": 1
+        }
+      ]
+    },
+    "infectedRailGrip": {
+      "ease": "smooth",
+      "keys": [
+        {
+          "at": 0,
+          "value": 1
+        },
+        {
+          "at": "sound-turn",
+          "value": 1
+        },
+        {
+          "at": "turnedToDrip",
+          "value": 0
+        }
+      ]
+    },
+    "handRise": {
+      "ease": "smooth",
+      "keys": [
+        {
+          "at": 0,
+          "value": 0
+        },
+        {
+          "at": "hand",
+          "value": 0
+        },
+        {
+          "at": "handRaised",
+          "value": 1
+        }
+      ]
+    },
+    "handSlide": {
+      "ease": "smooth",
+      "keys": [
+        {
+          "at": 0,
+          "value": 0
+        },
+        {
+          "at": "handSlide",
+          "value": 0
+        },
+        {
+          "at": "handSlid",
+          "value": 1
+        }
+      ]
+    },
+    "torch": {
+      "ease": "step",
+      "keys": [
+        {
+          "at": 0,
+          "value": 0
+        },
+        {
+          "at": "lightHit",
+          "value": 1
+        },
+        {
+          "at": "lightOff",
+          "value": 0
+        }
+      ]
+    },
+    "infectedTurn": {
+      "ease": "smooth",
+      "keys": [
+        {
+          "at": 0,
+          "value": -0.65
+        },
+        {
+          "at": "turn",
+          "value": -0.65
+        },
+        {
+          "at": "turnedToHero",
+          "value": 0
+        },
+        {
+          "at": "sound-turn",
+          "value": 0
+        },
+        {
+          "at": "turnedToDrip",
+          "value": 1.1
+        },
+        {
+          "at": "wait-below",
+          "value": 1.1
+        },
+        {
+          "at": "descentEnds",
+          "value": 0
+        }
+      ]
+    },
+    "infectedReach": {
+      "ease": "smooth",
+      "keys": [
+        {
+          "at": 0,
+          "value": 0
+        },
+        {
+          "at": "reachBegins",
+          "value": 0
+        },
+        {
+          "at": "reachEnds",
+          "value": 1
+        },
+        {
+          "at": "wait-below",
+          "value": 1
+        },
+        {
+          "at": "descentEnds",
+          "value": 0.2
+        }
+      ]
+    },
+    "stepFill": {
+      "ease": "step",
+      "keys": [
+        {
+          "at": 0,
+          "value": 1.6
+        },
+        {
+          "at": "lightOff",
+          "value": 0.8
+        }
+      ]
+    },
+    "pipeVisible": {
+      "ease": "step",
+      "keys": [
+        {
+          "at": 0,
+          "value": 0
+        },
+        {
+          "at": "drip-start",
+          "value": 1
+        }
+      ]
+    },
+    "pipeDrip": {
+      "ease": "step",
+      "keys": [
+        {
+          "at": 0,
+          "value": 0
+        },
+        {
+          "at": "drip-start",
+          "value": 1
+        }
+      ]
+    },
+    "infectedDirection": {
+      "ease": "smooth",
+      "keys": [
+        {
+          "at": 0,
+          "value": 0
+        },
+        {
+          "at": "sound-turn",
+          "value": 0
+        },
+        {
+          "at": "turnedToDrip",
+          "value": 3.141592653589793
+        }
+      ]
+    },
+    "infectedStep": {
+      "ease": "smooth",
+      "keys": [
+        {
+          "at": 0,
+          "value": 8
+        },
+        {
+          "at": "wait-below",
+          "value": 8
+        },
+        {
+          "at": "descentEnds",
+          "value": 13
+        }
+      ]
+    },
+    "infectedMove": {
+      "ease": "step",
+      "keys": [
+        {
+          "at": 0,
+          "value": 0
+        },
+        {
+          "at": "wait-below",
+          "value": 1
+        },
+        {
+          "at": "arrive-three",
+          "value": 0
+        }
+      ]
+    },
+    "figureVisible": {
+      "ease": "step",
+      "keys": [
+        {
+          "at": 0,
+          "value": 0
+        },
+        {
+          "at": "figure",
+          "value": 1
+        }
+      ]
+    },
+    "figureTurn": {
+      "ease": "smooth",
+      "keys": [
+        {
+          "at": 0,
+          "value": 0
+        },
+        {
+          "at": "who-inside",
+          "value": 0
+        },
+        {
+          "at": "doorEnd",
+          "value": -0.08
+        }
+      ]
+    },
+    "paPulse": {
+      "ease": "step",
+      "keys": [
+        {
+          "at": 0,
+          "value": 0
+        },
+        {
+          "at": "pa-name",
+          "value": 1
+        },
+        {
+          "at": "speakerEnd",
+          "value": 0
+        }
+      ]
+    },
+    "landingHeroWalk": {
+      "ease": "step",
+      "keys": [
+        {
+          "at": 0,
+          "value": 0
+        },
+        {
+          "at": "arrive-three",
+          "value": 1
+        },
+        {
+          "at": "dripEnd",
+          "value": 0
+        }
+      ]
+    },
+    "landingHeroZ": {
+      "ease": "smooth",
+      "keys": [
+        {
+          "at": 0,
+          "value": 2.5
+        },
+        {
+          "at": "arrive-three",
+          "value": 2.5
+        },
+        {
+          "at": "dripEnd",
+          "value": 1.8
+        }
+      ]
+    },
+    "landingHeroLook": {
+      "ease": "smooth",
+      "keys": [
+        {
+          "at": 0,
+          "value": 0
+        },
+        {
+          "at": "upper-door",
+          "value": 0
+        },
+        {
+          "at": "heroLookBack",
+          "value": 0.85
+        },
+        {
+          "at": "lookSettled",
+          "value": 0
+        }
+      ]
+    },
+    "choices": {
+      "ease": "step",
+      "keys": [
+        {
+          "at": 0,
+          "value": 0
+        },
+        {
+          "at": "options-start",
+          "value": 1
+        },
+        {
+          "at": "continue-option",
+          "value": 2
+        },
+        {
+          "at": "vote-start",
+          "value": 3
+        }
+      ]
+    },
+    "lowerVisible": {
+      "ease": "step",
+      "keys": [
+        {
+          "at": 0,
+          "value": 0
+        },
+        {
+          "at": "two-start",
+          "value": 1
+        }
+      ]
+    }
+  },
+  "captions": [
+    {
+      "id": "quiet",
+      "start": 0,
+      "end": 2.37,
+      "keywordAt": 1.54,
+      "thai": "เลือกบันได…ทางที่เงียบกว่า",
+      "english": "YOU CHOSE THE QUIETER STAIRS",
+      "highlight": "เงียบกว่า",
+      "accent": "amber",
+      "y": 1150
+    },
+    {
+      "id": "second-steps",
+      "start": 2.4,
+      "end": 4.18,
+      "keywordAt": 3.27,
+      "thai": "ที่ชานพัก…เสียงอีกคู่",
+      "english": "ANOTHER SET OF FOOTSTEPS",
+      "highlight": "เสียงอีกคู่",
+      "accent": "cyan",
+      "y": 1110
+    },
+    {
+      "id": "same-stop",
+      "start": "stop",
+      "end": 5.310167,
+      "keywordAt": "stop",
+      "thai": "หยุดพร้อมคุณ",
+      "english": "IT STOPS WHEN YOU STOP",
+      "highlight": "หยุด",
+      "accent": "coral",
+      "y": 1158
+    },
+    {
+      "id": "tracks",
+      "start": 5.430167,
+      "end": 7.880167,
+      "keywordAt": 6.250167,
+      "thai": "รอยเท้าหยุดที่ขอบขั้น",
+      "english": "THE WET TRACKS STOP AT THE EDGE",
+      "highlight": "หยุด",
+      "accent": "cyan",
+      "y": 1120
+    },
+    {
+      "id": "under-rail",
+      "start": "rail",
+      "end": 9.030167,
+      "keywordAt": "rail",
+      "thai": "ใต้ราวบันได",
+      "english": "UNDER THE HANDRAIL",
+      "highlight": "ราวบันได",
+      "accent": "cyan",
+      "y": 1158
+    },
+    {
+      "id": "one-hand",
+      "start": "hand",
+      "end": 10.000167,
+      "keywordAt": "hand",
+      "thai": "มือข้างหนึ่ง",
+      "english": "A HAND",
+      "highlight": "มือ",
+      "accent": "coral",
+      "y": 1158
+    },
+    {
+      "id": "sliding",
+      "start": "handSlide",
+      "end": 11.340167,
+      "keywordAt": 10.750167,
+      "thai": "กำลังเลื่อนขึ้นมา",
+      "english": "IT SLIDES UP",
+      "highlight": "ขึ้นมา",
+      "accent": "coral",
+      "y": 1158
+    },
+    {
+      "id": "torch",
+      "start": 11.550167,
+      "end": 12.790167,
+      "keywordAt": 11.950167,
+      "thai": "ยกไฟฉายขึ้น",
+      "english": "YOU RAISE THE FLASHLIGHT",
+      "highlight": "ไฟฉาย",
+      "accent": "amber",
+      "y": 1160
+    },
+    {
+      "id": "face",
+      "start": "lightHit",
+      "end": 14.080167,
+      "keywordAt": "lightHit",
+      "thai": "แสงโดนหน้ามัน",
+      "english": "THE BEAM HITS ITS FACE",
+      "highlight": "หน้ามัน",
+      "accent": "coral",
+      "y": 1170
+    },
+    {
+      "id": "turn",
+      "start": "turn",
+      "end": 15.280167,
+      "keywordAt": "turn",
+      "thai": "มันหันมาทันที",
+      "english": "IT TURNS AT ONCE",
+      "highlight": "หัน",
+      "accent": "coral",
+      "y": 1170
+    },
+    {
+      "id": "off",
+      "start": 15.310167,
+      "end": 16.750167,
+      "keywordAt": "lightOff",
+      "thai": "ดับไฟ",
+      "english": "LIGHT OFF",
+      "highlight": "ดับไฟ",
+      "accent": "coral",
+      "y": 1158
+    },
+    {
+      "id": "freeze",
+      "start": "freeze",
+      "end": "silence",
+      "keywordAt": "freeze",
+      "thai": "หยุดขยับ",
+      "english": "STAY STILL",
+      "highlight": "หยุดขยับ",
+      "accent": "coral",
+      "y": 1158
+    },
+    {
+      "id": "three-step-gap",
+      "start": "openingEnd",
+      "end": "fear-shoe",
+      "keywordAt": "three-count",
+      "thai": "ห่างแค่ 3 ขั้น",
+      "english": "ONLY THREE STEPS BELOW",
+      "highlight": "3 ขั้น",
+      "accent": "coral",
+      "y": 1158
+    },
+    {
+      "id": "fingers-shoe",
+      "start": "fear-shoe",
+      "end": "want-run",
+      "keywordAt": "almost-touch",
+      "thai": "ปลายนิ้วเกือบแตะรองเท้า",
+      "english": "FINGERS ALMOST REACH YOUR SHOE",
+      "highlight": "เกือบแตะ",
+      "accent": "coral",
+      "y": 1120
+    },
+    {
+      "id": "no-running",
+      "start": "want-run",
+      "end": "sound-gives-away",
+      "keywordAt": "want-run",
+      "thai": "คุณอยากวิ่ง",
+      "english": "YOU WANT TO RUN",
+      "highlight": "อยากวิ่ง",
+      "accent": "coral",
+      "y": 1110
+    },
+    {
+      "id": "footstep-rule",
+      "start": "sound-gives-away",
+      "end": "freezeEnd",
+      "keywordAt": "sound-gives-away",
+      "thai": "เสียงฝีเท้าจะบอกที่อยู่คุณ",
+      "english": "FOOTSTEPS WOULD GIVE YOU AWAY",
+      "highlight": "เสียงฝีเท้า",
+      "accent": "amber",
+      "y": 1120
+    },
+    {
+      "id": "pipe-source",
+      "start": "drip-start",
+      "end": "sound-turn",
+      "keywordAt": "drip-hit",
+      "thai": "น้ำจากท่อแตก…หยดใส่ถัง",
+      "english": "A LEAK DRIPS INTO THE METAL BUCKET",
+      "highlight": "หยดใส่ถัง",
+      "accent": "cyan",
+      "y": 1160
+    },
+    {
+      "id": "turn-sound",
+      "start": "sound-turn",
+      "end": "wait-below",
+      "keywordAt": "sound-turn",
+      "thai": "มันหันตามเสียง",
+      "english": "IT TURNS TOWARD THE SOUND",
+      "highlight": "ตามเสียง",
+      "accent": "amber",
+      "y": 1158
+    },
+    {
+      "id": "wait-first",
+      "start": "wait-below",
+      "end": "arrive-three",
+      "keywordAt": "wait-below",
+      "thai": "รอจนมันเดินลงไป",
+      "english": "WAIT UNTIL IT GOES DOWN",
+      "highlight": "รอ",
+      "accent": "amber",
+      "y": 1158
+    },
+    {
+      "id": "reach-three",
+      "start": "arrive-three",
+      "end": "dripEnd",
+      "keywordAt": "arrive-three",
+      "thai": "คุณถึงชานพักชั้น 3",
+      "english": "YOU REACH THE THIRD-FLOOR LANDING",
+      "highlight": "ชั้น 3",
+      "accent": "cyan",
+      "y": 1120
+    },
+    {
+      "id": "name-call",
+      "start": "pa-start",
+      "end": "pa-mother",
+      "keywordAt": "pa-name",
+      "thai": "ลำโพงเรียกชื่อคุณอีกแล้ว",
+      "english": "THE PA CALLS YOUR NAME AGAIN",
+      "highlight": "ชื่อคุณ",
+      "accent": "coral",
+      "y": 1158
+    },
+    {
+      "id": "mother-voice",
+      "start": "pa-mother",
+      "end": "no-answer",
+      "keywordAt": "pa-mother",
+      "thai": "เสียงแม่…ให้เข้าห้องควบคุม",
+      "english": "MOTHER'S VOICE: ENTER CONTROL",
+      "highlight": "เสียงแม่",
+      "accent": "coral",
+      "y": 1158
+    },
+    {
+      "id": "do-not-answer",
+      "start": "no-answer",
+      "end": "speakerEnd",
+      "keywordAt": "answer-word",
+      "thai": "คุณไม่ขานรับ",
+      "english": "YOU DO NOT ANSWER",
+      "highlight": "ไม่ขานรับ",
+      "accent": "amber",
+      "y": 1120
+    },
+    {
+      "id": "ajar-control",
+      "start": "door-start",
+      "end": "monitors",
+      "keywordAt": "door-start",
+      "thai": "ห้องควบคุมแง้มอยู่",
+      "english": "THE CONTROL-ROOM DOOR IS AJAR",
+      "highlight": "ห้องควบคุม",
+      "accent": "amber",
+      "y": 1158
+    },
+    {
+      "id": "security-monitors",
+      "start": "monitors",
+      "end": "figure",
+      "keywordAt": "monitors",
+      "thai": "ข้างในมีจอกล้องวงจรปิด",
+      "english": "SECURITY MONITORS INSIDE",
+      "highlight": "จอกล้อง",
+      "accent": "cyan",
+      "y": 1120
+    },
+    {
+      "id": "seated-shadow",
+      "start": "figure",
+      "end": "who-inside",
+      "keywordAt": "figure",
+      "thai": "เงาคนกำลังนั่งหันหลัง",
+      "english": "A FIGURE SITS WITH ITS BACK TO YOU",
+      "highlight": "เงาคน",
+      "accent": "coral",
+      "y": 1120
+    },
+    {
+      "id": "unknown-identity",
+      "start": "who-inside",
+      "end": "doorEnd",
+      "keywordAt": "who-inside",
+      "thai": "คนเปิดลำโพง…หรือผู้รอดชีวิต",
+      "english": "THE PA OPERATOR…OR A SURVIVOR?",
+      "highlight": "ผู้รอดชีวิต",
+      "accent": "amber",
+      "y": 1120
+    },
+    {
+      "id": "parking-below",
+      "start": "map-start",
+      "end": "locked",
+      "keywordAt": "parking",
+      "thai": "ลานจอดรถอยู่ชั้นใต้ดิน",
+      "english": "YOUR CAR IS STILL AT B1",
+      "highlight": "ชั้นใต้ดิน",
+      "accent": "cyan",
+      "y": 1150
+    },
+    {
+      "id": "gate-locked",
+      "start": "locked",
+      "end": "unlock",
+      "keywordAt": "locked",
+      "thai": "แต่ประตูทางลงล็อก",
+      "english": "THE DIRECT B1 GATE IS LOCKED",
+      "highlight": "ล็อก",
+      "accent": "coral",
+      "y": 1150
+    },
+    {
+      "id": "unlock-control",
+      "start": "unlock",
+      "end": "clueEnd",
+      "keywordAt": "unlock",
+      "thai": "ต้องปลดจากห้องควบคุม",
+      "english": "UNLOCK IT FROM THE CONTROL ROOM",
+      "highlight": "ห้องควบคุม",
+      "accent": "amber",
+      "y": 1150
+    },
+    {
+      "id": "floor-two-route",
+      "start": "two-start",
+      "end": "same-tracks",
+      "keywordAt": "two-start",
+      "thai": "ชั้น 2 มีทางออกอีกด้าน",
+      "english": "FLOOR 2 HAS ANOTHER EXIT ROUTE",
+      "highlight": "ชั้น 2",
+      "accent": "cyan",
+      "y": 1140
+    },
+    {
+      "id": "same-wet-tracks",
+      "start": "same-tracks",
+      "end": "upper-door",
+      "keywordAt": "same-tracks",
+      "thai": "รอยเท้าเดิม…ยังทอดลงไป",
+      "english": "THE SAME WET TRACKS GO DEEPER",
+      "highlight": "ยังทอดลงไป",
+      "accent": "coral",
+      "y": 1140
+    },
+    {
+      "id": "upper-bang",
+      "start": "upper-door",
+      "end": "pressureEnd",
+      "keywordAt": "upper-door",
+      "thai": "ประตูชั้น 4 ดังขึ้นอีก",
+      "english": "THE FOURTH-FLOOR DOOR BANGS AGAIN",
+      "highlight": "ชั้น 4",
+      "accent": "coral",
+      "y": 1120
+    },
+    {
+      "id": "option-room",
+      "start": "options-start",
+      "end": "unlock-option",
+      "keywordAt": "options-start",
+      "thai": "1 เข้าห้องควบคุม",
+      "english": "1 CONTROL ROOM",
+      "highlight": "ห้องควบคุม",
+      "accent": "amber",
+      "y": 1150
+    },
+    {
+      "id": "option-unlock",
+      "start": "unlock-option",
+      "end": "avoid-inside",
+      "keywordAt": "unlock-option",
+      "thai": "ปลดล็อกทางถึงรถ",
+      "english": "UNLOCK THE DIRECT ROUTE TO YOUR CAR",
+      "highlight": "ปลดล็อก",
+      "accent": "amber",
+      "y": 1150
+    },
+    {
+      "id": "option-avoid",
+      "start": "avoid-inside",
+      "end": "optionsEnd",
+      "keywordAt": "continue-option",
+      "thai": "หรือเลี่ยงคน แล้วลงต่อชั้น 2",
+      "english": "OR AVOID THE FIGURE AND KEEP GOING DOWN",
+      "highlight": "ลงต่อชั้น 2",
+      "accent": "cyan",
+      "y": 1150
+    },
+    {
+      "id": "vote-control",
+      "start": "vote-start",
+      "end": "vote-two",
+      "keywordAt": "vote-start",
+      "thai": "กดโหวต: 1 เข้าห้องควบคุม",
+      "english": "VOTE: 1 CONTROL ROOM",
+      "highlight": "กดโหวต",
+      "accent": "amber",
+      "y": 1150
+    },
+    {
+      "id": "vote-stairs",
+      "start": "vote-two",
+      "end": "your-choice",
+      "keywordAt": "vote-two",
+      "thai": "2 ลงบันไดต่อ",
+      "english": "2 KEEP GOING DOWNSTAIRS",
+      "highlight": "ลงบันไดต่อ",
+      "accent": "cyan",
+      "y": 1150
+    },
+    {
+      "id": "vote-future",
+      "start": "your-choice",
+      "end": "voteEnd",
+      "keywordAt": "your-choice",
+      "thai": "ทางที่คุณเลือก = ตอนต่อไป",
+      "english": "YOUR CHOICE SHAPES THE NEXT EPISODE",
+      "highlight": "คุณเลือก",
+      "accent": "amber",
+      "y": 1150
+    }
+  ],
+  "audio": [
+    {
+      "id": "narration",
+      "file": "assets/narration.wav",
+      "start": 0,
+      "duration": 86.39116666666666,
+      "volume": 1
+    },
+    {
+      "id": "bed",
+      "file": "assets/music-bed.wav",
+      "start": 0,
+      "duration": 86.39116666666666,
+      "volume": 1
+    }
+  ],
+  "sounds": [
+    {
+      "id": "second-footstep",
+      "file": "assets/step.wav",
+      "at": 3.57,
+      "duration": 0.365,
+      "volume": 0.28
+    },
+    {
+      "id": "light-on",
+      "file": "assets/click.mp3",
+      "at": "lightHit",
+      "duration": 0.365,
+      "volume": 0.12
+    },
+    {
+      "id": "light-off",
+      "file": "assets/click.mp3",
+      "at": "lightOff",
+      "duration": 0.365,
+      "volume": 0.12
+    },
+    {
+      "id": "pa-distortion",
+      "file": "assets/glitch-3.mp3",
+      "at": "pa-name",
+      "duration": 3.1,
+      "volume": 0.025
+    },
+    {
+      "id": "upper-impact",
+      "file": "assets/impact-bass-1.mp3",
+      "at": "upper-door",
+      "duration": 2.12,
+      "volume": 0.12
+    },
+    {
+      "id": "drip-0",
+      "file": "assets/click.mp3",
+      "at": 29.690166666666666,
+      "duration": 0.365,
+      "volume": 0.07
+    },
+    {
+      "id": "drip-1",
+      "file": "assets/click.mp3",
+      "at": 30.240166666666667,
+      "duration": 0.365,
+      "volume": 0.07
+    },
+    {
+      "id": "drip-2",
+      "file": "assets/click.mp3",
+      "at": 30.790166666666668,
+      "duration": 0.365,
+      "volume": 0.07
+    }
+  ],
+  "holds": [
+    {
+      "start": "silence",
+      "end": "openingEnd",
+      "purpose": "real quiet freeze before the hero considers running"
+    }
+  ],
+  "notes": [
+    "Stairs choice comes from the user report, not an independent vote tally.",
+    "Phone remains7%, coin spent, car atB1; protagonist ends atfloor3.",
+    "Rule1 no running; rule2 light off and freeze; rule3 no answering name onPA.",
+    "One reused new hook and all other narration remain original offlineJK; no pitch/speed change."
+  ]
+}

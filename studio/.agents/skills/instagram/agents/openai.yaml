@@ -1,0 +1,4 @@
+interface:
+  display_name: "Instagram"
+  short_description: "Choose an account, then use Instagram APIs"
+  default_prompt: "Use $instagram, select my target Instagram account first, then carry out the requested API task."

@@ -1,0 +1,535 @@
+{
+  "schema": "jk-style-import-provenance/v1",
+  "style": "freshstack-what-if",
+  "origin_manifest": "~/Movies/freshstack-what-if-2026-11-01/manifest.json",
+  "rights": {
+    "upstream": "FreshStack / kelano86/what-if-animation",
+    "commit": "8092fb5e825e55456d1d47fec0ebf595cb93cc0d",
+    "license": "MIT; verbatim copyright/license retained in kit/LICENSE. Remotion and fonts have separate terms.",
+    "limits": "Locally generated episode/audio retained for requested private study. Existing ElevenLabs purchase/approval does not authorize future spending or establish every downstream distribution right."
+  },
+  "scope": "Selective private-study import, not full production-ready clone",
+  "exclusions": [
+    ".env",
+    ".private",
+    "raw provider receipts",
+    "logs",
+    "caches",
+    "node_modules",
+    "weights",
+    "outputs",
+    "unrelated episodes"
+  ],
+  "local_adaptations": [
+    "source/studio/src/episodes/index.ts registers mute-touch only"
+  ],
+  "authorship": [
+    {
+      "id": "glm",
+      "label": "OpenCode / GLM — Mute Touch",
+      "video": "examples/glm/demo.mp4",
+      "author": "OpenCode",
+      "model": "opencode/glm-5.3-flash-free",
+      "renderer": "React SVG / Remotion 4.0.530 + host FFmpeg master",
+      "voice": "ElevenLabs eleven_v3 Thai narration; ElevenLabs sound assets",
+      "notes": "OpenCode/GLM authored episode; local host safety/alignment/mastering/QA patches are separate, not claimed as GLM authorship. Existing approval is completed and does not authorize new paid runs."
+    }
+  ],
+  "copied_files": [
+    {
+      "kind": "source",
+      "source": "~/Movies/freshstack-what-if-2026-11-01/.claude/skills/what-if-animation/LICENSE",
+      "destination": "~/Documents/ChatGPT/webtest/jk-animation-studio/styles/freshstack-what-if/kit/LICENSE",
+      "bytes": 1067,
+      "source_sha256": "296951d5c83eb4c9ca1179bbaa9a976bc9c46c5c319757bd45e59713eb35411d",
+      "sha256": "296951d5c83eb4c9ca1179bbaa9a976bc9c46c5c319757bd45e59713eb35411d",
+      "sha256_match": true
+    },
+    {
+      "kind": "source",
+      "source": "~/Movies/freshstack-what-if-2026-11-01/.claude/skills/what-if-animation/README.md",
+      "destination": "~/Documents/ChatGPT/webtest/jk-animation-studio/styles/freshstack-what-if/kit/README.md",
+      "bytes": 7604,
+      "source_sha256": "befefabfdbece2c5ad001e0eca179a4b0260b510c3a10e119bc28aec7973631d",
+      "sha256": "befefabfdbece2c5ad001e0eca179a4b0260b510c3a10e119bc28aec7973631d",
+      "sha256_match": true
+    },
+    {
+      "kind": "source",
+      "source": "~/Movies/freshstack-what-if-2026-11-01/.claude/skills/what-if-animation/SKILL.md",
+      "destination": "~/Documents/ChatGPT/webtest/jk-animation-studio/styles/freshstack-what-if/kit/SKILL.md",
+      "bytes": 10095,
+      "source_sha256": "a6a2f6fc0c1217e5a9793b131f783690d948ea6953f9dfcff26577d63505dae1",
+      "sha256": "a6a2f6fc0c1217e5a9793b131f783690d948ea6953f9dfcff26577d63505dae1",
+      "sha256_match": true
+    },
+    {
+      "kind": "source",
+      "source": "~/Movies/freshstack-what-if-2026-11-01/.claude/skills/what-if-animation/references/formula.md",
+      "destination": "~/Documents/ChatGPT/webtest/jk-animation-studio/styles/freshstack-what-if/kit/references/formula.md",
+      "bytes": 6110,
+      "source_sha256": "f842c463e49a6d352121dc49a159ec41712a31105251aa5cad230893ba708778",
+      "sha256": "f842c463e49a6d352121dc49a159ec41712a31105251aa5cad230893ba708778",
+      "sha256_match": true
+    },
+    {
+      "kind": "source",
+      "source": "~/Movies/freshstack-what-if-2026-11-01/.claude/skills/what-if-animation/references/kit.md",
+      "destination": "~/Documents/ChatGPT/webtest/jk-animation-studio/styles/freshstack-what-if/kit/references/kit.md",
+      "bytes": 13071,
+      "source_sha256": "c7f4e0dbc19093380b11d2b57ad5a65039e60bf62ecf9f29ad77129657ee7685",
+      "sha256": "c7f4e0dbc19093380b11d2b57ad5a65039e60bf62ecf9f29ad77129657ee7685",
+      "sha256_match": true
+    },
+    {
+      "kind": "source",
+      "source": "~/Movies/freshstack-what-if-2026-11-01/.claude/skills/what-if-animation/references/look.md",
+      "destination": "~/Documents/ChatGPT/webtest/jk-animation-studio/styles/freshstack-what-if/kit/references/look.md",
+      "bytes": 5687,
+      "source_sha256": "a26084c823f0682c1afd6cfa9e0862543ae61a124a4e491132ba0d4892abc403",
+      "sha256": "a26084c823f0682c1afd6cfa9e0862543ae61a124a4e491132ba0d4892abc403",
+      "sha256_match": true
+    },
+    {
+      "kind": "source",
+      "source": "~/Movies/freshstack-what-if-2026-11-01/.claude/skills/what-if-animation/references/sound.md",
+      "destination": "~/Documents/ChatGPT/webtest/jk-animation-studio/styles/freshstack-what-if/kit/references/sound.md",
+      "bytes": 4668,
+      "source_sha256": "8ef586cb2ca3964690c2a4620537cadcffccd9d5251999e820c7a076fffb77f7",
+      "sha256": "8ef586cb2ca3964690c2a4620537cadcffccd9d5251999e820c7a076fffb77f7",
+      "sha256_match": true
+    },
+    {
+      "kind": "source",
+      "source": "~/Movies/freshstack-what-if-2026-11-01/.claude/skills/what-if-animation/references/traps.md",
+      "destination": "~/Documents/ChatGPT/webtest/jk-animation-studio/styles/freshstack-what-if/kit/references/traps.md",
+      "bytes": 6929,
+      "source_sha256": "455d51cbfd801f617ddc1761caed5ab3edc2afeb5940510b12c53dda1d5c59d0",
+      "sha256": "455d51cbfd801f617ddc1761caed5ab3edc2afeb5940510b12c53dda1d5c59d0",
+      "sha256_match": true
+    },
+    {
+      "kind": "source",
+      "source": "~/Movies/freshstack-what-if-2026-11-01/.claude/skills/what-if-animation/scripts/board.py",
+      "destination": "~/Documents/ChatGPT/webtest/jk-animation-studio/styles/freshstack-what-if/kit/scripts/board.py",
+      "bytes": 4185,
+      "source_sha256": "529fae20cb5160c7766f9c7b72b6dcc2f407b8449a3033a69e1376318c0ee5e1",
+      "sha256": "529fae20cb5160c7766f9c7b72b6dcc2f407b8449a3033a69e1376318c0ee5e1",
+      "sha256_match": true
+    },
+    {
+      "kind": "source",
+      "source": "~/Movies/freshstack-what-if-2026-11-01/.claude/skills/what-if-animation/scripts/board_html.py",
+      "destination": "~/Documents/ChatGPT/webtest/jk-animation-studio/styles/freshstack-what-if/kit/scripts/board_html.py",
+      "bytes": 4006,
+      "source_sha256": "6e80597d4cfc32d99e18e382839dc5bc3293c74bee714822bff21cd712d6548b",
+      "sha256": "6e80597d4cfc32d99e18e382839dc5bc3293c74bee714822bff21cd712d6548b",
+      "sha256_match": true
+    },
+    {
+      "kind": "source",
+      "source": "~/Movies/freshstack-what-if-2026-11-01/.claude/skills/what-if-animation/scripts/master.py",
+      "destination": "~/Documents/ChatGPT/webtest/jk-animation-studio/styles/freshstack-what-if/kit/scripts/master.py",
+      "bytes": 3030,
+      "source_sha256": "c0fb9e02fb4fbb7f99617ce86cedf206fa5f6442fe425748623d4bcc6a05adae",
+      "sha256": "c0fb9e02fb4fbb7f99617ce86cedf206fa5f6442fe425748623d4bcc6a05adae",
+      "sha256_match": true
+    },
+    {
+      "kind": "source",
+      "source": "~/Movies/freshstack-what-if-2026-11-01/.claude/skills/what-if-animation/scripts/mixcheck.py",
+      "destination": "~/Documents/ChatGPT/webtest/jk-animation-studio/styles/freshstack-what-if/kit/scripts/mixcheck.py",
+      "bytes": 1833,
+      "source_sha256": "85ff5e5145bc2f4ad8d351e693de3cb68d21dd228a79012c724c934a7b7d584b",
+      "sha256": "85ff5e5145bc2f4ad8d351e693de3cb68d21dd228a79012c724c934a7b7d584b",
+      "sha256_match": true
+    },
+    {
+      "kind": "source",
+      "source": "~/Movies/freshstack-what-if-2026-11-01/.claude/skills/what-if-animation/scripts/motiongrid.py",
+      "destination": "~/Documents/ChatGPT/webtest/jk-animation-studio/styles/freshstack-what-if/kit/scripts/motiongrid.py",
+      "bytes": 2431,
+      "source_sha256": "3b9d6213a6ce5823ba512fdccb4eafbe37f18cab74a160bc6bdc599d25610033",
+      "sha256": "3b9d6213a6ce5823ba512fdccb4eafbe37f18cab74a160bc6bdc599d25610033",
+      "sha256_match": true
+    },
+    {
+      "kind": "source",
+      "source": "~/Movies/freshstack-what-if-2026-11-01/.claude/skills/what-if-animation/scripts/plan.py",
+      "destination": "~/Documents/ChatGPT/webtest/jk-animation-studio/styles/freshstack-what-if/kit/scripts/plan.py",
+      "bytes": 6239,
+      "source_sha256": "9cf6b75e78cf646da6671ea9a83ea5beef9e67a0a2ed016cc869c46310a6db9c",
+      "sha256": "9cf6b75e78cf646da6671ea9a83ea5beef9e67a0a2ed016cc869c46310a6db9c",
+      "sha256_match": true
+    },
+    {
+      "kind": "source",
+      "source": "~/Movies/freshstack-what-if-2026-11-01/.claude/skills/what-if-animation/scripts/sfx.py",
+      "destination": "~/Documents/ChatGPT/webtest/jk-animation-studio/styles/freshstack-what-if/kit/scripts/sfx.py",
+      "bytes": 7287,
+      "source_sha256": "801f6e50a7c3141c649a35db04d9d9862dc3bede14befd1848f611c397314ae2",
+      "sha256": "801f6e50a7c3141c649a35db04d9d9862dc3bede14befd1848f611c397314ae2",
+      "sha256_match": true
+    },
+    {
+      "kind": "source",
+      "source": "~/Movies/freshstack-what-if-2026-11-01/.claude/skills/what-if-animation/scripts/spend_guard.py",
+      "destination": "~/Documents/ChatGPT/webtest/jk-animation-studio/styles/freshstack-what-if/kit/scripts/spend_guard.py",
+      "bytes": 9957,
+      "source_sha256": "2820e0eb76ff3b7e1fdf23b4eb3867b001041fb054134c04647b752a7b032a24",
+      "sha256": "2820e0eb76ff3b7e1fdf23b4eb3867b001041fb054134c04647b752a7b032a24",
+      "sha256_match": true
+    },
+    {
+      "kind": "source",
+      "source": "~/Movies/freshstack-what-if-2026-11-01/.claude/skills/what-if-animation/scripts/stills.mjs",
+      "destination": "~/Documents/ChatGPT/webtest/jk-animation-studio/styles/freshstack-what-if/kit/scripts/stills.mjs",
+      "bytes": 2818,
+      "source_sha256": "6b3407d2df5dae301361f7fad63578e82175fab3764703c0083af1014032631a",
+      "sha256": "6b3407d2df5dae301361f7fad63578e82175fab3764703c0083af1014032631a",
+      "sha256_match": true
+    },
+    {
+      "kind": "source",
+      "source": "~/Movies/freshstack-what-if-2026-11-01/.claude/skills/what-if-animation/scripts/voice.py",
+      "destination": "~/Documents/ChatGPT/webtest/jk-animation-studio/styles/freshstack-what-if/kit/scripts/voice.py",
+      "bytes": 6736,
+      "source_sha256": "f1ab9e1ac962e6e5526678a6d945bc9133010f9bcdbddf735dddca6e5763ca19",
+      "sha256": "f1ab9e1ac962e6e5526678a6d945bc9133010f9bcdbddf735dddca6e5763ca19",
+      "sha256_match": true
+    },
+    {
+      "kind": "source",
+      "source": "~/Movies/freshstack-what-if-2026-11-01/.claude/skills/what-if-animation/scripts/voice_alignment.py",
+      "destination": "~/Documents/ChatGPT/webtest/jk-animation-studio/styles/freshstack-what-if/kit/scripts/voice_alignment.py",
+      "bytes": 2246,
+      "source_sha256": "11f6a03e95fd1494151b1be3069e6681b61e6da61506853e8b805f55b6a72d71",
+      "sha256": "11f6a03e95fd1494151b1be3069e6681b61e6da61506853e8b805f55b6a72d71",
+      "sha256_match": true
+    },
+    {
+      "kind": "source",
+      "source": "~/Movies/freshstack-what-if-2026-11-01/.claude/skills/what-if-animation/scripts/wi.py",
+      "destination": "~/Documents/ChatGPT/webtest/jk-animation-studio/styles/freshstack-what-if/kit/scripts/wi.py",
+      "bytes": 9069,
+      "source_sha256": "2b9c918d74e8e545c050f9cdb63adcb87089e7614285282a1047b75cfe4b18d9",
+      "sha256": "2b9c918d74e8e545c050f9cdb63adcb87089e7614285282a1047b75cfe4b18d9",
+      "sha256_match": true
+    },
+    {
+      "kind": "source",
+      "source": "~/Movies/freshstack-what-if-2026-11-01/what-if-studio/package.json",
+      "destination": "~/Documents/ChatGPT/webtest/jk-animation-studio/styles/freshstack-what-if/source/studio/package.json",
+      "bytes": 689,
+      "source_sha256": "5248a5e8b6db5e87cc13ef08b28f60b8b0adcacf176f0589b467e5ff201628cb",
+      "sha256": "5248a5e8b6db5e87cc13ef08b28f60b8b0adcacf176f0589b467e5ff201628cb",
+      "sha256_match": true
+    },
+    {
+      "kind": "source",
+      "source": "~/Movies/freshstack-what-if-2026-11-01/what-if-studio/package-lock.json",
+      "destination": "~/Documents/ChatGPT/webtest/jk-animation-studio/styles/freshstack-what-if/source/studio/package-lock.json",
+      "bytes": 145816,
+      "source_sha256": "dc49d528aac275c52e88aaddd232a46c84e23d64e576e97c34b7f83eaba0795c",
+      "sha256": "dc49d528aac275c52e88aaddd232a46c84e23d64e576e97c34b7f83eaba0795c",
+      "sha256_match": true
+    },
+    {
+      "kind": "source",
+      "source": "~/Movies/freshstack-what-if-2026-11-01/what-if-studio/remotion.config.ts",
+      "destination": "~/Documents/ChatGPT/webtest/jk-animation-studio/styles/freshstack-what-if/source/studio/remotion.config.ts",
+      "bytes": 154,
+      "source_sha256": "d591ba9f6198e07c13cc138312b38fae3904f7aa423a98e0388688e4a7bf64ea",
+      "sha256": "d591ba9f6198e07c13cc138312b38fae3904f7aa423a98e0388688e4a7bf64ea",
+      "sha256_match": true
+    },
+    {
+      "kind": "source",
+      "source": "~/Movies/freshstack-what-if-2026-11-01/what-if-studio/tsconfig.json",
+      "destination": "~/Documents/ChatGPT/webtest/jk-animation-studio/styles/freshstack-what-if/source/studio/tsconfig.json",
+      "bytes": 315,
+      "source_sha256": "f99201859d0180318b5a95df8911b3bb195fddc4cb769a376b257be669ec27d2",
+      "sha256": "f99201859d0180318b5a95df8911b3bb195fddc4cb769a376b257be669ec27d2",
+      "sha256_match": true
+    },
+    {
+      "kind": "source",
+      "source": "~/Movies/freshstack-what-if-2026-11-01/what-if-studio/src/CastSheet.tsx",
+      "destination": "~/Documents/ChatGPT/webtest/jk-animation-studio/styles/freshstack-what-if/source/studio/src/CastSheet.tsx",
+      "bytes": 2746,
+      "source_sha256": "bc20a6708846d812c555397419e32a9f0284474267b31969569be5c599b53dd9",
+      "sha256": "bc20a6708846d812c555397419e32a9f0284474267b31969569be5c599b53dd9",
+      "sha256_match": true
+    },
+    {
+      "kind": "source",
+      "source": "~/Movies/freshstack-what-if-2026-11-01/what-if-studio/src/Root.tsx",
+      "destination": "~/Documents/ChatGPT/webtest/jk-animation-studio/styles/freshstack-what-if/source/studio/src/Root.tsx",
+      "bytes": 999,
+      "source_sha256": "c07fc917fe4a60e444ded6e52e3fdfcc655c1bc5bc346a7d8d12eae54f78fcf6",
+      "sha256": "c07fc917fe4a60e444ded6e52e3fdfcc655c1bc5bc346a7d8d12eae54f78fcf6",
+      "sha256_match": true
+    },
+    {
+      "kind": "source",
+      "source": "~/Movies/freshstack-what-if-2026-11-01/what-if-studio/src/engine/anim.ts",
+      "destination": "~/Documents/ChatGPT/webtest/jk-animation-studio/styles/freshstack-what-if/source/studio/src/engine/anim.ts",
+      "bytes": 2183,
+      "source_sha256": "a385529d6e38f83e56597d4b06d3ee6c944cf671b422020cda934e4dca69fe8b",
+      "sha256": "a385529d6e38f83e56597d4b06d3ee6c944cf671b422020cda934e4dca69fe8b",
+      "sha256_match": true
+    },
+    {
+      "kind": "source",
+      "source": "~/Movies/freshstack-what-if-2026-11-01/what-if-studio/src/engine/episode.tsx",
+      "destination": "~/Documents/ChatGPT/webtest/jk-animation-studio/styles/freshstack-what-if/source/studio/src/engine/episode.tsx",
+      "bytes": 7874,
+      "source_sha256": "9ff5416ef3f580c5bca2ab0956c38194fe9646022698c43dc8277c3278fdea3f",
+      "sha256": "9ff5416ef3f580c5bca2ab0956c38194fe9646022698c43dc8277c3278fdea3f",
+      "sha256_match": true
+    },
+    {
+      "kind": "source",
+      "source": "~/Movies/freshstack-what-if-2026-11-01/what-if-studio/src/engine/fonts.ts",
+      "destination": "~/Documents/ChatGPT/webtest/jk-animation-studio/styles/freshstack-what-if/source/studio/src/engine/fonts.ts",
+      "bytes": 1161,
+      "source_sha256": "0d10ad628d4db784528b080b58dd986347c2c6524e227572a066989bef3b65a6",
+      "sha256": "0d10ad628d4db784528b080b58dd986347c2c6524e227572a066989bef3b65a6",
+      "sha256_match": true
+    },
+    {
+      "kind": "source",
+      "source": "~/Movies/freshstack-what-if-2026-11-01/what-if-studio/src/engine/furnish.tsx",
+      "destination": "~/Documents/ChatGPT/webtest/jk-animation-studio/styles/freshstack-what-if/source/studio/src/engine/furnish.tsx",
+      "bytes": 15473,
+      "source_sha256": "4a912a67a08bf189824c55a17aed42047c5238273957b062e3bf79dc2034d2d4",
+      "sha256": "4a912a67a08bf189824c55a17aed42047c5238273957b062e3bf79dc2034d2d4",
+      "sha256_match": true
+    },
+    {
+      "kind": "source",
+      "source": "~/Movies/freshstack-what-if-2026-11-01/what-if-studio/src/engine/index.ts",
+      "destination": "~/Documents/ChatGPT/webtest/jk-animation-studio/styles/freshstack-what-if/source/studio/src/engine/index.ts",
+      "bytes": 592,
+      "source_sha256": "9c268386f8e5928d80f0460ca41414ff6fa8655cb53e1d4b533ad093d2aa41c8",
+      "sha256": "9c268386f8e5928d80f0460ca41414ff6fa8655cb53e1d4b533ad093d2aa41c8",
+      "sha256_match": true
+    },
+    {
+      "kind": "source",
+      "source": "~/Movies/freshstack-what-if-2026-11-01/what-if-studio/src/engine/kit.tsx",
+      "destination": "~/Documents/ChatGPT/webtest/jk-animation-studio/styles/freshstack-what-if/source/studio/src/engine/kit.tsx",
+      "bytes": 9720,
+      "source_sha256": "8f82194358603baacd2f59ba5c507ee5d1769c42164d0497ab9282d2da50f6d4",
+      "sha256": "8f82194358603baacd2f59ba5c507ee5d1769c42164d0497ab9282d2da50f6d4",
+      "sha256_match": true
+    },
+    {
+      "kind": "source",
+      "source": "~/Movies/freshstack-what-if-2026-11-01/what-if-studio/src/engine/light.tsx",
+      "destination": "~/Documents/ChatGPT/webtest/jk-animation-studio/styles/freshstack-what-if/source/studio/src/engine/light.tsx",
+      "bytes": 8414,
+      "source_sha256": "f8e7d7d76e56d959a0833bf4ab40770437ef00e566b934aaa6ee682e506340a6",
+      "sha256": "f8e7d7d76e56d959a0833bf4ab40770437ef00e566b934aaa6ee682e506340a6",
+      "sha256_match": true
+    },
+    {
+      "kind": "source",
+      "source": "~/Movies/freshstack-what-if-2026-11-01/what-if-studio/src/engine/props.tsx",
+      "destination": "~/Documents/ChatGPT/webtest/jk-animation-studio/styles/freshstack-what-if/source/studio/src/engine/props.tsx",
+      "bytes": 27121,
+      "source_sha256": "f0679a78c7e2c3c31b581ede3b9e01efd992c3a637151b1c1bc49408cf27b311",
+      "sha256": "f0679a78c7e2c3c31b581ede3b9e01efd992c3a637151b1c1bc49408cf27b311",
+      "sha256_match": true
+    },
+    {
+      "kind": "source",
+      "source": "~/Movies/freshstack-what-if-2026-11-01/what-if-studio/src/engine/rig.tsx",
+      "destination": "~/Documents/ChatGPT/webtest/jk-animation-studio/styles/freshstack-what-if/source/studio/src/engine/rig.tsx",
+      "bytes": 26669,
+      "source_sha256": "d8cb97f48c938d5cb0d3ed2639164e7274ab370abab5b977ae7593f58ab68b57",
+      "sha256": "d8cb97f48c938d5cb0d3ed2639164e7274ab370abab5b977ae7593f58ab68b57",
+      "sha256_match": true
+    },
+    {
+      "kind": "source",
+      "source": "~/Movies/freshstack-what-if-2026-11-01/what-if-studio/src/engine/room.tsx",
+      "destination": "~/Documents/ChatGPT/webtest/jk-animation-studio/styles/freshstack-what-if/source/studio/src/engine/room.tsx",
+      "bytes": 3018,
+      "source_sha256": "3d03eb5edbe77b89ca460fae3d138ef0fd73048a6752764346e5a9a0204382b2",
+      "sha256": "3d03eb5edbe77b89ca460fae3d138ef0fd73048a6752764346e5a9a0204382b2",
+      "sha256_match": true
+    },
+    {
+      "kind": "source",
+      "source": "~/Movies/freshstack-what-if-2026-11-01/what-if-studio/src/engine/sets/bedroom.tsx",
+      "destination": "~/Documents/ChatGPT/webtest/jk-animation-studio/styles/freshstack-what-if/source/studio/src/engine/sets/bedroom.tsx",
+      "bytes": 16598,
+      "source_sha256": "ea177f60d508b2ca3071c5532e414d712863de61d4d2257a2aeceda7f6007bef",
+      "sha256": "ea177f60d508b2ca3071c5532e414d712863de61d4d2257a2aeceda7f6007bef",
+      "sha256_match": true
+    },
+    {
+      "kind": "source",
+      "source": "~/Movies/freshstack-what-if-2026-11-01/what-if-studio/src/engine/sets/classroom.tsx",
+      "destination": "~/Documents/ChatGPT/webtest/jk-animation-studio/styles/freshstack-what-if/source/studio/src/engine/sets/classroom.tsx",
+      "bytes": 14192,
+      "source_sha256": "7e4eed515b48f03aeeaa37b33ebacc3dc907a9836f117f45c21929f8ed380c9d",
+      "sha256": "7e4eed515b48f03aeeaa37b33ebacc3dc907a9836f117f45c21929f8ed380c9d",
+      "sha256_match": true
+    },
+    {
+      "kind": "source",
+      "source": "~/Movies/freshstack-what-if-2026-11-01/what-if-studio/src/engine/sets/kitchen.tsx",
+      "destination": "~/Documents/ChatGPT/webtest/jk-animation-studio/styles/freshstack-what-if/source/studio/src/engine/sets/kitchen.tsx",
+      "bytes": 12447,
+      "source_sha256": "07e461e586fc19efae98d08f6332e6bdc61d6f9505350dae827556152a0961c9",
+      "sha256": "07e461e586fc19efae98d08f6332e6bdc61d6f9505350dae827556152a0961c9",
+      "sha256_match": true
+    },
+    {
+      "kind": "source",
+      "source": "~/Movies/freshstack-what-if-2026-11-01/what-if-studio/src/engine/sets/rooftop.tsx",
+      "destination": "~/Documents/ChatGPT/webtest/jk-animation-studio/styles/freshstack-what-if/source/studio/src/engine/sets/rooftop.tsx",
+      "bytes": 11194,
+      "source_sha256": "03ea9ca882a457e300f3c38811dba9240827e05fc53c7882c1711afb00ff3e3d",
+      "sha256": "03ea9ca882a457e300f3c38811dba9240827e05fc53c7882c1711afb00ff3e3d",
+      "sha256_match": true
+    },
+    {
+      "kind": "source",
+      "source": "~/Movies/freshstack-what-if-2026-11-01/what-if-studio/src/engine/sets/schematic.tsx",
+      "destination": "~/Documents/ChatGPT/webtest/jk-animation-studio/styles/freshstack-what-if/source/studio/src/engine/sets/schematic.tsx",
+      "bytes": 6434,
+      "source_sha256": "89f9389f80a3c497f1ee1125d0403ac6b3bf9929502d35ca9867683bf8423ba2",
+      "sha256": "89f9389f80a3c497f1ee1125d0403ac6b3bf9929502d35ca9867683bf8423ba2",
+      "sha256_match": true
+    },
+    {
+      "kind": "source",
+      "source": "~/Movies/freshstack-what-if-2026-11-01/what-if-studio/src/engine/sets/stairwell.tsx",
+      "destination": "~/Documents/ChatGPT/webtest/jk-animation-studio/styles/freshstack-what-if/source/studio/src/engine/sets/stairwell.tsx",
+      "bytes": 12725,
+      "source_sha256": "848fdbb2a1ee734883e08b55070d7c6745f28ca40c21e9fc00a9393c28608afd",
+      "sha256": "848fdbb2a1ee734883e08b55070d7c6745f28ca40c21e9fc00a9393c28608afd",
+      "sha256_match": true
+    },
+    {
+      "kind": "source",
+      "source": "~/Movies/freshstack-what-if-2026-11-01/what-if-studio/src/engine/sets/study.tsx",
+      "destination": "~/Documents/ChatGPT/webtest/jk-animation-studio/styles/freshstack-what-if/source/studio/src/engine/sets/study.tsx",
+      "bytes": 18009,
+      "source_sha256": "15fcab8fbd011fbee3a85c85aeb78407134339c0d53bf3726ba3126ee91e5c2a",
+      "sha256": "15fcab8fbd011fbee3a85c85aeb78407134339c0d53bf3726ba3126ee91e5c2a",
+      "sha256_match": true
+    },
+    {
+      "kind": "source",
+      "source": "~/Movies/freshstack-what-if-2026-11-01/what-if-studio/src/engine/ui.tsx",
+      "destination": "~/Documents/ChatGPT/webtest/jk-animation-studio/styles/freshstack-what-if/source/studio/src/engine/ui.tsx",
+      "bytes": 13020,
+      "source_sha256": "4fec92331e0c517be81a93132fbf6b479464148b41f27ea72293754119886d2c",
+      "sha256": "4fec92331e0c517be81a93132fbf6b479464148b41f27ea72293754119886d2c",
+      "sha256_match": true
+    },
+    {
+      "kind": "source",
+      "source": "~/Movies/freshstack-what-if-2026-11-01/what-if-studio/src/episodes/mute-touch/episode.json",
+      "destination": "~/Documents/ChatGPT/webtest/jk-animation-studio/styles/freshstack-what-if/source/studio/src/episodes/mute-touch/episode.json",
+      "bytes": 12266,
+      "source_sha256": "294b0948c583c4bf1d724b3d8d2a7b774f9d2f7e371f44f4bdd255815d144cf9",
+      "sha256": "294b0948c583c4bf1d724b3d8d2a7b774f9d2f7e371f44f4bdd255815d144cf9",
+      "sha256_match": true
+    },
+    {
+      "kind": "source",
+      "source": "~/Movies/freshstack-what-if-2026-11-01/what-if-studio/src/episodes/mute-touch/index.tsx",
+      "destination": "~/Documents/ChatGPT/webtest/jk-animation-studio/styles/freshstack-what-if/source/studio/src/episodes/mute-touch/index.tsx",
+      "bytes": 2196,
+      "source_sha256": "dc2d905ee37fe1c495729d7a43639711d0d82cbb023846f1ffeefaae1bf53804",
+      "sha256": "dc2d905ee37fe1c495729d7a43639711d0d82cbb023846f1ffeefaae1bf53804",
+      "sha256_match": true
+    },
+    {
+      "kind": "source",
+      "source": "~/Movies/freshstack-what-if-2026-11-01/what-if-studio/src/episodes/mute-touch/shots.tsx",
+      "destination": "~/Documents/ChatGPT/webtest/jk-animation-studio/styles/freshstack-what-if/source/studio/src/episodes/mute-touch/shots.tsx",
+      "bytes": 28002,
+      "source_sha256": "0748de290315bc736c33b00c521816805a180eda3eaafa46eca4c6587477b9d9",
+      "sha256": "0748de290315bc736c33b00c521816805a180eda3eaafa46eca4c6587477b9d9",
+      "sha256_match": true
+    },
+    {
+      "kind": "source",
+      "source": "~/Movies/freshstack-what-if-2026-11-01/what-if-studio/src/episodes/mute-touch/timeline.json",
+      "destination": "~/Documents/ChatGPT/webtest/jk-animation-studio/styles/freshstack-what-if/source/studio/src/episodes/mute-touch/timeline.json",
+      "bytes": 6098,
+      "source_sha256": "5747bbfa82fe3ec9ac8c06cdecddb2e31084fcf8d272e4192d470be06a90176c",
+      "sha256": "5747bbfa82fe3ec9ac8c06cdecddb2e31084fcf8d272e4192d470be06a90176c",
+      "sha256_match": true
+    },
+    {
+      "kind": "source",
+      "source": "~/Movies/freshstack-what-if-2026-11-01/what-if-studio/src/episodes/mute-touch/words.json",
+      "destination": "~/Documents/ChatGPT/webtest/jk-animation-studio/styles/freshstack-what-if/source/studio/src/episodes/mute-touch/words.json",
+      "bytes": 2546,
+      "source_sha256": "71b3a2de060ce6eeb63fcfe98fdee7f6d9fe1102290b55305809885002c3432c",
+      "sha256": "71b3a2de060ce6eeb63fcfe98fdee7f6d9fe1102290b55305809885002c3432c",
+      "sha256_match": true
+    },
+    {
+      "kind": "source",
+      "source": "~/Movies/freshstack-what-if-2026-11-01/what-if-studio/src/index.ts",
+      "destination": "~/Documents/ChatGPT/webtest/jk-animation-studio/styles/freshstack-what-if/source/studio/src/index.ts",
+      "bytes": 93,
+      "source_sha256": "98b03b1da7aa397e0fc89cb4600c418d3572b389cb1831b1e72e9b4400a5a34e",
+      "sha256": "98b03b1da7aa397e0fc89cb4600c418d3572b389cb1831b1e72e9b4400a5a34e",
+      "sha256_match": true
+    },
+    {
+      "kind": "source",
+      "source": "~/Movies/freshstack-what-if-2026-11-01/what-if-studio/src/studio.config.ts",
+      "destination": "~/Documents/ChatGPT/webtest/jk-animation-studio/styles/freshstack-what-if/source/studio/src/studio.config.ts",
+      "bytes": 462,
+      "source_sha256": "e75c3967065bac9e50d562d002d6919767e73e7b797494670cd5457751cc3dc5",
+      "sha256": "e75c3967065bac9e50d562d002d6919767e73e7b797494670cd5457751cc3dc5",
+      "sha256_match": true
+    },
+    {
+      "kind": "source",
+      "source": "~/Movies/freshstack-what-if-2026-11-01/what-if-studio/public/mute-touch/voice.wav",
+      "destination": "~/Documents/ChatGPT/webtest/jk-animation-studio/styles/freshstack-what-if/source/studio/public/mute-touch/voice.wav",
+      "bytes": 2029462,
+      "source_sha256": "30d0ba82e9ca0ff32b221cac6b1c86a7c4c82d653c0ef411f76e98d0f3291efb",
+      "sha256": "30d0ba82e9ca0ff32b221cac6b1c86a7c4c82d653c0ef411f76e98d0f3291efb",
+      "sha256_match": true
+    },
+    {
+      "kind": "source",
+      "source": "~/Movies/freshstack-what-if-2026-11-01/what-if-studio/public/mute-touch/sfx.wav",
+      "destination": "~/Documents/ChatGPT/webtest/jk-animation-studio/styles/freshstack-what-if/source/studio/public/mute-touch/sfx.wav",
+      "bytes": 2143302,
+      "source_sha256": "6140ae2c63376472b0544f4b0038f31ed6460be225a1ac7c6fc3b989c22eca90",
+      "sha256": "6140ae2c63376472b0544f4b0038f31ed6460be225a1ac7c6fc3b989c22eca90",
+      "sha256_match": true
+    },
+    {
+      "kind": "source",
+      "source": "~/Movies/freshstack-what-if-2026-11-01/what-if-studio/public/mute-touch/music.wav",
+      "destination": "~/Documents/ChatGPT/webtest/jk-animation-studio/styles/freshstack-what-if/source/studio/public/mute-touch/music.wav",
+      "bytes": 2143302,
+      "source_sha256": "300a75a582cbb31e49833fac41796e3c0b593bf3341717b1898024556c1d3160",
+      "sha256": "300a75a582cbb31e49833fac41796e3c0b593bf3341717b1898024556c1d3160",
+      "sha256_match": true
+    },
+    {
+      "kind": "video",
+      "source": "~/Movies/freshstack-what-if-2026-11-01/deliverables/mute-touch-final.mp4",
+      "destination": "~/Documents/ChatGPT/webtest/jk-animation-studio/styles/freshstack-what-if/examples/glm/demo.mp4",
+      "bytes": 24604228,
+      "source_sha256": "b7ba06fe16628715c4fd07c0a8cef579af21e4931b9c3b8863e1792af3d0d9db",
+      "sha256": "b7ba06fe16628715c4fd07c0a8cef579af21e4931b9c3b8863e1792af3d0d9db",
+      "sha256_match": true
+    }
+  ]
+}

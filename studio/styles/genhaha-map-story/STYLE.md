@@ -1,0 +1,7 @@
+# Genhaha Map Story
+
+Draft; no visual, motion or audio approval yet. Source: locally supplied `~/Downloads/genhaha-map-story`, `SKILL.md`, `LICENSE.md` and `template/`. Genhaha permits personal/team use but asks users not to resell or re-upload the downloaded files as a product. The source kit is not redistributed here.
+
+Vertical 9:16 satellite-map stories: Three.js / HyperFrames camera moves, geographic boundaries, markers, routes and measured distance. The source supplies `layers.json`, `captions.js`, `video.json`, `index.html`, maps and the map kit. Default satellite layers are retrieved from EOX and require attribution; geometry credit includes geoBoundaries/Natural Earth. Any real-world claim and distance needs a source or coordinate calculation, and a straight-line distance must not be described as road distance. Default edge-tts sends narration text to Microsoft's service. The saved Thai narrator voice is not wired to this pipeline yet; a separately validated integration is required.
+
+Create an editable starter with `node scripts/genhaha-scaffold.mjs map <slug>`. It invokes the local source's `new` command and writes under ignored `outputs/genhaha-projects/`. It does not fetch layers, create narration, render, publish or incur provider charges. The source skill's `layers`, `voice`, `check`, `frames` and `render` require separate invocation and their prerequisites/network/provider costs should be checked first. Do not copy credentials or assume Google imagery access. Follow actual imagery and geometry license attribution.

@@ -1,0 +1,30 @@
+# studio/ lives inside the public kubcode repo. Large or private media
+# (example MP4s, voice WAVs, licensed SFX, reference kits) belong in the
+# repo-level git-ignored media/ folder, never here. See docs/media.md.
+.DS_Store
+node_modules/
+.qa/
+.test-*/
+.preview.log
+**/.hyperframes/
+.venv/
+__pycache__/
+*.pyc
+outputs/
+.env
+.env.*
+!.env.example
+**/.thumbnails/
+.*.hf-transaction-*/
+.local/
+**/token.json
+**/client_secret*.json
+.private/
+**/.private/
+**/dist/
+*.mp4
+*.mov
+*.webm
+*.wav
+*.mp3
+*.m4a

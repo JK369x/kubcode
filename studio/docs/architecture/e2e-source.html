@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="en"><!-- set lang to the label language, e.g. "ja" for Japanese labels -->
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>kubcode + JK Animation Studio — end-to-end stack</title>
+<style>
+/* engineered-paper theme (cool near-white, one accent, mono labels)
+ * All colors/fonts flow through the :root tokens — tweak tokens, not scattered values. */
+:root {
+  color-scheme: light;
+  --color-paper:   oklch(98.5% 0.004 250);
+  --color-paper-2: oklch(96.5% 0.005 252);
+  --color-rule:    oklch(93% 0.007 255);    /* graph-paper grid */
+  --color-rule-2:  oklch(83% 0.011 255);    /* hairline borders */
+  --color-muted:   oklch(56% 0.013 255);
+  --color-neutral: oklch(46% 0.015 255);    /* neutral edges */
+  --color-ink-2:   oklch(34% 0.018 257);
+  --color-ink:     oklch(24% 0.020 258);
+  --color-accent:  oklch(58% 0.20 256);     /* primary-flow edges, one signal color */
+  --color-graphite:oklch(24% 0.018 260);    /* dark tile for white/light logos */
+  /* group palette A — warm vendor (e.g. Cloudflare/AWS orange). Retune hue per vendor. */
+  --color-g1:      oklch(68% 0.15 55);
+  --color-g1-soft: oklch(78% 0.12 55);
+  --color-g1-ink:  oklch(52% 0.14 50);
+  --color-g1-tint: oklch(96.5% 0.015 60 / .5);
+  /* group palette B — accent-family (repo/tooling groups) */
+  --color-accent-soft: oklch(58% 0.20 256 / .45);
+  --color-accent-tint: oklch(97% 0.012 256 / .5);
+  /* JP glyphs: name JP faces explicitly — bare sans-serif fallback on Linux picks Chinese-variant CJK */
+  --font-display: "Geist", "Hiragino Sans", "Yu Gothic UI", "Noto Sans CJK JP", "Noto Sans JP", ui-sans-serif, system-ui, sans-serif;
+  --font-body: "Hiragino Sans", "Yu Gothic UI", "Noto Sans CJK JP", "Noto Sans JP", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, monospace;
+  --space-xs: 4px; --space-sm: 8px; --space-md: 16px; --space-lg: 24px; --space-xl: 40px; --space-2xl: 64px;
+  --radius-card: 10px; --radius-tile: 12px;
+  /* translucent veil behind node label text: matches paper on plain canvas, blends into
+     group tints instead of punching an off-color rectangle through them */
+  --color-veil: oklch(98.5% 0.004 250 / .78);
+}
+/* Dark variant: set data-theme="dark" on <html>. Tiles stay white — brand logos are drawn
+   for light grounds. Everything (arrowheads via context-stroke, legend via border-color)
+   follows the tokens, so toggling the attribute is all it takes. */
+[data-theme="dark"] {
+  color-scheme: dark;
+  --color-paper:   oklch(18% 0.012 255);
+  --color-paper-2: oklch(22% 0.014 255);
+  --color-rule:    oklch(24% 0.013 255);
+  --color-rule-2:  oklch(38% 0.018 255);
+  --color-muted:   oklch(65% 0.014 255);
+  --color-neutral: oklch(72% 0.012 255);
+  --color-ink-2:   oklch(85% 0.010 255);
+  --color-ink:     oklch(94% 0.008 255);
+  --color-accent:  oklch(70% 0.16 256);
+  --color-graphite:oklch(31% 0.020 260);
+  --color-g1:      oklch(70% 0.14 55);
+  --color-g1-soft: oklch(58% 0.11 55);
+  --color-g1-ink:  oklch(78% 0.12 55);
+  --color-g1-tint: oklch(26% 0.030 60 / .40);
+  --color-accent-soft: oklch(70% 0.16 256 / .5);
+  --color-accent-tint: oklch(28% 0.045 256 / .35);
+  --color-veil: oklch(18% 0.012 255 / .78);
+}
+@font-face { font-family:"Geist"; font-style:normal; font-weight:100 900; font-display:swap;
+  src:url(data:font/woff2;base64,%%FONT_DISPLAY%%) format("woff2"); }
+@font-face { font-family:"JetBrains Mono"; font-style:normal; font-weight:100 800; font-display:swap;
+  src:url(data:font/woff2;base64,%%FONT_JBM%%) format("woff2"); }
+/* JetBrains Mono reads cramped at 9.5–11px; open every mono label slightly */
+.kicker, .node .role, .el, .legend, .foot { letter-spacing: 0.04em; }
+* { margin:0; padding:0; box-sizing:border-box; }
+html, body { overflow-x: clip; }
+body { background: var(--color-paper); color: var(--color-ink); font-family: var(--font-body); padding: var(--space-xl) var(--space-lg) var(--space-2xl); }
+.page { width: fit-content; max-width: 100%; margin: 0 auto; }
+
+.head { display:grid; grid-template-columns: 1fr auto; gap: var(--space-lg); align-items:end;
+  padding-bottom: var(--space-md); border-bottom: 1px solid var(--color-rule-2); margin-bottom: var(--space-lg); }
+.kicker { font-family: var(--font-mono); font-size: 11px;
+  color: var(--color-accent); margin-bottom: var(--space-sm); }
+h1 { font-family: var(--font-display); font-weight: 700; font-size: clamp(22px, 4vw, 30px);
+  letter-spacing: -0.005em; line-height: 1.2; }
+.lede { max-width: 300px; font-size: 12px; line-height: 1.7; color: var(--color-neutral); padding-bottom: 2px; }
+@media (max-width: 680px) { .head { grid-template-columns: 1fr; align-items:start; } .lede { max-width:none; } }
+
+.scroller { overflow-x: auto; border: 1px solid var(--color-rule-2); border-radius: var(--radius-card); }
+/* CANVAS SIZE: set width/height here AND on svg.edges AND its viewBox — keep the three in sync */
+.canvas { position: relative; width: 1420px; height: 1030px; background: var(--color-paper);
+  background-image:
+    linear-gradient(var(--color-rule) 1px, transparent 1px),
+    linear-gradient(90deg, var(--color-rule) 1px, transparent 1px);
+  background-size: 24px 24px; background-position: -1px -1px; }
+
+.group { position:absolute; border-radius: var(--radius-tile); }
+/* group labels are names like node names (display font), written in the brand's own case.
+   They sit inside the top-left corner, so the border stays unbroken and needs no mask */
+.g-label { position:absolute; top:12px; left:12px; display:flex; align-items:center; gap:6px;
+  font-family: var(--font-display); font-size: 12px; font-weight: 600;
+  color: var(--color-neutral); white-space: nowrap; }
+.g-label img { width: 14px; height: 14px; }
+/* group labels sit on the group's tint, not on a white tile: in the dark theme swap in the brand's own
+   dark-theme logo (lt/dk pair), or give a mark with black parts a white plate */
+.g-label img.dk, .tile img.dk { display:none; }
+[data-theme="dark"] .g-label img.lt, [data-theme="dark"] .tile img.lt { display:none; }
+[data-theme="dark"] .g-label img.dk, [data-theme="dark"] .tile img.dk { display:block; }
+[data-theme="dark"] .g-label img.plate { background:#fff; border-radius:3px; padding:2px; width:18px; height:18px; }
+.group.ga { border:1.5px solid var(--color-g1); background: var(--color-g1-tint); }
+.group.ga-nested { border:1.5px dashed var(--color-g1-soft); }
+.group.gb { border:1.5px solid var(--color-accent-soft); background: var(--color-accent-tint); }
+.group.ga > .g-label, .group.ga-nested > .g-label { color: var(--color-g1-ink); }
+.group.gb > .g-label { color: var(--color-accent); }
+.group.aws { border:1.5px solid var(--color-ink); border-radius:0; }
+.group.aws > .g-label { top:-1.5px; left:-1.5px; gap:8px; color: var(--color-ink); }
+.group.aws > .g-label img { width:30px; height:30px; }
+.group.aws.az > .g-label { top:8px; left:12px; }
+.group.aws.region, .group.aws.az { border-color:#00A4A6; border-style:dashed; }
+.group.aws.vpc { border-color:#8C4FFF; }
+.group.aws.private { border-color:#00A4A6; }
+.group.aws.public { border-color:#7AA116; }
+.group.gcp { border:1.5px solid #4285F4; border-radius:6px; }
+.group.azure { border:1.5px solid #0078D4; border-radius:6px; }
+.group.gcp > .g-label, .group.azure > .g-label { gap:8px; color: var(--color-ink); }
+.group.gcp > .g-label img, .group.azure > .g-label img { width:20px; height:20px; }
+.group.gcp.region, .group.azure.region { border-color: var(--color-rule-2); background: var(--color-paper-2); }
+.group.gcp.vpc { border:1.5px dashed var(--color-ink-2); }
+.group.gcp.subnet { border:1px dashed var(--color-neutral); }
+.group.gcp.zone { border-color:#34A853; }
+.group.azure.rg { border:1.5px dashed #0096D7; }
+.group.azure.vnet { border:1.5px solid #A4CBFB; }
+.group.azure.subnet { border:1px solid #A4CBFB; }
+.group.azure.zone { border-color:#FFD965; }
+
+.node { position:absolute; width:132px; text-align:center; }
+.tile { width:60px; height:60px; margin:0 auto; border-radius: var(--radius-tile);
+  background:#fff; border:1px solid var(--color-rule-2); display:grid; place-items:center;
+  box-shadow: 0 1px 2px oklch(24% 0.02 258 / 0.05); transition: border-color .15s cubic-bezier(0.16,1,0.3,1); }
+.node:hover .tile { border-color: var(--color-accent); }
+.tile img { width:34px; height:34px; object-fit:contain; }
+.tile.wide img { width:44px; }                       /* wide-aspect logos */
+.tile.dark { background: var(--color-graphite); border-color: var(--color-graphite); }  /* white/light logos */
+.tile.bare { background:none; border:none; box-shadow:none; }
+.tile.bare img { width:60px; height:60px; }
+.tile.bare.res img { width:44px; height:44px; }
+.node .name { font-family: var(--font-display); font-weight:600; font-size:13px; margin-top: var(--space-sm); letter-spacing:0; }
+.node .role { font-family: var(--font-mono); font-size:9.5px; color: var(--color-muted); margin-top:2px; }
+/* veil behind label spans: crossing edges/grid fade behind text; translucent so it
+   blends into group tints (a solid paper rectangle looks pasted-on inside tinted groups) */
+.node .name span, .node .role span { background: var(--color-veil); backdrop-filter: blur(1.5px);
+  padding: 0 var(--space-xs); border-radius: 3px; -webkit-box-decoration-break: clone; box-decoration-break: clone; }
+
+svg.edges { position:absolute; inset:0; width:1420px; height:1030px; pointer-events:none; }
+.e  { stroke: var(--color-accent); stroke-width:1.6; fill:none; }   /* primary flow */
+.n  { stroke: var(--color-neutral); stroke-width:1.4; fill:none; }  /* internal */
+path.aws { stroke: var(--color-ink); stroke-width:1.6; fill:none; }
+.dash { stroke-dasharray:4 5; }                                     /* dev / deploy */
+.el { font-family: var(--font-mono); font-size:10.5px; fill: var(--color-neutral);
+  paint-order: stroke; stroke: var(--color-paper); stroke-width:4px; stroke-linejoin:round; }  /* halo */
+.el.a { fill: var(--color-accent); }
+
+.legend { display:flex; gap: var(--space-lg); align-items:center; margin-top: var(--space-md);
+  font-family: var(--font-mono); font-size:10px; color: var(--color-muted); flex-wrap:wrap; }
+.legend .sw { display:inline-block; width:30px; vertical-align:middle; margin-right:6px;
+  border-top:1.6px solid var(--color-accent); }
+.legend .sw.n { border-color: var(--color-neutral); border-top-width:1.4px; }
+.legend .sw.dash { border-top-style: dashed; }
+
+.foot { margin-top: var(--space-xl); padding-top: var(--space-md); border-top: 1px solid var(--color-rule-2);
+  display:flex; justify-content:space-between; gap: var(--space-md); flex-wrap:wrap;
+  font-family: var(--font-mono); font-size:10px; color: var(--color-muted); }
+.foot a { color: inherit; text-decoration-color: var(--color-rule-2); text-underline-offset: 2px; }
+.foot a:hover { color: var(--color-accent); }
+</style>
+</head>
+<body>
+<div class="page">
+  <header class="head">
+    <div>
+      <div class="kicker">end-to-end stack · 2026-11-11</div>
+      <h1>kubcode.dev + JK Animation Studio</h1>
+    </div>
+    <p class="lede">Git push → GitHub Actions → Lightsail web + Rust Lambdas on AWS ap-southeast-1, Supabase Postgres, and Zernio for social publishing. No end-user payment yet.</p>
+  </header>
+  <div class="scroller">
+  <div class="canvas">
+    <div class="group gb" style="left:20px; top:380px; width:180px; height:370px;"><div class="g-label"><img src="%%ICON_laptop%%" alt="">Owner Mac</div></div>
+    <div class="group aws" style="left:250px; top:40px; width:780px; height:730px;"><div class="g-label"><img class="lt" src="%%ICON_aws%%" alt=""><img class="dk" src="%%ICON_aws_dark%%" alt="">AWS Cloud</div></div>
+    <div class="group aws region" style="left:270px; top:90px; width:740px; height:660px;"><div class="g-label" style="top:8px;left:12px">ap-southeast-1</div></div>
+    <div class="group aws" style="left:290px; top:140px; width:340px; height:370px;"><div class="g-label"><img src="%%ICON_lightsail%%" alt="">Lightsail kubcode-web · micro $7/mo</div></div>
+    <div class="group ga" style="left:1070px; top:96px; width:330px; height:654px;"><div class="g-label">Third-party services</div></div>
+    <div class="group gb" style="left:290px; top:790px; width:520px; height:210px;"><div class="g-label"><img class="lt" src="%%ICON_github%%" alt=""><img class="dk" src="%%ICON_github_dark%%" alt="">Delivery</div></div>
+
+    <svg class="edges" viewBox="0 0 1420 1030" aria-hidden="true">
+      <defs>
+        <marker id="ar" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" fill="context-stroke"/></marker>
+        <marker id="open" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto-start-reverse"><path d="M1 1 L9 5 L1 9" fill="none" stroke="context-stroke" stroke-width="1.5"/></marker>
+      </defs>
+      <!-- request path -->
+      <path class="e" d="M144 230 H346" marker-end="url(#ar)"/><text class="el a" x="245" y="222" text-anchor="middle">HTTPS</text>
+      <path class="e" d="M414 230 H506" marker-end="url(#ar)"/>
+      <path class="e" d="M574 230 H642 V490 H686" marker-end="url(#ar)"/>
+      <path class="e" d="M642 230 V210 H686" marker-end="url(#ar)"/>
+      <path class="e" d="M642 350 H686" marker-end="url(#ar)"/>
+      <text class="el a" x="608" y="222" text-anchor="middle">HMAC</text>
+      <path class="n" d="M574 390 H640"/><text class="el" x="606" y="382" text-anchor="middle">tick</text>
+      <path class="n" d="M380 306 V354" marker-end="url(#ar)"/><text class="el" x="390" y="334">webhook</text>
+      <!-- publishing -->
+      <path class="e" d="M754 490 H1126" marker-start="url(#ar)" marker-end="url(#ar)"/><text class="el a" x="940" y="482" text-anchor="middle">Bearer · webhooks</text>
+      <path class="e" d="M1194 490 H1276" marker-end="url(#ar)"/><text class="el a" x="1212" y="482" text-anchor="middle">post</text>
+      <path class="e" d="M1232 490 V350 H1276" marker-end="url(#ar)"/>
+      <path class="e" d="M1232 490 V630 H1276" marker-end="url(#ar)"/>
+      <!-- AWS-internal -->
+      <path class="aws" d="M754 210 H866" marker-end="url(#open)"/><text class="el" x="778" y="202" text-anchor="middle">sign</text>
+      <path class="aws" d="M754 360 H866" marker-end="url(#open)"/><text class="el" x="810" y="352" text-anchor="middle">decrypt</text>
+      <path class="aws" d="M754 630 H866" marker-end="url(#open)"/><text class="el" x="810" y="622" text-anchor="middle">secrets</text>
+      <!-- OAuth + DB -->
+      <path class="n" d="M754 335 H810 V130 H1232 V350"/><text class="el" x="1010" y="122" text-anchor="middle">OAuth tokens</text>
+      <path class="n" d="M540 196 V68 H1310 V156" marker-end="url(#ar)"/><text class="el" x="860" y="60" text-anchor="middle">SQL · TLS (web + Lambdas)</text>
+      <!-- owner tooling -->
+      <path class="n" d="M144 630 H686" marker-end="url(#ar)"/><text class="el" x="560" y="622" text-anchor="middle">lambda invoke</text>
+      <path class="n dash" d="M144 470 H225 V880 H346" marker-end="url(#ar)"/><text class="el" x="290" y="872" text-anchor="middle">showcase</text>
+      <!-- delivery -->
+      <path class="n dash" d="M414 880 H506" marker-end="url(#ar)"/><text class="el" x="460" y="872" text-anchor="middle">push main</text>
+      <path class="n dash" d="M574 880 H686" marker-end="url(#ar)"/><text class="el" x="630" y="872" text-anchor="middle">infra</text>
+      <path class="n dash" d="M540 844 V815 H460 V250 H506" marker-end="url(#ar)"/><text class="el" x="470" y="560">ssh deploy</text>
+      <path class="n dash" d="M740 844 V706" marker-end="url(#ar)"/><text class="el" x="750" y="782">pulumi up</text>
+    </svg>
+    <div class="node" style="left:44px;top:200px"><div class="tile "><img src="%%ICON_users%%" alt=""></div><div class="name"><span>Members</span></div><div class="role"><span>Google / LINE sign-in</span></div></div>
+    <div class="node" style="left:44px;top:440px"><div class="tile "><img src="%%ICON_film%%" alt=""></div><div class="name"><span>JK Animation Studio</span></div><div class="role"><span>styles → showcase</span></div></div>
+    <div class="node" style="left:44px;top:600px"><div class="tile "><img src="%%ICON_rust%%" alt=""></div><div class="name"><span>kubcode CLI</span></div><div class="role"><span>push · schedule</span></div></div>
+    <div class="node" style="left:314px;top:200px"><div class="tile "><img src="%%ICON_caddy%%" alt=""></div><div class="name"><span>Caddy</span></div><div class="role"><span>TLS · kubcode.dev</span></div></div>
+    <div class="node" style="left:474px;top:200px"><div class="tile "><img src="%%ICON_nextjs%%" alt=""></div><div class="name"><span>Next.js 16 web</span></div><div class="role"><span>NextAuth · routes</span></div></div>
+    <div class="node" style="left:314px;top:360px"><div class="tile "><img src="%%ICON_nodejs%%" alt=""></div><div class="name"><span>tiktok-sandbox</span></div><div class="role"><span>Node :3051</span></div></div>
+    <div class="node" style="left:474px;top:360px"><div class="tile "><img src="%%ICON_worker%%" alt=""></div><div class="name"><span>worker timer</span></div><div class="role"><span>systemd · every 1 min</span></div></div>
+    <div class="node" style="left:654px;top:180px"><div class="tile bare"><img src="%%ICON_lambda%%" alt=""></div><div class="name"><span>package-signer</span></div><div class="role"><span>Rust · presign</span></div></div>
+    <div class="node" style="left:654px;top:320px"><div class="tile bare"><img src="%%ICON_lambda%%" alt=""></div><div class="name"><span>oauth-connect</span></div><div class="role"><span>Rust · tokens</span></div></div>
+    <div class="node" style="left:654px;top:460px"><div class="tile bare"><img src="%%ICON_lambda%%" alt=""></div><div class="name"><span>publishing</span></div><div class="role"><span>Rust · Zernio adapter</span></div></div>
+    <div class="node" style="left:654px;top:600px"><div class="tile bare"><img src="%%ICON_lambda%%" alt=""></div><div class="name"><span>publishing-ops</span></div><div class="role"><span>Rust · IAM-only</span></div></div>
+    <div class="node" style="left:834px;top:180px"><div class="tile bare"><img src="%%ICON_s3%%" alt=""></div><div class="name"><span>Amazon S3</span></div><div class="role"><span>media + packages</span></div></div>
+    <div class="node" style="left:834px;top:320px"><div class="tile bare"><img src="%%ICON_kms%%" alt=""></div><div class="name"><span>AWS KMS</span></div><div class="role"><span>envelope keys</span></div></div>
+    <div class="node" style="left:834px;top:600px"><div class="tile bare"><img src="%%ICON_ssm%%" alt=""></div><div class="name"><span>AWS Systems Manager</span></div><div class="role"><span>SSM secrets</span></div></div>
+    <div class="node" style="left:1094px;top:160px"><div class="tile "><img src="%%ICON_line%%" alt=""></div><div class="name"><span>LINE Login</span></div><div class="role"><span>OIDC sign-in</span></div></div>
+    <div class="node" style="left:1244px;top:160px"><div class="tile "><img src="%%ICON_supabase%%" alt=""></div><div class="name"><span>Supabase Postgres</span></div><div class="role"><span>kubcode-sg · free</span></div></div>
+    <div class="node" style="left:1244px;top:320px"><div class="tile "><img src="%%ICON_youtube%%" alt=""></div><div class="name"><span>Google · YouTube</span></div><div class="role"><span>OAuth · Data API</span></div></div>
+    <div class="node" style="left:1094px;top:460px"><div class="tile "><img src="%%ICON_zernio%%" alt=""></div><div class="name"><span>Zernio</span></div><div class="role"><span>unified social API</span></div></div>
+    <div class="node" style="left:1244px;top:460px"><div class="tile "><img src="%%ICON_instagram%%" alt=""></div><div class="name"><span>Instagram</span></div><div class="role"><span>via Zernio · BYOK</span></div></div>
+    <div class="node" style="left:1244px;top:600px"><div class="tile "><img src="%%ICON_tiktok%%" alt=""></div><div class="name"><span>TikTok</span></div><div class="role"><span>Zernio + sandbox</span></div></div>
+    <div class="node" style="left:1094px;top:600px"><div class="tile "><img src="%%ICON_elevenlabs%%" alt=""></div><div class="name"><span>ElevenLabs</span></div><div class="role"><span>member BYO key</span></div></div>
+    <div class="node" style="left:314px;top:850px"><div class="tile "><img src="%%ICON_github%%" alt=""></div><div class="name"><span>GitHub</span></div><div class="role"><span>JK369x/kubcode</span></div></div>
+    <div class="node" style="left:474px;top:850px"><div class="tile "><img src="%%ICON_actions%%" alt=""></div><div class="name"><span>GitHub Actions</span></div><div class="role"><span>checks · migrate · deploy</span></div></div>
+    <div class="node" style="left:654px;top:850px"><div class="tile "><img src="%%ICON_pulumi%%" alt=""></div><div class="name"><span>Pulumi</span></div><div class="role"><span>infra.yml · S3 state</span></div></div>
+  </div>
+  </div>
+  <div class="legend">
+    <span><span class="sw"></span>request / publish path</span>
+    <span><span class="sw n"></span>internal call</span>
+    <span><span class="sw n dash"></span>build / deploy</span>
+  </div>
+  <div class="foot">
+    <span>source: JK369x/kubcode @ 917dbec · read-only audit · Caddy/LINE/Zernio shown as pictograms</span>
+    <span>icons: svgl / devicon / gilbarbara / AWS Architecture Icons / Lucide · made with <a href="https://github.com/caru-ini/stack-diagram" target="_blank" rel="noopener">stack-diagram</a></span>
+  </div>
+</div>
+</body>
+</html>

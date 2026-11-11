@@ -1,0 +1,155 @@
+[
+  {
+    "line": "l1",
+    "spoken": "ถ้าเช้านี้ตื่นมา คุณตัวเล็กลง เหลือ",
+    "pre": "ถ้าเช้านี้ตื่นมา ",
+    "key": "คุณตัวเล็กลง",
+    "post": " เหลือ",
+    "color": "#f2c35b",
+    "en": "WHAT IF YOU SHRANK"
+  },
+  {
+    "line": "l1",
+    "spoken": "เท่ามดตัวหนึ่ง",
+    "pre": "",
+    "key": "เท่ามด",
+    "post": "ตัวหนึ่ง",
+    "color": "#f2c35b",
+    "en": "TO ANT SIZE?"
+  },
+  {
+    "line": "l2",
+    "spoken": "แมวที่บ้าน กลายเป็นยักษ์ สูง",
+    "pre": "แมวที่บ้าน ",
+    "key": "กลายเป็นยักษ์",
+    "post": " สูง",
+    "color": "#f2c35b",
+    "en": "YOUR CAT BECOMES A GIANT"
+  },
+  {
+    "line": "l2",
+    "spoken": "พอๆ กับตึกสี่สิบชั้น",
+    "pre": "พอๆ กับ",
+    "key": "ตึกสี่สิบชั้น",
+    "post": "",
+    "color": "#ff8271",
+    "en": "AS TALL AS A 40-STOREY TOWER"
+  },
+  {
+    "line": "l3",
+    "spoken": "กฎมีข้อเดียว ตัวเล็กลงห้าร้อยเท่า แต่ยังเป็นคุณ",
+    "pre": "กฎมีข้อเดียว ตัวเล็กลง",
+    "key": "ห้าร้อยเท่า",
+    "post": " แต่ยังเป็นคุณ",
+    "color": "#f2c35b",
+    "en": "ONE RULE · SHRINK 500x"
+  },
+  {
+    "line": "l3",
+    "spoken": "คนเดิม",
+    "pre": "",
+    "key": "คนเดิม",
+    "post": "",
+    "color": "#87dbd6",
+    "en": "STILL YOU"
+  },
+  {
+    "line": "l4",
+    "spoken": "แล้วคุณก็พลาดตกจากโต๊ะ แต่ลงถึงพื้น ",
+    "pre": "แล้วคุณก็",
+    "key": "พลาดตกจากโต๊ะ",
+    "post": " แต่ลงถึงพื้น ",
+    "color": "#ff8271",
+    "en": "YOU SLIP OFF THE DESK"
+  },
+  {
+    "line": "l4",
+    "spoken": "แบบแทบไม่เจ็บ",
+    "pre": "แบบ",
+    "key": "แทบไม่เจ็บ",
+    "post": "",
+    "color": "#ff8271",
+    "en": "AND YOU LAND, BARELY HURT"
+  },
+  {
+    "line": "l5",
+    "spoken": "เพราะยิ่งตัวเล็ก น้ำหนักลดลงเร็วกว่า",
+    "pre": "เพราะยิ่งตัวเล็ก ",
+    "key": "น้ำหนักลดลง",
+    "post": "เร็วกว่า",
+    "color": "#ff8271",
+    "en": "WEIGHT DROPS FASTER"
+  },
+  {
+    "line": "l5",
+    "spoken": "พื้นผิวที่ต้านลม คุณจึงตกช้าลงมาก",
+    "pre": "พื้นผิวที่ต้านลม คุณจึง",
+    "key": "ตกช้าลงมาก",
+    "post": "",
+    "color": "#ff8271",
+    "en": "SO YOU FALL MUCH SLOWER"
+  },
+  {
+    "line": "l6",
+    "spoken": "ปีหนึ่งพันเก้าร้อยยี่สิบหก ",
+    "pre": "",
+    "key": "ปีหนึ่งพันเก้าร้อยยี่สิบหก",
+    "post": " ",
+    "color": "#f2c35b",
+    "en": "THE YEAR 1926"
+  },
+  {
+    "line": "l6",
+    "spoken": "นักชีววิทยาคนหนึ่งเขียนไว้ว่า ",
+    "pre": "นักชีววิทยา",
+    "key": "คนหนึ่งเขียนไว้ว่า",
+    "post": " ",
+    "color": "#87dbd6",
+    "en": "A BIOLOGIST WROTE"
+  },
+  {
+    "line": "l6",
+    "spoken": "หนูตกบ่อเหมืองลึกราวเก้าร้อยเมตร ",
+    "pre": "หนูตกบ่อเหมืองลึกราว ",
+    "key": "เก้าร้อยเมตร",
+    "post": " ",
+    "color": "#ff8271",
+    "en": "A MOUSE FELL DOWN A ~900 M SHAFT"
+  },
+  {
+    "line": "l6",
+    "spoken": "ยังเดินจากไปได้ ถ้าพื้นนุ่มพอ",
+    "pre": "ยังเดินจากไปได้ ",
+    "key": "ถ้าพื้นนุ่มพอ",
+    "post": "",
+    "color": "#87dbd6",
+    "en": "AND WALKED AWAY · IF THE GROUND IS SOFT"
+  },
+  {
+    "line": "l7",
+    "spoken": "แต่ข้างนอก ฝนเริ่มตกแล้ว ",
+    "pre": "แต่ข้างนอก ",
+    "key": "ฝนเริ่มตกแล้ว",
+    "post": " ",
+    "color": "#f2c35b",
+    "en": "OUTSIDE · IT'S STARTING TO RAIN"
+  },
+  {
+    "line": "l7",
+    "spoken": "ถ้าเม็ดแรก ตกลงมา",
+    "pre": "ถ้า",
+    "key": "เม็ดแรก",
+    "post": " ตกลงมา",
+    "color": "#ff8271",
+    "en": "THE FIRST DROP"
+  },
+  {
+    "line": "l7",
+    "spoken": "ตรงหัวคุณล่ะ?",
+    "pre": "",
+    "key": "ตรงหัวคุณล่ะ?",
+    "post": "",
+    "color": "#ff8271",
+    "en": "STRAIGHT ONTO YOUR HEAD?"
+  }
+]

@@ -1,0 +1,8 @@
+{
+  "version": 1, "title": "The window choice", "scene": "jk-window", "duration": 8,
+  "shots": [
+    {"start":0,"end":2.5,"camera":"hero","effect":"blink","caption":{"thai":"ถ้าคนข้างนอก ไม่ใช่คนเดิม?","english":"WHAT IF THEY HAVE CHANGED?","highlight":"ไม่ใช่คนเดิม?"}},
+    {"start":2.5,"end":5,"camera":"window","effect":"latch","caption":{"thai":"เขาเอื้อมมือไปที่ กลอนหน้าต่าง","english":"THE HAND REACHES FOR THE LATCH","highlight":"กลอนหน้าต่าง"}},
+    {"start":5,"end":8,"camera":"wide","effect":"hand","caption":{"thai":"แต่มีอีกมือ รออยู่แล้ว","english":"ANOTHER HAND IS WAITING","highlight":"รออยู่แล้ว"}}
+  ]
+}

@@ -1,0 +1,200 @@
+[
+  {
+    "line": "l1",
+    "a": 4,
+    "b": 62,
+    "spoken": "ถ้าพรุ่งนี้ตื่นมา ทุกคนบนโลก",
+    "pre": "ถ้าพรุ่งนี้ตื่นมา ",
+    "key": "ทุกคนบนโลก",
+    "post": "",
+    "color": "#f2c35b",
+    "en": "WHAT IF EVERYONE SPOKE ONE LANGUAGE?"
+  },
+  {
+    "line": "l1",
+    "a": 62,
+    "b": 101,
+    "spoken": "พูดภาษาเดียวกันหมด",
+    "pre": "พูด",
+    "key": "ภาษาเดียวกัน",
+    "post": "หมด",
+    "color": "#f2c35b",
+    "en": "WHAT IF EVERYONE SPOKE ONE LANGUAGE?"
+  },
+  {
+    "line": "l2",
+    "a": 111,
+    "b": 148,
+    "spoken": "ไปเที่ยวต่างประเทศ",
+    "pre": "",
+    "key": "ไปเที่ยวต่างประเทศ",
+    "post": "",
+    "color": "#f2c35b",
+    "en": "NO TRANSLATOR NEEDED"
+  },
+  {
+    "line": "l2",
+    "a": 148,
+    "b": 177,
+    "spoken": "สั่งราเมนคล่อง",
+    "pre": "",
+    "key": "สั่งราเมนคล่อง",
+    "post": "",
+    "color": "#ff8271",
+    "en": "NO TRANSLATOR NEEDED"
+  },
+  {
+    "line": "l2",
+    "a": 177,
+    "b": 241,
+    "spoken": "ลุงเจ้าของร้านเล่ามุก ก็ขำทันที",
+    "pre": "ลุงเจ้าของร้านเล่ามุก ก็",
+    "key": "ขำทันที",
+    "post": "",
+    "color": "#ff8271",
+    "en": "NO TRANSLATOR NEEDED"
+  },
+  {
+    "line": "l3",
+    "a": 250,
+    "b": 280,
+    "spoken": "กฎมีข้อเดียว",
+    "pre": "",
+    "key": "กฎมีข้อเดียว",
+    "post": "",
+    "color": "#f2c35b",
+    "en": "ONE RULE: ONE SHARED LANGUAGE"
+  },
+  {
+    "line": "l3",
+    "a": 280,
+    "b": 343,
+    "spoken": "ทุกคนพูดภาษากลางภาษาเดียว",
+    "pre": "ทุกคนพูด",
+    "key": "ภาษากลางภาษาเดียว",
+    "post": "",
+    "color": "#f2c35b",
+    "en": "ONE RULE: ONE SHARED LANGUAGE"
+  },
+  {
+    "line": "l3",
+    "a": 343,
+    "b": 418,
+    "spoken": "และภาษาเดิม ค่อยๆ ไม่มีใครใช้",
+    "pre": "และภาษาเดิม ค่อยๆ ",
+    "key": "ไม่มีใครใช้",
+    "post": "",
+    "color": "#87dbd6",
+    "en": "ONE RULE: ONE SHARED LANGUAGE"
+  },
+  {
+    "line": "l4",
+    "a": 430,
+    "b": 476,
+    "spoken": "ปีหนึ่งพันแปดร้อยแปดสิบเจ็ด",
+    "pre": "",
+    "key": "ปี 1887",
+    "post": "",
+    "color": "#f2c35b",
+    "en": "1887: ESPERANTO WAS INVENTED FOR THIS"
+  },
+  {
+    "line": "l4",
+    "a": 476,
+    "b": 533,
+    "spoken": "เคยมีคนสร้างภาษากลางของโลกมาแล้ว",
+    "pre": "เคยมีคนสร้าง",
+    "key": "ภาษากลางของโลก",
+    "post": "มาแล้ว",
+    "color": "#f2c35b",
+    "en": "1887: ESPERANTO WAS INVENTED FOR THIS"
+  },
+  {
+    "line": "l4",
+    "a": 533,
+    "b": 569,
+    "spoken": "ชื่อเอสเปรันโต",
+    "pre": "ชื่อ",
+    "key": "เอสเปรันโต",
+    "post": "",
+    "color": "#f2c35b",
+    "en": "1887: ESPERANTO WAS INVENTED FOR THIS"
+  },
+  {
+    "line": "l5",
+    "a": 582,
+    "b": 603,
+    "spoken": "แต่วันนี้",
+    "pre": "แต่",
+    "key": "วันนี้",
+    "post": "",
+    "color": "#f2c35b",
+    "en": "7,000+ LANGUAGES · ABOUT HALF ENDANGERED"
+  },
+  {
+    "line": "l5",
+    "a": 603,
+    "b": 672,
+    "spoken": "โลกยังมีภาษามากกว่าเจ็ดพันภาษา",
+    "pre": "โลกยังมี",
+    "key": "มากกว่าเจ็ดพันภาษา",
+    "post": "",
+    "color": "#f2c35b",
+    "en": "7,000+ LANGUAGES · ABOUT HALF ENDANGERED"
+  },
+  {
+    "line": "l5",
+    "a": 672,
+    "b": 741,
+    "spoken": "และเกือบครึ่ง เสี่ยงจะหายไป",
+    "pre": "และ",
+    "key": "เกือบครึ่ง",
+    "post": " เสี่ยงจะหายไป",
+    "color": "#ff8271",
+    "en": "7,000+ LANGUAGES · ABOUT HALF ENDANGERED"
+  },
+  {
+    "line": "l6",
+    "a": 751,
+    "b": 775,
+    "spoken": "แค่ในไทย",
+    "pre": "แค่",
+    "key": "ในไทย",
+    "post": "",
+    "color": "#f2c35b",
+    "en": "THAILAND ALONE: ~70 LANGUAGES"
+  },
+  {
+    "line": "l6",
+    "a": 775,
+    "b": 852,
+    "spoken": "ก็มีคนพูดกันราวเจ็ดสิบภาษา",
+    "pre": "ก็มีคนพูดกัน",
+    "key": "ราวเจ็ดสิบภาษา",
+    "post": "",
+    "color": "#f2c35b",
+    "en": "THAILAND ALONE: ~70 LANGUAGES"
+  },
+  {
+    "line": "l7",
+    "a": 866,
+    "b": 911,
+    "spoken": "แล้วถ้าภาษาไทยหายไป",
+    "pre": "แล้วถ้า",
+    "key": "ภาษาไทยหายไป",
+    "post": "",
+    "color": "#ff8271",
+    "en": "HOW WOULD YOU TRANSLATE \"KRENG JAI\"?"
+  },
+  {
+    "line": "l7",
+    "a": 911,
+    "b": 1005,
+    "spoken": "คำว่าเกรงใจ จะแปลเป็นภาษาใหม่ว่าอะไรดี?",
+    "pre": "คำว่า",
+    "key": "เกรงใจ",
+    "post": " จะแปลเป็นภาษาใหม่ว่าอะไรดี?",
+    "color": "#f2c35b",
+    "en": "HOW WOULD YOU TRANSLATE \"KRENG JAI\"?"
+  }
+]

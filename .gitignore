@@ -54,3 +54,11 @@ npm-debug.log*
 !tests/fixtures/envelope/test-only-*.pem
 # Public half of the KMS wrap key (SPKI, fingerprint pinned in tests/wrap-key.test.ts).
 !lib/keys/secrets-wrap-v*.pub.pem
+
+# Local studio media (ADR 0005): example MP4s, voice WAVs, licensed SFX,
+# reference kits, clips and render outputs. Never tracked; see studio/docs/media.md.
+/media/
+studio/**/node_modules/
+studio/**/.venv/
+studio/**/outputs/
+studio/**/.local/

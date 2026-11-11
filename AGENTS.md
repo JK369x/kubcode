@@ -29,3 +29,7 @@ Articles and tool pages: `docs/content.md`. Any post with a repo or a skill bund
 ### Design system
 
 Before any UI change read `design-system/kubcode/MASTER.md` (brand tokens mapped to shadcn/ui + Tailwind v4 variables, type scale, touch/contrast/focus rules) and a `design-system/kubcode/pages/<page>.md` override if one exists. Brand source: `DESIGN.md` + `tokens.json`. Latest audit: `docs/design/uiux-audit-2026-11-11.md`.
+
+### Studio engine (`studio/`)
+
+The video production engine (styles, pipelines, voice, captions) imported from `jk-animation-studio`; see `docs/adr/0005-studio-engine-in-kubcode.md` and `studio/AGENTS.md`. This repo is public: never commit media (MP4/WAV/MP3, voice references, reference kits) — they go in the git-ignored `media/` (`studio/docs/media.md`); `tests/studio-public-tree.test.ts` enforces it. Run `npm --prefix studio test` and `npm --prefix studio run check` after studio changes.

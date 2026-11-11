@@ -37,7 +37,7 @@ const bySlug = (slug: string): Skill => {
 
 const withPoster = bySlug("growkaz-stickman");
 const { coverFor } = require("../lib/media-covers") as typeof import("../lib/media-covers");
-const noMedia = bySlug("thai-jk-voice");
+const noMedia = bySlug("thai-narrator");
 
 const tags = (html: string, name: string) =>
   html.match(new RegExp(`<${name}\\b[^>]*>`, "g")) || [];
@@ -169,7 +169,7 @@ test("no-media card is honest: no artwork, real requirements, same names", () =>
 
   const preview = tags(html, "button").find((b) => /card-preview/.test(b)) ?? "";
   assert.match(attr(preview, "class") ?? "", /without-media/);
-  assert.equal(attr(preview, "aria-label"), "ดูผลงาน Thai Voice");
+  assert.equal(attr(preview, "aria-label"), "ดูผลงาน Thai Calm Narrator");
   const inner =
     html.match(/<button\b[^>]*card-preview[^>]*>([\s\S]*?)<\/button>/)?.[1] ??
     "";
@@ -179,7 +179,7 @@ test("no-media card is honest: no artwork, real requirements, same names", () =>
   for (const item of noMedia.requirements) assert.ok(html.includes(item), item);
   // No examples → no invented authors.
   assert.doesNotMatch(html, /aria-label="ผู้เขียนโค้ด"/);
-  assert.match(html, /href="\/skills\/thai-jk-voice"/);
+  assert.match(html, /href="\/skills\/thai-narrator"/);
 });
 
 test("captions no-media card names its own workflow", () => {

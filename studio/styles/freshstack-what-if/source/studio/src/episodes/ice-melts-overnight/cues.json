@@ -1,0 +1,173 @@
+[
+  {
+    "line": "l1",
+    "spoken": "ถ้าคืนนี้ น้ำแข็งทุกก้อนบนโลก",
+    "pre": "ถ้าคืนนี้ ",
+    "key": "น้ำแข็งทุกก้อนบนโลก",
+    "post": "",
+    "color": "#f2c35b",
+    "en": "What if all the ice"
+  },
+  {
+    "line": "l1",
+    "spoken": "ละลายหมดในคืนเดียวล่ะ?",
+    "pre": "",
+    "key": "ละลายหมดในคืนเดียว",
+    "post": "ล่ะ?",
+    "color": "#f2c35b",
+    "en": "Melted overnight?"
+  },
+  {
+    "line": "l2",
+    "spoken": "น้ำแข็งในแก้วละลาย",
+    "pre": "",
+    "key": "น้ำแข็งในแก้วละลาย",
+    "post": "",
+    "color": "#87dbd6",
+    "en": "Ice melts in a glass"
+  },
+  {
+    "line": "l2",
+    "spoken": "น้ำแทบไม่ล้น",
+    "pre": "",
+    "key": "น้ำแทบไม่ล้น",
+    "post": "",
+    "color": "#87dbd6",
+    "en": "Barely overflows"
+  },
+  {
+    "line": "l2",
+    "spoken": "น้ำแข็งที่ลอยกลางทะเลขั้วโลกเหนือ ก็คล้ายกัน",
+    "pre": "น้ำแข็งที่",
+    "key": "ลอยกลางทะเลขั้วโลกเหนือ",
+    "post": " ก็คล้ายกัน",
+    "color": "#87dbd6",
+    "en": "Floating ice barely raises the sea"
+  },
+  {
+    "line": "l3",
+    "spoken": "กฎมีข้อเดียว",
+    "pre": "",
+    "key": "กฎมีข้อเดียว",
+    "post": "",
+    "color": "#f2c35b",
+    "en": "One rule"
+  },
+  {
+    "line": "l3",
+    "spoken": "น้ำแข็งบนแผ่นดินทั้งหมด",
+    "pre": "",
+    "key": "น้ำแข็งบนแผ่นดิน",
+    "post": "ทั้งหมด",
+    "color": "#f2c35b",
+    "en": "All land ice"
+  },
+  {
+    "line": "l3",
+    "spoken": "ละลายเสร็จก่อนเช้า",
+    "pre": "ละลายเสร็จ",
+    "key": "ก่อนเช้า",
+    "post": "",
+    "color": "#87dbd6",
+    "en": "Gone by morning"
+  },
+  {
+    "line": "l4",
+    "spoken": "ตัวการคือน้ำแข็งบนแอนตาร์กติกากับกรีนแลนด์",
+    "pre": "ตัวการคือน้ำแข็งบน",
+    "key": "แอนตาร์กติกากับกรีนแลนด์",
+    "post": "",
+    "color": "#f2c35b",
+    "en": "Antarctica + Greenland"
+  },
+  {
+    "line": "l4",
+    "spoken": "ละลายหมด",
+    "pre": "",
+    "key": "ละลายหมด",
+    "post": "",
+    "color": "#87dbd6",
+    "en": "Melted entirely"
+  },
+  {
+    "line": "l4",
+    "spoken": "ทะเลทั่วโลกสูงขึ้นราวหกสิบห้าเมตร",
+    "pre": "ทะเลทั่วโลกสูงขึ้น",
+    "key": "ราวหกสิบห้าเมตร",
+    "post": "",
+    "color": "#ff8271",
+    "en": "~65 m of global sea-level rise"
+  },
+  {
+    "line": "l5",
+    "spoken": "ส่วนกรุงเทพ สูงจากระดับน้ำทะเล",
+    "pre": "ส่วนกรุงเทพ ",
+    "key": "สูงจากระดับน้ำทะเล",
+    "post": "",
+    "color": "#87dbd6",
+    "en": "Bangkok vs the sea"
+  },
+  {
+    "line": "l5",
+    "spoken": "แค่ราวหนึ่งเมตร",
+    "pre": "แค่",
+    "key": "ราวหนึ่งเมตร",
+    "post": "",
+    "color": "#ff8271",
+    "en": "~1 m above sea level"
+  },
+  {
+    "line": "l5",
+    "spoken": "น้ำจะท่วมสูงกว่าตึกยี่สิบชั้น",
+    "pre": "น้ำจะท่วม",
+    "key": "สูงกว่าตึกยี่สิบชั้น",
+    "post": "",
+    "color": "#ff8271",
+    "en": "Taller than a 20-storey tower"
+  },
+  {
+    "line": "l6",
+    "spoken": "ข่าวดีคือ ในโลกจริง",
+    "pre": "",
+    "key": "ข่าวดีคือ",
+    "post": " ในโลกจริง",
+    "color": "#87dbd6",
+    "en": "Good news"
+  },
+  {
+    "line": "l6",
+    "spoken": "มันใช้เวลาหลายร้อยถึงหลายพันปี",
+    "pre": "มันใช้เวลา",
+    "key": "หลายร้อยถึงหลายพันปี",
+    "post": "",
+    "color": "#87dbd6",
+    "en": "Centuries to millennia"
+  },
+  {
+    "line": "l6",
+    "spoken": "ไม่ใช่คืนเดียว",
+    "pre": "",
+    "key": "ไม่ใช่คืนเดียว",
+    "post": "",
+    "color": "#ff8271",
+    "en": "Not overnight"
+  },
+  {
+    "line": "l7",
+    "spoken": "แล้วบ้านคุณล่ะ",
+    "pre": "แล้ว",
+    "key": "บ้านคุณ",
+    "post": "ล่ะ",
+    "color": "#ff8271",
+    "en": "And your home?"
+  },
+  {
+    "line": "l7",
+    "spoken": "สูงจากระดับน้ำทะเลกี่เมตร?",
+    "pre": "สูงจากระดับน้ำทะเล",
+    "key": "กี่เมตร",
+    "post": "?",
+    "color": "#ff8271",
+    "en": "How high above sea level?"
+  }
+]

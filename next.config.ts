@@ -1,6 +1,7 @@
 import type { NextConfig } from "next";
 import { loadContent } from "./lib/content";
 import { contentRedirects } from "./lib/seo";
+import { RENAMED_SKILLS } from "./lib/catalog";
 import { IMAGE_MIN_CACHE_TTL, publicCacheRules } from "./lib/cache-headers";
 
 const config: NextConfig = {
@@ -34,7 +35,14 @@ const config: NextConfig = {
   },
   // Renamed slugs and /go short links: real 301s, derived from content frontmatter.
   async redirects() {
-    return contentRedirects(loadContent());
+    return [
+      ...contentRedirects(loadContent()),
+      ...Object.entries(RENAMED_SKILLS).map(([old, slug]) => ({
+        source: `/skills/${old}`,
+        destination: `/skills/${slug}`,
+        statusCode: 301 as const,
+      })),
+    ];
   },
 };
 export default config;

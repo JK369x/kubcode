@@ -247,7 +247,7 @@ test("licensed-only never mutates raw data and keeps ids, order and attribution"
       assert.match(example.label, /รอยืนยันสิทธิ์/);
     });
   });
-  assert.ok(!pub.hasWithheldMedia(published.find((s) => s.slug === "thai-jk-voice")!));
+  assert.ok(!pub.hasWithheldMedia(published.find((s) => s.slug === "thai-narrator")!));
   assert.ok(pub.hasWithheldMedia(published.find((s) => s.slug === "growkaz-stickman")!));
 });
 
@@ -286,9 +286,9 @@ test("no-examples skills keep their own honest no-media copy", () => {
         onSelectSkill: () => {},
       }),
     );
-  assert.match(card("thai-jk-voice"), /เวิร์กโฟลว์เสียงไทย/);
+  assert.match(card("thai-narrator"), /เวิร์กโฟลว์เสียงไทย/);
   assert.match(card("captions-overlay"), /เวิร์กโฟลว์ซับไตเติล/);
-  for (const slug of ["thai-jk-voice", "captions-overlay"]) {
+  for (const slug of ["thai-narrator", "captions-overlay"]) {
     assert.match(card(slug), /ยังไม่มีสื่อพรีวิว/);
     assert.doesNotMatch(card(slug), /รอยืนยันสิทธิ์/);
   }

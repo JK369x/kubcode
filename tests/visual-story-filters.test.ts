@@ -101,7 +101,7 @@ test("style skills carry visual/story; tools carry neither", () => {
   assert.deepEqual(pair("make-short"), ["blender-3d", "paradox-fact"]);
   assert.deepEqual(pair("freshstack-what-if"), ["stick-svg", "what-if"]);
   assert.deepEqual(pair("low-poly-urban"), ["low-poly", "behind-the-city"]);
-  for (const slug of ["elephant-goldfish-model", "thai-jk-voice", "captions-overlay", "podcast-tool-short"])
+  for (const slug of ["elephant-goldfish-model", "thai-narrator", "captions-overlay", "podcast-tool-short"])
     assert.deepEqual(pair(slug), [undefined, undefined], slug);
   for (const s of rawSkills) {
     if (s.visual) assert.ok(VISUAL_STYLES[s.visual], s.slug);
@@ -138,7 +138,7 @@ test("the two rows combine (AND), and with the use case", () => {
 
 test("tools stay reachable through their use case only", () => {
   assert.deepEqual(slugs({ useCase: "code" }), ["elephant-goldfish-model"]);
-  assert.deepEqual(slugs({ useCase: "voice-captions" }), ["captions-overlay", "thai-jk-voice"]);
+  assert.deepEqual(slugs({ useCase: "voice-captions" }), ["captions-overlay", "thai-narrator"]);
   assert.deepEqual(slugs({ useCase: "podcast" }), ["podcast-tool-short"]);
   assert.equal(slugs({}).length, skills.length);
 });

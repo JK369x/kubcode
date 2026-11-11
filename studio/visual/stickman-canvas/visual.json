@@ -1,0 +1,25 @@
+{
+  "schema": "jk-visual-style/1",
+  "id": "stickman-canvas",
+  "name_th": "สติกแมน Canvas",
+  "name_en": "Stickman Canvas",
+  "axis": "visual_style",
+  "direction": "VISUAL.md",
+  "decided": "2026-11-10",
+  "note": "Pointer only: the kit stays under styles/; nothing is moved or copied. Pair with any formats/<story_format>.",
+  "kit": [
+    "media/archive/reference-kits/growkaz-stickman"
+  ],
+  "kit_contained": true,
+  "renderer": "Canvas 2D + Playwright/Chromium + FFmpeg",
+  "status": "draft",
+  "provenance": "media/archive/reference-kits/growkaz-stickman/PROVENANCE.json",
+  "license": "No explicit licence found; private study only, resolve before publication",
+  "credit": "GrowKaz Stickman Studio plugin source",
+  "legacy_series": [
+    "growkaz-stickman"
+  ],
+  "first_format": "money-tip",
+  "kit_role": "reference",
+  "reference_note": "media/archive/reference-kits/growkaz-stickman is an unlicensed upstream kit kept as a private reference (owner 2026-11-11). Build this look with our own code and characters; do not copy kit code or assets into shipped work or kubcode packages."
+}

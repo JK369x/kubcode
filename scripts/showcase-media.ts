@@ -6,8 +6,9 @@
  *
  *   npm run showcase
  *
- * Sources are never written. Roots can be moved with SHOWCASE_STUDIO_ROOT
- * and SHOWCASE_STYLES_ROOT.
+ * Sources are never written. Roots can be moved with SHOWCASE_STUDIO_ROOT,
+ * SHOWCASE_STYLES_ROOT (default studio/styles) and STUDIO_MEDIA_ROOT (default
+ * media/; style example videos are read from media/studio-examples/).
  */
 import { execFileSync } from "node:child_process";
 import { createHash } from "node:crypto";
@@ -20,8 +21,10 @@ import { classifySource } from "../lib/taxonomy";
 
 const HOME = os.homedir();
 const STUDIO = process.env.SHOWCASE_STUDIO_ROOT ?? path.join(HOME, "Studio/clips");
-const STYLES = process.env.SHOWCASE_STYLES_ROOT ?? path.join(HOME, "work/ai-video/jk-animation-studio/styles");
 const REPO = path.join(__dirname, "..");
+const STYLES = process.env.SHOWCASE_STYLES_ROOT ?? path.join(REPO, "studio/styles");
+// Example MP4s are not tracked in Git; they sit in the ignored media root.
+const STYLE_MEDIA = path.join(process.env.STUDIO_MEDIA_ROOT ?? path.join(REPO, "media"), "studio-examples");
 const OUT = path.join(REPO, "public/showcase");
 const PREVIEW_SECONDS = 3.5;
 
@@ -87,7 +90,8 @@ function readClip(entry: ShowcaseAllowEntry): Clip {
     };
   }
   if (kind === "style") {
-    const src = path.join(STYLES, ref);
+    const inStyles = path.join(STYLES, ref);
+    const src = fs.existsSync(inStyles) ? inStyles : path.join(STYLE_MEDIA, ref);
     if (!entry.title || !entry.madeWith) throw new Error(`${entry.id}: style sources need title and madeWith`);
     return {
       src,

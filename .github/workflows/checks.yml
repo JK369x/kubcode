@@ -21,6 +21,10 @@ jobs:
       - run: npm ci --ignore-scripts
       - run: npm test
       - run: npm run typecheck
+      # Studio engine (studio/): node:test + manifest check, no install and no
+      # local media needed (media-dependent tests skip; docs/adr/0005).
+      - run: npm --prefix studio test
+      - run: npm --prefix studio run check
       # Source-only build: private preview binaries are intentionally not in Git.
       - run: npm run build
         env:

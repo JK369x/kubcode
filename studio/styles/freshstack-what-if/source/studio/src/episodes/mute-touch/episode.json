@@ -1,0 +1,449 @@
+{
+ "id": "MuteTouch",
+ "slug": "mute-touch",
+ "topic": "ถ้าคุณปิดเสียงสิ่งที่แตะได้ แต่ทุกเสียงจะย้อนกลับทันทีที่คุณหัวเราะ?",
+ "title": [
+  "WHAT IF YOU COULD",
+  "SILENCE UNTIL LAUGHTER?"
+ ],
+ "accent": "LAUGHTER",
+ "render": {
+  "width": 1920,
+  "height": 1080,
+  "fps": 30
+ },
+ "power": {
+  "word": "เงียบ",
+  "rule": "Touch an object and its sound goes silent. ALL stored sounds return together the moment the protagonist laughs. (Episode rule, not real physics.)",
+  "look": "A pale ripple ring wraps the touched object and its hanging sound freezes inside it; on the protagonist's laugh, every stored ring releases at once in one rising flash; a small pill label reading 'เงียบ' marks each touch."
+ },
+ "script": [
+  {
+   "beat": "1 cold open, demo 1 (small and personal)",
+   "text": "แตะนาฬิกาปลุก เงียบ"
+  },
+  {
+   "beat": "1 cold open, demo 2 (useful)",
+   "text": "แตะเครื่องเจาะ เงียบ"
+  },
+  {
+   "beat": "1 cold open, demo 3 (the stakes rise: a stored horn)",
+   "text": "แตะแตรรถตรงหน้า เงียบ แต่รถก็ยังวิ่งมา"
+  },
+  {
+   "beat": "2 the premise (title card) + the sole fictional rule",
+   "text": "ถ้าปิดเสียงของสิ่งที่แตะได้ แต่ทุกเสียงย้อนกลับทันทีที่คุณหัวเราะ"
+  },
+  {
+   "beat": "4 the turn: one independent real number, then the consequence",
+   "text": "ในอากาศราว 20 องศาเซลเซียส เสียงวิ่งราว 343 เมตรต่อวินาที อันนี้ของจริง"
+  },
+  {
+   "beat": "5-7 folded into a question",
+   "text": "แล้วคุณจะกลั้นขำได้อีกนานแค่ไหน?"
+  }
+ ],
+ "science": [
+  {
+   "claim": "Sound in air at approximately 20C travels at approximately 343 m/s",
+   "working": "Independent real fact, not a justification for the fantasy sound-storage rule. NPL primary PDF verified by the parent (see evidence/science-preflight.json): calculation 331.3 + 0.606 * 20 gives 343.42 m/s, rounded to 343 m/s for air at approximately 20C. Speed varies with conditions. The narration says 'approximately' ('rao').",
+   "source": "NPL primary PDF, verified by parent; evidence file: evidence/science-preflight.json",
+   "verification_status": "verified_by_parent"
+  },
+  {
+   "claim": "Touching an object silences it, and ALL stored sounds return together immediately when the protagonist laughs",
+   "working": "Sole fictional rule of this episode (fantasy sound storage). Not physics, no scientific basis; must never be drawn on the science schematic as fact. The narrative consequence ('a stored horn does not wait for the protagonist to choose the moment') follows this rule only.",
+   "source": "None - fictional premise of the episode",
+   "verification_status": "premise_not_a_fact - never claim as real"
+  }
+ ],
+ "translation_en": "Tap your alarm. Quiet. Tap the jackhammer. Quiet. Tap the truck horn. Quiet. The truck keeps coming. What if one tap silenced anything, and all stored sounds return when you laugh? In air at 20 degrees Celsius, sound moves at about 343 metres a second. That's real. How long can you hold a laugh?",
+ "voice": {
+  "model": "eleven_v3",
+  "language_code": "th",
+  "preserve_pauses": true,
+  "settings": {
+   "stability": 0.5
+  },
+  "note": "Voice is resolved by name from ELEVENLABS_VOICE_NAME (kubcode). Proposed settings pending parent confirmation of official settings. Parent confirmed eleven_v3 supports Thai. Submission helper must be checked by the parent to honor model eleven_v3 and these settings; helpers were not modified."
+ },
+ "cast": [
+  "pipHood",
+  "mo"
+ ],
+ "notes_for_review": "YouTube collision: the parent found the generic premise 'What If You Could Silence Any Sound?' plus many mute-people/mute-things episodes; the generic premise is rejected. The parent chose the laughter-return twist as the differentiator, but it is NOT proven globally unique. The old touch-again restoration rule is fully superseded and removed everywhere. Only objects are muted; muting a horn does not silence the street; no person is ever muted. Step 1 only: no shots, edit, fx or sound events yet. No audio generated, no oral listening has occurred, actual duration unmeasured (target 15-25 s only). Parent submits all paid requests after QC.",
+ "narration_edit": {
+  "kind": "whole_clause_edit_from_one_paid_take",
+  "creative_source": "Actual OpenCode GLM narration, original order; parent omitted optional clauses only",
+  "source_episode": "out/mute-touch/episode-voice-source.json",
+  "original_duration_seconds": 29.702290249433105,
+  "edited_duration_seconds": 23.009274376417235,
+  "source_characters": 317,
+  "edited_characters": 250,
+  "cuts": [
+   {
+    "a": 120547,
+    "b": 195209,
+    "start": 2.7334920634920636,
+    "end": 4.426507936507937,
+    "phrases": [
+     "หลับต่อได้เลย"
+    ]
+   },
+   {
+    "a": 290178,
+    "b": 368081,
+    "start": 6.58,
+    "end": 8.346507936507937,
+    "phrases": [
+     "อ่านหนังสือต่อได้"
+    ]
+   },
+   {
+    "a": 1075158,
+    "b": 1217755,
+    "start": 24.38,
+    "end": 27.613492063492064,
+    "phrases": [
+     "แตรที่เก็บไว้",
+     "ไม่รอให้คุณเลือกเวลา"
+    ]
+   }
+  ],
+  "sample_rate": 44100,
+  "time_stretch": false,
+  "pitch_change": false,
+  "word_truncation": false,
+  "join_fade_seconds": 0.004,
+  "provider_alignment": "out/mute-touch/alignment_raw.json (unchanged)",
+  "remapped_units": "phrase (not linguistic words)",
+  "paid_voice_takes": 1,
+  "confirmed_voice_credits": 317,
+  "receipt_id": "JdTHFdISeYSssYJrkJEE",
+  "instruction": "Do NOT rerun voice.py on edited script. Reuse the locked take and conformed voice.wav; no additional paid take is authorized."
+ },
+ "tail": 0.9,
+ "shots": [
+  {
+   "id": "S1",
+   "size": "wide",
+   "set": "bedroom 04:12",
+   "key": 34,
+   "note": "asleep → wake flinch → windup → tap lands t35 after the phrase, foreground mitten pinned on the alarm through the cut"
+  },
+  {
+   "id": "S2",
+   "size": "macro insert",
+   "set": "bedroom (nightstand top)",
+   "key": 40,
+   "note": "the tapped alarm, dead; Pip's sleeve withdraws from the collapsed rings"
+  },
+  {
+   "id": "S3",
+   "size": "wide",
+   "set": "street dusk (episode-local)",
+   "key": 42,
+   "note": "drill rides on the road at feet level; worker's two sleeve-hands grip the bar ends; Pip closes right up and lands the slap at t40"
+  },
+  {
+   "id": "S4",
+   "size": "macro low",
+   "set": "street (asphalt)",
+   "key": 19,
+   "note": "macro: same drill prop, hand still on the handle from the cut (press-recoil then holds); rings dry while the bit keeps chewing"
+  },
+  {
+   "id": "S5",
+   "size": "wide low angle",
+   "set": "street",
+   "key": 55,
+   "note": "the truck closes blaring from its own brass trumpet; Pip sprints, winds up — the tap lands at t57 after the phrase, held on the horn; truck still creeping"
+  },
+  {
+   "id": "S6",
+   "size": "medium",
+   "set": "street",
+   "key": 74,
+   "note": "the silenced horn but the truck rolls silently past; Pip recoils"
+  },
+  {
+   "id": "S7",
+   "size": "title, wide",
+   "set": "rooftop",
+   "key": 58,
+   "note": "WHAT IF YOU COULD / SILENCE UNTIL LAUGHTER? over the dusk city"
+  },
+  {
+   "id": "S8",
+   "size": "wide",
+   "set": "street",
+   "key": 88,
+   "note": "the rule demonstrated: a real open-mouth laugh at t52 releases ALL stored sounds at once — they expand and fade FOREVER, no return-to-storage; caught, he clamps his face"
+  },
+  {
+   "id": "S9",
+   "size": "schematic",
+   "set": "schematic",
+   "key": 58,
+   "note": "sound in air at ~20°C spreads as expanding rings over a ruler"
+  },
+  {
+   "id": "S10",
+   "size": "schematic",
+   "set": "schematic",
+   "key": 90,
+   "note": "~343 m/s counts up; ring dots march along the tick column"
+  },
+  {
+   "id": "S11",
+   "size": "medium",
+   "set": "street",
+   "key": 30,
+   "note": "settled factual schematic from frame 0: ~343 m/s · ~20 °C ในอากาศ · ของจริง (no rings, no character, no look)"
+  },
+  {
+   "id": "S12",
+   "size": "close-up",
+   "set": "street",
+   "key": 88,
+   "note": "cheeks-in cliffhanger: sweat runs, rings crowd in and freeze at the very edge of his mouth; unresolved"
+  }
+ ],
+ "edit": [
+  {
+   "shot": "S1",
+   "at": "s:0",
+   "look": "mute"
+  },
+  {
+   "shot": "S2",
+   "at": "s:1.333",
+   "look": "mute"
+  },
+  {
+   "shot": "S3",
+   "at": "s:2.76",
+   "look": "mute"
+  },
+  {
+   "shot": "S4",
+   "at": "s:4.2",
+   "look": "mute"
+  },
+  {
+   "shot": "S5",
+   "at": "s:4.913",
+   "look": "mute"
+  },
+  {
+   "shot": "S6",
+   "at": "s:6.86",
+   "look": "mute"
+  },
+  {
+   "shot": "S7",
+   "at": "s:9.54"
+  },
+  {
+   "shot": "S8",
+   "at": "s:11.633"
+  },
+  {
+   "shot": "S9",
+   "at": "s:14.673"
+  },
+  {
+   "shot": "S10",
+   "at": "s:16.7"
+  },
+  {
+   "shot": "S11",
+   "at": "s:19.86"
+  },
+  {
+   "shot": "S12",
+   "at": "s:20.934",
+   "look": "mute"
+  }
+ ],
+ "fx": [
+  {
+   "at": "S1+35",
+   "kind": "flash",
+   "color": "#FFF3DC",
+   "o": 0.35
+  },
+  {
+   "at": "S3+40",
+   "kind": "flash",
+   "color": "#FFF3DC",
+   "o": 0.3
+  },
+  {
+   "at": "S5+57",
+   "kind": "flash",
+   "color": "#FFF3DC",
+   "o": 0.4
+  },
+  {
+   "at": "S8+52",
+   "kind": "flash",
+   "color": "#FFE7B3",
+   "o": 0.55
+  },
+  {
+   "at": "S8+52",
+   "kind": "shake",
+   "len": 8,
+   "amp": 6
+  },
+  {
+   "at": "S12+50",
+   "kind": "shake",
+   "len": 10,
+   "amp": 7
+  }
+ ],
+ "sound": {
+  "clips": {
+   "room_tone": [
+    "quiet indoor room tone in the evening, faint distant city hum, no voices",
+    12.5
+   ],
+   "title_boom": [
+    "a cinematic whoosh rising into a deep boom impact",
+    1.6
+   ],
+   "drone_hit": [
+    "a dark ominous low drone hit, deep cinematic horror sting",
+    2.6
+   ],
+   "mute_hush": [
+    "a soft airy shush as a single object's sound is dampened away, cartoon, short",
+    0.8
+   ],
+   "alarm_freeze": [
+    "an alarm bell strike frozen to abrupt silence mid-ring, short",
+    0.7
+   ],
+   "drill_freeze": [
+    "a jackhammer abruptly swallowed into quiet, window-muffled, short",
+    0.7
+   ],
+   "horn_freeze": [
+    "a truck horn silenced mid-blast while the engine rumble keeps running, short",
+    0.7
+   ],
+   "page_turn": [
+    "a single paperback page turn, close, short",
+    0.5
+   ],
+   "release_flood": [
+    "many stored sounds rushing back together in one rising overlapping comedic wave, cartoon",
+    2.0
+   ],
+   "stifle_breath": [
+    "tight nose-held breath trying to hold back a laugh, cartoon, short",
+    0.6
+   ],
+   "ticker_swell": [
+    "low swelling menace under a flickering muted horn, cartoon dread",
+    1.2
+   ],
+   "music_bed": [
+    "curious cartoon comedy underscore with a pent-up secretly-plotting feel, pizzicato strings, glockenspiel, soft bass, no vocals",
+    25.0
+   ]
+  },
+  "events": [
+   [
+    "S1+0",
+    "room_tone",
+    0.1,
+    "onset",
+    "S3"
+   ],
+   [
+    "S1+35",
+    "alarm_freeze",
+    0.55,
+    "onset"
+   ],
+   [
+    "S2+2",
+    "mute_hush",
+    0.5,
+    "onset"
+   ],
+   [
+    "S3+40",
+    "drill_freeze",
+    0.55,
+    "onset"
+   ],
+   [
+    "S4+2",
+    "mute_hush",
+    0.45,
+    "onset"
+   ],
+   [
+    "S5+57",
+    "horn_freeze",
+    0.6,
+    "onset"
+   ],
+   [
+    "S6+2",
+    "ticker_swell",
+    0.5,
+    "onset",
+    "S8"
+   ],
+   [
+    "S7",
+    "title_boom",
+    0.35,
+    "peak"
+   ],
+   [
+    "S8+52",
+    "release_flood",
+    0.55,
+    "onset",
+    "S9"
+   ],
+   [
+    "S9",
+    "drone_hit",
+    0.3,
+    "peak"
+   ]
+  ],
+  "repeats": [
+   {
+    "at": "S12+18",
+    "clip": "stifle_breath",
+    "n": 3,
+    "every": 22,
+    "gain": [
+     0.35,
+     0.5
+    ],
+    "pitch": [
+     0.9,
+     1.1
+    ],
+    "note": "the suppressed breath fights again at t40, t62 in the cheek-clamp"
+   }
+  ],
+  "music": {
+   "clip": "music_bed",
+   "until": "S9"
+  },
+  "levels": {
+   "sfx_lu": -18,
+   "music_lu": -20
+  }
+ }
+}

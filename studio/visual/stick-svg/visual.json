@@ -1,0 +1,24 @@
+{
+  "schema": "jk-visual-style/1",
+  "id": "stick-svg",
+  "name_th": "ตัวละครเส้น SVG",
+  "name_en": "Stick SVG",
+  "axis": "visual_style",
+  "direction": "VISUAL.md",
+  "decided": "2026-11-10",
+  "note": "Pointer only: the kit stays under styles/; nothing is moved or copied. Pair with any formats/<story_format>.",
+  "kit": [
+    "styles/freshstack-what-if"
+  ],
+  "kit_contained": true,
+  "renderer": "React SVG / Remotion 4.0.530 + FFmpeg",
+  "status": "draft",
+  "provenance": "styles/freshstack-what-if/PROVENANCE.json",
+  "license": "MIT (kit/LICENSE); Remotion and fonts have separate terms",
+  "credit": "FreshStack / kelano86 what-if-animation @8092fb5e",
+  "legacy_series": [
+    "freshstack-what-if",
+    "what-if-studio"
+  ],
+  "first_format": "what-if"
+}

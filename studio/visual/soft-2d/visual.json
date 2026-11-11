@@ -1,0 +1,25 @@
+{
+  "schema": "jk-visual-style/1",
+  "id": "soft-2d",
+  "name_th": "2D นุ่ม ตัวละครหัวกลม",
+  "name_en": "Soft 2D",
+  "axis": "visual_style",
+  "direction": "VISUAL.md",
+  "decided": "2026-11-10",
+  "note": "Pointer only: the kit stays under styles/; nothing is moved or copied. Pair with any formats/<story_format>.",
+  "kit": [
+    "styles/jk-soft-story",
+    "styles/jk-soft-story-motion-v2"
+  ],
+  "kit_contained": true,
+  "renderer": "HyperFrames",
+  "status": "selected (still v2) / draft (motion-v2)",
+  "provenance": "styles/jk-soft-story/STYLE.md",
+  "license": "Own art (JK); reference screenshots private study only",
+  "credit": "JK Animation Studio",
+  "legacy_series": [
+    "jk-soft-story",
+    "jk-soft-story-motion-v2"
+  ],
+  "first_format": "life-story"
+}

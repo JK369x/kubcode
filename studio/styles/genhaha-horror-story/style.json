@@ -1,0 +1,12 @@
+{
+  "id": "genhaha-horror-story",
+  "name": "Genhaha Horror Story",
+  "status": "draft",
+  "version": "0.1",
+  "approvalScope": "เพิ่มจากชุดต้นฉบับในเครื่อง · รอตรวจภาพและ motion",
+  "direction": "STYLE.md",
+  "preview": null,
+  "source": null,
+  "components": [],
+  "tags": ["horror", "svg", "portrait"]
+}

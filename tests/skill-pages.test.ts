@@ -34,7 +34,7 @@ test("showcaseForSkill: the clips of every style that names the skill, led by it
   );
   assert.equal(what.cover.cover, true);
   assert.equal(what.detail, SHOWCASE_VISUALS["stick-svg"]!.detail);
-  assert.equal(showcaseForSkill("thai-jk-voice", CLIPS), null);
+  assert.equal(showcaseForSkill("thai-narrator", CLIPS), null);
   assert.equal(showcaseForSkill("no-such-skill", CLIPS), null);
 });
 
@@ -83,7 +83,7 @@ test("a packaged skill page never says it has no download package", async () => 
 });
 
 test("a skill without clips keeps its existing preview and gets the same plain sections", async () => {
-  const html = await renderSkillPage("thai-jk-voice");
+  const html = await renderSkillPage("thai-narrator");
   assert.doesNotMatch(html, /คลิปที่ทำด้วยสกิลนี้/);
   assert.match(html, /<h2[^>]*>ใช้ยังไง<\/h2>/);
 });
