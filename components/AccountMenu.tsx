@@ -49,7 +49,7 @@ export function AccountMenuView({
         {image ? (
           // Plain <img>: provider host only, no proxy, no referrer sent.
           // eslint-disable-next-line @next/next/no-img-element
-          <img src={image} alt="" width={32} height={32} referrerPolicy="no-referrer" />
+          <img src={image} alt="" width={32} height={32} referrerPolicy="no-referrer" decoding="async" />
         ) : (
           <span aria-hidden="true">{avatarInitial(user.name)}</span>
         )}

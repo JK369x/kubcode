@@ -26,7 +26,8 @@ test("cover derivatives belong to the exact genuine source video, without changi
 
 test("first-row cards can request eager posters instead of blank lazy captures", () => {
   const html=renderToStaticMarkup(createElement(MediaSkillCard,{skill:skills[0],onSelectSkill:()=>{},eager:true}));
-  assert.match(html,/<img[^>]+class="poster"[^>]+loading="eager"/);
+  const poster=html.match(/<img\b(?=[^>]*class="poster")[^>]*>/)?.[0]??"";
+  assert.match(poster,/loading="eager"/);
 });
 
 test("detail download mounts the same truly disabled neutral control, not a purple fake action", () => {

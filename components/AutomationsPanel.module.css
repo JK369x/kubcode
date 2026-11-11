@@ -171,12 +171,22 @@
   margin: 0;
   accent-color: var(--purple);
 }
-.thumb {
+/* Fixed 4:5 box: the shimmer shows here until the thumbnail loads. */
+.thumbBox {
+  position: relative;
+  display: block;
   width: 100%;
   aspect-ratio: 4 / 5;
+  overflow: hidden;
   border-radius: 10px;
-  object-fit: cover;
   background: var(--surface);
+}
+.thumb {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
 }
 .caption {
   font-size: 14px;

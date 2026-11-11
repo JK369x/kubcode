@@ -54,4 +54,4 @@ STYLE: friendly hand-drawn cartoon, flat colour with slightly uneven dark-brown 
 
 Keep `cover.json` next to the images: it is the provenance record.
 
-**Replacing a cover:** give the new files new names (e.g. `cover-v2.jpg`, `og-v2.jpg`) and update the frontmatter. The image optimiser, CDN and browsers cache by URL, so an image replaced under the same name can keep showing the old one.
+**Replacing a cover:** give the new files new names (e.g. `cover-v2.jpg`, `og-v2.jpg`) and update the frontmatter. The image optimiser, CDN and browsers cache by URL, so an image replaced under the same name can keep showing the old one. Cover images are served with `Cache-Control: public, max-age=31536000, immutable` (see [images.md](images.md)), so this is a hard rule: a browser that has the old file will never ask again.

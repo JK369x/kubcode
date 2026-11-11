@@ -6,6 +6,7 @@ import { MAX_DM_CHARS, MAX_PUBLIC_REPLY_CHARS, dmHasLink, type MatchMode } from 
 import type { AutomationChannel, RuleView } from "@/lib/automations/store";
 import type { RecentOutcome } from "@/lib/automations/view";
 import type { PickerPost } from "@/lib/automations/posts";
+import { SkeletonImg } from "./SkeletonImage";
 import keys from "./KeysSettings.module.css";
 import styles from "./AutomationsPanel.module.css";
 
@@ -97,7 +98,7 @@ function PostSummary({ post, id, tiktok }: { post: PickerPost | undefined; id: s
   if (!post) return <>{`เฉพาะ${tiktok ? "วิดีโอ" : "โพสต์"} ID ${id}`}</>;
   return (
     <span className={styles.summary}>
-      {post.thumbnailUrl && <img src={post.thumbnailUrl} alt="" referrerPolicy="no-referrer" width={48} height={48} />}
+      {post.thumbnailUrl && <img src={post.thumbnailUrl} alt="" referrerPolicy="no-referrer" width={48} height={48} loading="lazy" decoding="async" />}
       <span>
         {post.caption || `${tiktok ? "วิดีโอ" : "โพสต์"}ที่ไม่มีคำบรรยาย`}
         <span className={styles.postMeta}>
@@ -322,9 +323,18 @@ export function AutomationsPanel({ channel, rules, usage, recent }: Props) {
                   เลือก{noun}ที่ต้องการ กฎของ{noun}เดียวจะถูกใช้ก่อนกฎทุก{noun}
                 </p>
                 {posts.state === "loading" || posts.state === "idle" ? (
-                  <p className={keys.meta} role="status">
-                    กำลังโหลด{noun}ล่าสุดของช่องนี้…
-                  </p>
+                  <div className={styles.posts} role="status" aria-busy="true">
+                    <span className={styles.visuallyHidden}>กำลังโหลด{noun}ล่าสุดของช่องนี้…</span>
+                    {Array.from({ length: 6 }, (_, i) => (
+                      <div key={i} className={styles.post} aria-hidden="true">
+                        <span className={styles.thumbBox}>
+                          <span className="img-skeleton" />
+                        </span>
+                        <span className="skeleton-line" style={{ width: "80%" }} />
+                        <span className="skeleton-line skeleton-line-short" />
+                      </div>
+                    ))}
+                  </div>
                 ) : posts.state === "failed" ? (
                   <p className={keys.meta} role="status">
                     {posts.message}{" "}
@@ -355,7 +365,11 @@ export function AutomationsPanel({ channel, rules, usage, recent }: Props) {
                               }}
                               required={!showManual}
                             />
-                            {p.thumbnailUrl && <img className={styles.thumb} src={p.thumbnailUrl} alt="" referrerPolicy="no-referrer" loading="lazy" />}
+                            {p.thumbnailUrl && (
+                              <span className={styles.thumbBox}>
+                                <SkeletonImg className={styles.thumb} src={p.thumbnailUrl} alt="" referrerPolicy="no-referrer" width={150} height={188} />
+                              </span>
+                            )}
                             <span className={p.thumbnailUrl ? styles.caption : `${styles.caption} ${styles.captionOnly}`}>
                               {p.caption || `${noun}ที่ไม่มีคำบรรยาย`}
                             </span>

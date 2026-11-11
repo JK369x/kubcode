@@ -4,6 +4,7 @@ import { ArrowUpRight } from "lucide-react";
 import type { ShowcaseItem, SkillShowcase } from "@/lib/showcase";
 import { creditsOf } from "./VisualShelf";
 import { playPreview, stopPreview } from "./hoverPreview";
+import { SkeletonImage } from "./SkeletonImage";
 import styles from "./SkillClips.module.css";
 
 const PLATFORM = { youtube: "YouTube", instagram: "Instagram" } as const;
@@ -18,17 +19,17 @@ const hover = {
   },
 };
 
-function Media({ clip, eager }: { clip: ShowcaseItem; eager: boolean }) {
+function Media({ clip, eager, sizes, high = false }: { clip: ShowcaseItem; eager: boolean; sizes: string; high?: boolean }) {
   return (
     <span className={styles.media}>
-      <img
+      <SkeletonImage
         className={styles.poster}
         src={clip.poster.src}
         alt={clip.label}
-        width={clip.poster.width}
-        height={clip.poster.height}
+        fill
+        sizes={sizes}
         loading={eager ? "eager" : "lazy"}
-        decoding="async"
+        fetchPriority={high ? "high" : undefined}
       />
       {clip.preview && (
         <video
@@ -62,7 +63,7 @@ export function SkillCover({ showcase }: { showcase: SkillShowcase }) {
   const { cover } = showcase;
   return (
     <figure className={styles.cover} {...hover}>
-      <Media clip={cover} eager />
+      <Media clip={cover} eager high sizes="(max-width: 719px) 100vw, 360px" />
       <figcaption className={styles.caption}>
         <span>ตัวอย่าง: {cover.label}</span>
         <PostLink clip={cover} label="ดูคลิปเต็มบน" />
@@ -87,7 +88,7 @@ export function SkillClipGrid({ showcase }: { showcase: SkillShowcase }) {
           <ul className={styles.grid}>
             {others.map((clip, i) => (
               <li key={clip.id} className={styles.item} {...hover}>
-                <Media clip={clip} eager={i < 2} />
+                <Media clip={clip} eager={i < 2} sizes="(max-width: 719px) 33vw, 180px" />
                 <p className={styles.label}>{clip.label}</p>
                 <PostLink clip={clip} label="ดูบน" />
               </li>

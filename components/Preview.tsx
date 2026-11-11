@@ -99,6 +99,7 @@ export function Preview({
         <img
           ref={imageRef}
           src={example.poster}
+          decoding="async"
           alt={"ภาพตัวอย่างจริง " + skill.name}
           onLoad={(event) =>
             measure(

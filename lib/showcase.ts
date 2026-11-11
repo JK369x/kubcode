@@ -3,6 +3,7 @@ import { SHOWCASE_ALLOWLIST, SHOWCASE_VISUALS, type ShowcaseCredit, type Showcas
 import type { StoryKey, VisualKey } from "./taxonomy";
 import type { Logo, Tool } from "./content";
 import { SHOWCASE_MANIFEST } from "./showcase-manifest";
+import { versioned } from "./cache-headers";
 
 /** A showcase clip as the homepage renders it. */
 export type ShowcaseItem = {
@@ -44,8 +45,12 @@ export function publishedShowcase(
       story: m.story,
       cover: entry.cover === true,
       aspect: m.aspect,
-      poster: { src: m.poster.src, width: m.poster.width, height: m.poster.height },
-      preview: m.preview && isPublishable(m.preview.src, policy, allowlist) ? { src: m.preview.src } : null,
+      // ?v=<sha>: npm run showcase rewrites these files in place, so the URL
+      // carries the content hash and can be cached for a year (lib/cache-headers.ts).
+      poster: { src: versioned(m.poster.src, m.poster.sha256), width: m.poster.width, height: m.poster.height },
+      preview: m.preview && isPublishable(m.preview.src, policy, allowlist)
+        ? { src: versioned(m.preview.src, m.preview.sha256) }
+        : null,
       link: m.link ? { url: m.link.url, platform: m.link.platform } : null,
       credits: entry.credits ?? [],
       madeBy: entry.madeBy,

@@ -7,11 +7,15 @@ import { downloadPhase } from "@/lib/downloads/view";
 import { visualShelf, type ShelfEntry, type ShowcaseItem, type StyleTool } from "@/lib/showcase";
 import { STORY_FORMATS, VISUAL_STYLES, type StoryKey } from "@/lib/taxonomy";
 import { ToolLogo } from "./ToolLogo";
+import { SkeletonImage } from "./SkeletonImage";
 import { playPreview as play, stopPreview as stop } from "./hoverPreview";
 import { SHOWCASE_AGENTS, SHOWCASE_VISUALS, type ShowcaseCredit, type ShowcaseMadeBy } from "@/lib/showcase-allowlist";
 import styles from "./VisualShelf.module.css";
 
 const PLATFORM = { youtube: "YouTube", instagram: "Instagram" } as const;
+
+/** Rendered poster width (CSS --card-w), for the optimiser's srcset. */
+const SHELF_SIZES = "(max-width: 719px) 42vw, 232px";
 
 /** Widest a desktop card gets (CSS clamp upper bound) plus the gap. */
 const CARD_SPAN = 232 + 20;
@@ -209,6 +213,7 @@ function Card({
   signedIn,
   available,
   eager,
+  first,
   copy,
 }: {
   entry: ShelfEntry;
@@ -216,6 +221,8 @@ function Card({
   signedIn: boolean | undefined;
   available: boolean | undefined;
   eager: boolean;
+  /** The first cards on screen: the page's LCP candidates. */
+  first: boolean;
   copy: boolean;
 }) {
   const { clip, count } = entry;
@@ -234,14 +241,14 @@ function Card({
       }}
     >
       <div className={styles.media}>
-        <img
+        <SkeletonImage
           className={styles.poster}
           src={clip.poster.src}
           alt={clip.label}
-          width={clip.poster.width}
-          height={clip.poster.height}
+          fill
+          sizes={SHELF_SIZES}
           loading={eager ? "eager" : "lazy"}
-          decoding="async"
+          fetchPriority={first ? "high" : undefined}
           draggable={false}
         />
         {clip.preview && (
@@ -318,6 +325,7 @@ export function VisualShelf({
               signedIn={signedIn}
               available={available[SHOWCASE_VISUALS[entry.visual]?.skill ?? ""]}
               eager={i < 6}
+              first={i < 2}
               copy={i >= shelf.length}
             />
           ))}

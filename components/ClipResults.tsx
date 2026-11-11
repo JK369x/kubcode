@@ -5,6 +5,7 @@ import type { ShowcaseItem } from "@/lib/showcase";
 import { SHOWCASE_VISUALS } from "@/lib/showcase-allowlist";
 import { STORY_FORMATS, VISUAL_STYLES } from "@/lib/taxonomy";
 import { playPreview, stopPreview } from "./hoverPreview";
+import { SkeletonImage } from "./SkeletonImage";
 import styles from "./ClipResults.module.css";
 
 const PLATFORM = { youtube: "YouTube", instagram: "Instagram" } as const;
@@ -37,14 +38,13 @@ export function ClipResults({ clips }: { clips: readonly ShowcaseItem[] }) {
           return (
             <li key={clip.id} className={styles.item} data-visual={clip.visual} data-story={clip.story} {...hover}>
               <span className={styles.media}>
-                <img
+                <SkeletonImage
                   className={styles.poster}
                   src={clip.poster.src}
                   alt={clip.label}
-                  width={clip.poster.width}
-                  height={clip.poster.height}
+                  fill
+                  sizes="(max-width: 719px) 50vw, 240px"
                   loading={i < 4 ? "eager" : "lazy"}
-                  decoding="async"
                 />
                 {clip.preview && (
                   <video

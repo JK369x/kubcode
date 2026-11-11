@@ -248,6 +248,7 @@ export function ToolMark({
         height={size}
         alt=""
         aria-hidden="true"
+        loading="lazy"
         decoding="async"
         draggable={false}
         data-tool-mark={key}
