@@ -1,0 +1,164 @@
+---
+slug: deepseek-harness-subscriptions
+title: "DeepSeek Harness บน Mac: รวม Claude กับ Codex ไว้ที่เดียว"
+description: "ติดตั้ง DeepSeek Harness บน Mac แล้วใช้ปลั๊กอินชุมชนเชื่อม Claude กับ ChatGPT/Codex ที่จ่ายอยู่แล้ว ทำได้แค่ไหน ติดตรงไหน ต้องระวังอะไร"
+tags: [ai-agent, setup]
+refs:
+  - tool:claude-code
+  - tool:codex-cli
+  - article:install-with-permissions
+category: tools
+featured: true
+cover:
+  src: /covers/deepseek-harness-subscriptions/cover.jpg
+  og: /covers/deepseek-harness-subscriptions/og.jpg
+  alt: "ผลจริงจากการติดตั้งบน Mac ของเรา: เทอร์มินัลแสดง build ผ่าน 10 จาก 10 ใน 90.37 วินาที และติดตั้งปลั๊กอิน dsh-plugin-subscriptions 0.9.12 ข้าง ๆ เป็นรายการบัญชี Claude กับ ChatGPT (Codex) ที่เชื่อมแล้ว"
+  source: own-screenshot
+updated: 2026-11-11
+go: [dsh]
+sources:
+  - title: "DeepSeek Harness (เว็บไซต์ทางการ)"
+    url: https://deepseek.com/harness/
+  - title: "deepseek-ai/deepseek-harness: Run from source"
+    url: https://github.com/deepseek-ai/deepseek-harness#run-from-source
+  - title: "DeepSeek Harness: Web UI guide"
+    url: https://github.com/deepseek-ai/deepseek-harness/blob/master/docs/user/guide/index.md
+  - title: "V1ki/dsh-plugin-subscriptions (ปลั๊กอินชุมชน, รุ่น 0.9.12)"
+    url: https://github.com/V1ki/dsh-plugin-subscriptions
+  - title: "Official Codex subagent bundle"
+    url: https://github.com/deepseek-ai/deepseek-harness/blob/master/packages/subagent/subagent-codex/README.md
+  - title: "Official Claude Code subagent bundle"
+    url: https://github.com/deepseek-ai/deepseek-harness/blob/master/packages/subagent/subagent-claude-code/README.md
+  - title: "Claude Code: Legal and compliance (Authentication and credential use)"
+    url: https://code.claude.com/docs/en/legal-and-compliance#authentication-and-credential-use
+  - title: "anomalyco/opencode issue #6930 (รายงานบัญชีถูกแบนและปลดแบน)"
+    url: https://github.com/anomalyco/opencode/issues/6930
+sourceNote: "ผลจากการลองบน Mac ของเรา 10–11 พ.ย. 2026 (ติดตั้งจากซอร์ส และลองขั้นตอนแอปเดสก์ท็อปในโปรไฟล์แยก) ฟีเจอร์ที่ยังไม่ได้ลองเขียนตามเอกสารต้นทาง"
+agentInstall:
+  agents: [claude-code, codex-cli]
+  source: https://github.com/V1ki/dsh-plugin-subscriptions
+  prompt: |
+    ช่วยติดตั้งแอป DeepSeek Harness กับปลั๊กอิน https://github.com/V1ki/dsh-plugin-subscriptions บน Mac ฉันไม่ใช่ dev ไม่มี git/Node/Python และไม่ต้องลงเพิ่ม
+    1. ก่อนเริ่ม อธิบายว่าจะติดตั้งอะไร ไว้ที่ไหน และขออนุญาตฉันก่อนรันทุกคำสั่ง
+    2. เช็ก uname -m ต้องเป็น arm64 และ macOS 13 ขึ้นไป ถ้าไม่รองรับ ให้หยุดแล้วบอกฉัน
+    3. ถ้ามี DeepSeek Harness.app อยู่แล้วใน /Applications หรือ ~/Applications ใช้ตัวนั้น (เรียกว่า APP) ถ้าไม่มี ใช้ curl โหลด https://download.deepseek.com/desktop/dsh-latest-macos-arm64.dmg ไว้ใน ~/Downloads แล้ว hdiutil attach คัดลอกแอปไป /Applications แล้ว detach จากนั้นตรวจ APP ด้วย spctl -a -vv ว่าเป็นของ Hangzhou DeepSeek (NAN929V4UM) ไม่ตรงให้หยุด
+    4. open "APP" รอจนมี ~/.dsh/profiles/desktop/package.json แล้วปิดแอปให้สนิทด้วย osascript -e 'quit app "DeepSeek Harness"'
+    5. รัน "APP/Contents/Resources/runtime/cli/bin/dsh" plugin --profile desktop add dsh-plugin-subscriptions@0.9.12 แล้วยืนยันด้วย plugin --profile desktop list
+    6. ห้ามขอ API key รหัสผ่าน หรือโค้ดล็อกอินในแชต
+    7. เสร็จแล้วบอกฉันว่า: เปิดแอป กด Add API Key แล้ว Set up later ไป Settings → Subscriptions กด Log in ของ Claude และ ChatGPT แล้วยืนยันในเบราว์เซอร์ จากนั้น New session เลือกโฟลเดอร์และโมเดล แล้วรอฉัน
+---
+## ทำไมถึงลอง
+
+ตอนนี้เราจ่าย subscription ทั้ง Claude และ ChatGPT อยู่แล้ว แต่ต้องสลับไปมาระหว่างหลายแอป เลยอยากรู้ว่า [DeepSeek Harness](https://deepseek.com/harness/) จะเป็นโต๊ะทำงานกลางที่รวมทั้งสองบัญชีไว้ในหน้าจอเดียวได้ไหม และไม่ต้องใช้โมเดล DeepSeek เป็นตัวหลักตลอดเวลา
+
+สรุปสั้น ๆ ก่อนอ่านต่อ: **ติดตั้ง Harness กับปลั๊กอิน subscription สำเร็จ เชื่อมบัญชี Claude และ ChatGPT/Codex ได้ และเลือก Claude เป็นโมเดลหลักในแชตใหม่ได้** แต่เรายังไม่ได้ทดสอบให้โมเดลทั้งสองตอบงานจริงครบเส้นทางผ่านปลั๊กอินนี้ ตั้งค่าสำเร็จกับใช้งานได้ครบทุกอย่างเป็นคนละเรื่องกัน
+
+## DeepSeek Harness คืออะไร
+
+Harness เป็นโปรแกรมที่รันบน Mac ของเรา แล้วเปิดหน้าควบคุมเป็นเว็บในเครื่อง (`127.0.0.1`) ในหน้านั้นเลือกโฟลเดอร์งาน (workspace) เปิดแชตหลาย session และให้ agent อ่านหรือแก้ไฟล์ รันคำสั่ง แบ่งงานย่อย และวางแผนงานได้ตามสิทธิ์ที่เราตั้งไว้
+
+ข้อที่ควรเข้าใจให้ตรง: **หน้าเว็บอยู่ในเครื่อง แต่ตัวโมเดลไม่ได้รันในเครื่อง** ทุกครั้งที่คุยกับ Claude หรือ Codex คำขอยังถูกส่งไปที่บริการของแต่ละเจ้าเหมือนเดิม ตอนนี้ Harness ยังเป็นรุ่น developer preview ส่วนต่าง ๆ อาจเปลี่ยนได้
+
+## ติดตั้งบน Mac แบบไม่ต้องเป็น dev
+
+กล่อง **ติดตั้งด้วย AI agent ของคุณ** ด้านบนเขียนไว้สำหรับคนที่ไม่เคยใช้ git, Node หรือ Python เลย ใช้ได้กับ Mac ชิป Apple (M1 ขึ้นไป) และ macOS 13 ขึ้นไป สิ่งที่ต้องมีคือ AI agent สักตัว เช่น [Claude Code](/tools/claude-code) หรือ [Codex](/tools/codex-cli) คัดลอก prompt ไปวางในแชต แล้วกดอนุญาตทีละคำสั่ง
+
+agent จะทำสิ่งเหล่านี้ให้:
+
+1. โหลดแอป DeepSeek Harness จาก[หน้าดาวน์โหลดของ DeepSeek](https://deepseek.com/download/) และตรวจว่าเป็นไฟล์ที่ DeepSeek เซ็นจริง
+2. ติดตั้งแอปลงในโฟลเดอร์ Applications
+3. เปิดแอปหนึ่งครั้งเพื่อให้แอปสร้างโฟลเดอร์ตั้งค่า แล้วปิด
+4. เพิ่มปลั๊กอิน dsh-plugin-subscriptions ด้วยคำสั่ง `dsh` ที่มากับแอปเอง จึงไม่ต้องลง Node หรือ git เพิ่ม
+
+**ไม่จำเป็นต้องใช้แบบเว็บที่ติดตั้งจากซอร์ส** แอปเดสก์ท็อปที่โหลดจาก DeepSeek ก็ลงปลั๊กอินเดียวกันและใช้ Claude กับ Codex ได้ ในคลิปเราใช้แบบเว็บเพราะเครื่องนั้นติดตั้งจากซอร์สไว้ก่อนแล้ว ซึ่งเป็นทางของ dev
+
+ถ้าเครื่องมีแอป DeepSeek Harness อยู่แล้ว agent จะใช้ตัวเดิม ไม่โหลดซ้ำ ปลั๊กอินที่เคยลงในแบบเว็บ (`dsh web`) ไม่ได้ติดมาในแอปเดสก์ท็อป ทั้งสองแบบเก็บรายการปลั๊กอินแยกกัน จึงต้องลงในแอปอีกครั้ง
+
+หลังจากนั้นเหลือแค่คลิกเอง:
+
+1. เปิดแอป **DeepSeek Harness** ถ้ายังไม่มีบัญชี DeepSeek ให้กด **Add API Key** แล้วกด **Set up later** (ข้ามได้ ถ้าจะใช้แค่ Claude กับ ChatGPT)
+2. ไปที่ **Settings → Subscriptions** กด **Log in** ของ Claude และ ChatGPT (Codex) แล้วยืนยันในเบราว์เซอร์
+3. กด **New session** เลือกโฟลเดอร์งาน แล้วเลือกโมเดลในเมนูโมเดล
+
+ต้องมีแผน Claude แบบเสียเงิน (Pro หรือ Max) และ/หรือ ChatGPT Plus ขึ้นไป แผนฟรีใช้ไม่ได้
+
+เราลองขั้นตอนนี้บน Mac ของเราเมื่อ 11 พ.ย. 2026 ในโปรไฟล์แยกที่ไม่ปนกับของเดิม: แอปที่โหลดจากลิงก์ทางการผ่านการตรวจลายเซ็นของ Apple (Notarized Developer ID ของ DeepSeek) เปิดครั้งแรกแล้วสร้างโปรไฟล์ได้ คำสั่ง `dsh` ที่มากับแอปเพิ่มปลั๊กอินได้ใน 4 วินาที และเปิดแอปรอบสองแล้วโหลดปลั๊กอินขึ้นมา ส่วนการล็อกอินในโปรไฟล์ทดสอบนี้เราไม่ได้ทำซ้ำ
+
+### ถ้าไม่มี AI agent
+
+ทำเองได้ด้วยมือ: โหลดแอปจาก[หน้าดาวน์โหลด](https://deepseek.com/download/) ลากลง Applications เปิดหนึ่งครั้งแล้วปิดด้วย Cmd+Q จากนั้นเปิดแอป Terminal วางคำสั่งนี้ ถ้าแอปของคุณอยู่ในโฟลเดอร์ Applications ของบัญชีตัวเอง ให้เปลี่ยน `/Applications` เป็น `$HOME/Applications`
+
+```bash title="add-plugin.sh"
+# Run while DeepSeek Harness is fully quit (Cmd+Q). Uses the dsh that ships inside the app.
+"/Applications/DeepSeek Harness.app/Contents/Resources/runtime/cli/bin/dsh" \
+  plugin --profile desktop add dsh-plugin-subscriptions@0.9.12
+```
+
+### ทางสำหรับ dev: ติดตั้งจากซอร์ส
+
+เครื่องที่เราใช้ทำคลิปติดตั้งแบบนี้ ต้องมี git และ Node.js 24.9 ขึ้นไป ตัว Harness ที่ได้คือรุ่น 0.2.2-rc.1
+
+```bash title="install-from-source.sh"
+git clone https://github.com/deepseek-ai/deepseek-harness.git
+cd deepseek-harness
+corepack pnpm install      # Done in 22.5s
+corepack pnpm run build    # run-gates: 10 passed, 0 failed, 0 skipped in 90.37s
+corepack pnpm dsh web      # opens the local web UI at 127.0.0.1:3080
+corepack pnpm dsh plugin --profile web add dsh-plugin-subscriptions@0.9.12
+```
+
+หน้าเว็บเปิดที่ `127.0.0.1:3080` ผูกกับเครื่องเราเท่านั้น ไม่ได้เปิดเป็นเว็บสาธารณะ ลิงก์ที่เปิดตอนเริ่มมีโทเคนเข้าระบบอยู่ อย่าแชร์หรือแปะลงในคลิป ก่อนทำตามให้เปิด [README ล่าสุด](https://github.com/deepseek-ai/deepseek-harness#run-from-source) ด้วย เพราะรุ่น preview อาจเปลี่ยนขั้นตอน
+
+## โมเดลหลักกับผู้ช่วยย่อย ไม่ใช่เรื่องเดียวกัน
+
+จุดที่เราสับสนเองตอนแรก คือ Harness ต่อกับ Claude และ Codex ได้สองแบบ:
+
+- **โมเดลหลัก (model provider):** โมเดลที่เราคุยด้วยในแชตโดยตรง เลือกได้จากเมนูโมเดล เป้าหมายของเราอยู่ตรงนี้ คือใช้บัญชี subscription เป็นโมเดลหลัก
+- **ผู้ช่วยย่อย (native subagent):** โมเดลหลักส่งงานหนึ่งชิ้นไปให้ Codex หรือ [Claude Code](/tools/claude-code) ตัวจริงทำ แล้วเอาผลกลับมา DeepSeek มีชุดทางการให้สำหรับ [Codex](https://github.com/deepseek-ai/deepseek-harness/blob/master/packages/subagent/subagent-codex/README.md) และ [Claude Code](https://github.com/deepseek-ai/deepseek-harness/blob/master/packages/subagent/subagent-claude-code/README.md)
+
+ตอนแรกเราลงชุดผู้ช่วยย่อยก่อน แล้วพบว่ามันไม่ได้ทำให้ Claude ขึ้นมาเป็นโมเดลหลัก จึงต้องติดตั้งปลั๊กอิน subscription แยกอีกตัว ชุดผู้ช่วยย่อยยังติดตั้งอยู่ เราลองเรียก Codex ผ่านชุดนี้แยกต่างหากแล้วตอบกลับได้ แต่ผลนี้เป็นของชุดผู้ช่วยย่อยเท่านั้น ไม่ได้พิสูจน์ว่าปลั๊กอิน subscription ตอบงานได้
+
+## เชื่อม Claude กับ ChatGPT/Codex ด้วยปลั๊กอินชุมชน
+
+ปลั๊กอินที่ใช้คือ [dsh-plugin-subscriptions](https://github.com/V1ki/dsh-plugin-subscriptions) ของ V1ki ซึ่ง**เป็นปลั๊กอินจากชุมชน ไม่ใช่ของ DeepSeek** เราติดตั้งรุ่น 0.9.12 แบบระบุรุ่นแน่นอน และตรวจแล้วว่าไฟล์ที่ได้ตรงกับค่า SHA-512 ที่ npm ประกาศ
+
+ไม่ต้องใส่ API key ของ Anthropic หรือ OpenAI ล็อกอินผ่านเบราว์เซอร์อย่างเดียว ถ้าปุ่ม Log in ของ Claude กดแล้วเงียบ ดูวิธีแก้ในหัวข้อถัดไป
+
+ผลล่าสุดในเครื่องเรา: ChatGPT/Codex เชื่อม 1 บัญชี Claude เชื่อม 1 บัญชี ทั้งสองอ่านโควตาได้ และแชตใหม่เลือก Claude Opus 5.5 เป็นโมเดลหลักได้
+
+การใช้ subscription ไม่ได้แปลว่าใช้ได้ไม่จำกัด ทุกคำขอยังกินโควตาและอยู่ใต้ข้อกำหนดของแต่ละบัญชีเหมือนเดิม
+
+## ปัญหาที่เจอระหว่างทาง
+
+- **ปุ่ม Log in ของ Claude กดแล้วเหมือนไม่มีอะไรเกิดขึ้น** ปลั๊กอินพยายามนำเข้าข้อมูลล็อกอินจาก Claude Code ที่มีในเครื่องก่อน มันรายงานว่านำเข้าสำเร็จ แต่บัญชีหายไป เราตรวจแล้วพบว่ามันไปหยิบข้อมูลชุดเก่าที่หมดอายุแล้วใน Keychain เราแก้โดยเลือก**ยืนยันสิทธิ์ผ่านเบราว์เซอร์**แทน หลังจากนั้นบัญชีขึ้นปกติพร้อมโควตา เราไม่ได้แก้โค้ดของ Harness หรือของปลั๊กอิน
+- **โควตาบัญชี DeepSeek หมดก่อนลองส่งงาน** ตอนให้ DeepSeek เป็นตัวประสานงานแล้วส่งงานต่อให้ Codex ระบบตอบ `ACCOUNT_QUOTA` ก่อน เลยยังทดสอบเส้นทางนี้ไม่สำเร็จ
+- **รุ่นโมเดลของ Codex ไม่ตรงกับบัญชี** รุ่นที่ตั้งไว้เป็นค่าเริ่มต้นใช้กับบัญชี ChatGPT นี้ไม่ได้ เราจึงดูรายการโมเดลที่บัญชีใช้ได้จริง แล้วตั้งรุ่นที่ใช้ได้ให้ Harness อย่างเดียว ไม่ได้แก้ค่าตั้งของ Codex ที่ใช้นอก Harness
+
+## สิ่งที่เราชอบ
+
+- **บัญชีหลายเจ้าในหน้าเดียว** จัดการบัญชีและเลือกโมเดลจากที่เดียว ไม่ต้องสลับแอป
+- **เห็นโควตาก่อนเริ่มงาน** Claude แสดงทั้งรอบ 5 ชั่วโมงและรายสัปดาห์ Codex แสดงช่วงโควตาของบัญชี ช่วยตัดสินใจว่างานนี้ควรใช้บัญชีไหน แต่ละแผนอาจแสดงไม่เหมือนกัน
+- **หน้าเว็บ แต่ทำงานกับไฟล์ในเครื่อง** ใช้เป็นโต๊ะทำงานกับโฟลเดอร์โปรเจกต์ได้จริง โดยให้ agent ทำงานตามสิทธิ์ที่เราตั้ง
+
+## ฟีเจอร์ที่เอกสารบอก แต่เรายังไม่ได้ลอง
+
+ส่วนนี้เราเขียนตามเอกสารต้นทาง ยังไม่ได้ลองเอง:
+
+- **Everything is a plugin และ Creator mode** เว็บทางการสาธิตให้ agent สร้างปลั๊กอินใหม่จากคำขอในแชต
+- **ตั้งรายการโมเดลและระดับการคิด** README ของปลั๊กอินบอกว่าเลือกโมเดลที่จะแสดง เปลี่ยนชื่อ และตั้ง Effort หรือ Fast ได้ แต่ใช้ได้เฉพาะโมเดลและบัญชีที่รองรับ
+- **ตั้งงานตามเวลาและงานนอกโค้ด** เช่น สรุปรายงานประจำสัปดาห์ หรือทำเอกสารและสไลด์ งานตามเวลาที่รันในเครื่องต้องเปิดเครื่องและเปิดโปรแกรมไว้
+- **เครื่องมือสร้างภาพ วิดีโอ และค้นหา** ปลั๊กอินมีให้สำหรับบางเจ้า (เช่น ChatGPT และ Grok) ไม่ได้แปลว่า Claude subscription ทำได้ด้วย
+
+## ความเสี่ยงที่ต้องรู้ก่อนลอง
+
+- ปลั๊กอินนี้ทำโดยชุมชน การที่ล็อกอินได้ไม่ได้แปลว่า Anthropic หรือ OpenAI อนุมัติวิธีล็อกอินทุกแบบที่มันใช้
+- **Claude ต้องระวังเป็นพิเศษ** [เอกสารของ Anthropic](https://code.claude.com/docs/en/legal-and-compliance#authentication-and-credential-use) แยกกรณีที่ใช้ Claude Code ตัวจริงโดยไม่ดัดแปลง ออกจากกรณีที่นำข้อมูลล็อกอินของ Claude.ai ไปใช้หรือส่งคำขอผ่านแอปอื่น อ่านข้อกำหนดล่าสุดเองก่อนตัดสินใจ
+- มีผู้ใช้[รายงานว่าบัญชี Claude ถูกแบน](https://github.com/anomalyco/opencode/issues/6930)หลังใช้ subscription กับเครื่องมืออื่นเมื่อ ม.ค. 2026 และภายหลังผู้รายงานบอกว่าได้รับการปลดแบน ข้อมูลนี้ไม่พอจะบอกว่าโอกาสโดนแบนมากแค่ไหน หรือสาเหตุคืออะไร
+- เราไม่พบหลักฐานว่าปลั๊กอินตัวนี้ทำให้บัญชีใดถูกแบน แต่การไม่พบหลักฐานไม่ได้แปลว่าไม่มีความเสี่ยง
+- เรายังไม่ได้วัดความเร็ว คุณภาพคำตอบ หรือค่าใช้จ่าย และยังไม่ได้ใช้ทำโปรเจกต์จริงตั้งแต่ต้นจนจบ
+
+## สรุป
+
+> ถ้าอยากรวมบัญชี Claude กับ ChatGPT/Codex ไว้ในหน้าจอเดียว DeepSeek Harness กับปลั๊กอิน subscription ทำได้ตั้งแต่ติดตั้งจนเลือกโมเดลได้ แต่ก่อนใช้กับบัญชีหลัก ให้อ่านข้อกำหนดของแต่ละเจ้าเอง และลองกับงานเล็ก ๆ ก่อน
+
+ก่อนติดตั้งปลั๊กอินหรือ skill ตัวไหนก็ตาม อ่านเพิ่มได้ที่[ก่อนติดตั้ง skill: ตรวจเครื่องมือและสิทธิ์ให้ครบ](/articles/install-with-permissions)

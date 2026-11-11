@@ -19,6 +19,7 @@ test("the pages that point at an installable kit carry an agent prompt", () => {
   const withPrompt = (list: Array<{ slug: string; agentInstall?: unknown }>) =>
     list.filter((p) => p.agentInstall).map((p) => p.slug).sort();
   assert.deepEqual(withPrompt(content.articles), [
+    "deepseek-harness-subscriptions",
     "elephant-goldfish-model",
     "free-ai-animation-opencode",
     "make-short-blender",
@@ -76,6 +77,12 @@ test("prompts use the upstream install commands we verified (README, 2026-11-11)
   assert.match(wi.prompt, /\.claude\/skills\/what-if-animation/);
   assert.match(wi.prompt, /opencode\/commands\/what-if\.md/);
   assert.match(wi.prompt, /kubcode\.dev\/skills\/freshstack-what-if/);
+  const dsh = get("article", "deepseek-harness-subscriptions");
+  // Non-dev path: the signed desktop app from DeepSeek, then its bundled dsh adds the plugin (no git/Node/Python).
+  assert.match(dsh.prompt, /https:\/\/download\.deepseek\.com\/desktop\/dsh-latest-macos-arm64\.dmg/);
+  assert.match(dsh.prompt, /NAN929V4UM/);
+  assert.match(dsh.prompt, /APP\/Contents\/Resources\/runtime\/cli\/bin\/dsh" plugin --profile desktop add dsh-plugin-subscriptions@0\.9\.12/);
+  assert.doesNotMatch(dsh.prompt, /git clone|pnpm install|brew install/);
   // The same kit gets the same prompt on its article and its tool page.
   assert.equal(get("tool", "make-short").prompt, ms.prompt);
   assert.equal(get("tool", "elephant-goldfish-model").prompt, egm.prompt);
