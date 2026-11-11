@@ -103,7 +103,8 @@ jobs:
         working-directory: ${{ github.workspace }}
         run: |
           rustup target add x86_64-unknown-linux-musl
-          sudo apt-get install -y musl-tools
+          bash .github/scripts/install-musl-gcc.sh
+          export PATH="$HOME/.musl-1.2.5/bin:$PATH"
           bash services/package-signer/build-lambda.sh
       # Same for the OAuth connect Lambda (kubcode:oauthConnect).
       - name: Build OAuth connect Lambda (static musl binary)
@@ -179,7 +180,8 @@ jobs:
         working-directory: ${{ github.workspace }}
         run: |
           rustup target add x86_64-unknown-linux-musl
-          sudo apt-get install -y musl-tools
+          bash .github/scripts/install-musl-gcc.sh
+          export PATH="$HOME/.musl-1.2.5/bin:$PATH"
           bash services/package-signer/build-lambda.sh
       # Same for the OAuth connect Lambda (kubcode:oauthConnect).
       - name: Build OAuth connect Lambda (static musl binary)
