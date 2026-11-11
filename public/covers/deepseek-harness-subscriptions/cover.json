@@ -1,0 +1,12 @@
+{
+  "slug": "deepseek-harness-subscriptions",
+  "tool": "HTML layout rendered with headless Chrome (docs/covers/real/deepseek-harness-subscriptions/cover.html)",
+  "date": "2026-11-11",
+  "source": "own-screenshot",
+  "content": "Our own install output on macOS arm64 on 2026-11-10: node version, pnpm install time, build run-gates summary, dsh web listener, and dsh-plugin-subscriptions@0.9.12 install, plus the account status from our verification (Claude 1, Codex 1, main model selectable, model response not tested). No third-party UI, account names or tokens.",
+  "master": "cover.jpg",
+  "og": "og.jpg",
+  "width": 1600,
+  "height": 900,
+  "fonts": "Anuphan and Archivo (SIL OFL, @fontsource)"
+}
