@@ -31,12 +31,11 @@ test("form-control outlines use --field-line / shadcn --input (>=3:1), defined f
     assert.equal(light, "#857896", name);
   }
   assert.match(css, /\.search \{[^}]*border: 1px solid var\(--field-line\)/);
-  for (const f of [
-    "components/AutomationsPanel.module.css",
-    "components/KeysSettings.module.css",
-    "app/account/tiktok/studio.css",
-  ])
-    assert.match(readFileSync(f, "utf8"), /var\(--field-line\)/, f);
+  assert.match(readFileSync("app/account/tiktok/studio.css", "utf8"), /var\(--field-line\)/);
+  // Account forms (automations, keys, public name, YouTube upload) are shadcn
+  // fields now: their edge is border-input (= --field-line), set in components/ui.
+  for (const f of ["components/AutomationsPanel.tsx", "components/KeysSettings.tsx", "components/PublicNameForm.tsx"])
+    assert.doesNotMatch(readFileSync(f, "utf8"), /<(textarea|select)\b|<input(?![^>]*type="radio")[^>]*>/, f);
   // shadcn fields (Input/Textarea) draw their edge with border-input, never border-border.
   for (const f of ["components/ui/input.tsx", "components/ui/textarea.tsx"]) {
     const src = readFileSync(f, "utf8");

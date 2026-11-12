@@ -324,9 +324,7 @@ header.header {
 .header nav > a:hover {
   color: var(--purple);
 }
-.account-link {
-  gap: 8px;
-}
+
 .theme-toggle {
   display: inline-flex;
   align-items: center;
@@ -359,21 +357,7 @@ header.header {
   margin-top: 9px;
   font-size: 14px;
 }
-.opening-actions {
-  display: grid;
-  justify-items: end;
-  gap: 8px;
-  min-width: 290px;
-}
-.browse-link {
-  display: inline-flex;
-  align-items: center;
-  gap: 10px;
-  font-size: 13px;
-  color: var(--purple);
-  text-decoration: none;
-  min-height: 32px;
-}
+
 .search {
   border: 1px solid var(--field-line);
   display: flex;
@@ -393,12 +377,7 @@ header.header {
   outline: 3px solid var(--ring);
   outline-offset: 4px;
 }
-.work-showcase {
-  display: grid;
-  grid-template-columns: minmax(0, 1.65fr) minmax(0, 1fr);
-  gap: 24px;
-  align-items: start;
-}
+
 .featured-work {
   background: var(--surface);
   border: 1px solid var(--line);
@@ -414,15 +393,7 @@ header.header {
   align-items: start;
   min-width: 0;
 }
-.work-type {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 12px;
-  color: var(--muted-foreground);
-  order: 2;
-  margin-top: 12px;
-}
+
 .featured-copy h2 {
   font:
     500 clamp(24px, 2.05vw, 30px)/1.15 Archivo,
@@ -582,82 +553,7 @@ header.header {
 .compact-preview .credits {
   padding-right: 12px;
 }
-.supporting-work {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 16px;
-  padding-top: 36px;
-}
-.support-preview {
-  display: block;
-  text-align: left;
-  border: 0;
-  padding: 0;
-  min-width: 0;
-}
-.support-image {
-  display: block;
-  position: relative;
-  border-radius: 19px;
-  overflow: hidden;
-  aspect-ratio: 9 / 16;
-  max-height: 340px;
-  background: var(--media);
-}
-.support-image > img {
-  width: 100%;
-  height: 100%;
-  object-fit: contain;
-  display: block;
-}
-.support-preview:nth-child(2) {
-  margin-top: 46px;
-}
-.support-title {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-  font:
-    500 14px/1.4 Archivo,
-    Anuphan,
-    sans-serif;
-  margin-top: 14px;
-}
-.support-title svg {
-  color: var(--purple);
-}
-.support-caption {
-  display: block;
-  font-size: 12px;
-  color: var(--muted-foreground);
-  margin-top: 5px;
-}
-.support-preview:hover .support-title {
-  color: var(--purple);
-}
-.media-badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  position: absolute;
-  left: 12px;
-  bottom: 12px;
-  color: #fff;
-  background: #251b36;
-  border: 1px solid #6e5b85;
-  border-radius: 999px;
-  padding: 7px 10px;
-  font-size: 12px;
-}
-.local-notice {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  color: var(--muted-foreground);
-  font-size: 12px;
-  padding: 17px 0;
-}
+
 .catalog-section {
   padding: 46px 0 65px;
   scroll-margin-top: 24px;
@@ -829,9 +725,7 @@ header.header {
   height: 100%;
   object-fit: contain;
 }
-.card-preview:hover .media-badge {
-  background: #55317f;
-}
+
 .card-preview.without-media {
   color: var(--purple);
   background: var(--surface-soft);
@@ -846,9 +740,7 @@ header.header {
   font-size: 12px;
   color: var(--muted-foreground);
 }
-.card-copy {
-  padding: 20px 18px 0;
-}
+
 .card-title {
   display: flex;
   align-items: start;
@@ -871,34 +763,7 @@ header.header {
 .card-title > svg {
   color: var(--purple);
 }
-.card-copy > p {
-  font-size: 12px;
-  color: var(--muted-foreground);
-  margin-top: 10px;
-  min-height: 63px;
-}
-.card-copy .tool-chips {
-  margin: 17px 0 18px;
-}
-.card-bottom {
-  border-top: 1px solid var(--line);
-  padding: 13px 0;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 10px;
-  font-size: 12px;
-  color: var(--muted-foreground);
-}
-.card-bottom a {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  min-height: 32px;
-  color: var(--purple);
-  text-decoration: none;
-  font-size: 12px;
-}
+
 .empty {
   text-align: center;
   padding: 65px 25px;
@@ -1518,38 +1383,7 @@ p[role="status"]:empty {
   }
 }
 @media (max-width: 1150px) {
-  .work-showcase {
-    grid-template-columns: minmax(0, 1.9fr) minmax(0, 1fr);
-    gap: 20px;
-  }
-  .supporting-work {
-    grid-template-columns: 1fr;
-    padding-top: 0;
-  }
-  .support-preview {
-    display: grid;
-    grid-template-columns: 110px 1fr;
-    column-gap: 13px;
-    align-items: center;
-  }
-  .support-preview:nth-child(2) {
-    margin-top: 0;
-  }
-  .support-image {
-    grid-row: 1 / 3;
-  }
-  .support-title {
-    margin-top: 0;
-    align-self: end;
-    font-size: 13px;
-  }
-  .support-title svg {
-    display: none;
-  }
-  .support-caption {
-    align-self: start;
-    margin-top: 6px;
-  }
+
   .featured-copy {
     padding: 24px 19px;
   }
@@ -1575,15 +1409,11 @@ p[role="status"]:empty {
     font-size: 12px;
     max-width: 34ch;
   }
-  .opening-actions {
-    min-width: 240px;
-  }
+
   .search {
     width: 240px;
   }
-  .work-showcase {
-    grid-template-columns: minmax(0, 1fr);
-  }
+
   .featured-work {
     grid-template-columns: 1fr 1fr;
   }
@@ -1593,13 +1423,7 @@ p[role="status"]:empty {
   .compact-preview .media-stage {
     height: 420px;
   }
-  .supporting-work {
-    grid-template-columns: 1fr 1fr;
-    gap: 22px;
-  }
-  .support-preview {
-    grid-template-columns: 95px 1fr;
-  }
+
   .skill-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
@@ -1647,9 +1471,7 @@ p[role="status"]:empty {
   .theme-toggle span {
     display: none;
   }
-  .account-link {
-    gap: 5px;
-  }
+
   .library-page {
     padding: 0 5%;
   }
@@ -1666,33 +1488,7 @@ p[role="status"]:empty {
     font-size: 12px;
     margin-top: 8px;
   }
-  .opening-actions {
-    margin-top: 18px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    gap: 12px;
-    min-width: 0;
-  }
-  .opening-actions .search {
-    width: auto;
-    flex: 1;
-    min-width: 0;
-    padding: 11px 13px;
-    gap: 8px;
-  }
-  .opening-actions .search input {
-    font-size: 12px;
-  }
-  .browse-link {
-    font-size: 12px;
-    gap: 4px;
-    flex-shrink: 0;
-    min-height: 44px;
-  }
-  .work-showcase {
-    gap: 20px;
-  }
+
   .featured-work {
     display: block;
     border-radius: 19px;
@@ -1729,9 +1525,7 @@ p[role="status"]:empty {
     margin-top: 10px;
     font-size: 13px;
   }
-  .work-type {
-    margin-top: 10px;
-  }
+
   .feature-tools,
   .feature-authors {
     margin-top: 16px;
@@ -1739,35 +1533,7 @@ p[role="status"]:empty {
   .feature-link {
     margin-top: 20px;
   }
-  .supporting-work {
-    gap: 14px;
-  }
-  .support-preview {
-    display: block;
-  }
-  .support-image {
-    aspect-ratio: 3 / 4;
-    border-radius: 15px;
-  }
-  .support-title {
-    margin-top: 10px;
-    font-size: 12px;
-  }
-  .support-title svg {
-    display: block;
-  }
-  .support-caption {
-    font-size: 12px;
-  }
-  .local-notice {
-    font-size: 12px;
-    align-items: start;
-    gap: 6px;
-    padding-top: 22px;
-  }
-  .local-notice > svg {
-    margin-top: 3px;
-  }
+
   .catalog-section {
     padding: 28px 0 40px;
   }
@@ -1802,30 +1568,15 @@ p[role="status"]:empty {
   .card-preview {
     aspect-ratio: 1 / 1;
   }
-  .card-copy {
-    padding: 20px 20px 0;
-  }
+
   .card-title h3 {
     font-size: 20px;
   }
-  .card-copy > p {
-    min-height: 0;
-    font-size: 13px;
-    margin-top: 11px;
-  }
-  .card-copy .tool-chips {
-    margin-top: 18px;
-  }
+
   .tool-chip {
     font-size: 12px;
   }
-  .card-bottom {
-    font-size: 12px;
-  }
-  .card-bottom a {
-    min-height: 44px;
-    font-size: 12px;
-  }
+
   .article-teasers {
     display: block;
     padding: 33px 0;
@@ -2172,30 +1923,6 @@ img.tool-mark {
 
 /* Supporting previews share the feature's height instead of a staggered
  * skyscraper/tiny-card split. Narrower layouts keep the earlier row list. */
-@media (min-width: 1151px) {
-  .work-showcase {
-    grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr);
-    align-items: stretch;
-  }
-  .supporting-work {
-    padding-top: 0;
-    gap: 14px;
-  }
-  .support-preview {
-    display: flex;
-    flex-direction: column;
-  }
-  .support-preview:nth-child(2) {
-    margin-top: 0;
-  }
-  .support-image {
-    flex: 1 1 auto;
-    min-height: 300px;
-    max-height: none;
-    aspect-ratio: auto;
-    border-radius: 16px;
-  }
-}
 @media (min-width: 851px) and (max-width: 1150px) {
   .feature-meta {
     grid-template-columns: minmax(0, 1fr);

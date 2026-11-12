@@ -5,6 +5,7 @@ import type { AuthProviderId } from "@/lib/auth-policy";
 import { ACCOUNT_ERRORS, isAccountErrorCode, type AccountErrorCode } from "@/lib/accounts/errors";
 import type { SettingsView } from "@/lib/accounts/view";
 import styles from "./AccountSettings.module.css";
+import { Button } from "@/components/ui/button";
 
 type ReadyView = Extract<SettingsView, { state: "ready" }>;
 export type AccountSettingsProps = { view: ReadyView; notice: string | null };
@@ -97,9 +98,9 @@ export function AccountSettings({ view, notice }: AccountSettingsProps) {
 
   const locked = busy !== null || intent !== null;
   const cancelButton = (label = "ยกเลิกคำขอ") => (
-    <button type="button" onClick={cancel} disabled={busy !== null} aria-busy={busy === "cancel"}>
+    <Button type="button" variant="outline" onClick={cancel} disabled={busy !== null} aria-busy={busy === "cancel"}>
       {label}
-    </button>
+    </Button>
   );
 
   const rows = PROVIDERS.map((provider) => {
@@ -116,15 +117,16 @@ export function AccountSettings({ view, notice }: AccountSettingsProps) {
               {ready ? "ยังไม่ได้เชื่อม" : `ยังไม่ได้เชื่อม · ${label} ยังไม่เปิดใช้งานบนเซิร์ฟเวอร์นี้`}
             </span>
           </div>
-          <button
+          <Button
             type="button"
+            variant="outline"
             onClick={() => begin("link", provider)}
             disabled={!ready || locked}
             aria-busy={busy === `link-${provider}`}
             aria-describedby={hintId}
           >
             {`เชื่อม ${label}`}
-          </button>
+          </Button>
         </li>
       );
     const othersUsable = usable.filter((i) => i.provider !== provider).length > 0;
@@ -140,15 +142,16 @@ export function AccountSettings({ view, notice }: AccountSettingsProps) {
             {othersUsable ? "" : " · ยกเลิกไม่ได้ เพราะเป็นวิธีเข้าสู่ระบบเดียวที่ใช้ได้"}
           </span>
         </div>
-        <button
+        <Button
           type="button"
+          variant="outline"
           onClick={() => begin("unlink", provider)}
           disabled={!othersUsable || locked}
           aria-busy={busy === `unlink-${provider}`}
           aria-describedby={hintId}
         >
           {`ยกเลิกการเชื่อม ${label}`}
-        </button>
+        </Button>
       </li>
     );
   });
@@ -166,30 +169,28 @@ export function AccountSettings({ view, notice }: AccountSettingsProps) {
             ขั้นที่ 1 จาก {total}: ยืนยันว่าเป็นเจ้าของบัญชี {source} ที่ใช้อยู่ตอนนี้อีกครั้ง
             {intent.kind === "link" ? ` ก่อนเชื่อม ${target}` : ` ก่อนยกเลิกการเชื่อม ${target}`}
           </p>
-          <button
+          <Button
             type="button"
-            className="primary"
             onClick={() => prove(intent.sourceProvider)}
             disabled={busy !== null}
             aria-busy={busy === `prove-${intent.sourceProvider}`}
           >
             {`ยืนยันตัวตนด้วย ${source} อีกครั้ง`}
-          </button>
+          </Button>
         </>
       );
     else if (intent.phase === "await_target")
       body = (
         <>
           <p>ขั้นที่ 2 จาก 3: เข้าสู่ระบบด้วยบัญชี {target} ที่ต้องการเชื่อม ระบบจะยังไม่เชื่อมจนกว่าคุณจะกดยืนยัน</p>
-          <button
+          <Button
             type="button"
-            className="primary"
             onClick={() => prove(intent.targetProvider)}
             disabled={busy !== null}
             aria-busy={busy === `prove-${intent.targetProvider}`}
           >
             {`เข้าสู่ระบบด้วย ${target} ที่ต้องการเชื่อม`}
-          </button>
+          </Button>
         </>
       );
     else
@@ -203,9 +204,9 @@ export function AccountSettings({ view, notice }: AccountSettingsProps) {
             <br />
             หลังยืนยัน ทุกอุปกรณ์จะออกจากระบบ และต้องเข้าสู่ระบบใหม่
           </p>
-          <button type="button" className="primary" onClick={confirm} disabled={busy !== null} aria-busy={busy === "confirm"}>
+          <Button type="button" onClick={confirm} disabled={busy !== null} aria-busy={busy === "confirm"}>
             {intent.kind === "link" ? `ยืนยันการเชื่อม ${target}` : `ยืนยันยกเลิกการเชื่อม ${target}`}
-          </button>
+          </Button>
         </>
       );
     step = (

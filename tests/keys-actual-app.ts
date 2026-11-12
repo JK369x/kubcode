@@ -227,9 +227,11 @@ async function main() {
       const youtube = page.getByRole("region", { name: "YouTube" });
       await youtube.getByRole("button", { name: "ลบคีย์" }).click();
       await youtube.getByRole("button", { name: "ยืนยันลบและยกเลิกการเชื่อม" }).waitFor();
-      await youtube.getByRole("status").getByText(/บัญชีที่เชื่อมอยู่/).waitFor();
+      // Results are toasts (components/ui/toaster.tsx), not a status line in the section.
+      const toasts = page.getByRole("region", { name: "การแจ้งเตือน" });
+      await toasts.locator(".tst-title", { hasText: /บัญชีที่เชื่อมอยู่/ }).waitFor();
       await youtube.getByRole("button", { name: "ยืนยันลบและยกเลิกการเชื่อม" }).click();
-      await youtube.getByText("ลบคีย์และยกเลิกการเชื่อม 1 บัญชีแล้ว").waitFor();
+      await toasts.locator(".tst-title", { hasText: "ลบคีย์และยกเลิกการเชื่อม 1 บัญชีแล้ว" }).waitFor();
       await youtube.getByText("ยังไม่ได้ตั้งค่า").waitFor();
       await youtube.getByText("ยังไม่มีบัญชีที่เชื่อม").waitFor();
       const history = page.getByRole("region", { name: "ประวัติ" });
@@ -248,7 +250,7 @@ async function main() {
       await ig.getByLabel("Instagram app ID").fill("1234567890123456");
       await ig.getByLabel("Instagram app secret").fill("fixtureonly0000000000000000003c4d");
       await ig.getByRole("button", { name: "บันทึกคีย์" }).click();
-      await ig.getByText("บันทึกคีย์แล้ว").waitFor();
+      await ui.page.getByRole("region", { name: "การแจ้งเตือน" }).locator(".tst-title", { hasText: "บันทึกคีย์แล้ว" }).waitFor();
       await ig.getByText("3c4d").waitFor();
       assert.equal(await ig.getByLabel("Instagram app secret").inputValue(), "", "secret field is cleared after saving");
       await ui.page.getByRole("region", { name: "ประวัติ" }).getByText("บันทึกคีย์ · Instagram app").waitFor();

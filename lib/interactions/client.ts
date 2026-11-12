@@ -1,6 +1,6 @@
 // Browser helpers for interaction writes: fetch the double-submit CSRF token
 // once, then send same-origin JSON. Errors come back as { code, message }.
-export type ApiResult<T> = ({ ok: true } & T) | { ok: false; code: string; message: string };
+export type ApiResult<T> = ({ ok: true } & T) | { ok: false; code: string; message: string; /** The input the error is about, when the server names one. */ field?: string };
 
 const FALLBACK = "ทำรายการไม่สำเร็จ ลองใหม่ภายหลัง";
 let csrfToken: string | null = null;
@@ -34,6 +34,7 @@ export async function send<T>(path: string, method: "POST" | "PATCH" | "DELETE",
         ok: false,
         code: typeof json.code === "string" ? json.code : "UNKNOWN",
         message: typeof json.message === "string" ? json.message : FALLBACK,
+        ...(typeof json.field === "string" ? { field: json.field } : {}),
       };
     }
     return { ok: true, ...(json as T) };

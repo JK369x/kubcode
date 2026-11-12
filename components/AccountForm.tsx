@@ -5,6 +5,7 @@ import { signIn, signOut } from "next-auth/react";
 import type { AuthProviderId, AuthReadiness, PublicUser } from "@/lib/auth-policy";
 import styles from "./GoogleLogin.module.css";
 import lineStyles from "./LineLogin.module.css";
+import { Button } from "@/components/ui/button";
 
 export type AccountFormProps =
   | { state: "unconfigured" }
@@ -93,14 +94,15 @@ export function AccountForm(props: AccountFormProps) {
           <br />
           ระบบอนุมัติสมาชิกยังไม่พร้อม จึงยังดาวน์โหลดไฟล์ไม่ได้
         </p>
-        <button
+        <Button
           type="button"
+          variant="outline"
           onClick={() => run("signout", startSignOut)}
           disabled={busy !== null}
           aria-busy={busy === "signout"}
         >
           {busy === "signout" ? "กำลังออกจากระบบ…" : "ออกจากระบบ"}
-        </button>
+        </Button>
         {props.settingsAvailable ? (
           <Link href="/account/settings">ตั้งค่าการเข้าสู่ระบบและการเชื่อม Google/LINE</Link>
         ) : null}

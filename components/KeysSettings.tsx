@@ -6,6 +6,9 @@ import { send } from "@/lib/interactions/client";
 import { toast } from "@/components/ui/toaster";
 import type { AuditEntry, ConnectionMeta, Overview, SecretKind, SecretMeta } from "@/lib/keys/store";
 import styles from "./KeysSettings.module.css";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Field, FieldDescription, FieldLabel } from "@/components/ui/field";
 
 type Props = {
   overview: Overview;
@@ -121,9 +124,9 @@ function KeyForm({ spec, saved, canSave }: { spec: FormSpec; saved: SecretMeta |
         )}
       </p>
       {spec.publicLabel && (
-        <label htmlFor={`${id}-pub`}>
-          {spec.publicLabel}
-          <input
+        <Field>
+          <FieldLabel htmlFor={`${id}-pub`}>{spec.publicLabel}</FieldLabel>
+          <Input
             id={`${id}-pub`}
             value={publicValue}
             onChange={(e) => setPublicValue(e.target.value)}
@@ -133,16 +136,12 @@ function KeyForm({ spec, saved, canSave }: { spec: FormSpec; saved: SecretMeta |
             inputMode={spec.kind === "instagram_app" ? "numeric" : undefined}
             aria-describedby={spec.publicHint ? `${id}-pub-hint` : undefined}
           />
-          {spec.publicHint && (
-            <span id={`${id}-pub-hint`} className={styles.meta}>
-              {spec.publicHint}
-            </span>
-          )}
-        </label>
+          {spec.publicHint && <FieldDescription id={`${id}-pub-hint`}>{spec.publicHint}</FieldDescription>}
+        </Field>
       )}
-      <label htmlFor={`${id}-secret`}>
-        {spec.secretLabel}
-        <input
+      <Field>
+        <FieldLabel htmlFor={`${id}-secret`}>{spec.secretLabel}</FieldLabel>
+        <Input
           id={`${id}-secret`}
           type="password"
           value={secret}
@@ -154,15 +153,15 @@ function KeyForm({ spec, saved, canSave }: { spec: FormSpec; saved: SecretMeta |
           maxLength={512}
           placeholder={saved ? "วางคีย์ใหม่เพื่อแทนที่" : ""}
         />
-      </label>
+      </Field>
       <div className={styles.actions}>
-        <button type="submit" className="primary" disabled={busy || !canSave || !secret}>
+        <Button type="submit" disabled={busy || !canSave || !secret}>
           {saved ? "แทนที่คีย์" : "บันทึกคีย์"}
-        </button>
+        </Button>
         {saved && (
-          <button type="button" className={confirmDisconnect ? styles.danger : undefined} disabled={busy} onClick={onDelete}>
+          <Button type="button" variant={confirmDisconnect ? "destructive" : "outline"} disabled={busy} onClick={onDelete}>
             {confirmDisconnect ? "ยืนยันลบและยกเลิกการเชื่อม" : "ลบคีย์"}
-          </button>
+          </Button>
         )}
       </div>
     </form>
@@ -235,17 +234,17 @@ function Connections({
                 {showExpiry && c.tokenExpiresAt && ` · token หมดอายุ ${date(c.tokenExpiresAt)}`}
               </span>
               {provider === "youtube" && c.status === "active" && c.appSource === "kubcode" && <YouTubePrivateUpload id={c.id} channel={c.accountLabel ?? label} />}
-              <button type="button" disabled={busy} onClick={() => onDisconnect(c.id)}>
+              <Button type="button" variant="destructive" disabled={busy} onClick={() => onDisconnect(c.id)}>
                 ยกเลิกการเชื่อม
-              </button>
+              </Button>
             </li>
           ))}
         </ul>
       )}
       <div className={styles.soon}>
-        <button type="button" className="primary" disabled={busy || !canConnect} onClick={onConnect}>
+        <Button type="button" disabled={busy || !canConnect} onClick={onConnect}>
           {provider === "youtube" ? "เชื่อมช่อง" : "เชื่อมบัญชี"}
-        </button>
+        </Button>
         {!canConnect && <span className={styles.meta}>{hint}</span>}
       </div>
     </div>

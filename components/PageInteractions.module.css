@@ -200,11 +200,24 @@
 }
 /* The sheet itself is components/ui/sheet.tsx (bottom). The panel inside
    drops its own frame. */
+/* Sized by its content (lead, 2026-11-12): the panel does not stretch; the
+   comment list scrolls once the sheet hits its max height, and the
+   composer / sign-in line sits right under the comments. */
 .sheet .panel {
-  flex: 1;
+  flex: 1 1 auto;
   min-height: 0;
   border: 0;
   border-radius: 0;
   background: transparent;
 }
 
+
+.sheet .scroll {
+  flex: 0 1 auto;
+  min-height: 0;
+}
+/* Short lists: the composer area takes the rest of the minimum height, so
+   the box sits under the comments and its tint reaches the sheet's edge. */
+.sheet .composer {
+  flex: 1 0 auto;
+}
