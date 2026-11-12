@@ -6,6 +6,9 @@ import { send } from "@/lib/interactions/client";
 import type { PageKind, PageState, PublicComment } from "@/lib/interactions/store";
 import { CommentText } from "./CommentText";
 import { SkeletonRows } from "./SkeletonImage";
+import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
+import { toast } from "@/components/ui/toaster";
 import styles from "./PageInteractions.module.css";
 
 export type InteractionTarget = { kind: PageKind; slug: string; title: string };
@@ -25,7 +28,6 @@ const when = (iso: string) =>
  */
 export function useInteractions({ kind, slug }: InteractionTarget) {
   const [load, setLoad] = useState<Load>({ state: "loading" });
-  const [status, setStatus] = useState("");
   const [busy, setBusy] = useState(false);
   const [publicName, setPublicName] = useState<string | null>(null);
   const base = `/api/interactions?kind=${kind}&slug=${encodeURIComponent(slug)}`;
@@ -69,7 +71,9 @@ export function useInteractions({ kind, slug }: InteractionTarget) {
           state: "ready",
           data: { ...load.data, extra: [...load.data.extra, ...next.comments], nextCursor: next.nextCursor },
         });
-      } else setStatus("โหลดคอมเมนต์เพิ่มไม่สำเร็จ");
+      } else toast.error("โหลดคอมเมนต์เพิ่มไม่สำเร็จ");
+    } catch {
+      toast.error("โหลดคอมเมนต์เพิ่มไม่สำเร็จ");
     } finally {
       setBusy(false);
     }
@@ -78,13 +82,14 @@ export function useInteractions({ kind, slug }: InteractionTarget) {
   const act: Act = async (run, done) => {
     setBusy(true);
     const result = await run();
-    setStatus(result.ok ? done : (result.message ?? "ทำรายการไม่สำเร็จ"));
+    if (result.ok) toast.success(done);
+    else toast.error(result.message ?? "ทำรายการไม่สำเร็จ");
     if (result.ok) await refresh();
     setBusy(false);
     return result.ok;
   };
 
-  return { load, status, busy, act, loadMore, publicName };
+  return { load, busy, act, loadMore, publicName };
 }
 
 export type Interactions = ReturnType<typeof useInteractions>;
@@ -176,9 +181,6 @@ export function CommentsPanel({ target, it, headingId }: { target: InteractionTa
           </button>
         )}
       </div>
-      <p role="status" aria-live="polite" className={`${styles.meta} ${styles.status}`}>
-        {it.status}
-      </p>
       <div className={styles.composer}>
         {data.viewer.signedIn ? (
           <CommentForm
@@ -239,7 +241,7 @@ function CommentForm({
       <label htmlFor={id} className={open ? styles.label : "sr-only"}>
         {label}
       </label>
-      <textarea
+      <Textarea
         id={id}
         value={text}
         maxLength={MAX}
@@ -254,13 +256,13 @@ function CommentForm({
         </span>
         <span className={styles.formActions}>
           {cancel && (
-            <button type="button" onClick={cancel} disabled={busy}>
+            <Button type="button" variant="outline" onClick={cancel} disabled={busy}>
               ยกเลิก
-            </button>
+            </Button>
           )}
-          <button type="submit" className="primary" disabled={busy || text.trim() === ""}>
+          <Button type="submit" disabled={busy || text.trim() === ""}>
             ส่ง
-          </button>
+          </Button>
         </span>
       </div>
     </form>

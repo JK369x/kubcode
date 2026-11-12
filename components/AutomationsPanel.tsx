@@ -2,6 +2,7 @@
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { send } from "@/lib/interactions/client";
+import { toast } from "@/components/ui/toaster";
 import { MAX_DM_CHARS, MAX_PUBLIC_REPLY_CHARS, dmHasLink, type MatchMode } from "@/lib/automations/rules";
 import type { AutomationChannel, RuleView } from "@/lib/automations/store";
 import type { RecentOutcome } from "@/lib/automations/view";
@@ -121,7 +122,6 @@ export function AutomationsPanel({ channel, rules, usage, recent }: Props) {
   const router = useRouter();
   const base = `/api/channels/${channel.id}/automations`;
   const [busy, setBusy] = useState(false);
-  const [status, setStatus] = useState("");
   const [draft, setDraft] = useState<Draft>(EMPTY);
   const [editing, setEditing] = useState<string | null>(null);
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
@@ -148,8 +148,11 @@ export function AutomationsPanel({ channel, rules, usage, recent }: Props) {
     setBusy(true);
     const r = editing ? await send(`${base}/${editing}`, "PATCH", bodyOf(draft, tiktok)) : await send(base, "POST", bodyOf(draft, tiktok));
     setBusy(false);
-    if (!r.ok) return setStatus(r.message);
-    setStatus(editing ? "บันทึกการแก้ไขแล้ว" : "เพิ่มกฎแล้ว");
+    if (!r.ok) {
+      toast.error(r.message);
+      return;
+    }
+    toast.success(editing ? "บันทึกการแก้ไขแล้ว" : "เพิ่มกฎแล้ว");
     setEditing(null);
     setDraft(EMPTY);
     setManual(false);
@@ -161,7 +164,6 @@ export function AutomationsPanel({ channel, rules, usage, recent }: Props) {
     setConfirmDelete(null);
     setDraft(draftOf(rule));
     setManual(false);
-    setStatus("");
     formRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
     firstField.current?.focus({ preventScroll: true });
   }
@@ -176,20 +178,23 @@ export function AutomationsPanel({ channel, rules, usage, recent }: Props) {
     setBusy(true);
     const r = await send(`${base}/${rule.id}`, "PATCH", { active: !rule.active });
     setBusy(false);
-    setStatus(r.ok ? (rule.active ? "พักกฎไว้แล้ว" : "เปิดใช้กฎแล้ว") : r.message);
+    if (r.ok) toast.success(rule.active ? "พักกฎไว้แล้ว" : "เปิดใช้กฎแล้ว");
+    else toast.error(r.message);
     if (r.ok) router.refresh();
   }
 
   async function onDelete(rule: RuleView) {
     if (confirmDelete !== rule.id) {
       setConfirmDelete(rule.id);
-      return setStatus("กดยืนยันลบอีกครั้งเพื่อลบกฎนี้");
+      toast.warning("กดยืนยันลบอีกครั้งเพื่อลบกฎนี้");
+      return;
     }
     setBusy(true);
     const r = await send(`${base}/${rule.id}`, "DELETE");
     setBusy(false);
     setConfirmDelete(null);
-    setStatus(r.ok ? "ลบกฎแล้ว" : r.message);
+    if (r.ok) toast.success("ลบกฎแล้ว");
+    else toast.error(r.message);
     if (r.ok) {
       if (editing === rule.id) onCancelEdit();
       router.refresh();
@@ -213,9 +218,6 @@ export function AutomationsPanel({ channel, rules, usage, recent }: Props) {
           หนึ่งคนได้ DM ได้ครั้งเดียวต่อโพสต์
         </p>
       )}
-      <p className={keys.status} role="status" aria-live="polite">
-        {status}
-      </p>
 
       <section className={keys.section} aria-labelledby="automations-usage">
         <h2 id="automations-usage">{tiktok ? "โควตาคำตอบของช่องนี้" : "โควตา DM ของช่องนี้"}</h2>

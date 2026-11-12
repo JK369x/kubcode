@@ -1,0 +1,121 @@
+// shadcn/ui foundation (PR1 of the migration): Tailwind v4, brand tokens as
+// shadcn variables, ding toasts. Rules: design-system/kubcode/MASTER.md.
+import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
+import test from "node:test";
+import { createElement } from "react";
+import { renderToStaticMarkup } from "react-dom/server";
+
+const css = readFileSync("app/globals.css", "utf8");
+const read = (f: string) => readFileSync(f, "utf8");
+const block = (selector: RegExp) => css.match(selector)?.[1] ?? "";
+const dark = block(/@layer base \{\s*\/\*[^*]*\*\/\s*:root \{([^}]*)\}/);
+const light = block(/:root\[data-theme="light"\] \{([^}]*--background[^}]*)\}/);
+const token = (b: string, name: string) => b.match(new RegExp(`\\s${name}: ([^;]+);`))?.[1];
+
+test("shadcn variables carry the MASTER.md brand values in both themes", () => {
+  const expected: Record<string, [string, string]> = {
+    "--background": ["#100e15", "#faf8fd"],
+    "--foreground": ["#f5f1fb", "#271c34"],
+    "--card": ["#1b1722", "#ffffff"],
+    "--primary": ["#d1b9ff", "#7136b9"],
+    "--primary-foreground": ["#291640", "#ffffff"],
+    "--secondary": ["#231d2d", "#e9dbff"],
+    "--muted": ["#231d2d", "#efe9f8"],
+    "--muted-foreground": ["#b8adca", "#6c5f7d"],
+    "--destructive": ["#ffb4b4", "#a3262a"],
+    "--border": ["#38303f", "#e0d9e9"],
+    "--input": ["#807394", "#857896"],
+    "--ring": ["#bb98ff", "#7136b9"],
+  };
+  for (const [name, [d, l]] of Object.entries(expected)) {
+    assert.equal(token(dark, name), d, `dark ${name}`);
+    assert.equal(token(light, name), l, `light ${name}`);
+  }
+  assert.equal(token(dark, "--radius"), "12px");
+});
+
+test("no shadcn grey defaults, pink, or Inter/Geist", () => {
+  assert.doesNotMatch(css, /oklch\(/, "shadcn default palette left in globals.css");
+  assert.doesNotMatch(css, /#ec4899/i);
+  assert.match(css, /--font-sans: Anuphan, sans-serif;/);
+  for (const f of ["app/layout.tsx", "app/globals.css"]) {
+    assert.doesNotMatch(read(f), /\bInter\b|Geist|next\/font\/google/, f);
+  }
+});
+
+test("theme switch stays data-theme on <html>; dark: maps to it, not to .dark", () => {
+  assert.match(css, /@custom-variant dark \(&:where\(\[data-theme="dark"\], \[data-theme="dark"\] \*\)\);/);
+  assert.doesNotMatch(css, /^\.dark \{/m);
+  assert.match(read("app/layout.tsx"), /data-theme="dark"/);
+});
+
+test("legacy CSS sits in a cascade layer under utilities; reduced-motion rule kept", () => {
+  assert.match(css, /^@layer theme, base, legacy, components, utilities;/m);
+  assert.match(css, /^@layer legacy \{/m);
+  assert.match(css, /@media \(prefers-reduced-motion: reduce\) \{\s*html \{\s*scroll-behavior: auto;\s*\}\s*\*,\s*\*::before,\s*\*::after \{\s*animation: none !important;\s*transition: none !important;/);
+});
+
+test("toaster: top-center, follows the system theme, Thai labels, mounted once in the root layout", async () => {
+  const layout = read("app/layout.tsx");
+  assert.equal(layout.match(/<Toaster\b/g)?.length, 1);
+  assert.match(layout, /<Toaster position="top-center" theme="system" \/>/);
+  const { TOAST_LABELS, pageNonce } = await import("../components/ui/toaster");
+  assert.deepEqual(TOAST_LABELS, { region: "การแจ้งเตือน", dismiss: "ปิดการแจ้งเตือน" });
+  // CSP: the nonce Next puts on its scripts is handed to ding's <style>.
+  const doc = {
+    querySelectorAll: () => [{ nonce: "" }, { nonce: "n0nce" }],
+  } as unknown as Document;
+  assert.equal(pageNonce(doc), "n0nce");
+  assert.equal(pageNonce({ querySelectorAll: () => [] } as unknown as Document), undefined);
+  // The toast takes our tokens and fonts, and the site theme over the OS one.
+  assert.match(css, /\.tst-viewport \{[^}]*--tst-bg: var\(--popover\);[^}]*font-family: Anuphan/);
+});
+
+test("inline status lines are toasts now", () => {
+  const files = [
+    "components/PageInteractions.tsx",
+    "components/CopyButton.tsx",
+    "components/ChannelsPanel.tsx",
+    "components/KeysSettings.tsx",
+    "components/AutomationsPanel.tsx",
+    "components/PublicNameForm.tsx",
+    "components/CardDownloadAction.tsx",
+    "components/VisualShelf.tsx",
+    "components/YouTubePrivateUpload.tsx",
+  ];
+  for (const f of files) {
+    const src = read(f);
+    assert.match(src, /from "@\/components\/ui\/toaster"/, f);
+    assert.doesNotMatch(src, /setStatus\(r\.message\)|setError\(message\)|setMessage\(/, f);
+  }
+  assert.match(read("components/PageInteractions.tsx"), /toast\.success\(done\)/);
+  assert.match(read("components/PageInteractions.tsx"), /"ส่งคอมเมนต์แล้ว"/);
+  assert.match(read("components/CopyButton.tsx"), /toast\.success\(/);
+  // Connect callback notices show once, then leave the URL.
+  const channels = read("components/ChannelsPanel.tsx");
+  assert.match(channels, /searchParams\.delete\("notice"\)/);
+  assert.match(channels, /history\.replaceState/);
+});
+
+test("shadcn Button/Input meet the size and focus rules", async () => {
+  const { Button } = await import("../components/ui/button");
+  const { Input } = await import("../components/ui/input");
+  const b = renderToStaticMarkup(createElement(Button, null, "ส่ง"));
+  assert.match(b, /\bh-11\b/, "44px on mobile");
+  assert.match(b, /md:h-10/);
+  assert.match(b, /focus-visible:outline-3/);
+  assert.match(b, /focus-visible:outline-ring/);
+  // outline-none (in the base classes) sets outline-style: none, so the focus
+  // variant has to set the style back or the ring never paints.
+  assert.match(b, /focus-visible:outline-solid/);
+  assert.match(renderToStaticMarkup(createElement(Input)), /focus-visible:outline-solid/);
+  assert.doesNotMatch(b, /ring-ring\/50/, "no half-transparent shadcn ring");
+  const icon = renderToStaticMarkup(createElement(Button, { size: "icon", "aria-label": "ปิด" }));
+  assert.match(icon, /size-11/);
+  const i = renderToStaticMarkup(createElement(Input));
+  assert.match(i, /text-base/, "16px on mobile: no iOS zoom");
+  assert.match(i, /border-input/);
+  assert.match(i, /h-11/);
+  assert.doesNotMatch(read("components/ui/badge.tsx"), /text-xs|text-\[1[01]px\]/, "badge text >= 12px");
+});

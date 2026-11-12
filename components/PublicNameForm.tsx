@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useId, useState } from "react";
 import { send } from "@/lib/interactions/client";
+import { toast } from "@/components/ui/toaster";
 
 /**
  * Edits the name shown with this member's comments. Prefilled with the
@@ -31,8 +32,8 @@ export function PublicNameForm() {
           setBusy(false);
           if (r.ok) {
             setName(r.publicName);
-            setStatus(r.publicName ? `บันทึกแล้ว: ${r.publicName}` : "บันทึกแล้ว คอมเมนต์จะแสดงเป็น “สมาชิก”");
-          } else setStatus(r.message);
+            toast.success(r.publicName ? `บันทึกชื่อแล้ว: ${r.publicName}` : "บันทึกแล้ว คอมเมนต์จะแสดงเป็น “สมาชิก”");
+          } else toast.error(r.message);
         }}
       >
         <label htmlFor={id}>ชื่อนี้แสดงต่อสาธารณะคู่กับคอมเมนต์ของคุณ เว้นว่างไว้เพื่อแสดงเป็น “สมาชิก”</label>

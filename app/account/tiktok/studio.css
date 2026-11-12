@@ -24,7 +24,7 @@
   padding: 5px 12px;
   border: 1px solid var(--line);
   border-radius: 99px;
-  color: var(--muted);
+  color: var(--muted-foreground);
 }
 .tt-grid {
   display: grid;
@@ -54,7 +54,7 @@
 .tt-help,
 .tt-upload small,
 .tt-connect p {
-  color: var(--muted);
+  color: var(--muted-foreground);
 }
 .tt-editor-head p {
   margin-top: 5px;
@@ -145,7 +145,7 @@
   border-radius: 9px;
 }
 .tt-toggles label:has(:disabled) {
-  color: var(--muted);
+  color: var(--muted-foreground);
 }
 .tt-studio button,
 .tt-studio > a {
@@ -193,7 +193,7 @@
 }
 .tt-profile dt,
 .tt-profile small {
-  color: var(--muted);
+  color: var(--muted-foreground);
   font-size: 13px;
 }
 .tt-profile dd {

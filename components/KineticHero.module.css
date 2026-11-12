@@ -7,7 +7,7 @@
 .hero {
   --hero-field: var(--bg);
   --hero-ink: var(--ink);
-  --hero-muted: var(--muted);
+  --hero-muted: var(--muted-foreground);
   --hero-line: var(--line);
   --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
 

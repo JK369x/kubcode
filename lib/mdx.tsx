@@ -75,9 +75,11 @@ function CodeBlock({ "data-language": lang, "data-title": title, ...pre }: PrePr
       <figcaption className="code-head">
         <span className="code-lang">{lang || "text"}</span>
         {title && <span className="code-file">{title}</span>}
-        <CopyButton />
       </figcaption>
-      <pre {...pre} tabIndex={0} />
+      <div className="code-body">
+        <CopyButton />
+        <pre {...pre} tabIndex={0} />
+      </div>
     </figure>
   );
 }

@@ -35,7 +35,7 @@
   font-size: 14px;
 }
 .rule dt {
-  color: var(--muted);
+  color: var(--muted-foreground);
 }
 .rule dd {
   margin: 0;
@@ -205,7 +205,7 @@
 .postMeta {
   display: block;
   font-size: 12px;
-  color: var(--muted);
+  color: var(--muted-foreground);
 }
 .open {
   font-size: 12px;

@@ -78,10 +78,12 @@ export function GetStarted() {
           <p className="get-started-note">จาก README ของ skill กดคัดลอกแล้ววางใน Claude Code ได้เลย</p>
           {PROMPTS.map((prompt) => (
             <div className="code-block get-started-prompt" key={prompt}>
-              <pre>
-                <code>{prompt}</code>
-              </pre>
-              <CopyButton />
+              <div className="code-body">
+                <CopyButton label="คัดลอก prompt" />
+                <pre>
+                  <code>{prompt}</code>
+                </pre>
+              </div>
             </div>
           ))}
         </div>

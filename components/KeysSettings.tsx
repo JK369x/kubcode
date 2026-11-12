@@ -3,6 +3,7 @@ import { YouTubePrivateUpload } from "./YouTubePrivateUpload";
 import { useId, useState } from "react";
 import { useRouter } from "next/navigation";
 import { send } from "@/lib/interactions/client";
+import { toast } from "@/components/ui/toaster";
 import type { AuditEntry, ConnectionMeta, Overview, SecretKind, SecretMeta } from "@/lib/keys/store";
 import styles from "./KeysSettings.module.css";
 
@@ -69,7 +70,6 @@ function KeyForm({ spec, saved, canSave }: { spec: FormSpec; saved: SecretMeta |
   const id = useId();
   const [publicValue, setPublicValue] = useState(saved?.publicValue ?? "");
   const [secret, setSecret] = useState("");
-  const [status, setStatus] = useState("");
   const [busy, setBusy] = useState(false);
   const [confirmDisconnect, setConfirmDisconnect] = useState(false);
 
@@ -82,9 +82,12 @@ function KeyForm({ spec, saved, canSave }: { spec: FormSpec; saved: SecretMeta |
       secret,
     });
     setBusy(false);
-    if (!r.ok) return setStatus(r.message);
+    if (!r.ok) {
+      toast.error(r.message);
+      return;
+    }
     setSecret("");
-    setStatus(r.replaced ? "แทนที่คีย์แล้ว" : "บันทึกคีย์แล้ว");
+    toast.success(r.replaced ? "แทนที่คีย์แล้ว" : "บันทึกคีย์แล้ว");
     router.refresh();
   }
 
@@ -94,11 +97,12 @@ function KeyForm({ spec, saved, canSave }: { spec: FormSpec; saved: SecretMeta |
     setBusy(false);
     if (!r.ok) {
       if (r.code === "IN_USE") setConfirmDisconnect(true);
-      return setStatus(r.message);
+      toast.error(r.message);
+      return;
     }
     setConfirmDisconnect(false);
     setPublicValue("");
-    setStatus(r.disconnected ? `ลบคีย์และยกเลิกการเชื่อม ${r.disconnected} บัญชีแล้ว` : "ลบคีย์แล้ว");
+    toast.success(r.disconnected ? `ลบคีย์และยกเลิกการเชื่อม ${r.disconnected} บัญชีแล้ว` : "ลบคีย์แล้ว");
     router.refresh();
   }
 
@@ -161,9 +165,6 @@ function KeyForm({ spec, saved, canSave }: { spec: FormSpec; saved: SecretMeta |
           </button>
         )}
       </div>
-      <p role="status" aria-live="polite" className={styles.status}>
-        {status}
-      </p>
     </form>
   );
 }
@@ -187,14 +188,14 @@ function Connections({
 }) {
   const router = useRouter();
   const [busy, setBusy] = useState(false);
-  const [status, setStatus] = useState("");
 
   async function onConnect() {
     setBusy(true);
     const r = await send<{ authorizeUrl: string }>("/api/keys/oauth/start", "POST", { provider });
     if (!r.ok) {
       setBusy(false);
-      return setStatus(r.message);
+      toast.error(r.message);
+      return;
     }
     // Leaves kubcode for the provider's consent page; it returns to the callback.
     window.location.assign(r.authorizeUrl);
@@ -204,8 +205,11 @@ function Connections({
     setBusy(true);
     const r = await send<{ revoked: boolean }>(`/api/keys/connections/${id}/disconnect`, "POST", {});
     setBusy(false);
-    if (!r.ok) return setStatus(r.message);
-    setStatus(
+    if (!r.ok) {
+      toast.error(r.message);
+      return;
+    }
+    toast.success(
       provider === "instagram"
         ? "ยกเลิกการเชื่อมแล้ว ลบ kubcode ออกจาก Instagram › แอปและเว็บไซต์ได้ด้วย"
         : r.revoked
@@ -244,9 +248,6 @@ function Connections({
         </button>
         {!canConnect && <span className={styles.meta}>{hint}</span>}
       </div>
-      <p role="status" aria-live="polite" className={styles.status}>
-        {status}
-      </p>
     </div>
   );
 }

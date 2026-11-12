@@ -14,6 +14,8 @@
 2. This file: how the brand maps onto shadcn/ui + Tailwind v4, plus the rules from [the 2026-11-11 audit](../../docs/design/uiux-audit-2026-11-11.md).
 3. The current CSS (`app/globals.css`, CSS modules): shipping behaviour until migrated.
 
+**CSS layering (since the shadcn PR1):** `@layer theme, base, legacy, components, utilities`. The pre-shadcn rules in `globals.css` live in `@layer legacy`, so Tailwind utilities on shadcn components always win over old element rules (`button`, `input`). CSS modules are unlayered and still beat utilities: when a component moves to shadcn, delete the module rules that style the same element. Tailwind's preflight is not loaded (the legacy CSS assumes browser defaults).
+
 **Target stack:** Next.js 16 App Router, React 19, Tailwind v4 (CSS-first `@theme`), shadcn/ui (Radix), lucide-react, `next/font/local`. Themes: `data-theme="dark"` (default) / `"light"` on `<html>`, persisted in `localStorage['jk-theme']`. **Keep that attribute.** Map the shadcn `dark:` variant to it, do not switch to `class="dark"`.
 
 ---
@@ -48,6 +50,8 @@ The values are our tokens; do not substitute the shadcn defaults. Ratios are WCA
 | `--card-media` *(ours)* | catalog / hero media cards (dark in **both** themes) | `#0c0b10`, text `#ffffff` | same | 19.6 |
 | `--media-action` *(ours)* | unavailable download on media | bg `#242327`, label `#d7d3dd`, state `#bdb5c8` | detail page: bg `#ecebf0`, label `#5c5566`, state `#655a71`, border `#d5cfdd` | 10.6 / 7.9 · 6.0 / 5.4 |
 | `--chart-*` | not used | | | |
+| `--primary-hover` *(ours)* | primary button hover | `#bb98ff`, text `#291640` | `#5c2b98`, text `#ffffff` | 7.1 / 9.3 |
+| `--success` / `--warning` *(ours)* | toast status glyphs only (always with a word) | `#86efac` / `#fcd34d` | `#166534` / `#92400e` | on popover: 12.5 / 12.2 · 7.1 / 7.1 |
 
 **Color notes:** Purple marks choice and navigation, not every vendor identity. Real tool logos keep their own colors on small neutral discs. There is no purple panel behind the hero; the `hero-*` tokens are retired. No cream, purple or dashed panels for unavailable states.
 
@@ -180,6 +184,14 @@ Rules:
 - Mobile comments use a bottom `Sheet`: traps focus, Esc and browser Back close it, focus returns to the FAB.
 - The account menu is a `DropdownMenu`: opens on click/Enter, Tab enters, Esc returns focus, outside click closes.
 - Overlay scrim must leave the foreground ≥ 4.5:1.
+
+### Toasts (ding, `components/ui/toaster.tsx`)
+
+- One `<Toaster position="top-center" theme="system" />` in `app/layout.tsx`; Thai labels ("การแจ้งเตือน" / "ปิดการแจ้งเตือน").
+- Use `toast.success/error/warning/loading` from `@/components/ui/toaster` for the result of an action (sent, copied, saved, connected, failed). No inline `role=status` result lines. Errors stay until dismissed. Validation errors still go **under the field**.
+- Colours and font come from our tokens (`.tst-viewport` in `globals.css`), not ding's defaults; it follows `data-theme` because `color-scheme` is inherited.
+- CSP: ding injects one `<style>`; the wrapper passes the page nonce (read from Next's own nonce'd scripts), so it works under a `style-src 'nonce-…'` policy.
+- ding respects `prefers-reduced-motion` (fade only, no springs).
 
 ### Loading (`Skeleton`)
 

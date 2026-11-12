@@ -25,14 +25,14 @@
 }
 .email {
   display: block;
-  color: var(--muted);
+  color: var(--muted-foreground);
   font-size: 14px;
   overflow-wrap: anywhere;
 }
 .provider {
   display: block;
   margin-top: 2px;
-  color: var(--muted);
+  color: var(--muted-foreground);
   font-size: 13px;
 }
 /* Doubled class outranks the global `.account-form p` rule. */

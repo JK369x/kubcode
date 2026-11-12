@@ -23,12 +23,12 @@
   color: var(--purple);
 }
 .count {
-  color: var(--muted);
+  color: var(--muted-foreground);
   font-size: 14px;
 }
 .meta {
   margin: 0;
-  color: var(--muted);
+  color: var(--muted-foreground);
   font-size: 13px;
 }
 .meta a {
@@ -73,13 +73,6 @@
 }
 .empty {
   padding: 14px 16px;
-}
-.status:empty {
-  display: none;
-}
-.status {
-  flex: none;
-  padding: 6px 16px 0;
 }
 .composer {
   flex: none;
@@ -129,7 +122,7 @@
   padding: 0;
   font: inherit;
   font-size: 13px;
-  color: var(--muted);
+  color: var(--muted-foreground);
   cursor: pointer;
 }
 .actions button:hover,
@@ -154,19 +147,12 @@
 }
 .label {
   font-size: 13px;
-  color: var(--muted);
+  color: var(--muted-foreground);
 }
+/* Box, text size and focus come from components/ui/textarea.tsx (--input
+   outline, 16px on mobile); only the open/closed height lives here. */
 .form textarea {
-  width: 100%;
-  font: inherit;
-  font-size: 14px;
-  padding: 8px 10px;
-  border-radius: 10px;
-  border: 1px solid var(--field-line);
-  background: var(--surface);
-  color: var(--ink);
-  resize: vertical;
-  min-height: 2.5rem;
+  min-height: 2.75rem;
   transition: min-height 0.18s ease, border-color 0.18s ease;
 }
 .form[data-open] textarea {
@@ -205,9 +191,6 @@
   gap: 8px;
   margin-left: auto;
 }
-.formActions button {
-  padding: 6px 14px;
-}
 
 /* Mobile/tablet: floating bar and bottom sheet; the rail takes over ≥1180px. */
 .mobileBar {
@@ -228,11 +211,13 @@
    scrolls a focused control above it. Bar: 16px offset + ~58px tall. */
 @media (max-width: 1179px) {
   :global(html):has(.mobileBar) {
-    scroll-padding-bottom: 88px;
+    scroll-padding-bottom: 104px;
   }
-  /* ...including the last footer links, which cannot scroll any higher. */
+  /* ...including the last footer links, which cannot scroll any higher.
+     Bar top is ~70px above the viewport bottom; 96px leaves a clear gap so
+     the end of any block can scroll above it (owner, 2026-11-12). */
   :global(body):has(.mobileBar) {
-    padding-bottom: 80px;
+    padding-bottom: 96px;
   }
 }
 .mobileBar .count {
