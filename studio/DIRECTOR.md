@@ -2,7 +2,7 @@
 
 ## Choose a style
 
-Start with npm run styles or the gallery. Read the selected STYLE.md and inspect its actual image/source. JK Soft Story v2 is selected for still visual direction; Low-poly Urban retains its selected 8-second visual/motion direction; captions were separately updated and approved on 2026-10-29. Audio and future episodes require separate review. If no style is specified, present the catalog and let the user choose. Never silently merge styles. Do not advertise earlier rejected auditions as additional approved styles. Add future styles as separate drafts.
+Start with npm run styles. Read the selected STYLE.md and inspect its actual image/source. JK Soft Story v2 is selected for still visual direction; Low-poly Urban retains its selected 8-second visual/motion direction; captions were separately updated and approved on 2026-10-29. Audio and future episodes require separate review. If no style is specified, present the catalog and let the user choose. Never silently merge styles. Do not advertise earlier rejected auditions as additional approved styles. Add future styles as separate drafts.
 
 ## Build the story before expensive visuals
 

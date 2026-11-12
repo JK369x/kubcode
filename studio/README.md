@@ -5,11 +5,11 @@
 ยังไม่คุ้นโครงสร้าง? อ่าน [โฟลเดอร์ ไฟล์ และความต่างของ skills](STRUCTURE.md) ก่อน — แยกสิ่งที่ใช้ร่วมกันจาก renderer และ source ตัวอย่างแต่ละรุ่น
 
 
-เปิด [แกลเลอรีเลือกสไตล์](gallery/index.html) หรือรัน `npm run preview` แล้วเปิด `http://127.0.0.1:3012` ค้นหาแนวภาพ เลือกวิดีโอตัวอย่าง และกด **เลือกสไตล์นี้ → คัดลอกโจทย์** ได้เลย ดู [ทะเบียนสไตล์ทั้งหมด](CATALOG.md) และ [แผนผังโปรเจกต์](WORKSPACE.md)
+รัน `npm run styles` เพื่อดูรายชื่อสไตล์ แล้วอ่าน `styles/<id>/STYLE.md` ของแนวที่เลือก ดู [แผนผังโปรเจกต์](WORKSPACE.md) — ไม่มี UI ใน studio/ UI ผลิตภัณฑ์อยู่ในเว็บ kubcode (kubcode.dev)
 
 - **GrowKaz Stickman / Thai Survival:** มีคลิปจริงแยก Claude Code, Codex CLI และฉบับ Claude → Codex ให้สลับดู
 - **FreshStack What If:** มีตัวอย่าง OpenCode + GLM และเสียงไทย ElevenLabs; ยังไม่มีเวอร์ชัน Claude/Codex จึงไม่ติดป้ายว่าเป็นคู่เทียบ
-- แนวเดิมและแนวทดลองคงสถานะของตนเอง การเลือกในหน้าเว็บไม่เท่ากับอนุมัติภาพ/เสียงใหม่หรือเริ่มงานเสียเงิน
+- แนวเดิมและแนวทดลองคงสถานะของตนเอง การเลือกสไตล์ไม่เท่ากับอนุมัติภาพ/เสียงใหม่หรือเริ่มงานเสียเงิน
 - สไตล์ต่าง renderer ต้องใช้ kit ของตนเอง อย่าใช้คำสั่ง HyperFrames กับ Remotion หรือ GrowKaz โดยอัตโนมัติ
 
 Private style and production library for code-based videos. เริ่มจาก **JK Soft Story v2** ที่ผู้ใช้เลือกเมื่อ 28 ตุลาคม 2026 พร้อมภาพต้นแบบ SVG ชิ้นส่วน และผู้บรรยายไทย สุขุม
@@ -25,10 +25,8 @@ npm ci
 npm run doctor
 npm test
 npm run check
-npm run preview
+npm run styles
 ```
-
-เปิด http://127.0.0.1:3012 และกด Ctrl+C เพื่อหยุด สามารถเปิด gallery/index.html โดยตรงได้หลัง npm run gallery
 
 ## ใช้กับ Claude หรือ Codex
 
@@ -53,7 +51,7 @@ npm run preview
 
 <img src="styles/low-poly-urban/assets/preview.png" alt="Low-poly Urban draft with Robot Terminal captions" width="360">
 
-คลิปตัวอย่างทั้งสองไม่มีเสียง ใช้ดูภาพและ motion เท่านั้น เลือกสไตล์ใน gallery แล้วคัดลอกข้อความเริ่มงาน แต่ละแนวมี STYLE.md ของตัวเอง ไม่ผสมภาพอัตโนมัติ ส่วนซับคลิปบรรยายไทยใช้ค่าเริ่มต้นล่าสุด: **ไทยไฮไลต์คำสำคัญ + อังกฤษตัวเล็กใต้ไทย** ตาม [คู่มือซับ](shared/captions/STYLE.md) ที่อนุมัติ 29 ต.ค. 2026 เว้นแต่สั่งรูปแบบอื่นหรือไม่เอาซับ
+คลิปตัวอย่างทั้งสองไม่มีเสียง ใช้ดูภาพและ motion เท่านั้น เลือกสไตล์จาก `npm run styles` แล้วอ่าน STYLE.md ของแนวนั้น แต่ละแนวมี STYLE.md ของตัวเอง ไม่ผสมภาพอัตโนมัติ ส่วนซับคลิปบรรยายไทยใช้ค่าเริ่มต้นล่าสุด: **ไทยไฮไลต์คำสำคัญ + อังกฤษตัวเล็กใต้ไทย** ตาม [คู่มือซับ](shared/captions/STYLE.md) ที่อนุมัติ 29 ต.ค. 2026 เว้นแต่สั่งรูปแบบอื่นหรือไม่เอาซับ
 
 คลังนี้ยังไม่ได้มีทุกสไตล์ของ Lemo และไม่ได้คัดลอก renderer ของ Lemo มาใช้ ดู [DIRECTOR.md](DIRECTOR.md) สำหรับวิธีเล่า/ภาพ/เสียง และ [TECHNIQUE.md](TECHNIQUE.md) สำหรับเครื่องมือ/การเรนเดอร์
 
@@ -63,7 +61,7 @@ npm run preview
 npm run new-style -- paper-noir
 ```
 
-สร้าง styles/paper-noir/STYLE.md และ style.json เป็น draft โดยไม่ทับของเดิม เติม guide, ภาพ, source และ component แล้วใส่ paths ใน metadata เปลี่ยน status เป็น selected เฉพาะเมื่อผู้ใช้เลือกจริง จากนั้น npm run check และ npm run gallery
+สร้าง styles/paper-noir/STYLE.md และ style.json เป็น draft โดยไม่ทับของเดิม เติม guide, ภาพ, source และ component แล้วใส่ paths ใน metadata เปลี่ยน status เป็น selected เฉพาะเมื่อผู้ใช้เลือกจริง จากนั้น npm run check
 
 ## ภาพและวิดีโอ
 
@@ -85,7 +83,7 @@ npm run setup:voice
 .venv/bin/python shared/voice/scripts/narrate.py --lines shared/voice/example-lines.json --out outputs/voice
 ```
 
-ดู [voice setup](shared/voice/README.md) สำหรับ check/dry-run และข้อกำหนด ส่วน Windows/Linux ใช้แกลเลอรี ภาพ และเสียงที่มีได้ แต่สร้างเสียงด้วย MLX helper นี้ไม่ได้ ไม่รับประกัน delivery เหมือนกันทุกครั้งข้ามฮาร์ดแวร์
+ดู [voice setup](shared/voice/README.md) สำหรับ check/dry-run และข้อกำหนด ส่วน Windows/Linux ใช้สไตล์ ภาพ และเสียงที่มีได้ แต่สร้างเสียงด้วย MLX helper นี้ไม่ได้ ไม่รับประกัน delivery เหมือนกันทุกครั้งข้ามฮาร์ดแวร์
 
 ## Layout
 
@@ -93,7 +91,7 @@ npm run setup:voice
 - shared/voice/ — original JK reference/profile/helper and pinned primary requirements
 - shared/captions/ — Thai highlighted phrase overlay treatment
 - .agents/skills/ — repository-local agent entrypoints
-- scripts/ — catalog, draft scaffolding, gallery, doctor, voice setup
+- scripts/ — catalog, draft scaffolding, doctor, voice setup
 - tests/ — catalog/overwrite and relocated voice-bundle checks
 
 ## Privacy and rights

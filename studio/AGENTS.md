@@ -6,15 +6,14 @@ Preserve the distinction between draft, selected and retired. JK Soft Story v2 i
 
 Keep editable SVG source and stable named groups. Prefix SVG ids when composing multiple components. Use TECHNIQUE.md for the core HyperFrames contract and the optional official HyperFrames skills for full API guidance. Repository-local .agents/skills contains the Thai narrator entrypoint (thai-narrator); its reference WAV is local media (docs/media.md). Do not invent a replacement.
 
-After code changes run npm test and npm run check. Regenerate gallery with npm run gallery when metadata changes. Inspect actual images after artwork changes. Do not import third-party reference screenshots as production assets or publish without a request.
+After code changes run npm test and npm run check. Inspect actual images after artwork changes. Do not import third-party reference screenshots as production assets or publish without a request.
 
 ## Product boundary: the AI Studio belongs on kubcode.dev (owner decision 2026-11-11)
 
 The user-facing AI Studio (idea → brief → build clip → review → schedule/publish, plus calendar, channels and insights) is a feature of the kubcode web app (repo `JK369x/kubcode`, kubcode.dev), not of this repository. See docs/adr/0001-ai-studio-on-kubcode.md.
 
 - This repository is the production engine and style source: styles, STYLE.md, style.json, renderers/pipelines, Thai narrator voice, captions and covers. It runs on the owner's Mac and is never deployed.
-- `docs/studio-design-2026-10-29/createui-react/` is a design prototype with simulated data only. Use it as UI/flow reference; do not add real backends, auth, AI calls, payments or publishing to it, and do not grow it into a product.
-- `gallery/` stays a local style picker for agents and the owner.
+- No UI in studio/; product UI lives in the kubcode web app. The local style gallery and the simulated createui-react prototype were removed on 2026-11-12 (owner decision; git history keeps them). Do not add new local UIs here.
 - Build new Studio screens, routes, auth, storage, jobs and billing in kubcode, following its own AGENTS.md, ADRs and Rust-for-backend rule. kubcode already owns accounts, channels, publishing (Rust Lambdas + Zernio) and secrets.
 - Integrate through explicit contracts (exported style manifest, render job/artifact format, `kubcode` CLI), never by sharing a database, secrets or importing code across repositories.
 

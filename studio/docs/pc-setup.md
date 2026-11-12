@@ -79,7 +79,7 @@ The kit's `SKILL.md` (`studio/styles/freshstack-what-if/kit/`) is the brief for 
 ## 8. What comes from `media/` (copy from the owner's store; never commit)
 
 See `docs/media.md`. For What If shorts you need none of it: narration is generated per episode into
-`media/work/what-if/voice/<slug>/voice/`. Optional: `media/studio-examples/` (example videos for the gallery) and
+`media/work/what-if/voice/<slug>/voice/`. Optional: `media/studio-examples/` (style example videos) and
 `media/studio-examples/freshstack-what-if/source/studio/public/mute-touch/` (only to re-render Mute Touch).
 
 ## 9. Smoke test

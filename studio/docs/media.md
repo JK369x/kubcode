@@ -7,7 +7,7 @@ pass without it; tests that need a file skip, and `check` warns about absent exa
 
 | Local path under `media/` | What | Used by |
 |---|---|---|
-| `studio-examples/<style>/examples/<id>/demo.mp4` | style example videos (jk-soft-story, low-poly-urban, freshstack-what-if) | `style.json` `video`/`examples[].video` (resolved style dir → here), gallery, kubcode `npm run showcase` |
+| `studio-examples/<style>/examples/<id>/demo.mp4` | style example videos (jk-soft-story, low-poly-urban, freshstack-what-if) | `style.json` `video`/`examples[].video` (resolved style dir → here), kubcode `npm run showcase` |
 | `studio-examples/freshstack-what-if/source/studio/public/mute-touch/*.wav` | Mute Touch ElevenLabs voice/music/SFX (private study) | copy into the Remotion `public/` to re-render that episode |
 | `voice/narrator-reference.wav` | approved narrator reference (checksum in `shared/voice/assets/narrator-profile.json`) | `shared/voice/scripts/narrate.py` (`NARRATOR_REFERENCE_PATH` overrides) |
 | `voice/narrator-sample.wav`, `voice/voice-jk-example.wav` | listening samples | — |
