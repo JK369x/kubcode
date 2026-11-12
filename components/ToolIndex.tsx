@@ -5,6 +5,7 @@ import { toolIndex, toolUsage } from "@/lib/tool-index";
 import { StarCountsProvider } from "./StarCounts";
 import { ToolCard } from "./ToolCard";
 import styles from "./ToolIndex.module.css";
+import { chipVariants } from "@/components/ui/toggle-variants";
 
 /** /tools and /tools/c/<stage>: production-line filter and a card grid. */
 export function ToolIndex({ content, stage }: { content: Content; stage?: ToolCategory }) {
@@ -23,7 +24,7 @@ export function ToolIndex({ content, stage }: { content: Content; stage?: ToolCa
         <ol>
           {chips.map((c) => (
             <li key={c.href}>
-              <Link href={c.href} aria-current={c.active ? "page" : undefined}>
+              <Link href={c.href} aria-current={c.active ? "page" : undefined} className={chipVariants({ className: "pr-3.5 pl-2 text-sm" })}>
                 {c.step !== null && (
                   <span className={styles.step} aria-hidden="true">
                     {c.step}

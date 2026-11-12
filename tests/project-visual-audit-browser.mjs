@@ -1,6 +1,7 @@
 import {chromium} from '@playwright/test';
 import fs from 'node:fs';
 import assert from 'node:assert/strict';
+const BASE=process.env.BASE_URL||'http://127.0.0.1:3040';
 const dir='.qa/project-visual-audit';fs.mkdirSync(dir,{recursive:true});
 const slugs=file=>[...fs.readFileSync(file,'utf8').matchAll(/slug:\s*"([^"]+)"/g)].map(m=>m[1]);
 const routes=['/','/articles','/account',...slugs('lib/catalog.ts').map(s=>'/skills/'+s),...fs.readdirSync('content/articles').filter(f=>f.endsWith('.mdx')).map(f=>'/articles/'+f.slice(0,-4))];
@@ -16,7 +17,7 @@ try{
   for(const width of [1440,768,375]){
    await page.setViewportSize({width,height:width<600?844:1000});
    for(const route of routes){
-    const res=await page.goto('http://127.0.0.1:3040'+route,{waitUntil:'networkidle'});
+    const res=await page.goto(BASE+route,{waitUntil:'networkidle'});
     await page.evaluate(()=>document.fonts.ready);
     await page.locator('.detail-grid .exhibit video').evaluateAll(async videos=>{
       await Promise.all(videos.map(v=>v.readyState>=2?Promise.resolve():new Promise((resolve,reject)=>{
@@ -32,7 +33,7 @@ try{
     const screenshot=`${dir}/${width}-${theme}-${route==='/'?'home':route.slice(1).replaceAll('/','-')}.png`;
     await page.screenshot({path:screenshot});report.routeStates.push({route,width,theme,status:res.status(),...info,screenshot});
    }
-   await page.goto('http://127.0.0.1:3040',{waitUntil:'networkidle'});
+   await page.goto(BASE,{waitUntil:'networkidle'});
    for(const image of await page.locator('.card-preview > img').all()){
     await image.evaluate(async img=>{img.scrollIntoView({block:'center',behavior:'instant'});await img.decode();if(!img.naturalWidth)throw new Error('blank catalog image');});
    }

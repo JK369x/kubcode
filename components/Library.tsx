@@ -27,6 +27,9 @@ import {
   type HomeFilter,
 } from "@/lib/facets";
 import { ClipResults } from "./ClipResults";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { KineticHero } from "./KineticHero";
 import heroStyles from "./KineticHero.module.css";
 
@@ -35,7 +38,11 @@ const PUBLISHED = publishedShowcase();
 const HOME: HomeData = { skills, clips: cartoonShowcase(PUBLISHED), published: PUBLISHED };
 const USE_CASE_IDS = useCases.map((u) => u.id);
 
-/** One row of toggle chips; the pressed one is the row's value. */
+/**
+ * One row of filter chips: a shadcn ToggleGroup (single, radio semantics:
+ * arrow keys move between chips). One chip is always checked, so clicking the
+ * checked chip again keeps it.
+ */
 function FilterRow({
   label,
   name,
@@ -52,22 +59,27 @@ function FilterRow({
   return (
     <div className="filter-row" data-filter={name}>
       <span className="filter-label" aria-hidden="true">{label}</span>
-      <nav className="categories" aria-label={label}>
+      <ToggleGroup
+        type="single"
+        className="categories"
+        aria-label={label}
+        value={value}
+        onValueChange={(id) => id && onPick(id)}
+      >
         {options.map((item) => (
-          <button
+          <ToggleGroupItem
             key={item.id}
-            type="button"
+            value={item.id}
             data-value={item.id}
             {...(item.count === 0 ? { "data-empty": "" } : {})}
-            aria-pressed={value === item.id}
-            onClick={() => onPick(item.id)}
+            className="gap-2 data-empty:not-data-[state=on]:opacity-50"
           >
             {item.label}
             {item.en && <small lang="en" className="chip-en">{item.en}</small>}
-            <span>{item.count}</span>
-          </button>
+            <span className="font-brand text-xs text-muted-foreground group-data-[state=on]/toggle:text-inherit">{item.count}</span>
+          </ToggleGroupItem>
         ))}
-      </nav>
+      </ToggleGroup>
     </div>
   );
 }
@@ -226,12 +238,14 @@ export function Library({
             <p>เริ่มจากภาพที่ชอบ แล้วค่อยเลือกเครื่องมือที่เหมาะ</p>
           </div>
           <label className="search">
-            <Search size={19} />
+            <Search size={19} aria-hidden="true" />
             <span className="sr-only">ค้นหาในรายการ</span>
-            <input
+            <Input
+              type="search"
               value={query}
               onChange={(event) => set({ query: event.target.value })}
               placeholder="ค้นหาในรายการ"
+              className="h-auto rounded-none border-0 bg-transparent p-0 focus-visible:outline-0"
             />
           </label>
         </div>
@@ -276,10 +290,10 @@ export function Library({
                 ? "ลองค้นชื่อสไตล์ หรือเครื่องมือ เช่น Canvas, Remotion, เสียง"
                 : "ตัวกรองชุดนี้ยังไม่มีรายการจริง เราไม่สร้าง skill ขึ้นมาเติมช่องว่าง"}
             </p>
-            <button onClick={reset}>
-              <RotateCcw size={16} />
+            <Button type="button" variant="outline" onClick={reset}>
+              <RotateCcw size={16} aria-hidden="true" />
               ล้างตัวกรอง
-            </button>
+            </Button>
           </div>
         )}
       </section>

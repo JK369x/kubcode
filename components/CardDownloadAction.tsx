@@ -17,7 +17,8 @@ import { toast } from "@/components/ui/toaster";
 export function CardDownloadAction({ slug, name, conditions = true }: {
   slug: string; name?: string; conditions?: boolean;
 }) {
-  const label = "ดูเงื่อนไขการดาวน์โหลด" + (name ? " " + name : "");
+  // Starts with the visible word (WCAG 2.5.3, audit 2026-11-11 #4).
+  const label = "เงื่อนไข: ดาวน์โหลด" + (name ? " " + name : "");
   const state = "download-state-" + encodeURIComponent(slug);
   const hasPackage = approvedPackageFor(slug) !== null;
   return (

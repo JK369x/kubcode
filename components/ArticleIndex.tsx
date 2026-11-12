@@ -6,6 +6,8 @@ import { ArticleCard } from "./ArticleCard";
 import { LatestComments } from "./Community";
 import { StarCountsProvider } from "./StarCounts";
 import styles from "./ArticleIndex.module.css";
+import { chipVariants } from "@/components/ui/toggle-variants";
+import { Badge } from "@/components/ui/badge";
 
 /** /articles and /articles/c/<key>: hero article, category filter, card grid. */
 export function ArticleIndex({ content, category }: { content: Content; category?: string }) {
@@ -24,9 +26,9 @@ export function ArticleIndex({ content, category }: { content: Content; category
         <ul>
           {chips.map((c) => (
             <li key={c.href}>
-              <Link href={c.href} aria-current={c.active ? "page" : undefined}>
+              <Link href={c.href} aria-current={c.active ? "page" : undefined} className={chipVariants({ className: "text-sm" })}>
                 {c.label}
-                <span className={styles.count}>{c.count}</span>
+                <Badge variant="secondary" className={styles.count}>{c.count}</Badge>
               </Link>
             </li>
           ))}

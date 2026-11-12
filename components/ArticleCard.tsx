@@ -8,6 +8,8 @@ import { PageStars } from "./StarCounts";
 import { ToolIconRow } from "./ToolIconRow";
 import { SkeletonImage } from "./SkeletonImage";
 import styles from "./ArticleIndex.module.css";
+import { Card, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 
 /**
  * One article in the index. The title is the card's link (stretched over the
@@ -28,7 +30,7 @@ export function ArticleCard({
 }) {
   const Heading = featured ? "h2" : "h3";
   return (
-    <article className={featured ? `${styles.card} ${styles.featured}` : styles.card}>
+    <Card as="article" variant="cover" className={featured ? `${styles.card} ${styles.featured}` : styles.card}>
       <Morph name={coverTransitionName(a.slug)}>
         <div className={styles.cover}>
           {/* The title is the link text; the cover is decorative here. */}
@@ -42,11 +44,11 @@ export function ArticleCard({
           />
         </div>
       </Morph>
-      <div className={styles.text}>
+      <CardContent className={styles.text}>
         <span className={styles.badge}>{categoryLabel}</span>
         <Morph name={titleTransitionName("article", a.slug)}>
           <Heading className={styles.title}>
-            <Link href={`/articles/${a.slug}`} transitionTypes={["nav-forward"]} className={styles.link}>
+            <Link href={`/articles/${a.slug}`} transitionTypes={["nav-forward"]} className={styles.link} data-stretch="">
               {a.title}
             </Link>
           </Heading>
@@ -56,14 +58,14 @@ export function ArticleCard({
           <time dateTime={a.updated}>{thaiDate(a.updated, "short")}</time>
           <span>อ่าน {a.readingMinutes} นาที</span>
           {a.video && (
-            <span className={styles.clip}>
-              <PlayCircle size={14} aria-hidden /> มีคลิป
-            </span>
+            <Badge className={styles.clip}>
+              <PlayCircle aria-hidden /> มีคลิป
+            </Badge>
           )}
           <PageStars slug={a.slug} className={styles.stars} />
         </p>
         <ToolIconRow tools={tools} className={styles.tools} />
-      </div>
-    </article>
+      </CardContent>
+    </Card>
   );
 }

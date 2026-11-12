@@ -107,7 +107,7 @@
   background: var(--selected, #d9c8ff);
   color: var(--selected-ink, #120c1c);
   box-shadow: 0 2px 8px rgb(0 0 0 / 0.35);
-  font-size: 11.5px;
+  font-size: 12px;
   font-weight: 600;
   line-height: 1.35;
   white-space: nowrap;
@@ -154,7 +154,7 @@
   border-radius: 8px;
   background: rgb(12 11 16 / 0.72);
   color: #fff;
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 600;
 }
 
@@ -184,7 +184,7 @@
 .model {
   overflow: hidden;
   color: rgb(255 255 255 / 0.78);
-  font: 500 10.5px / 1.3 ui-monospace, SFMono-Regular, Menlo, monospace;
+  font: 500 12px / 1.3 ui-monospace, SFMono-Regular, Menlo, monospace;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
@@ -271,48 +271,13 @@
   flex-wrap: wrap;
   gap: 6px;
 }
-.action,
-.lock {
-  display: inline-flex;
-  flex: 1 1 0;
-  align-items: center;
-  justify-content: center;
-  gap: 5px;
-  min-height: 40px;
-  padding: 0 10px;
-  border-radius: 999px;
-  font-size: 13px;
-  font-weight: 500;
-  line-height: 1.2;
-  text-decoration: none;
-  white-space: nowrap;
-}
-.action {
-  background: var(--selected);
-  color: var(--selected-ink);
-}
-.action:hover {
-  background: var(--purple);
-  color: var(--action-hover-ink);
-}
-/* Outline pills sit on the dark scrim in both themes, so their ink is light. */
-.lock {
-  border: 1px solid rgb(255 255 255 / 0.45);
-  background: rgb(8 6 12 / 0.35);
-  color: #fff;
-}
-a.lock:hover {
-  border-color: #fff;
-}
+/* .action / .lock / .download are shadcn Buttons (VisualShelf.tsx ACTION,
+   ON_SCRIM): pills on the dark scrim, 44px on touch. Only the disabled
+   "เร็วๆ นี้" keeps a dimmer edge here. */
 .lock:disabled {
   border-color: rgb(255 255 255 / 0.25);
   color: rgb(255 255 255 / 0.65);
-  cursor: not-allowed;
-}
-.action:focus-visible,
-.lock:focus-visible {
-  outline: 3px solid var(--purple);
-  outline-offset: 2px;
+  opacity: 1;
 }
 
 .footer {
@@ -332,27 +297,9 @@ a.lock:hover {
   color: inherit;
   text-underline-offset: 3px;
 }
+/* The pause control is a shadcn Toggle (outline). */
 .toggle {
-  display: inline-flex;
   flex: none;
-  align-items: center;
-  gap: 8px;
-  min-height: 44px;
-  padding: 0 16px 0 13px;
-  border: 1px solid var(--line);
-  border-radius: 999px;
-  background: transparent;
-  color: var(--ink);
-  font-size: 14px;
-}
-.toggle[aria-pressed="true"] {
-  background: var(--selected);
-  border-color: var(--selected);
-  color: var(--selected-ink);
-}
-.toggle:focus-visible {
-  outline: 3px solid var(--purple);
-  outline-offset: 3px;
 }
 
 @media (max-width: 719px) {
@@ -391,37 +338,4 @@ a.lock:hover {
   .toggle {
     display: none;
   }
-}
-
-/* A real download (signed in, package approved): an outline pill that fills on hover. */
-.download {
-  display: inline-flex;
-  flex: 1 1 0;
-  align-items: center;
-  justify-content: center;
-  gap: 5px;
-  min-height: 40px;
-  padding: 0 10px;
-  border: 1px solid var(--purple);
-  border-radius: 999px;
-  background: rgb(8 6 12 / 0.35);
-  color: #fff;
-  font: inherit;
-  font-size: 13px;
-  font-weight: 500;
-  line-height: 1.2;
-  white-space: nowrap;
-  cursor: pointer;
-}
-.download:hover:not(:disabled) {
-  background: var(--purple);
-  color: var(--action-hover-ink);
-}
-.download:disabled {
-  opacity: 0.7;
-  cursor: progress;
-}
-.download:focus-visible {
-  outline: 3px solid var(--purple);
-  outline-offset: 2px;
 }
