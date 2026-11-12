@@ -337,12 +337,23 @@ header.header {
   font-size: 12px;
   background: var(--surface);
 }
+/* The home page spans the whole window, so the hero aura and the style
+   shelf can bleed edge to edge at any width (owner, 2026-11-12: 1920/2560
+   showed plain strips at the sides). The page itself clips their overscan
+   (clip, not hidden: no scroll container, sticky still works); every
+   section keeps the 1440px column with the usual gutters. */
 .library-page {
-  max-width: 1440px;
-  padding: 0 4.5%;
-  margin: 0 auto;
-  /* The hero aura and the style shelf bleed to the window edge. */
+  --page-gutter: 0.045;
   overflow-x: clip;
+}
+/* Same column as before (1440px box with 4.5% / 5% gutters): margins, not
+   padding, so each section's own padding and background stay as they were. */
+.library-page > * {
+  /* As the header: a box of at most 1440px, minus a 4.5% (5% on phones)
+     gutter each side, where % is of the window (percent padding resolves
+     against the parent's width). */
+  width: calc(min(100%, 1440px) - 2 * var(--page-gutter) * 100%);
+  margin-inline: auto !important;
 }
 .opening {
   display: flex;
@@ -1475,7 +1486,7 @@ p[role="status"]:empty {
   }
 
   .library-page {
-    padding: 0 5%;
+    --page-gutter: 0.05;
   }
   .opening {
     display: block;
