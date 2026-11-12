@@ -51,18 +51,7 @@
   gap: 12px;
   max-width: 480px;
 }
-.form label {
-  display: grid;
-  gap: 6px;
-  font-size: 14px;
-}
-.form input {
-  padding: 12px;
-  border: 1px solid var(--field-line);
-  border-radius: 12px;
-  background: var(--surface-soft);
-  min-width: 0;
-}
+/* Fields: shadcn Field + Input (components/ui). */
 .state {
   font-size: 15px;
 }
@@ -84,22 +73,6 @@
 }
 .actions > * {
   flex: 1 1 180px;
-}
-.actions button:not(:global(.primary)) {
-  border-radius: 12px;
-  padding: 12px;
-}
-.danger {
-  border-color: var(--purple);
-  color: var(--purple);
-}
-.status.status {
-  min-height: 1.5em;
-  color: var(--purple);
-  font-size: 14px;
-}
-.status:empty {
-  min-height: 0;
 }
 .connections {
   display: grid;
@@ -125,11 +98,6 @@
 .connections li strong {
   font-weight: 500;
   overflow-wrap: anywhere;
-}
-.connections li button,
-.soon button {
-  border-radius: 12px;
-  padding: 10px 14px;
 }
 .soon {
   display: flex;

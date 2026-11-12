@@ -2,6 +2,9 @@
 import { useEffect, useId, useState } from "react";
 import { send } from "@/lib/interactions/client";
 import { toast } from "@/components/ui/toaster";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { FieldLabel } from "@/components/ui/field";
 
 /**
  * Edits the name shown with this member's comments. Prefilled with the
@@ -36,8 +39,8 @@ export function PublicNameForm() {
           } else toast.error(r.message);
         }}
       >
-        <label htmlFor={id}>ชื่อนี้แสดงต่อสาธารณะคู่กับคอมเมนต์ของคุณ เว้นว่างไว้เพื่อแสดงเป็น “สมาชิก”</label>
-        <input
+        <FieldLabel htmlFor={id}>ชื่อนี้แสดงต่อสาธารณะคู่กับคอมเมนต์ของคุณ เว้นว่างไว้เพื่อแสดงเป็น “สมาชิก”</FieldLabel>
+        <Input
           id={id}
           value={name ?? ""}
           maxLength={40}
@@ -45,9 +48,9 @@ export function PublicNameForm() {
           onChange={(e) => setName(e.target.value)}
           autoComplete="nickname"
         />
-        <button type="submit" className="primary" disabled={name === null || busy}>
+        <Button type="submit" disabled={name === null || busy}>
           บันทึกชื่อ
-        </button>
+        </Button>
         <p role="status" aria-live="polite">
           {status}
         </p>

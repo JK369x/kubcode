@@ -42,62 +42,10 @@
   overflow-wrap: anywhere;
   white-space: pre-line;
 }
-.rule button {
-  border-radius: 12px;
-  padding: 10px 14px;
-}
+/* Rule badge: shadcn Badge (ok / warn). Form: shadcn Field, Textarea,
+   NativeSelect, RadioGroup, Checkbox (components/ui). */
 .badge {
   justify-self: start;
-  padding: 2px 10px;
-  border: 1px solid var(--line);
-  border-radius: 999px;
-  font-size: 13px;
-}
-.form textarea,
-.form select {
-  font: inherit;
-  color: inherit;
-  padding: 12px;
-  border: 1px solid var(--field-line);
-  border-radius: 12px;
-  background: var(--surface-soft);
-  min-width: 0;
-  width: 100%;
-}
-.form textarea {
-  resize: vertical;
-  min-height: 96px;
-}
-.form textarea:focus-visible,
-.form select:focus-visible {
-  outline: 3px solid var(--purple);
-  outline-offset: 4px;
-}
-.form fieldset {
-  display: grid;
-  gap: 8px;
-  margin: 0;
-  padding: 0;
-  border: 0;
-  min-width: 0;
-}
-.form legend {
-  padding: 0;
-  margin-bottom: 6px;
-  font-size: 14px;
-}
-.form .check {
-  display: flex;
-  align-items: flex-start;
-  gap: 10px;
-}
-.form .check input {
-  width: 20px;
-  height: 20px;
-  margin: 2px 0 0;
-  padding: 0;
-  flex: none;
-  accent-color: var(--purple);
 }
 .warn.warn {
   color: var(--purple);
@@ -209,20 +157,6 @@
 }
 .open {
   font-size: 12px;
-}
-.linkButton.linkButton {
-  justify-self: start;
-  padding: 0;
-  border: 0;
-  background: none;
-  color: var(--purple);
-  font: inherit;
-  font-size: 14px;
-  text-decoration: underline;
-  cursor: pointer;
-}
-.linkButton:disabled {
-  display: none;
 }
 .summary {
   display: flex;

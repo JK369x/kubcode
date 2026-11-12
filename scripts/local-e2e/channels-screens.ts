@@ -3,6 +3,8 @@
 // throwaway database. No provider call: these pages only read our database.
 //
 //   KUBCODE_TEST_DATABASE_URL=... npm run build && npx tsx scripts/local-e2e/channels-screens.ts
+// KUBCODE_SCREENS_OUT=<dir> writes elsewhere; KUBCODE_SCREENS_ALL=1 adds light
+// theme, 1440 px and the Instagram automations form (with a field error).
 import assert from "node:assert/strict";
 import { spawn, type ChildProcess } from "node:child_process";
 import { randomBytes } from "node:crypto";
@@ -13,11 +15,12 @@ import { chromium } from "@playwright/test";
 import { createPgAccountStore } from "../../lib/accounts/store";
 import { accountToken } from "../../lib/accounts/session";
 import { SESSION_COOKIE_NAME } from "../../lib/auth-policy";
+import { CSRF_COOKIE } from "../../lib/accounts/http";
 import { throwawayDb } from "../../tests/accounts-db/harness";
 
 const SECRET = "FIXTURE-ONLY-session-secret-local-e2e-0000001";
 const FAKE_LAMBDA = "https://localrunner0000000000000.lambda-url.ap-southeast-1.on.aws/";
-const OUT = ".qa/local-e2e/channels";
+const OUT = process.env.KUBCODE_SCREENS_OUT ?? ".qa/local-e2e/channels";
 
 async function freePort(): Promise<number> {
   const s = createServer();
@@ -58,12 +61,13 @@ async function main() {
     };
     await ch("youtube", "โลกอีกแบบ", "โลกอกแบบ", "revoked");
     await ch("youtube", "โลกอีกแบบ", "โลกอกแบบ", "revoked");
-    await ch("instagram", "kube.code", "kube.code", "active");
+    const ig = await ch("instagram", "kube.code", "kube.code", "active");
     const tt = await ch("tiktok", "kubcode", "kubcode", "active");
     await ch("youtube", "kubcode", "kubcode", "needs_reconnect");
 
     const token = accountToken({ userId: uid, sessionVersion: login.sessionVersion, provider: "google", subject: profile.subject, name: "Owner", email: profile.email });
     const session = await encode({ token: token as never, secret: SECRET });
+    const csrf = randomBytes(32).toString("base64url");
     const port = await freePort();
     next = spawn(process.execPath, ["node_modules/next/dist/bin/next", "start", "--hostname", "127.0.0.1", "--port", String(port)], {
       env: {
@@ -93,14 +97,21 @@ async function main() {
     }
     mkdirSync(OUT, { recursive: true });
     const browser = await chromium.launch({ headless: true });
-    for (const [name, viewport] of [
-      ["desktop", { width: 1280, height: 900 }],
-      ["mobile-390", { width: 390, height: 844 }],
-    ] as const) {
+    const all = process.env.KUBCODE_SCREENS_ALL === "1";
+    const runs = all
+      ? (["dark", "light"] as const).flatMap((theme) =>
+          ([["1440", { width: 1440, height: 1000 }], ["390", { width: 390, height: 844 }]] as const).map(
+            ([w, viewport]) => [`${w}-${theme}`, viewport, theme] as const,
+          ),
+        )
+      : ([["desktop", { width: 1280, height: 900 }, "dark"], ["mobile-390", { width: 390, height: 844 }, "dark"]] as const);
+    for (const [name, viewport, theme] of runs) {
       const context = await browser.newContext({ viewport });
+      await context.addInitScript((t) => localStorage.setItem("jk-theme", t), theme);
       await context.route("https://kubcode.dev/**", async (route) => {
         const u = new URL(route.request().url());
-        const headers = { ...(await route.request().allHeaders()), host: "kubcode.dev", "x-forwarded-proto": "https", cookie: `${SESSION_COOKIE_NAME}=${session}` };
+        // Plain-http browser: Secure cookies (session, CSRF double-submit) are injected per request.
+        const headers = { ...(await route.request().allHeaders()), host: "kubcode.dev", origin: "https://kubcode.dev", "x-forwarded-proto": "https", cookie: `${SESSION_COOKIE_NAME}=${session}; ${CSRF_COOKIE}=${csrf}` };
         await route.fulfill({ response: await route.fetch({ url: `http://127.0.0.1:${port}${u.pathname}${u.search}`, headers, maxRedirects: 0 }) });
       });
       const page = await context.newPage();
@@ -123,6 +134,22 @@ async function main() {
       await page.getByText("TikTok ตอบได้แค่ในคอมเมนต์ ส่ง DM ไม่ได้").first().waitFor();
       assert.equal(await page.getByLabel("ข้อความ DM").count(), 0, "no DM field on TikTok");
       await page.screenshot({ path: `${OUT}/automations-tiktok-${name}.png`, fullPage: true });
+      if (all) {
+        await page.goto(`https://kubcode.dev/account/channels/${ig}/automations`);
+        await page.getByLabel("ข้อความ DM").waitFor();
+        await page.screenshot({ path: `${OUT}/automations-instagram-${name}.png`, fullPage: true });
+        // Submit with a keyword list the server rejects (21 words): the error
+        // shows under the field and focus moves there.
+        await page.getByLabel("คีย์เวิร์ด").fill(Array.from({ length: 21 }, (_, i) => `k${i}`).join(", "));
+        await page.getByLabel("ข้อความ DM").fill("ขอบคุณนะ https://kubcode.dev/go/x");
+        await page.getByRole("button", { name: "เพิ่มกฎ" }).click();
+        await page.waitForTimeout(800);
+        const focused = await page.evaluate(() => document.activeElement?.id ?? "");
+        const invalid = await page.getByLabel("คีย์เวิร์ด").getAttribute("aria-invalid");
+        console.log(`[channels-screens] ${name}: field error focus=${focused} aria-invalid=${invalid}`);
+        await page.getByLabel("คีย์เวิร์ด").scrollIntoViewIfNeeded();
+        await page.screenshot({ path: `${OUT}/automations-instagram-error-${name}.png` });
+      }
       await context.close();
     }
     await browser.close();

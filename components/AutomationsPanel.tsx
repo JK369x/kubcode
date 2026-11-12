@@ -8,6 +8,14 @@ import type { AutomationChannel, RuleView } from "@/lib/automations/store";
 import type { RecentOutcome } from "@/lib/automations/view";
 import type { PickerPost } from "@/lib/automations/posts";
 import { SkeletonImg } from "./SkeletonImage";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { NativeSelect } from "@/components/ui/native-select";
+import { Checkbox } from "@/components/ui/checkbox";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Field, FieldDescription, FieldError, FieldLabel, FieldLegend, FieldSet } from "@/components/ui/field";
 import keys from "./KeysSettings.module.css";
 import styles from "./AutomationsPanel.module.css";
 
@@ -27,6 +35,10 @@ type Draft = {
   dmText: string;
   afterDm: boolean;
 };
+
+/** Form fields that can carry an error (server RuleField names). */
+type ErrField = "keywords" | "scope" | "publicReply" | "dmText";
+const FIELD_ID: Record<ErrField, string> = { keywords: "rule-keywords", scope: "rule-post", publicReply: "rule-reply", dmText: "rule-dm" };
 
 const EMPTY: Draft = { keywords: "", mode: "contains", scope: "all", postId: "", publicReply: "", dmText: "", afterDm: true };
 const DM_PLACEHOLDER = "ขอบคุณที่สนใจนะ นี่ลิงก์ที่ขอไว้ https://kubcode.dev/go/<slug>";
@@ -125,9 +137,16 @@ export function AutomationsPanel({ channel, rules, usage, recent }: Props) {
   const [draft, setDraft] = useState<Draft>(EMPTY);
   const [editing, setEditing] = useState<string | null>(null);
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
+  // The field the server rejected: its message shows under it (audit #10).
+  const [error, setError] = useState<{ field: ErrField; message: string } | null>(null);
   const formRef = useRef<HTMLElement>(null);
   const firstField = useRef<HTMLTextAreaElement>(null);
-  const set = <K extends keyof Draft>(k: K, v: Draft[K]) => setDraft((d) => ({ ...d, [k]: v }));
+  const set = <K extends keyof Draft>(k: K, v: Draft[K]) => {
+    setDraft((d) => ({ ...d, [k]: v }));
+    setError(null);
+  };
+  const invalid = (f: ErrField) => (error?.field === f ? { "aria-invalid": true as const } : {});
+  const describe = (f: ErrField, hint?: string) => [hint, error?.field === f ? `${FIELD_ID[f]}-error` : undefined].filter(Boolean).join(" ") || undefined;
   const tiktok = channel.platform === "tiktok";
   const noLink = tiktok
     ? draft.publicReply.trim() !== "" && !dmHasLink(draft.publicReply)
@@ -149,9 +168,15 @@ export function AutomationsPanel({ channel, rules, usage, recent }: Props) {
     const r = editing ? await send(`${base}/${editing}`, "PATCH", bodyOf(draft, tiktok)) : await send(base, "POST", bodyOf(draft, tiktok));
     setBusy(false);
     if (!r.ok) {
-      toast.error(r.message);
+      const f = r.field === "keywords" || r.field === "scope" || r.field === "publicReply" || r.field === "dmText" ? r.field : null;
+      if (f) {
+        // Under the field, and focus moves there (MASTER.md §Inputs).
+        setError({ field: f, message: r.message });
+        requestAnimationFrame(() => document.getElementById(FIELD_ID[f])?.focus());
+      } else toast.error(r.message);
       return;
     }
+    setError(null);
     toast.success(editing ? "บันทึกการแก้ไขแล้ว" : "เพิ่มกฎแล้ว");
     setEditing(null);
     setDraft(EMPTY);
@@ -169,6 +194,7 @@ export function AutomationsPanel({ channel, rules, usage, recent }: Props) {
   }
 
   function onCancelEdit() {
+    setError(null);
     setEditing(null);
     setDraft(EMPTY);
     setManual(false);
@@ -240,7 +266,9 @@ export function AutomationsPanel({ channel, rules, usage, recent }: Props) {
           <ul className={styles.rules}>
             {rules.map((r) => (
               <li key={r.id} className={r.active ? styles.rule : `${styles.rule} ${styles.paused}`}>
-                <span className={styles.badge}>{r.active ? "ใช้งานอยู่" : "พักไว้"}</span>
+                <Badge variant={r.active ? "ok" : "warn"} className={styles.badge}>
+                  {r.active ? "ใช้งานอยู่" : "พักไว้"}
+                </Badge>
                 <dl>
                   <dt>คีย์เวิร์ด</dt>
                   <dd>{r.keywords.join(", ")}</dd>
@@ -260,21 +288,21 @@ export function AutomationsPanel({ channel, rules, usage, recent }: Props) {
                   <dd>{tiktok ? TIKTOK_PUBLIC_ONLY : r.dmText}</dd>
                 </dl>
                 <div className={keys.actions}>
-                  <button type="button" disabled={busy} onClick={() => onEdit(r)} aria-label={`แก้ไขกฎ ${r.keywords.join(", ")}`}>
+                  <Button type="button" variant="outline" disabled={busy} onClick={() => onEdit(r)} aria-label={`แก้ไขกฎ ${r.keywords.join(", ")}`}>
                     แก้ไข
-                  </button>
-                  <button type="button" disabled={busy} onClick={() => onToggle(r)} aria-label={`${r.active ? "พัก" : "เปิดใช้"}กฎ ${r.keywords.join(", ")}`}>
+                  </Button>
+                  <Button type="button" variant="outline" disabled={busy} onClick={() => onToggle(r)} aria-label={`${r.active ? "พัก" : "เปิดใช้"}กฎ ${r.keywords.join(", ")}`}>
                     {r.active ? "พักกฎ" : "เปิดใช้"}
-                  </button>
-                  <button
+                  </Button>
+                  <Button
                     type="button"
-                    className={keys.danger}
+                    variant="destructive"
                     disabled={busy}
                     onClick={() => onDelete(r)}
                     aria-label={`${confirmDelete === r.id ? "ยืนยันลบ" : "ลบ"}กฎ ${r.keywords.join(", ")}`}
                   >
                     {confirmDelete === r.id ? "ยืนยันลบ" : "ลบ"}
-                  </button>
+                  </Button>
                 </div>
               </li>
             ))}
@@ -285,9 +313,9 @@ export function AutomationsPanel({ channel, rules, usage, recent }: Props) {
       <section className={keys.section} aria-labelledby="automations-form" ref={formRef}>
         <h2 id="automations-form">{editing ? "แก้ไขกฎ" : "เพิ่มกฎ"}</h2>
         <form className={`${keys.form} ${styles.form}`} onSubmit={onSubmit}>
-          <label htmlFor="rule-keywords">
-            คีย์เวิร์ด
-            <textarea
+          <Field data-invalid={error?.field === "keywords" || undefined}>
+            <FieldLabel htmlFor="rule-keywords">คีย์เวิร์ด</FieldLabel>
+            <Textarea
               id="rule-keywords"
               ref={firstField}
               rows={2}
@@ -296,31 +324,41 @@ export function AutomationsPanel({ channel, rules, usage, recent }: Props) {
               disabled={busy}
               required
               placeholder="ขอลิงก์, link"
-              aria-describedby="rule-keywords-hint"
+              aria-describedby={describe("keywords", "rule-keywords-hint")}
+              {...invalid("keywords")}
             />
-            <span id="rule-keywords-hint" className={keys.meta}>
+            <FieldDescription id="rule-keywords-hint">
               หลายคำคั่นด้วยจุลภาคหรือขึ้นบรรทัดใหม่ ได้สูงสุด 20 คำ ตัวพิมพ์เล็กใหญ่ถือว่าเหมือนกัน
-            </span>
-          </label>
-          <label htmlFor="rule-mode">
-            จับคำแบบ
-            <select id="rule-mode" value={draft.mode} onChange={(e) => set("mode", e.target.value as MatchMode)} disabled={busy}>
+            </FieldDescription>
+            {error?.field === "keywords" && <FieldError id="rule-keywords-error">{error.message}</FieldError>}
+          </Field>
+          <Field>
+            <FieldLabel htmlFor="rule-mode">จับคำแบบ</FieldLabel>
+            <NativeSelect id="rule-mode" value={draft.mode} onChange={(e) => set("mode", e.target.value as MatchMode)} disabled={busy}>
               <option value="contains">{MODE_LABEL.contains}</option>
               <option value="exact">{MODE_LABEL.exact}</option>
-            </select>
-          </label>
-          <fieldset disabled={busy}>
-            <legend>ใช้กับโพสต์ไหน</legend>
-            <label className={styles.check}>
-              <input type="radio" name="rule-scope" checked={draft.scope === "all"} onChange={() => set("scope", "all")} />
-              ทุกโพสต์
-            </label>
-            <label className={styles.check}>
-              <input type="radio" name="rule-scope" checked={draft.scope === "post"} onChange={() => set("scope", "post")} />
-              เฉพาะโพสต์เดียว
-            </label>
+            </NativeSelect>
+          </Field>
+          <FieldSet disabled={busy}>
+            <FieldLegend variant="label">ใช้กับโพสต์ไหน</FieldLegend>
+            <RadioGroup
+              value={draft.scope}
+              onValueChange={(v) => set("scope", v as Draft["scope"])}
+              aria-label="ใช้กับโพสต์ไหน"
+              className="gap-1"
+            >
+              <Field orientation="horizontal" className="min-h-11 items-center">
+                <RadioGroupItem value="all" id="rule-scope-all" />
+                <FieldLabel htmlFor="rule-scope-all" className="font-normal">ทุกโพสต์</FieldLabel>
+              </Field>
+              <Field orientation="horizontal" className="min-h-11 items-center">
+                <RadioGroupItem value="post" id="rule-scope-post" />
+                <FieldLabel htmlFor="rule-scope-post" className="font-normal">เฉพาะโพสต์เดียว</FieldLabel>
+              </Field>
+            </RadioGroup>
             {draft.scope === "post" && (
               <div className={styles.picker}>
+                {error?.field === "scope" && !showManual && <FieldError id="rule-post-error">{error.message}</FieldError>}
                 <p id="rule-post-hint" className={keys.meta}>
                   เลือก{noun}ที่ต้องการ กฎของ{noun}เดียวจะถูกใช้ก่อนกฎทุก{noun}
                 </p>
@@ -340,9 +378,9 @@ export function AutomationsPanel({ channel, rules, usage, recent }: Props) {
                 ) : posts.state === "failed" ? (
                   <p className={keys.meta} role="status">
                     {posts.message}{" "}
-                    <button type="button" className={styles.linkButton} onClick={retry}>
+                    <Button type="button" variant="link" className="h-11 md:h-auto" onClick={retry}>
                       ลองอีกครั้ง
-                    </button>
+                    </Button>
                   </p>
                 ) : listed.length === 0 ? (
                   <p className={keys.meta}>ยังไม่พบ{noun}ของช่องนี้ ใส่ ID เองได้ด้านล่าง</p>
@@ -395,9 +433,9 @@ export function AutomationsPanel({ channel, rules, usage, recent }: Props) {
                   <p className={keys.meta}>แสดงเฉพาะ{noun}ที่โพสต์ผ่าน kubcode เพราะโหลดรายการจาก{tiktok ? " TikTok" : " Instagram"} ไม่ได้ตอนนี้</p>
                 )}
                 {showManual ? (
-                  <label htmlFor="rule-post">
-                    {tiktok ? "ID ของวิดีโอใน TikTok" : "ID ของโพสต์ใน Instagram"}
-                    <input
+                  <Field data-invalid={error?.field === "scope" || undefined}>
+                    <FieldLabel htmlFor="rule-post">{tiktok ? "ID ของวิดีโอใน TikTok" : "ID ของโพสต์ใน Instagram"}</FieldLabel>
+                    <Input
                       id="rule-post"
                       value={draft.postId}
                       onChange={(e) => set("postId", e.target.value)}
@@ -406,18 +444,21 @@ export function AutomationsPanel({ channel, rules, usage, recent }: Props) {
                       pattern="[0-9]{1,64}"
                       autoComplete="off"
                       spellCheck={false}
-                      aria-describedby="rule-post-manual-hint"
+                      aria-describedby={describe("scope", "rule-post-manual-hint")}
+                      {...invalid("scope")}
                     />
-                    <span id="rule-post-manual-hint" className={keys.meta}>
+                    <FieldDescription id="rule-post-manual-hint">
                       {tiktok
                         ? "ตัวเลขท้ายลิงก์วิดีโอ เช่น tiktok.com/@kubcode/video/7300000000000000001"
                         : "media id ตัวเลขล้วน เช่น 17895695668004550 (ไม่ใช่ตัวอักษรในลิงก์ instagram.com)"}
-                    </span>
-                  </label>
+                    </FieldDescription>
+                    {error?.field === "scope" && <FieldError id="rule-post-error">{error.message}</FieldError>}
+                  </Field>
                 ) : null}
-                <button
+                <Button
                   type="button"
-                  className={styles.linkButton}
+                  variant="link"
+                  className="h-11 justify-start md:h-auto"
                   aria-expanded={showManual}
                   aria-controls={showManual ? "rule-post" : undefined}
                   onClick={() => {
@@ -427,13 +468,13 @@ export function AutomationsPanel({ channel, rules, usage, recent }: Props) {
                   disabled={posts.state === "failed"}
                 >
                   {showManual ? `เลือกจาก${noun}ล่าสุดแทน` : "ใส่ ID เอง"}
-                </button>
+                </Button>
               </div>
             )}
-          </fieldset>
-          <label htmlFor="rule-reply">
-            {tiktok ? "ข้อความตอบใต้คอมเมนต์" : "ข้อความตอบใต้คอมเมนต์ (ไม่บังคับ)"}
-            <textarea
+          </FieldSet>
+          <Field data-invalid={error?.field === "publicReply" || undefined}>
+            <FieldLabel htmlFor="rule-reply">{tiktok ? "ข้อความตอบใต้คอมเมนต์" : "ข้อความตอบใต้คอมเมนต์ (ไม่บังคับ)"}</FieldLabel>
+            <Textarea
               id="rule-reply"
               rows={tiktok ? 4 : 2}
               value={draft.publicReply}
@@ -442,21 +483,23 @@ export function AutomationsPanel({ channel, rules, usage, recent }: Props) {
               required={tiktok}
               maxLength={MAX_PUBLIC_REPLY_CHARS}
               placeholder={tiktok ? "ขอบคุณที่สนใจ ลิงก์อยู่ในไบโอนะ" : "ส่งให้ใน DM แล้วนะ"}
-              aria-describedby={tiktok ? "rule-reply-hint" : undefined}
+              aria-describedby={describe("publicReply", tiktok ? "rule-reply-hint" : undefined)}
+              {...invalid("publicReply")}
             />
             {tiktok && (
-              <span id="rule-reply-hint" className={keys.meta}>
+              <FieldDescription id="rule-reply-hint">
                 ต้องใส่ ช่องนี้คือคำตอบทั้งหมด เพราะ {TIKTOK_PUBLIC_ONLY} ทุกคนที่เปิดคอมเมนต์จะเห็นข้อความนี้
-              </span>
+              </FieldDescription>
             )}
-          </label>
+            {error?.field === "publicReply" && <FieldError id="rule-reply-error">{error.message}</FieldError>}
+          </Field>
           {tiktok ? (
             <p className={keys.meta}>ข้อความ DM: {TIKTOK_PUBLIC_ONLY}</p>
           ) : (
             <>
-              <label htmlFor="rule-dm">
-                ข้อความ DM
-                <textarea
+              <Field data-invalid={error?.field === "dmText" || undefined}>
+                <FieldLabel htmlFor="rule-dm">ข้อความ DM</FieldLabel>
+                <Textarea
                   id="rule-dm"
                   rows={4}
                   value={draft.dmText}
@@ -465,28 +508,30 @@ export function AutomationsPanel({ channel, rules, usage, recent }: Props) {
                   required
                   maxLength={MAX_DM_CHARS}
                   placeholder={DM_PLACEHOLDER}
-                  aria-describedby="rule-dm-hint"
+                  aria-describedby={describe("dmText", "rule-dm-hint")}
+                  {...invalid("dmText")}
                 />
-                <span id="rule-dm-hint" className={noLink ? `${keys.meta} ${styles.warn}` : keys.meta}>
+                <FieldDescription id="rule-dm-hint" className={noLink ? styles.warn : undefined}>
                   {noLink
                     ? "ข้อความนี้ยังไม่มีลิงก์ https:// บันทึกได้ แต่คนที่ได้ DM จะไม่มีลิงก์ให้กด"
                     : "ส่งเป็นข้อความธรรมดา ใส่ลิงก์ไว้ในข้อความได้เลย ไม่เกิน 1,000 ตัวอักษร"}
-                </span>
-              </label>
-              <label className={styles.check}>
-                <input type="checkbox" checked={draft.afterDm} onChange={(e) => set("afterDm", e.target.checked)} disabled={busy} />
-                ตอบสาธารณะเฉพาะเมื่อส่ง DM สำเร็จ
-              </label>
+                </FieldDescription>
+                {error?.field === "dmText" && <FieldError id="rule-dm-error">{error.message}</FieldError>}
+              </Field>
+              <Field orientation="horizontal" className="min-h-11 items-center">
+                <Checkbox id="rule-after-dm" checked={draft.afterDm} onCheckedChange={(v) => set("afterDm", v === true)} disabled={busy} />
+                <FieldLabel htmlFor="rule-after-dm" className="font-normal">ตอบสาธารณะเฉพาะเมื่อส่ง DM สำเร็จ</FieldLabel>
+              </Field>
             </>
           )}
           <div className={keys.actions}>
-            <button type="submit" className="primary" disabled={busy}>
+            <Button type="submit" disabled={busy}>
               {editing ? "บันทึกการแก้ไข" : "เพิ่มกฎ"}
-            </button>
+            </Button>
             {editing && (
-              <button type="button" disabled={busy} onClick={onCancelEdit}>
+              <Button type="button" variant="outline" disabled={busy} onClick={onCancelEdit}>
                 ยกเลิก
-              </button>
+              </Button>
             )}
           </div>
         </form>
