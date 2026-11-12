@@ -76,7 +76,7 @@ test("packaged skills get numbered Thai steps with copyable prompts from their R
     const steps = stepsOf(html);
     assert.ok((steps.match(/<li\b/g) || []).length >= 4, p.slug);
     const blocks = [...steps.matchAll(/<div[^>]*class="code-block[^"]*"[^>]*>([\s\S]*?)<\/div>/g)].map((m) => m[1]);
-    assert.ok(blocks.some((b) => /<button[^>]*class="code-copy"/.test(b)), `${p.slug}: a copy button`);
+    assert.ok(blocks.some((b) => /<button[^>]*data-slot="button"[^>]*class="[^"]*\bcode-copy"/.test(b)), `${p.slug}: a copy button`);
     // README prose is hard-wrapped: compare with whitespace collapsed.
     const readme = readFileSync(`packages/${p.slug}/${p.version}/README.md`, "utf8").replace(/\s+/g, " ");
     const prompts = guideFor(p.slug).flatMap((s) => (s.prompt ? [s.prompt] : []));

@@ -1,35 +1,37 @@
 "use client";
 import { useState } from "react";
+import { Button } from "@/components/ui/button";
+import { toast } from "@/components/ui/toaster";
+import { cn } from "@/lib/utils";
 
 /**
- * Copies the code of the surrounding .code-block and confirms in place; a
- * polite live region announces the result to screen readers.
+ * Copies the code of the surrounding .code-block. The result is a toast
+ * (announced by the toaster's live region); the button also says
+ * "คัดลอกแล้ว" for two seconds so the eye does not have to leave it.
  */
 export function CopyButton({ label = "คัดลอก", className }: { label?: string; className?: string }) {
-  const [state, setState] = useState<"idle" | "copied" | "failed">("idle");
-  const message = state === "copied" ? "คัดลอกแล้ว" : state === "failed" ? "คัดลอกไม่ได้" : "";
+  const [copied, setCopied] = useState(false);
+  const big = className?.includes("code-copy-big");
   return (
-    <>
-      <button
-        type="button"
-        className={className ? `code-copy ${className}` : "code-copy"}
-        data-state={state}
-        onClick={async (e) => {
-          const code = e.currentTarget.closest(".code-block")?.querySelector("pre code")?.textContent ?? "";
-          try {
-            await navigator.clipboard.writeText(code);
-            setState("copied");
-          } catch {
-            setState("failed");
-          }
-          setTimeout(() => setState("idle"), 2000);
-        }}
-      >
-        {message || label}
-      </button>
-      <span className="sr-only" role="status" aria-live="polite">
-        {message}
-      </span>
-    </>
+    <Button
+      type="button"
+      variant={big ? "default" : "outline"}
+      size={big ? "default" : "sm"}
+      className={cn("code-copy", className)}
+      data-state={copied ? "copied" : "idle"}
+      onClick={async (e) => {
+        const code = e.currentTarget.closest(".code-block")?.querySelector("pre code")?.textContent ?? "";
+        try {
+          await navigator.clipboard.writeText(code);
+          setCopied(true);
+          toast.success(label === "คัดลอก" ? "คัดลอกแล้ว" : `${label} แล้ว`);
+          setTimeout(() => setCopied(false), 2000);
+        } catch {
+          toast.error("คัดลอกไม่ได้", { description: "เลือกข้อความในกล่องแล้วคัดลอกเองได้" });
+        }
+      }}
+    >
+      {copied ? "คัดลอกแล้ว" : label}
+    </Button>
   );
 }

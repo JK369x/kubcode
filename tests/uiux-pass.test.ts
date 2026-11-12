@@ -21,21 +21,29 @@ test("route loading UI exists for the public detail/index routes, not under /acc
   assert.equal(existsSync("app/account/loading.tsx"), false);
 });
 
-test("form-control outlines use --field-line (>=3:1), defined for both themes", () => {
-  const dark = css.match(/:root \{[^}]*--field-line: (#[0-9a-f]{6})/)?.[1];
-  const light = css.match(
-    /:root\[data-theme="light"\] \{[^}]*--field-line: (#[0-9a-f]{6})/,
-  )?.[1];
-  assert.equal(dark, "#807394");
-  assert.equal(light, "#857896");
+test("form-control outlines use --field-line / shadcn --input (>=3:1), defined for both themes", () => {
+  for (const name of ["--field-line", "--input"]) {
+    const dark = css.match(new RegExp(`:root \\{[^}]*${name}: (#[0-9a-f]{6})`))?.[1];
+    const light = css.match(
+      new RegExp(`:root\\[data-theme="light"\\] \\{[^}]*${name}: (#[0-9a-f]{6})`),
+    )?.[1];
+    assert.equal(dark, "#807394", name);
+    assert.equal(light, "#857896", name);
+  }
   assert.match(css, /\.search \{[^}]*border: 1px solid var\(--field-line\)/);
   for (const f of [
     "components/AutomationsPanel.module.css",
     "components/KeysSettings.module.css",
-    "components/PageInteractions.module.css",
     "app/account/tiktok/studio.css",
   ])
     assert.match(readFileSync(f, "utf8"), /var\(--field-line\)/, f);
+  // shadcn fields (Input/Textarea) draw their edge with border-input, never border-border.
+  for (const f of ["components/ui/input.tsx", "components/ui/textarea.tsx"]) {
+    const src = readFileSync(f, "utf8");
+    assert.match(readFileSync("components/ui/input.tsx", "utf8"), /border-input/, f);
+    assert.doesNotMatch(src, /border-border/, f);
+  }
+  assert.match(readFileSync("components/PageInteractions.tsx", "utf8"), /<Textarea\b/);
 });
 
 test("floating mobile comments bar reserves scroll padding so focus is not hidden under it", () => {

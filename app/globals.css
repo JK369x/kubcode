@@ -1,11 +1,164 @@
-@import "./account/tiktok/studio.css";
+/*
+ * Cascade order (lowest → highest): Tailwind theme, base, the pre-shadcn
+ * site CSS ("legacy", wrapped below), components, utilities. Utilities on
+ * shadcn components always beat the old element rules; CSS modules stay
+ * unlayered and keep winning over both until each is migrated.
+ * Tailwind's preflight is left out on purpose: the legacy CSS assumes browser
+ * defaults, and the few resets shadcn needs are in @layer base below.
+ * Tokens: design-system/kubcode/MASTER.md (never the shadcn grey defaults).
+ */
+@layer theme, base, legacy, components, utilities;
+@import "tailwindcss/theme.css" layer(theme);
+@import "tailwindcss/utilities.css" layer(utilities) source(none);
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+@import "./account/tiktok/studio.css" layer(legacy);
+
+@source "../app";
+@source "../components";
+@source "../lib";
+
+/* data-theme on <html> stays the switch (MASTER.md); no class="dark". */
+@custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
+@custom-variant light (&:where([data-theme="light"], [data-theme="light"] *));
+
+@layer base {
+  /* Dark is the default theme. Values and contrast: MASTER.md §Color Palette. */
+  :root {
+    --background: #100e15;
+    --foreground: #f5f1fb;
+    --card: #1b1722;
+    --card-foreground: #f5f1fb;
+    --popover: #1b1722;
+    --popover-foreground: #f5f1fb;
+    --primary: #d1b9ff;
+    --primary-foreground: #291640;
+    --primary-hover: #bb98ff;
+    --primary-hover-foreground: #291640;
+    --secondary: #231d2d;
+    --secondary-foreground: #f5f1fb;
+    --muted: #231d2d;
+    --muted-foreground: #b8adca;
+    --accent: #231d2d;
+    --accent-foreground: #f5f1fb;
+    --link: #bb98ff;
+    --destructive: #ffb4b4;
+    --destructive-foreground: #ffffff;
+    --success: #86efac;
+    --warning: #fcd34d;
+    --border: #38303f;
+    --input: #807394;
+    --ring: #bb98ff;
+    --radius: 12px;
+  }
+  :root[data-theme="light"] {
+    --background: #faf8fd;
+    --foreground: #271c34;
+    --card: #ffffff;
+    --card-foreground: #271c34;
+    --popover: #ffffff;
+    --popover-foreground: #271c34;
+    --primary: #7136b9;
+    --primary-foreground: #ffffff;
+    --primary-hover: #5c2b98;
+    --primary-hover-foreground: #ffffff;
+    --secondary: #e9dbff;
+    --secondary-foreground: #3b1d60;
+    --muted: #efe9f8;
+    --muted-foreground: #6c5f7d;
+    --accent: #efe9f8;
+    --accent-foreground: #271c34;
+    --link: #7136b9;
+    --destructive: #a3262a;
+    --destructive-foreground: #ffffff;
+    --success: #166534;
+    --warning: #92400e;
+    --border: #e0d9e9;
+    --input: #857896;
+    --ring: #7136b9;
+  }
+  /* The resets shadcn components rely on, without the rest of preflight. */
+  textarea,
+  select {
+    font: inherit;
+    color: inherit;
+  }
+}
+
+@theme inline {
+  --font-sans: Anuphan, sans-serif;
+  --font-heading: Anuphan, sans-serif;
+  --font-brand: Archivo, Anuphan, sans-serif;
+  --font-mono: ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary-hover: var(--primary-hover);
+  --color-primary-hover-foreground: var(--primary-hover-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-link: var(--link);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  /* MASTER.md §Radius: control 12, compact-stage 14, cover 16, surface 22, hero 24. */
+  --radius-sm: 8px;
+  --radius-md: var(--radius);
+  --radius-lg: 14px;
+  --radius-xl: 16px;
+  --radius-2xl: 22px;
+  --radius-3xl: 24px;
+  --ease-brand: cubic-bezier(0.16, 1, 0.3, 1);
+  --shadow-popover: 0 12px 32px rgb(0 0 0 / 0.25);
+  --shadow-floating: 0 8px 24px rgb(0 0 0 / 0.25);
+}
+
+/*
+ * ding toasts (components/ui/toaster.tsx). ding injects its own unlayered
+ * stylesheet at the top of <head>; these rules come later with the same
+ * specificity, so they win. They put the toast on our tokens and fonts and
+ * make it follow the site's data-theme instead of the OS setting.
+ */
+.tst-viewport {
+  color-scheme: inherit;
+  --tst-bg: var(--popover);
+  --tst-fg: var(--popover-foreground);
+  --tst-ring: var(--input);
+  --tst-success: var(--success);
+  --tst-error: var(--destructive);
+  --tst-warning: var(--warning);
+  --tst-info: var(--link);
+  font-family: Anuphan, sans-serif;
+  line-height: 1.5;
+}
+.tst-viewport .tst-slot:focus-visible .tst {
+  outline: 3px solid var(--ring);
+  outline-offset: 2px;
+}
+.tst-viewport .tst-action:focus-visible,
+.tst-viewport .tst-close:focus-visible {
+  outline: 3px solid var(--ring);
+  outline-offset: 2px;
+}
+
+@layer legacy {
 
 :root {
   --bg: #100e15;
   --surface: #1b1722;
   --surface-soft: #231d2d;
   --ink: #f5f1fb;
-  --muted: #b8adca;
   --line: #38303f;
   /* Form-control outlines: >=3:1 against bg/surface/surface-soft (WCAG 1.4.11).
      --line (~1.5:1) is for dividers only. */
@@ -17,7 +170,7 @@
   --selected-ink: #291640;
   --action-hover-ink: #291640;
   --media: #0a090e;
-  --radius: 22px;
+  --radius-surface: 22px;
   color-scheme: dark;
 }
 :root[data-theme="light"] {
@@ -25,7 +178,6 @@
   --surface: #ffffff;
   --surface-soft: #efe9f8;
   --ink: #271c34;
-  --muted: #6c5f7d;
   --line: #e0d9e9;
   --field-line: #857896;
   --purple: #7136b9;
@@ -97,7 +249,7 @@ input {
   caret-color: var(--purple);
 }
 input::placeholder {
-  color: var(--muted);
+  color: var(--muted-foreground);
   opacity: 1;
 }
 h1,
@@ -196,7 +348,7 @@ header.header {
   font-size: clamp(27px, 2.35vw, 34px);
 }
 .opening p {
-  color: var(--muted);
+  color: var(--muted-foreground);
   margin-top: 9px;
   font-size: 14px;
 }
@@ -224,7 +376,7 @@ header.header {
   border-radius: 999px;
   padding: 11px 17px;
   width: 300px;
-  color: var(--muted);
+  color: var(--muted-foreground);
 }
 .search:focus-within {
   border-color: var(--purple);
@@ -244,7 +396,7 @@ header.header {
 .featured-work {
   background: var(--surface);
   border: 1px solid var(--line);
-  border-radius: var(--radius);
+  border-radius: var(--radius-surface);
   display: grid;
   grid-template-columns: minmax(0, 1.04fr) minmax(0, 1fr);
   overflow: hidden;
@@ -261,7 +413,7 @@ header.header {
   align-items: center;
   gap: 8px;
   font-size: 12px;
-  color: var(--muted);
+  color: var(--muted-foreground);
   order: 2;
   margin-top: 12px;
 }
@@ -275,7 +427,7 @@ header.header {
 }
 .featured-copy > p {
   font-size: 14px;
-  color: var(--muted);
+  color: var(--muted-foreground);
   margin-top: 14px;
   order: 1;
 }
@@ -288,7 +440,7 @@ header.header {
 .feature-authors > span {
   display: block;
   font-size: 11px;
-  color: var(--muted);
+  color: var(--muted-foreground);
   margin-bottom: 8px;
 }
 .feature-authors {
@@ -335,7 +487,7 @@ header.header {
 }
 .draft-note {
   order: 5;
-  color: var(--muted);
+  color: var(--muted-foreground);
   font-size: 11px;
   margin-top: 11px;
 }
@@ -349,7 +501,7 @@ header.header {
   align-items: center;
   justify-content: center;
   overflow: hidden;
-  border-radius: var(--radius);
+  border-radius: var(--radius-surface);
   animation: selection-in 0.28s cubic-bezier(0.16, 1, 0.3, 1);
 }
 .media-stage .no-media,
@@ -397,13 +549,13 @@ header.header {
   justify-content: space-between;
   flex-wrap: wrap;
   gap: 6px 16px;
-  color: var(--muted);
+  color: var(--muted-foreground);
   font-size: 10px;
   margin: 9px 0;
 }
 .credits {
   font-size: 11px;
-  color: var(--muted);
+  color: var(--muted-foreground);
   padding: 0 0 12px;
 }
 .credits summary {
@@ -472,7 +624,7 @@ header.header {
 .support-caption {
   display: block;
   font-size: 11px;
-  color: var(--muted);
+  color: var(--muted-foreground);
   margin-top: 5px;
 }
 .support-preview:hover .support-title {
@@ -496,7 +648,7 @@ header.header {
   display: flex;
   align-items: center;
   gap: 8px;
-  color: var(--muted);
+  color: var(--muted-foreground);
   font-size: 11px;
   padding: 17px 0;
 }
@@ -514,7 +666,7 @@ header.header {
   font-size: 28px;
 }
 .catalog-heading p {
-  color: var(--muted);
+  color: var(--muted-foreground);
   font-size: 13px;
   margin-top: 8px;
 }
@@ -539,7 +691,7 @@ header.header {
 }
 .filter-label {
   padding-top: 12px;
-  color: var(--muted);
+  color: var(--muted-foreground);
   font-size: 12px;
   font-weight: 600;
 }
@@ -570,7 +722,7 @@ header.header {
   font:
     11px Archivo,
     sans-serif;
-  color: var(--muted);
+  color: var(--muted-foreground);
 }
 .categories button[aria-pressed="true"] {
   border-color: var(--selected);
@@ -587,7 +739,7 @@ header.header {
 .result-line {
   white-space: nowrap;
   font-size: 12px;
-  color: var(--muted);
+  color: var(--muted-foreground);
 }
 .skill-grid {
   display: grid;
@@ -606,7 +758,7 @@ header.header {
 }
 .no-clip > p {
   margin-top: 4px;
-  color: var(--muted);
+  color: var(--muted-foreground);
   font-size: 13px;
 }
 .no-clip ul {
@@ -639,7 +791,7 @@ header.header {
   font-size: 15px;
 }
 .no-clip-desc {
-  color: var(--muted);
+  color: var(--muted-foreground);
   font-size: 13px;
   line-height: 1.5;
   display: -webkit-box;
@@ -660,7 +812,7 @@ header.header {
   padding: 0 9px;
   border: 1px solid var(--line);
   border-radius: 999px;
-  color: var(--muted);
+  color: var(--muted-foreground);
   font-size: 12px;
   white-space: nowrap;
 }
@@ -682,7 +834,7 @@ header.header {
   overflow: hidden;
   min-width: 0;
   border: 1px solid var(--line);
-  border-radius: var(--radius);
+  border-radius: var(--radius-surface);
   background: var(--surface);
 }
 .card-preview {
@@ -717,7 +869,7 @@ header.header {
 }
 .without-media > span {
   font-size: 12px;
-  color: var(--muted);
+  color: var(--muted-foreground);
 }
 .card-copy {
   padding: 20px 18px 0;
@@ -746,7 +898,7 @@ header.header {
 }
 .card-copy > p {
   font-size: 12px;
-  color: var(--muted);
+  color: var(--muted-foreground);
   margin-top: 10px;
   min-height: 63px;
 }
@@ -761,7 +913,7 @@ header.header {
   justify-content: space-between;
   gap: 10px;
   font-size: 10px;
-  color: var(--muted);
+  color: var(--muted-foreground);
 }
 .card-bottom a {
   display: inline-flex;
@@ -776,7 +928,7 @@ header.header {
   text-align: center;
   padding: 65px 25px;
   border-block: 1px solid var(--line);
-  color: var(--muted);
+  color: var(--muted-foreground);
 }
 .empty > svg {
   color: var(--purple);
@@ -808,7 +960,7 @@ header.header {
   font-size: 28px;
 }
 .article-teasers > div > p {
-  color: var(--muted);
+  color: var(--muted-foreground);
   font-size: 13px;
   margin: 13px 0 18px;
 }
@@ -837,7 +989,7 @@ header.header {
   line-height: 1.5;
 }
 .article-row p {
-  color: var(--muted);
+  color: var(--muted-foreground);
   font-size: 13px;
   margin-top: 8px;
 }
@@ -850,7 +1002,7 @@ header.header {
 }
 .style-register {
   margin: 34px 0 50px;
-  color: var(--muted);
+  color: var(--muted-foreground);
 }
 .style-register summary {
   cursor: pointer;
@@ -862,7 +1014,7 @@ header.header {
 .style-register summary span {
   font-size: 12px;
   margin-left: 16px;
-  color: var(--muted);
+  color: var(--muted-foreground);
 }
 .style-register > p {
   font-size: 12px;
@@ -889,7 +1041,7 @@ footer {
   align-items: start;
   flex-wrap: wrap;
   gap: 18px 28px;
-  color: var(--muted);
+  color: var(--muted-foreground);
   font-size: 13px;
 }
 footer strong {
@@ -930,7 +1082,7 @@ footer strong {
 }
 .lead {
   font-size: 18px;
-  color: var(--muted);
+  color: var(--muted-foreground);
   line-height: 1.9;
 }
 .reading-index > .lead {
@@ -984,7 +1136,7 @@ footer strong {
   border: 1px solid var(--line);
   border-radius: 999px;
   font-size: 13px;
-  color: var(--muted);
+  color: var(--muted-foreground);
 }
 .tag-list a:hover {
   color: var(--ink);
@@ -1004,7 +1156,7 @@ footer strong {
 }
 .tool-facts dt {
   font-size: 12px;
-  color: var(--muted);
+  color: var(--muted-foreground);
 }
 .tool-facts dd {
   margin: 4px 0 0;
@@ -1041,7 +1193,7 @@ footer strong {
 }
 .related li p {
   margin: 4px 0 0;
-  color: var(--muted);
+  color: var(--muted-foreground);
   font-size: 14px;
 }
 .back {
@@ -1052,7 +1204,7 @@ footer strong {
   border-top: 1px solid var(--line);
   padding-top: 25px;
   margin-top: 50px;
-  color: var(--muted);
+  color: var(--muted-foreground);
   font-size: 12px;
 }
 .detail-page {
@@ -1075,7 +1227,7 @@ footer strong {
   letter-spacing: -0.03em;
 }
 .detail-heading p {
-  color: var(--muted);
+  color: var(--muted-foreground);
   font-size: 12px;
 }
 .detail-grid {
@@ -1096,7 +1248,7 @@ footer strong {
 }
 .detail-copy ul {
   padding-left: 20px;
-  color: var(--muted);
+  color: var(--muted-foreground);
 }
 /* "ใช้ยังไง": numbered steps, the main path through the page. */
 .detail-copy .steps {
@@ -1151,7 +1303,7 @@ footer strong {
   overflow-y: auto;
   padding: 20px;
   border: 1px solid var(--line);
-  border-radius: var(--radius);
+  border-radius: var(--radius-surface);
   background: var(--surface);
 }
 .skill-panel h2 {
@@ -1173,7 +1325,7 @@ footer strong {
 }
 .skill-panel-cost {
   margin-top: 10px;
-  color: var(--muted);
+  color: var(--muted-foreground);
   font-size: 13px;
   line-height: 1.5;
 }
@@ -1195,7 +1347,7 @@ footer strong {
   border-bottom: 1px solid var(--line);
 }
 .download-facts dt {
-  color: var(--muted);
+  color: var(--muted-foreground);
 }
 .download-facts dd {
   margin: 0;
@@ -1244,7 +1396,7 @@ footer strong {
   margin-top: 32px;
   padding-top: 16px;
   border-top: 1px solid var(--line);
-  color: var(--muted);
+  color: var(--muted-foreground);
   font-size: 14px;
 }
 .rights-details summary {
@@ -1260,7 +1412,7 @@ footer strong {
 .rights-code {
   display: block;
   font-size: 10px;
-  color: var(--muted);
+  color: var(--muted-foreground);
   overflow-wrap: anywhere;
 }
 .download {
@@ -1287,7 +1439,7 @@ footer strong {
 }
 .download p {
   font-size: 12px;
-  color: var(--muted);
+  color: var(--muted-foreground);
   margin: 12px 0;
 }
 .download a {
@@ -1307,7 +1459,7 @@ p[role="status"]:empty {
   gap: 16px;
   justify-items: center;
   text-align: center;
-  color: var(--muted);
+  color: var(--muted-foreground);
   padding: 30px;
 }
 .no-media > svg {
@@ -1348,7 +1500,7 @@ p[role="status"]:empty {
   background: var(--surface);
 }
 .account-form p {
-  color: var(--muted);
+  color: var(--muted-foreground);
   font-size: 12px;
 }
 .account-form button:not(.primary) {
@@ -1359,7 +1511,7 @@ p[role="status"]:empty {
   padding: 30px;
   background: var(--surface);
   border: 1px solid var(--line);
-  border-radius: var(--radius);
+  border-radius: var(--radius-surface);
 }
 .membership h2 {
   font-size: 27px;
@@ -1370,13 +1522,13 @@ p[role="status"]:empty {
 }
 .membership dd {
   margin: 7px 0 0;
-  color: var(--muted);
+  color: var(--muted-foreground);
   font-size: 14px;
 }
 .membership > p {
   margin-top: 28px;
   font-size: 12px;
-  color: var(--muted);
+  color: var(--muted-foreground);
 }
 .sr-only,
 .skip:not(:focus) {
@@ -1909,7 +2061,7 @@ img.tool-mark {
   color: #d1556b;
 }
 .tool-mark[data-tool-mark="unknown"] {
-  color: var(--muted);
+  color: var(--muted-foreground);
 }
 
 /* ---- author switch: small tabs with real marks, not billboard pills ---- */
@@ -2038,7 +2190,7 @@ img.tool-mark {
   margin: 0;
   font-size: 12px;
   line-height: 1.35;
-  color: var(--muted);
+  color: var(--muted-foreground);
 }
 .feature-actions {
   display: flex;
@@ -2219,7 +2371,7 @@ img.tool-mark {
   padding: 0;
   margin: 0;
   font-size: 13px;
-  color: var(--muted);
+  color: var(--muted-foreground);
 }
 .crumbs li + li::before {
   content: "/";
@@ -2245,7 +2397,7 @@ img.tool-mark {
   gap: 12px;
   align-items: center;
   margin: 28px 0 0;
-  color: var(--muted);
+  color: var(--muted-foreground);
   font-size: 14px;
 }
 .kind-badge {
@@ -2303,7 +2455,7 @@ img.tool-mark {
   min-width: 3.4em;
   text-align: center;
   font-size: 12px;
-  color: var(--muted);
+  color: var(--muted-foreground);
 }
 .reading-grid {
   display: grid;
@@ -2352,7 +2504,7 @@ img.tool-mark {
   border: 1px solid var(--line);
   border-radius: 999px;
   font-size: 13px;
-  color: var(--muted);
+  color: var(--muted-foreground);
 }
 .toc {
   list-style: none;
@@ -2366,7 +2518,7 @@ img.tool-mark {
   margin-left: -2px;
   padding: 6px 0 6px 16px;
   border-left: 2px solid transparent;
-  color: var(--muted);
+  color: var(--muted-foreground);
   font-size: 14px;
   line-height: 1.5;
   transition: color 0.2s, border-color 0.2s;
@@ -2551,7 +2703,7 @@ img.tool-mark {
 }
 .code-file {
   font-family: var(--mono);
-  color: var(--muted);
+  color: var(--muted-foreground);
 }
 .code-copy {
   margin-left: auto;
@@ -2677,7 +2829,7 @@ html[data-theme="light"] .shiki span {
 }
 .agent-install-lead {
   margin: 0 0 12px;
-  color: var(--muted);
+  color: var(--muted-foreground);
   font-size: 15px;
   line-height: 1.7;
 }
@@ -2746,7 +2898,7 @@ html[data-theme="light"] .shiki span {
 .agent-install-notes {
   margin: 0;
   padding-left: 1.2em;
-  color: var(--muted);
+  color: var(--muted-foreground);
   font-size: 14px;
   line-height: 1.7;
 }
@@ -2801,7 +2953,7 @@ html[data-theme="light"] .shiki span {
 }
 .tool-logo.is-monogram {
   background: var(--surface-soft);
-  color: var(--muted);
+  color: var(--muted-foreground);
   font: 600 19px/1 Archivo, sans-serif;
   letter-spacing: 0.02em;
 }
@@ -2877,7 +3029,7 @@ html[data-theme="light"] .shiki span {
   margin: 0 0 10px;
 }
 .get-started-head p {
-  color: var(--muted);
+  color: var(--muted-foreground);
 }
 .get-started-grid {
   display: grid;
@@ -2923,7 +3075,7 @@ html[data-theme="light"] .shiki span {
 }
 .get-started-note {
   margin: -6px 0 12px;
-  color: var(--muted);
+  color: var(--muted-foreground);
   font-size: 14px;
 }
 .get-started-prompt {
@@ -2949,7 +3101,7 @@ html[data-theme="light"] .shiki span {
 }
 .get-started-faq details p {
   margin: 0 0 16px;
-  color: var(--muted);
+  color: var(--muted-foreground);
   line-height: 1.7;
 }
 @media (max-width: 899px) {
@@ -3091,3 +3243,4 @@ img[data-img-state="loading"] {
     gap: 24px;
   }
 }
+} /* @layer legacy */

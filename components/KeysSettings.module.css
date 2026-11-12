@@ -11,7 +11,7 @@
   min-width: 0;
 }
 .lead {
-  color: var(--muted);
+  color: var(--muted-foreground);
   font-size: 15px;
 }
 .section {
@@ -21,7 +21,7 @@
   padding: 24px;
   background: var(--surface);
   border: 1px solid var(--line);
-  border-radius: var(--radius);
+  border-radius: var(--radius-surface);
 }
 .section h2 {
   font-size: 24px;
@@ -73,7 +73,7 @@
 /* Doubled class outranks the global paragraph rules where needed. */
 .meta.meta {
   display: block;
-  color: var(--muted);
+  color: var(--muted-foreground);
   font-size: 13px;
   overflow-wrap: anywhere;
 }

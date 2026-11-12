@@ -278,11 +278,15 @@ async function main() {
         await panel.getByLabel(/เขียนคอมเมนต์เกี่ยวกับ/).fill(text);
         await panel.getByRole("button", { name: "ส่ง", exact: true }).click();
         await scroller.getByText(text).waitFor();
+        // The result is a toast now (components/ui/toaster.tsx), not a line in the panel.
+        const toasts = page.getByRole("region", { name: "การแจ้งเตือน" });
+        await toasts.locator(".tst-title", { hasText: "ส่งคอมเมนต์แล้ว" }).waitFor();
         await panel.getByText(/แสดงในชื่อ “App Member/).waitFor();
         await page.waitForTimeout(400);
         await page.screenshot({ path: `.qa/interactions-ui-${label}.png` });
         await scroller.getByRole("button", { name: "ลบ" }).first().click();
         await scroller.getByText(text).waitFor({ state: "detached" });
+        await toasts.locator(".tst-title", { hasText: "ลบคอมเมนต์แล้ว" }).waitFor();
         if (!desktop) {
           await page.keyboard.press("Escape");
           await panel.waitFor({ state: "hidden" });

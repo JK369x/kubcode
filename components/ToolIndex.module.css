@@ -75,7 +75,7 @@
   height: 22px;
   border-radius: 999px;
   background: var(--surface-soft);
-  color: var(--muted);
+  color: var(--muted-foreground);
   font: 600 12px/1 Archivo, sans-serif;
 }
 .line a[aria-current="page"] .step {
@@ -86,7 +86,7 @@
   color: inherit;
 }
 .count {
-  color: var(--muted);
+  color: var(--muted-foreground);
   font-size: 12px;
 }
 
@@ -150,7 +150,7 @@
   align-items: center;
   gap: 7px;
   margin: 0;
-  color: var(--muted);
+  color: var(--muted-foreground);
   font-size: 13px;
 }
 .stage .step {
@@ -160,7 +160,7 @@
 }
 .description {
   margin: 0;
-  color: var(--muted);
+  color: var(--muted-foreground);
   font-size: 14px;
   line-height: 1.75;
   display: -webkit-box;
@@ -177,7 +177,7 @@
   margin-top: auto;
   padding-top: 14px;
   border-top: 1px solid var(--line);
-  color: var(--muted);
+  color: var(--muted-foreground);
   font-size: 13px;
 }
 .facts {

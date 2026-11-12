@@ -50,7 +50,7 @@
   aspect-ratio: 9 / 16;
   margin-bottom: 10px;
   overflow: hidden;
-  border-radius: var(--radius);
+  border-radius: var(--radius-surface);
   background: var(--media);
 }
 .poster,
@@ -80,14 +80,14 @@
 }
 .meta {
   margin: 2px 0 0;
-  color: var(--muted);
+  color: var(--muted-foreground);
   font-size: 13px;
   line-height: 1.4;
 }
 
 .stories {
   margin: 4px 0 0;
-  color: var(--muted);
+  color: var(--muted-foreground);
   font-size: 12px;
   line-height: 1.4;
 }
@@ -324,7 +324,7 @@ a.lock:hover {
 }
 .credits {
   margin: 0;
-  color: var(--muted);
+  color: var(--muted-foreground);
   font-size: 13px;
   line-height: 1.6;
 }
@@ -424,13 +424,4 @@ a.lock:hover {
 .download:focus-visible {
   outline: 3px solid var(--purple);
   outline-offset: 2px;
-}
-.error {
-  flex-basis: 100%;
-  margin: 0;
-  color: rgb(255 255 255 / 0.8);
-  font-size: 12px;
-}
-.error:empty {
-  display: none;
 }

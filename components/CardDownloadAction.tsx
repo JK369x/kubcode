@@ -7,6 +7,7 @@ import { approvedPackageFor } from "@/lib/packages";
 import { fetchAvailable, fetchSignedIn, startDownload } from "@/lib/downloads/client";
 import { downloadPhase, PHASE_STATE } from "@/lib/downloads/view";
 import styles from "./CardDownloadAction.module.css";
+import { toast } from "@/components/ui/toaster";
 
 /**
  * The download control on catalogue cards and skill pages. Skills without an
@@ -42,7 +43,6 @@ function PackageDownload({ slug, stateId }: { slug: string; stateId: string }) {
   const [signedIn, setSignedIn] = useState<boolean | undefined>(undefined);
   const [available, setAvailable] = useState<boolean | undefined>(undefined);
   const [working, setWorking] = useState(false);
-  const [error, setError] = useState("");
 
   useEffect(() => {
     let live = true;
@@ -60,7 +60,6 @@ function PackageDownload({ slug, stateId }: { slug: string; stateId: string }) {
       <span className={styles.state} id={stateId}>{PHASE_STATE[phase]}</span>
     </span>
   );
-  const errorId = stateId + "-error";
 
   if (phase === "signin") {
     return (
@@ -74,10 +73,9 @@ function PackageDownload({ slug, stateId }: { slug: string; stateId: string }) {
   const ready = phase === "ready";
   async function onClick() {
     setWorking(true);
-    setError("");
     const message = await startDownload(slug);
     setWorking(false);
-    if (message) setError(message);
+    if (message) toast.error("ดาวน์โหลดไม่สำเร็จ", { description: message });
   }
   return (
     <span className={styles.stack}>
@@ -85,13 +83,12 @@ function PackageDownload({ slug, stateId }: { slug: string; stateId: string }) {
         type="button"
         className={ready ? styles.ready : styles.unavailable}
         disabled={!ready}
-        aria-describedby={error ? `${stateId} ${errorId}` : stateId}
+        aria-describedby={stateId}
         onClick={ready ? onClick : undefined}
       >
         {ready ? <Download size={15} aria-hidden="true" /> : <LockKeyhole size={15} aria-hidden="true" />}
         {copy}
       </button>
-      <span className={styles.error} id={errorId} role="status">{error}</span>
     </span>
   );
 }

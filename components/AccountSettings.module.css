@@ -32,7 +32,7 @@
 .meta.meta {
   display: block;
   margin-top: 2px;
-  color: var(--muted);
+  color: var(--muted-foreground);
   font-size: 13px;
   overflow-wrap: anywhere;
 }

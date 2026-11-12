@@ -1,6 +1,7 @@
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { AccountMenu } from "@/components/AccountMenu";
 import { SiteFooter } from "@/components/SiteFooter";
+import { Toaster } from "@/components/ui/toaster";
 import type { Metadata } from "next";
 import Link from "next/link";
 import "@fontsource/anuphan/400.css";
@@ -51,6 +52,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
         </header>
         {children}
         <SiteFooter />
+        <Toaster position="top-center" theme="system" />
       </body>
     </html>
   );

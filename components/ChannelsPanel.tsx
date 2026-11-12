@@ -1,9 +1,12 @@
 "use client";
-import { useState, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Instagram, Youtube } from "lucide-react";
 import { send } from "@/lib/interactions/client";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { toast } from "@/components/ui/toaster";
 import { CONNECTABLE, type Connectable } from "@/lib/channels/config";
 import type { ChannelStatus, ChannelView } from "@/lib/channels/store";
 import styles from "./KeysSettings.module.css";
@@ -16,12 +19,13 @@ type Props = {
   automations?: boolean;
 };
 
-const NOTICES: Record<string, string> = {
-  connected: "เชื่อมช่องสำเร็จแล้ว",
-  connect_failed: "เชื่อมช่องไม่สำเร็จ ลองใหม่อีกครั้ง",
-  connect_denied: "คุณยกเลิกการให้สิทธิ์ จึงยังไม่ได้เชื่อมช่อง",
-  connect_expired: "คำขอเชื่อมช่องหมดเวลา ลองใหม่อีกครั้ง",
-  connect_unavailable: "ระบบเชื่อมช่องยังไม่พร้อม",
+/** ?notice= codes from the connect callback, shown once as a toast. */
+export const NOTICES: Record<string, { ok: boolean; text: string }> = {
+  connected: { ok: true, text: "เชื่อมช่องสำเร็จแล้ว" },
+  connect_failed: { ok: false, text: "เชื่อมช่องไม่สำเร็จ ลองใหม่อีกครั้ง" },
+  connect_denied: { ok: false, text: "คุณยกเลิกการให้สิทธิ์ จึงยังไม่ได้เชื่อมช่อง" },
+  connect_expired: { ok: false, text: "คำขอเชื่อมช่องหมดเวลา ลองใหม่อีกครั้ง" },
+  connect_unavailable: { ok: false, text: "ระบบเชื่อมช่องยังไม่พร้อม" },
 };
 
 /** TikTok's note glyph (lucide has no TikTok icon). */
@@ -62,7 +66,17 @@ export const disconnectQuestion = (c: ChannelView) =>
 export function ChannelsPanel({ channels, notice, automations = false }: Props) {
   const router = useRouter();
   const [busy, setBusy] = useState(false);
-  const [status, setStatus] = useState(notice ? (NOTICES[notice] ?? "") : "");
+  // The callback's ?notice= shows once, then leaves the URL so a reload or
+  // Back does not repeat it.
+  useEffect(() => {
+    const n = notice ? NOTICES[notice] : undefined;
+    if (!n) return;
+    if (n.ok) toast.success(n.text);
+    else toast.error(n.text);
+    const url = new URL(window.location.href);
+    url.searchParams.delete("notice");
+    window.history.replaceState(window.history.state, "", url.pathname + url.search + url.hash);
+  }, [notice]);
   const live = channels.filter((c) => c.status !== "disconnected");
   const gone = channels.filter((c) => c.status === "disconnected");
 
@@ -71,7 +85,8 @@ export function ChannelsPanel({ channels, notice, automations = false }: Props) 
     const r = await send<{ authorizeUrl: string }>("/api/channels/connect", "POST", { platform });
     if (!r.ok) {
       setBusy(false);
-      return setStatus(r.message);
+      toast.error(r.message);
+      return;
     }
     // Leaves kubcode for the platform's consent page; it returns to the callback.
     window.location.assign(r.authorizeUrl);
@@ -82,7 +97,8 @@ export function ChannelsPanel({ channels, notice, automations = false }: Props) 
     setBusy(true);
     const r = await send("/api/channels/" + c.id + "/disconnect", "POST", {});
     setBusy(false);
-    setStatus(r.ok ? `ยกเลิกการเชื่อม ${platformOf(c.platform).label} ${who(c)} แล้ว` : r.message);
+    if (r.ok) toast.success(`ยกเลิกการเชื่อม ${platformOf(c.platform).label} ${who(c)} แล้ว`);
+    else toast.error(r.message);
     if (r.ok) router.refresh();
   }
 
@@ -91,9 +107,6 @@ export function ChannelsPanel({ channels, notice, automations = false }: Props) 
       <p className={styles.lead}>
         เชื่อมช่อง YouTube บัญชี Instagram และ TikTok เพื่อตั้งเวลาโพสต์คลิปจาก kubcode หน้าขอสิทธิ์จะขึ้นชื่อแอปของ Zernio
         ซึ่งเป็นผู้ให้บริการเชื่อมต่อที่ kubcode ใช้อยู่ตอนนี้
-      </p>
-      <p className={own.status} role="status" aria-live="polite">
-        {status}
       </p>
 
       <section className={styles.section} aria-labelledby="channels-list">
@@ -112,19 +125,19 @@ export function ChannelsPanel({ channels, notice, automations = false }: Props) 
                       {p.label}
                     </span>
                     <strong className={own.handle}>{who(c)}</strong>
-                    <span className={c.status === "active" ? `${own.pill} ${own.ok}` : `${own.pill} ${own.warn}`}>{STATUS[c.status]}</span>
+                    <Badge variant={c.status === "active" ? "ok" : "warn"}>{STATUS[c.status]}</Badge>
                     {c.handle && c.displayName !== c.handle ? <span className={own.meta}>{c.displayName}</span> : null}
                     {c.connectedAt ? <span className={own.meta}>ตั้งแต่ {date(c.connectedAt)}</span> : null}
                   </div>
                   <div className={own.rowActions}>
                     {automations && AUTOMATABLE.has(c.platform) && c.status === "active" ? (
-                      <Link className={own.action} href={`/account/channels/${c.id}/automations`}>
-                        ตั้งค่าตอบคอมเมนต์อัตโนมัติ
-                      </Link>
+                      <Button asChild variant="outline">
+                        <Link href={`/account/channels/${c.id}/automations`}>ตั้งค่าตอบคอมเมนต์อัตโนมัติ</Link>
+                      </Button>
                     ) : null}
-                    <button type="button" className={`${styles.danger} ${own.action}`} disabled={busy} onClick={() => onDisconnect(c)}>
+                    <Button type="button" variant="destructive" disabled={busy} onClick={() => onDisconnect(c)}>
                       ยกเลิกการเชื่อม
-                    </button>
+                    </Button>
                   </div>
                 </li>
               );
@@ -149,10 +162,10 @@ export function ChannelsPanel({ channels, notice, automations = false }: Props) 
         <h2 id="channels-add">เชื่อมช่องใหม่</h2>
         <div className={own.connect}>
           {CONNECTABLE.map((id) => (
-            <button key={id} type="button" className="primary" disabled={busy} onClick={() => onConnect(id)}>
+            <Button key={id} type="button" disabled={busy} onClick={() => onConnect(id)}>
               {PLATFORM[id].icon}
               เชื่อม {PLATFORM[id].label}
-            </button>
+            </Button>
           ))}
         </div>
       </section>

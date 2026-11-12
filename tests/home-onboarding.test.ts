@@ -45,7 +45,7 @@ test("example prompts are copyable code blocks", () => {
   assert.ok(blocks.length >= 2);
   for (const b of blocks) {
     assert.match(b, /<pre[^>]*><code[^>]*>[^<]+<\/code><\/pre>/);
-    assert.match(b, /<button[^>]*class="code-copy"/);
+    assert.match(b, /<button[^>]*data-slot="button"[^>]*class="[^"]*\bcode-copy"/);
   }
 });
 

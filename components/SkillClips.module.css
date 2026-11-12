@@ -13,7 +13,7 @@
   display: block;
   aspect-ratio: 9 / 16;
   overflow: hidden;
-  border-radius: var(--radius);
+  border-radius: var(--radius-surface);
   background: var(--media);
 }
 .poster,
@@ -37,7 +37,7 @@
   justify-content: space-between;
   gap: 4px 12px;
   margin-top: 10px;
-  color: var(--muted);
+  color: var(--muted-foreground);
   font-size: 13px;
 }
 
@@ -78,7 +78,7 @@
 }
 .credits {
   margin: 16px 0 0;
-  color: var(--muted);
+  color: var(--muted-foreground);
   font-size: 13px;
 }
 .credits a {

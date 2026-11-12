@@ -7,7 +7,12 @@ let session: Promise<boolean> | null = null;
 
 export function fetchSignedIn(): Promise<boolean> {
   session ??= fetch("/api/auth/session", { credentials: "same-origin", cache: "no-store" })
-    .then(async (res) => (res.ok ? ((await res.json().catch(() => ({}))) as { user?: unknown }) : {}))
+    // Always drain the body (also the 503 when sign-in isn't configured), so
+    // the request completes instead of staying open (as in AccountMenu).
+    .then(async (res) => {
+      const body = (await res.json().catch(() => ({}))) as { user?: unknown };
+      return res.ok ? body : {};
+    })
     .then((s) => Boolean(s.user))
     .catch(() => false);
   return session;

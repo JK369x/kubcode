@@ -30,7 +30,7 @@
   border-style: dashed;
   border-color: var(--line);
   background: transparent;
-  color: var(--muted);
+  color: var(--muted-foreground);
 }
 :global(:root[data-theme="light"]) .line:not(:disabled) {
   border-color: #05692f;

@@ -80,7 +80,7 @@
   padding: 1px 8px;
   border-radius: 999px;
   background: var(--surface-soft);
-  color: var(--muted);
+  color: var(--muted-foreground);
   font-size: 12px;
   white-space: nowrap;
 }
@@ -97,7 +97,7 @@
 }
 .meta {
   margin: 0;
-  color: var(--muted);
+  color: var(--muted-foreground);
   font-size: 13px;
 }
 .empty {
@@ -141,7 +141,7 @@
   line-height: 1.5;
 }
 .rank li::marker {
-  color: var(--muted);
+  color: var(--muted-foreground);
 }
 .rank a {
   margin-right: 8px;
@@ -150,7 +150,7 @@
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  color: var(--muted);
+  color: var(--muted-foreground);
   font-size: 13px;
   white-space: nowrap;
 }

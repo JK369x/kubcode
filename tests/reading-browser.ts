@@ -145,6 +145,10 @@ async function main() {
       await copy.scrollIntoViewIfNeeded();
       await copy.click();
       await page.waitForFunction(() => document.querySelector(".prose .code-copy")?.textContent === "คัดลอกแล้ว");
+      // ding toast (components/ui/toaster.tsx): visible pill plus the toaster's polite live region.
+      const toastRegion = page.getByRole("region", { name: "การแจ้งเตือน" });
+      await toastRegion.locator(".tst-title", { hasText: "คัดลอกแล้ว" }).waitFor();
+      await toastRegion.getByRole("status").filter({ hasText: "คัดลอกแล้ว" }).waitFor();
       const clip = await page.evaluate(() => navigator.clipboard.readText());
       assert.match(clip, /^# Each line prints a version/);
       assert.match(clip, /ffprobe -version/);
@@ -164,13 +168,13 @@ async function main() {
       assert.equal(await agentCopy.innerText(), "คัดลอก prompt");
       await agentCopy.scrollIntoViewIfNeeded();
       await agentCopy.click();
-      await agent.getByRole("status").filter({ hasText: "คัดลอกแล้ว" }).waitFor();
+      await toastRegion.locator(".tst-title", { hasText: "คัดลอก prompt แล้ว" }).waitFor();
       assert.equal(await agentCopy.innerText(), "คัดลอกแล้ว");
       const prompt = await page.evaluate(() => navigator.clipboard.readText());
       assert.equal(prompt, await agent.locator("pre code").innerText());
       assert.match(prompt, /https:\/\/github\.com\/kelano86\/what-if-animation/);
       await agent.screenshot({ path: ".qa/agent-install-1280-dark.png" });
-      checks.push("agent install prompt: first TOC entry, before the first H2, copy button copies the prompt and announces คัดลอกแล้ว");
+      checks.push("agent install prompt: first TOC entry, before the first H2, copy button copies the prompt and a toast says คัดลอก prompt แล้ว");
 
       assert.equal(await page.locator(".font-size span").innerText(), "100%", "fresh readers start at 100%");
       const size = () => page.locator(".prose").evaluate((el) => parseFloat(getComputedStyle(el).fontSize));
@@ -216,17 +220,23 @@ async function main() {
       await page.goto(base + ARTICLE, { waitUntil: "networkidle" });
       const anim = await page.locator(".reading-head .enter").first().evaluate((el) => getComputedStyle(el).animationName);
       assert.equal(anim, "none");
-      const vtRuleOff = await page.evaluate(() =>
-        [...document.styleSheets].some((sheet) => {
+      const vtRuleOff = await page.evaluate(() => {
+        // The site CSS sits in `@layer legacy` (app/globals.css), so look inside layers too.
+        const stack: CSSRule[] = [];
+        for (const sheet of document.styleSheets) {
           try {
-            return [...sheet.cssRules].some(
-              (r) => r instanceof CSSMediaRule && r.conditionText.includes("prefers-reduced-motion") && r.cssText.includes("::view-transition-group(*)"),
-            );
+            stack.push(...sheet.cssRules);
           } catch {
-            return false;
+            /* cross-origin sheet */
           }
-        }),
-      );
+        }
+        while (stack.length) {
+          const r = stack.pop()!;
+          if (r instanceof CSSMediaRule && r.conditionText.includes("prefers-reduced-motion") && r.cssText.includes("::view-transition-group(*)")) return true;
+          if (r instanceof CSSLayerBlockRule) stack.push(...r.cssRules);
+        }
+        return false;
+      });
       assert.ok(vtRuleOff, "reduced-motion rule disables view transition animations");
       checks.push("prefers-reduced-motion removes entrance and transition animation");
       await page.context().close();

@@ -11,6 +11,7 @@ import { SkeletonImage } from "./SkeletonImage";
 import { playPreview as play, stopPreview as stop } from "./hoverPreview";
 import { SHOWCASE_AGENTS, SHOWCASE_VISUALS, type ShowcaseCredit, type ShowcaseMadeBy } from "@/lib/showcase-allowlist";
 import styles from "./VisualShelf.module.css";
+import { toast } from "@/components/ui/toaster";
 
 const PLATFORM = { youtube: "YouTube", instagram: "Instagram" } as const;
 
@@ -113,7 +114,6 @@ export function CardActions({
  */
 function SkillDownload({ skill, signedIn, available }: { skill: string; signedIn: boolean | undefined; available?: boolean }) {
   const [working, setWorking] = useState(false);
-  const [error, setError] = useState("");
   const phase = downloadPhase({ hasPackage: approvedPackageFor(skill) !== null, signedIn, available, working });
 
   if (phase === "none" || phase === "closed") {
@@ -137,27 +137,21 @@ function SkillDownload({ skill, signedIn, available }: { skill: string; signedIn
 
   async function onClick() {
     setWorking(true);
-    setError("");
     const message = await startDownload(skill);
     setWorking(false);
-    if (message) setError(message);
+    if (message) toast.error("ดาวน์โหลดไม่สำเร็จ", { description: message });
   }
   return (
-    <>
-      <button
-        type="button"
-        className={styles.download}
-        disabled={phase === "working"}
-        aria-busy={phase === "working"}
-        onClick={phase === "ready" ? onClick : undefined}
-      >
-        <Download size={14} aria-hidden="true" />
-        {phase === "working" ? "กำลังเตรียม…" : "ดาวน์โหลด"}
-      </button>
-      <p className={styles.error} role="status">
-        {error}
-      </p>
-    </>
+    <button
+      type="button"
+      className={styles.download}
+      disabled={phase === "working"}
+      aria-busy={phase === "working"}
+      onClick={phase === "ready" ? onClick : undefined}
+    >
+      <Download size={14} aria-hidden="true" />
+      {phase === "working" ? "กำลังเตรียม…" : "ดาวน์โหลด"}
+    </button>
   );
 }
 
