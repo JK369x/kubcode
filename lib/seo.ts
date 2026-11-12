@@ -158,6 +158,7 @@ export function sitemapEntries(content: Content): SitemapEntry[] {
     { url: absoluteUrl("/articles"), lastModified: latest },
     { url: absoluteUrl("/tools"), lastModified: latest },
     { url: absoluteUrl("/community") },
+    ...["/pricing", "/roadmap", "/refund", "/contact", "/terms", "/privacy"].map((path) => ({ url: absoluteUrl(path) })),
     ...pages(content).map((p) => ({ url: absoluteUrl(hrefOf(p)), lastModified: p.updated })),
     ...rawSkills.map((s) => ({ url: absoluteUrl(hrefOf({ kind: "skill", slug: s.slug })) })),
     ...content.categories
