@@ -164,7 +164,8 @@ test("no text under 12px in the cards, shelves and filters (audit #7)", () => {
   ]) assert.doesNotMatch(read(f), small, f);
   // globals.css: only the two allowed exceptions are left (MASTER.md §Typography).
   const left = [...css.matchAll(/([^{}]+)\{[^}]*font-size:\s*(?:[0-9]|1[01])px/g)].map((m) => m[1].trim().split("\n").pop()!.trim());
-  assert.deepEqual(left, [".tool-logo-icon.is-monogram", ".categories .chip-en"]);
+  // Only the decorative monogram is left (the 10px chip-en sub-label went with the calm filter bar, 2026-11-12).
+  assert.deepEqual(left, [".tool-logo-icon.is-monogram"]);
 });
 
 test("conditions link name starts with its visible word (WCAG 2.5.3, audit #4)", () => {
@@ -224,4 +225,15 @@ test("bottom sheet hugs its content: no min height, only the safe-area inset und
   assert.match(sheet, /data-\[side=bottom\]:h-auto data-\[side=bottom\]:max-h-\[min\(85dvh,760px\)\]/);
   assert.match(sheet, /data-\[side=bottom\]:pb-\[env\(safe-area-inset-bottom\)\]/);
   assert.doesNotMatch(read("components/PageInteractions.module.css"), /\.sheet \.composer \{\s*flex: 1/);
+});
+
+test("Buttons never carry the link underline (owner 2026-11-12)", async () => {
+  const { Button } = await import("../components/ui/button");
+  for (const variant of ["default", "feature", "outline", "secondary", "ghost", "destructive"] as const) {
+    const html = renderToStaticMarkup(createElement(Button, { asChild: true, variant }, createElement("a", { href: "#x" }, "x")));
+    assert.match(html, /\bno-underline\b/, variant);
+  }
+  // The hero's secondary action is an outline Button, not an underlined link.
+  assert.doesNotMatch(read("components/HeroStage.tsx"), /variant="link"/);
+  assert.doesNotMatch(read("components/HeroStage.module.css"), /text-decoration: underline;\s*text-decoration-thickness/);
 });
