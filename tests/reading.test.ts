@@ -45,7 +45,7 @@ test("code blocks are highlighted on the server with a language label, filename 
   assert.match(html, /class="code-block"/);
   assert.match(html, /<span class="code-lang">bash<\/span>/);
   assert.match(html, /<span class="code-file">check\.sh<\/span>/);
-  assert.match(html, /<button[^>]*data-slot="button"[^>]*class="[^"]*\bcode-copy"[^>]*>คัดลอก<\/button>/);
+  assert.match(html, /<\/figcaption><div class="code-body"><button[^>]*data-slot="button"[^>]*class="[^"]*\bcode-copy\b[^"]*"[^>]*aria-label="คัดลอกโค้ด"[^>]*><svg[^>]*lucide-copy/);
   assert.match(html, /--shiki-dark:/, "dual-theme token colours");
   assert.match(html, /# comment/);
   // A fence without a language still gets the card, labelled as plain text.

@@ -144,11 +144,23 @@ async function main() {
       const copy = page.locator(".prose .code-block .code-copy").first();
       await copy.scrollIntoViewIfNeeded();
       await copy.click();
-      await page.waitForFunction(() => document.querySelector(".prose .code-copy")?.textContent === "คัดลอกแล้ว");
+      // Icon-only: Copy turns into Check for 2 s; the name stays "คัดลอกโค้ด".
+      assert.equal(await copy.getAttribute("aria-label"), "คัดลอกโค้ด");
+      await page.waitForFunction(() => document.querySelector(".prose .code-copy svg")?.classList.contains("lucide-check"));
+      const copyBox = await copy.boundingBox();
+      assert.ok(copyBox && copyBox.width >= 24 && copyBox.height >= 24, "copy hit area >= 24px");
+      // The icon floats over the code's right gutter, never over the first line.
+      const clear = await page.locator(".prose .code-block").first().evaluate((fig) => {
+        const btn = fig.querySelector(".code-copy")!.getBoundingClientRect();
+        const pre = fig.querySelector("pre")!;
+        const right = pre.getBoundingClientRect().right - parseFloat(getComputedStyle(pre).paddingRight);
+        return btn.left >= right - 1;
+      });
+      assert.ok(clear, "copy icon sits in the code's right padding");
       // ding toast (components/ui/toaster.tsx): visible pill plus the toaster's polite live region.
       const toastRegion = page.getByRole("region", { name: "การแจ้งเตือน" });
-      await toastRegion.locator(".tst-title", { hasText: "คัดลอกแล้ว" }).waitFor();
-      await toastRegion.getByRole("status").filter({ hasText: "คัดลอกแล้ว" }).waitFor();
+      await toastRegion.locator(".tst-title", { hasText: "คัดลอกโค้ดแล้ว" }).waitFor();
+      await toastRegion.getByRole("status").filter({ hasText: "คัดลอกโค้ดแล้ว" }).waitFor();
       const clip = await page.evaluate(() => navigator.clipboard.readText());
       assert.match(clip, /^# Each line prints a version/);
       assert.match(clip, /ffprobe -version/);
@@ -164,12 +176,12 @@ async function main() {
         "agent section sits before the first H2",
       );
       // By class: the button's accessible name changes once it confirms.
-      const agentCopy = agent.locator("button.code-copy-big");
-      assert.equal(await agentCopy.innerText(), "คัดลอก prompt");
+      const agentCopy = agent.getByRole("button", { name: "คัดลอก prompt" });
+      assert.equal(await agent.locator(".code-head").count(), 0, "no header row with a big button");
       await agentCopy.scrollIntoViewIfNeeded();
       await agentCopy.click();
       await toastRegion.locator(".tst-title", { hasText: "คัดลอก prompt แล้ว" }).waitFor();
-      assert.equal(await agentCopy.innerText(), "คัดลอกแล้ว");
+      assert.ok(await agentCopy.locator("svg.lucide-check").count(), "check icon after copying");
       const prompt = await page.evaluate(() => navigator.clipboard.readText());
       assert.equal(prompt, await agent.locator("pre code").innerText());
       assert.match(prompt, /https:\/\/github\.com\/kelano86\/what-if-animation/);

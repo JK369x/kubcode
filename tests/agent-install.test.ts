@@ -96,7 +96,9 @@ test("the section renders a titled block with agent badges, the prompt, a big co
   const html = renderToStaticMarkup(createElement(AgentInstall, { install: page.agentInstall!, tools: content.tools }));
   assert.match(html, new RegExp(`<h2 id="${AGENT_INSTALL_ID}" tabindex="-1">${AGENT_INSTALL_TITLE}</h2>`));
   assert.match(html, /<a href="\/tools\/claude-code">.*Claude Code<\/span><\/a>/);
-  assert.match(html, /<button[^>]*data-slot="button"[^>]*class="[^"]*\bcode-copy code-copy-big\b[^"]*"[^>]*>คัดลอก prompt<\/button>/);
+  // Icon-only copy button in the box's top-right corner (owner, 2026-11-12); no header row.
+  assert.match(html, /<div class="code-body"><button[^>]*data-slot="button"[^>]*class="[^"]*\bcode-copy\b[^"]*"[^>]*aria-label="คัดลอก prompt"[^>]*><svg[^>]*lucide-copy/);
+  assert.doesNotMatch(html, /code-head|>prompt</);
   // The result is a toast (components/ui/toaster.tsx), announced by its live region.
   assert.match(readFileSync("components/CopyButton.tsx", "utf8"), /toast\.success\(/);
   assert.ok(html.includes("ไม่ต้องพิมพ์คำสั่งเอง"));

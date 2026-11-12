@@ -2705,22 +2705,13 @@ img.tool-mark {
   font-family: var(--mono);
   color: var(--muted-foreground);
 }
-.code-copy {
-  margin-left: auto;
-  padding: 4px 12px;
-  border: 1px solid var(--line);
-  border-radius: 8px;
-  background: var(--surface);
-  color: var(--ink);
-  font: inherit;
-  cursor: pointer;
+/* The copy button floats in the text box's top-right corner (CopyButton):
+   the code keeps a right gutter so the icon never covers the first line. */
+.code-body {
+  position: relative;
 }
-.code-copy:hover {
-  border-color: var(--purple);
-}
-.code-copy[data-state="copied"] {
-  border-color: var(--purple);
-  color: var(--purple);
+.code-block .code-body > pre {
+  padding-right: 48px;
 }
 .code-block pre {
   margin: 0;
@@ -2877,24 +2868,6 @@ html[data-theme="light"] .shiki span {
   font-size: 13.5px;
   line-height: 1.75;
 }
-.code-copy.code-copy-big {
-  min-height: 40px;
-  padding: 8px 18px;
-  border: 0;
-  border-radius: 10px;
-  background: var(--selected);
-  color: var(--selected-ink);
-  font-size: 14px;
-  font-weight: 600;
-}
-.code-copy.code-copy-big:hover {
-  background: var(--purple);
-  color: var(--action-hover-ink);
-}
-.code-copy.code-copy-big[data-state="copied"] {
-  background: var(--purple);
-  color: var(--action-hover-ink);
-}
 .agent-install-notes {
   margin: 0;
   padding-left: 1.2em;
@@ -2915,9 +2888,6 @@ html[data-theme="light"] .shiki span {
   }
   .agent-install h2 {
     font-size: 20px;
-  }
-  .agent-install .code-head {
-    flex-wrap: wrap;
   }
 }
 

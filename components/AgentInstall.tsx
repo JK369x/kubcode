@@ -29,13 +29,12 @@ export function AgentInstall({ install, tools }: { install: AgentInstallData; to
         ))}
       </ul>
       <figure className="code-block agent-install-prompt">
-        <figcaption className="code-head">
-          <span className="code-lang">prompt</span>
-          <CopyButton label="คัดลอก prompt" className="code-copy-big" />
-        </figcaption>
-        <pre tabIndex={0}>
-          <code>{install.prompt}</code>
-        </pre>
+        <div className="code-body">
+          <CopyButton label="คัดลอก prompt" />
+          <pre tabIndex={0}>
+            <code>{install.prompt}</code>
+          </pre>
+        </div>
       </figure>
       <ul className="agent-install-notes">
         <li>agent จะอธิบายว่าจะติดตั้งอะไรและขออนุญาตก่อนรันคำสั่งทุกครั้ง อ่านก่อนกดอนุญาต</li>

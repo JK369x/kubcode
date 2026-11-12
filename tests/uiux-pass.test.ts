@@ -50,11 +50,11 @@ test("floating mobile comments bar reserves scroll padding so focus is not hidde
   const m = readFileSync("components/PageInteractions.module.css", "utf8");
   assert.match(
     m,
-    /:global\(html\):has\(\.mobileBar\) \{\s*scroll-padding-bottom: 88px;/,
+    /:global\(html\):has\(\.mobileBar\) \{\s*scroll-padding-bottom: 104px;/,
   );
   assert.match(
     m,
-    /:global\(body\):has\(\.mobileBar\) \{\s*padding-bottom: 80px;/,
+    /:global\(body\):has\(\.mobileBar\) \{\s*padding-bottom: 96px;/,
   );
 });
 

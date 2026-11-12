@@ -211,11 +211,13 @@
    scrolls a focused control above it. Bar: 16px offset + ~58px tall. */
 @media (max-width: 1179px) {
   :global(html):has(.mobileBar) {
-    scroll-padding-bottom: 88px;
+    scroll-padding-bottom: 104px;
   }
-  /* ...including the last footer links, which cannot scroll any higher. */
+  /* ...including the last footer links, which cannot scroll any higher.
+     Bar top is ~70px above the viewport bottom; 96px leaves a clear gap so
+     the end of any block can scroll above it (owner, 2026-11-12). */
   :global(body):has(.mobileBar) {
-    padding-bottom: 80px;
+    padding-bottom: 96px;
   }
 }
 .mobileBar .count {
