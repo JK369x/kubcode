@@ -48,8 +48,9 @@ function SheetOverlay({
 
 /**
  * kubcode Sheet. Radix Dialog: traps focus, Esc closes, focus returns to the
- * trigger. Bottom sheets (mobile comments) size to their content between
- * 40dvh and min(85dvh, 760px) (the content scrolls inside), 720px wide max,
+ * trigger. Bottom sheets (mobile comments) hug their content up to
+ * min(85dvh, 760px) (the content scrolls inside); the only space under the
+ * footer is the safe-area inset. 720px wide max,
  * with a 20px top radius; side sheets are 3/4 wide.
  * Enter 260ms / exit 160ms with the brand ease; reduced motion: none
  * (the global rule in globals.css also stops it).
@@ -75,7 +76,7 @@ function SheetContent({
         data-side={side}
         className={cn(
           "fixed z-50 flex flex-col bg-popover text-popover-foreground shadow-popover outline-none ease-brand data-open:animate-in data-open:duration-260 data-closed:animate-out data-closed:duration-160 motion-reduce:animate-none",
-          "data-[side=bottom]:inset-x-0 data-[side=bottom]:bottom-0 data-[side=bottom]:mx-auto data-[side=bottom]:h-auto data-[side=bottom]:min-h-[40dvh] data-[side=bottom]:max-h-[min(85dvh,760px)] data-[side=bottom]:w-full data-[side=bottom]:max-w-[720px] data-[side=bottom]:rounded-t-[20px] data-[side=bottom]:border data-[side=bottom]:border-b-0 data-[side=bottom]:border-input data-[side=bottom]:pb-[env(safe-area-inset-bottom)] data-[side=bottom]:data-open:slide-in-from-bottom data-[side=bottom]:data-closed:slide-out-to-bottom",
+          "data-[side=bottom]:inset-x-0 data-[side=bottom]:bottom-0 data-[side=bottom]:mx-auto data-[side=bottom]:h-auto data-[side=bottom]:max-h-[min(85dvh,760px)] data-[side=bottom]:w-full data-[side=bottom]:max-w-[720px] data-[side=bottom]:rounded-t-[20px] data-[side=bottom]:border data-[side=bottom]:border-b-0 data-[side=bottom]:border-input data-[side=bottom]:pb-[env(safe-area-inset-bottom)] data-[side=bottom]:data-open:slide-in-from-bottom data-[side=bottom]:data-closed:slide-out-to-bottom",
           "data-[side=right]:inset-y-0 data-[side=right]:right-0 data-[side=right]:h-full data-[side=right]:w-3/4 data-[side=right]:border-l data-[side=right]:border-input data-[side=right]:sm:max-w-sm data-[side=right]:data-open:slide-in-from-right data-[side=right]:data-closed:slide-out-to-right",
           "data-[side=left]:inset-y-0 data-[side=left]:left-0 data-[side=left]:h-full data-[side=left]:w-3/4 data-[side=left]:border-r data-[side=left]:border-input data-[side=left]:sm:max-w-sm data-[side=left]:data-open:slide-in-from-left data-[side=left]:data-closed:slide-out-to-left",
           "data-[side=top]:inset-x-0 data-[side=top]:top-0 data-[side=top]:border-b data-[side=top]:border-input data-[side=top]:data-open:slide-in-from-top data-[side=top]:data-closed:slide-out-to-top",

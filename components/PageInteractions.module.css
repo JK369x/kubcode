@@ -216,8 +216,3 @@
   flex: 0 1 auto;
   min-height: 0;
 }
-/* Short lists: the composer area takes the rest of the minimum height, so
-   the box sits under the comments and its tint reaches the sheet's edge. */
-.sheet .composer {
-  flex: 1 0 auto;
-}

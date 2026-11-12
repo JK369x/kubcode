@@ -217,3 +217,11 @@ test("article chrome meets the touch rules (audit #8)", () => {
 test("toasts stay announced while a modal sheet is open (aria-hidden skips [aria-live])", () => {
   assert.match(read("components/ui/toaster.tsx"), /<div data-toaster="" aria-live="off" className="contents">/);
 });
+
+test("bottom sheet hugs its content: no min height, only the safe-area inset under the footer", () => {
+  const sheet = read("components/ui/sheet.tsx");
+  assert.doesNotMatch(sheet, /data-\[side=bottom\]:min-h-/);
+  assert.match(sheet, /data-\[side=bottom\]:h-auto data-\[side=bottom\]:max-h-\[min\(85dvh,760px\)\]/);
+  assert.match(sheet, /data-\[side=bottom\]:pb-\[env\(safe-area-inset-bottom\)\]/);
+  assert.doesNotMatch(read("components/PageInteractions.module.css"), /\.sheet \.composer \{\s*flex: 1/);
+});
