@@ -36,20 +36,23 @@ test("footer: no prototype wording, links to articles, tools and privacy", () =>
 
 /* --------------------------------------------------------------- hero */
 
-test("hero promises the outcome in plain Thai, without jargon", () => {
-  const h1 = text(hero.match(/<h1\b[^>]*>([\s\S]*?)<\/h1>/)?.[1] ?? "");
-  assert.equal(h1, "คลิปแบบนี้ ทำเองได้");
-  const lead = text(hero.match(/<p\b[^>]*class="lead"[^>]*>([\s\S]*?)<\/p>/)?.[1] ?? "");
-  assert.match(lead, /โหลดชุดคำสั่งฟรี/);
-  assert.match(lead, /ในคอมของคุณ/);
-  assert.doesNotMatch(h1 + " " + lead, /skill|agent|template|render|เรนเดอร์|เทมเพลต/i);
+test("hero promises the outcome in plain Thai (phone stage, owner 2026-11-11)", () => {
+  // Line 1 is static; line 2 types "ทำแนว<แนวเรื่อง>" of the selected clip, and
+  // screen readers get the whole phrase once (the typed span is aria-hidden).
+  const h1 = hero.match(/<h1\b[^>]*>([\s\S]*?)<\/h1>/)?.[1] ?? "";
+  assert.match(h1, /เห็นคลิปไหนถูกใจ/);
+  assert.match(h1, /<span[^>]*aria-hidden="true"[^>]*>ทำแนวซอมบี้คอนโด<\/span><span class="sr-only">ทำแนวซอมบี้คอนโด<\/span>/);
+  const lead = text(hero.match(/<p\b[^>]*class="[^"]*\blead\b[^"]*"[^>]*>([\s\S]*?)<\/p>/)?.[1] ?? "");
+  assert.match(lead, /สกิลฟรี/);
+  assert.match(lead, /ในคอมคุณเอง/);
+  assert.doesNotMatch(text(h1), /template|render|เรนเดอร์|เทมเพลต/i);
 });
 
 test("hero has exactly one primary action and no search box", () => {
-  const links = hero.match(/<a\b[^>]*class="start"[^>]*>[\s\S]*?<\/a>/g) || [];
-  assert.equal(links.length, 1);
+  const links = hero.match(/<a\b[^>]*data-variant="feature"[^>]*>[\s\S]*?<\/a>/g) || [];
+  assert.equal(links.length, 1, "one primary (feature) action");
   assert.match(links[0], /href="#get-started"/);
-  assert.match(text(links[0]), /^ดูวิธีทำคลิปแรก/);
+  assert.match(text(links[0]), /^เริ่มทำคลิปแรก/);
   assert.doesNotMatch(hero, /<input\b/, "search lives in the catalogue, not the hero");
   assert.doesNotMatch(hero, /ดูคลังทั้งหมด/);
 });

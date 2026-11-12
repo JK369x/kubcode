@@ -23,13 +23,14 @@ const hero = html.slice(0, html.indexOf("</section>"));
 const start = html.match(/<section[^>]*id="get-started"[^>]*>([\s\S]*?)<\/section>/)?.[1] ?? "";
 
 test("hero says which agents the skills work with, linking their tool pages", () => {
-  const chips = hero.match(/<ul[^>]*aria-label="ใช้กับ"[^>]*>([\s\S]*?)<\/ul>/)?.[1] ?? "";
+  // Phone-stage hero (owner, 2026-11-11): "ทำได้ด้วย Claude Code หรือ OpenCode", plain text with small logos.
+  const chips = hero.match(/ทำได้ด้วย([\s\S]*?)<\/p>/)?.[1] ?? "";
   for (const tool of ["claude-code", "opencode"]) assert.match(chips, new RegExp(`href="/tools/${tool}"`), tool);
   assert.doesNotMatch(chips, /codex/i, "no claim for an agent the packages do not name");
 });
 
 test("hero has one primary action that starts the first skill", () => {
-  assert.match(hero, /<a[^>]*href="#get-started"[^>]*>[\s\S]*?ดูวิธีทำคลิปแรก/);
+  assert.match(hero, /<a[^>]*href="#get-started"[^>]*>[\s\S]*?เริ่มทำคลิปแรก/);
 });
 
 test("first-skill section: numbered install steps with the real skills path", () => {

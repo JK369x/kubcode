@@ -4,6 +4,8 @@ import { ArrowDown, Play } from "lucide-react";
 import type { Skill } from "@/lib/catalog";
 import { cartoonShowcase, publishedShowcase, type ShowcaseItem, type StyleTool } from "@/lib/showcase";
 import { VisualShelf } from "./VisualShelf";
+import { HeroStage } from "./HeroStage";
+import { heroClips } from "@/lib/hero-stage";
 import styles from "./KineticHero.module.css";
 
 /* ------------------------------------------------------------- component */
@@ -36,6 +38,8 @@ export function KineticHero({
   );
 
   const hasClips = clips.length > 0;
+  // Option B phone stage (DECISION.md 2026-11-11) whenever its clips are publishable.
+  const stage = heroClips(clips);
 
   return (
     <section
@@ -43,8 +47,9 @@ export function KineticHero({
       aria-labelledby={headingId}
       data-media={hasClips ? "clips" : "none"}
     >
+      {stage.length > 0 && <HeroStage clips={stage} headingId={headingId} />}
       <div className={styles.copy}>
-        {hasClips ? (
+        {stage.length > 0 ? null : hasClips ? (
           <>
             {/* Plain Thai, outcome first: no skill/agent/template/render jargon (owner, 2026-11-06). */}
             <h1 id={headingId} className={styles.title}>
@@ -54,17 +59,6 @@ export function KineticHero({
               เลือกสไตล์ที่ชอบจากคลิปจริงด้านล่าง
               โหลดชุดคำสั่งฟรี แล้วทำคลิปแนวเดียวกันในคอมของคุณ
             </p>
-            <div className={styles.agents}>
-              <span>ใช้กับ</span>
-              <ul aria-label="ใช้กับ">
-                <li>
-                  <a href="/tools/claude-code">Claude Code</a>
-                </li>
-                <li>
-                  <a href="/tools/opencode">OpenCode</a>
-                </li>
-              </ul>
-            </div>
             <a className={styles.start} href="#get-started">
               ดูวิธีทำคลิปแรก
               <ArrowDown size={17} aria-hidden="true" />
