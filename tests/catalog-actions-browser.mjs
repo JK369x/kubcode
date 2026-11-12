@@ -1,6 +1,7 @@
 import { chromium } from "@playwright/test";
 import fs from "node:fs";
 import assert from "node:assert/strict";
+const BASE=process.env.BASE_URL||'http://127.0.0.1:3040';
 const browser = await chromium.launch({ channel: "chrome", headless: true });
 const page = await browser.newPage({
   viewport: { width: 1440, height: 1000 },
@@ -10,7 +11,7 @@ const checks = [];
 const errors = [];
 page.on("pageerror", (e) => errors.push(e.message));
 try {
-  await page.goto("http://127.0.0.1:3040");
+  await page.goto(BASE);
   const cards = page.locator(".skill-card");
   assert.equal(await cards.count(), 7);
   assert.equal(
@@ -41,7 +42,7 @@ try {
   }
   const details = cards
     .first()
-    .getByRole("link", { name: "ดูเงื่อนไขการดาวน์โหลด" });
+    .getByRole("link", { name: "เงื่อนไข: ดาวน์โหลด" });
   await details.click();
   await page.waitForURL("**/skills/growkaz-stickman#download");
   assert.equal(await page.locator("#download").count(), 1);
@@ -49,7 +50,7 @@ try {
   assert.deepEqual(
     await (
       await page.request.get(
-        "http://127.0.0.1:3040/api/download/growkaz-stickman",
+        BASE+"/api/download/growkaz-stickman",
       )
     ).json(),
     { available: false },
@@ -58,7 +59,7 @@ try {
   for (const width of [390, 768, 1440])
     for (const theme of ["dark", "light"]) {
       await page.setViewportSize({ width, height: 1000 });
-      await page.goto("http://127.0.0.1:3040");
+      await page.goto(BASE);
       await page.evaluate(
         (t) => (document.documentElement.dataset.theme = t),
         theme,

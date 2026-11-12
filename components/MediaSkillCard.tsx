@@ -11,6 +11,8 @@ import { SkillIcon, getSkillTools } from "./ToolChips";
 import { ToolMark, resolveToolMark } from "./ToolMark";
 import { SkeletonImage } from "./SkeletonImage";
 import styles from "./MediaSkillCard.module.css";
+import { Card } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 
 /*
  * Full-media catalog card.
@@ -63,7 +65,9 @@ export function MediaSkillCard({
   const preview = showcase?.cover.preview ?? null;
 
   return (
-    <article
+    <Card
+      as="article"
+      variant="media"
       className={"skill-card " + styles.card}
       data-media={poster ? "poster" : "none"}
       data-category={skill.category}
@@ -169,8 +173,10 @@ export function MediaSkillCard({
       <div className={styles.bottom}>
         <ul className={styles.badges} aria-label="ข้อมูลสำคัญ">
           {badges.map((b) => (
-            <li key={b.key} className={styles.badge} data-badge={b.key} title={b.title}>
-              {b.label}
+            <li key={b.key} title={b.title}>
+              <Badge variant="media" className={styles.badge} data-badge={b.key}>
+                {b.label}
+              </Badge>
             </li>
           ))}
         </ul>
@@ -197,6 +203,6 @@ export function MediaSkillCard({
           <CardDownloadAction slug={skill.slug} name={skill.name} />
         </div>
       </div>
-    </article>
+    </Card>
   );
 }

@@ -119,3 +119,54 @@ test("shadcn Button/Input meet the size and focus rules", async () => {
   assert.match(i, /h-11/);
   assert.doesNotMatch(read("components/ui/badge.tsx"), /text-xs|text-\[1[01]px\]/, "badge text >= 12px");
 });
+
+/* ---------------- PR2: cards, filters, shelves ---------------- */
+
+test("home filters are shadcn ToggleGroups; link filters share the chip look", () => {
+  const lib = read("components/Library.tsx");
+  assert.match(lib, /<ToggleGroup\s+type="single"/);
+  assert.match(lib, /onValueChange=\{\(id\) => id && onPick\(id\)\}/, "one chip always checked");
+  for (const f of ["components/ArticleIndex.tsx", "components/ToolIndex.tsx"]) {
+    assert.match(read(f), /aria-current=\{c\.active \? "page" : undefined\} className=\{chipVariants\(/, f);
+  }
+  const toggle = read("components/ui/toggle-variants.ts");
+  assert.match(toggle, /h-11 px-4 md:h-10/, "44px chips on mobile");
+  assert.match(toggle, /text-\[13px\]/, "13px Thai chips");
+  assert.match(toggle, /aria-\[current=page\]:bg-primary/);
+  assert.doesNotMatch(css, /\.categories button/, "old chip CSS removed");
+});
+
+test("cards use the shadcn Card; tool cards keep a meaningful --input edge", () => {
+  assert.match(read("components/ToolCard.tsx"), /<Card as="article"/);
+  assert.match(read("components/ArticleCard.tsx"), /<Card as="article" variant="cover"/);
+  assert.match(read("components/MediaSkillCard.tsx"), /variant="media"/);
+  const card = read("components/ui/card.tsx");
+  assert.match(card, /border-input bg-card/);
+  assert.match(card, /has-\[\[data-stretch\]:focus-visible\]:outline-ring/);
+});
+
+test("shelf actions and the pause control are shadcn Button / Toggle", () => {
+  const shelf = read("components/VisualShelf.tsx");
+  assert.match(shelf, /<Button asChild className=\{cn\(ACTION, ON_MEDIA_PRIMARY/);
+  assert.match(shelf, /<Toggle\s+variant="outline"[\s\S]*?data-motion-toggle=""/);
+  assert.match(shelf, /const ACTION = "h-11 /, "44px card actions on touch");
+});
+
+test("no text under 12px in the cards, shelves and filters (audit #7)", () => {
+  const small = /font-size:\s*(?:[0-9]|1[01])(?:\.\d+)?px|font:\s*\d+\s+(?:[0-9]|1[01])(?:\.\d+)?px/;
+  for (const f of [
+    "components/VisualShelf.module.css",
+    "components/ClipResults.module.css",
+    "components/CardDownloadAction.module.css",
+    "components/ToolIndex.module.css",
+    "components/ArticleIndex.module.css",
+    "components/MediaSkillCard.module.css",
+  ]) assert.doesNotMatch(read(f), small, f);
+  // globals.css: only the two allowed exceptions are left (MASTER.md §Typography).
+  const left = [...css.matchAll(/([^{}]+)\{[^}]*font-size:\s*(?:[0-9]|1[01])px/g)].map((m) => m[1].trim().split("\n").pop()!.trim());
+  assert.deepEqual(left, [".tool-logo-icon.is-monogram", ".categories .chip-en"]);
+});
+
+test("conditions link name starts with its visible word (WCAG 2.5.3, audit #4)", () => {
+  assert.match(read("components/CardDownloadAction.tsx"), /const label = "เงื่อนไข: ดาวน์โหลด"/);
+});

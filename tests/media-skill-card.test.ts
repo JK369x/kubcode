@@ -97,9 +97,11 @@ test("navigation: real detail link and real conditions link, both named", () => 
   assert.match(links[0][2], /Stickman Cinema/);
   assert.equal(
     attr(links[1][0], "aria-label"),
-    "ดูเงื่อนไขการดาวน์โหลด Stickman Cinema",
+    "เงื่อนไข: ดาวน์โหลด Stickman Cinema",
   );
   assert.match(links[1][2], /เงื่อนไข/, "visible text is part of the name");
+  // WCAG 2.5.3 (audit 2026-11-11 #4): the name starts with the visible word.
+  assert.ok(attr(links[1][0], "aria-label")!.startsWith("เงื่อนไข"));
 });
 
 test("download renders disabled on the server with no fake success or file href", () => {

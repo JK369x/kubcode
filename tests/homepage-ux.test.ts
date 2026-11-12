@@ -73,7 +73,7 @@ test("filters are by what the creator wants to make, each one non-empty", () => 
 });
 
 test("the filter bar shows the use cases, not the old tech categories", () => {
-  const bar = home.match(/<nav[^>]*aria-label="อยากทำอะไร"[^>]*>([\s\S]*?)<\/nav>/)?.[1] ?? "";
+  const bar = home.match(/<div[^>]*role="radiogroup"[^>]*aria-label="อยากทำอะไร"[^>]*>([\s\S]*?)<\/div>/)?.[1] ?? "";
   for (const u of useCases) assert.match(bar, new RegExp(u.label), u.label);
   assert.doesNotMatch(bar, /วิดีโอ \/ ภาพ|ซับไตเติล|โค้ด|การทำงาน/);
 });

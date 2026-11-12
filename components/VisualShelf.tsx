@@ -12,6 +12,15 @@ import { playPreview as play, stopPreview as stop } from "./hoverPreview";
 import { SHOWCASE_AGENTS, SHOWCASE_VISUALS, type ShowcaseCredit, type ShowcaseMadeBy } from "@/lib/showcase-allowlist";
 import styles from "./VisualShelf.module.css";
 import { toast } from "@/components/ui/toaster";
+import { Button } from "@/components/ui/button";
+import { Toggle } from "@/components/ui/toggle";
+import { cn } from "@/lib/utils";
+
+/** Card actions sit on the dark media scrim in both themes: pill Buttons, 44px on touch. */
+const ACTION = "h-11 min-w-0 flex-1 basis-0 rounded-full px-2.5 text-[13px] md:h-10";
+/** The primary pill keeps the dark-theme chip colours: the media is dark in both themes (MASTER.md --card-media). */
+const ON_MEDIA_PRIMARY = "bg-[#d1b9ff] text-[#291640] [a]:hover:bg-[#bb98ff] [a]:hover:text-[#291640] focus-visible:outline-[#d1b9ff]";
+const ON_SCRIM = "border-white/45 bg-black/35 text-white hover:enabled:border-white hover:enabled:bg-black/50 [a]:hover:border-white [a]:hover:bg-black/50 focus-visible:outline-[#d1b9ff]";
 
 const PLATFORM = { youtube: "YouTube", instagram: "Instagram" } as const;
 
@@ -89,9 +98,9 @@ export function CardActions({
   if (style?.skill) {
     return (
       <div className={styles.actions}>
-        <a className={styles.action} href={`/skills/${style.skill}`}>
-          ดู template
-        </a>
+        <Button asChild className={cn(ACTION, ON_MEDIA_PRIMARY, styles.action)}>
+          <a href={`/skills/${style.skill}`}>ดู template</a>
+        </Button>
         <SkillDownload skill={style.skill} signedIn={signedIn} available={available} />
       </div>
     );
@@ -99,11 +108,13 @@ export function CardActions({
   if (!clip.link) return null;
   return (
     <div className={styles.actions}>
-      <a className={styles.action} href={clip.link.url} target="_blank" rel="noopener noreferrer">
-        ดูคลิป
-        <ArrowUpRight size={14} aria-hidden="true" />
-        <span className="sr-only">บน {PLATFORM[clip.link.platform]} (เปิดแท็บใหม่)</span>
-      </a>
+      <Button asChild className={cn(ACTION, ON_MEDIA_PRIMARY, styles.action)}>
+        <a href={clip.link.url} target="_blank" rel="noopener noreferrer">
+          ดูคลิป
+          <ArrowUpRight size={14} aria-hidden="true" />
+          <span className="sr-only">บน {PLATFORM[clip.link.platform]} (เปิดแท็บใหม่)</span>
+        </a>
+      </Button>
     </div>
   );
 }
@@ -118,20 +129,22 @@ function SkillDownload({ skill, signedIn, available }: { skill: string; signedIn
 
   if (phase === "none" || phase === "closed") {
     return (
-      <button type="button" className={styles.lock} disabled>
+      <Button type="button" variant="outline" className={cn(ACTION, ON_SCRIM, styles.lock)} disabled>
         <span className="sr-only">ดาวน์โหลดเร็วๆ นี้</span>
         <span aria-hidden="true">เร็วๆ นี้</span>
-      </button>
+      </Button>
     );
   }
   // Until the session is known, offer sign-in: most visitors are signed out.
   if (phase === "signin" || phase === "checking") {
     return (
-      <a className={styles.lock} href="/account" title="สมัครหรือเข้าสู่ระบบก่อนดาวน์โหลด">
-        <LockKeyhole size={14} aria-hidden="true" />
-        <span className="sr-only">เข้าสู่ระบบเพื่อดาวน์โหลด</span>
-        <span aria-hidden="true">ดาวน์โหลด</span>
-      </a>
+      <Button asChild variant="outline" className={cn(ACTION, ON_SCRIM, styles.lock)}>
+        <a href="/account" title="สมัครหรือเข้าสู่ระบบก่อนดาวน์โหลด">
+          <LockKeyhole size={14} aria-hidden="true" />
+          <span className="sr-only">เข้าสู่ระบบเพื่อดาวน์โหลด</span>
+          <span aria-hidden="true">ดาวน์โหลด</span>
+        </a>
+      </Button>
     );
   }
 
@@ -142,16 +155,17 @@ function SkillDownload({ skill, signedIn, available }: { skill: string; signedIn
     if (message) toast.error("ดาวน์โหลดไม่สำเร็จ", { description: message });
   }
   return (
-    <button
+    <Button
       type="button"
-      className={styles.download}
+      variant="outline"
+      className={cn(ACTION, ON_SCRIM, "border-[#d1b9ff] hover:enabled:bg-[#d1b9ff] hover:enabled:text-[#291640]", styles.download)}
       disabled={phase === "working"}
       aria-busy={phase === "working"}
       onClick={phase === "ready" ? onClick : undefined}
     >
       <Download size={14} aria-hidden="true" />
       {phase === "working" ? "กำลังเตรียม…" : "ดาวน์โหลด"}
-    </button>
+    </Button>
   );
 }
 
@@ -339,16 +353,16 @@ export function VisualShelf({
         ) : (
           <span />
         )}
-        <button
-          type="button"
-          className={styles.toggle}
-          aria-pressed={paused}
+        <Toggle
+          variant="outline"
+          className={cn("pr-4 pl-3.5 text-sm", styles.toggle)}
+          pressed={paused}
           data-motion-toggle=""
-          onClick={() => setPaused((p) => !p)}
+          onPressedChange={setPaused}
         >
           {paused ? <Play size={15} aria-hidden="true" /> : <Pause size={15} aria-hidden="true" />}
           <span>หยุดเลื่อน</span>
-        </button>
+        </Toggle>
       </div>
     </div>
   );

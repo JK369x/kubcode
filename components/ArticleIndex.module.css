@@ -24,35 +24,10 @@
   margin: 0;
   padding: 0;
 }
-.chips a {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  min-height: 40px;
-  padding: 0 16px;
-  border: 1px solid var(--line);
-  border-radius: 999px;
-  color: var(--ink);
-  font-size: 14px;
-  text-decoration: none;
-}
-.chips a:hover {
-  border-color: var(--purple);
-}
-.chips a[aria-current="page"] {
-  background: var(--selected);
-  border-color: var(--selected);
-  color: var(--selected-ink);
-  font-weight: 600;
-}
+/* Chip look: chipVariants (components/ui/toggle.tsx); count: Badge. */
 .count {
-  min-width: 1.6em;
-  padding: 0 6px;
-  border-radius: 999px;
-  background: var(--surface-soft);
-  color: var(--muted-foreground);
-  font-size: 12px;
-  text-align: center;
+  min-width: 1.8em;
+  padding-block: 0;
 }
 .chips a[aria-current="page"] .count {
   background: rgb(255 255 255 / 0.45);
@@ -60,13 +35,7 @@
 }
 
 /* Cards */
-.card {
-  position: relative;
-  display: flex;
-  flex-direction: column;
-  gap: 14px;
-  color: var(--ink);
-}
+/* Card box: components/ui/card.tsx (variant "cover"). */
 /* The title link covers the whole card; tool icons sit above it. */
 .link {
   color: inherit;
@@ -78,6 +47,7 @@
   inset: 0;
   border-radius: 16px;
 }
+/* The card draws the ring (Card: has-[[data-stretch]:focus-visible]). */
 .link:focus-visible {
   outline: none;
 }
@@ -100,15 +70,6 @@
 .card:hover .cover img,
 .card:has(.link:focus-visible) .cover img {
   transform: scale(1.03);
-}
-.card:has(.link:focus-visible) {
-  outline: 2px solid var(--purple);
-  outline-offset: 6px;
-  border-radius: 16px;
-}
-.text {
-  display: grid;
-  gap: 6px;
 }
 .badge {
   justify-self: start;
@@ -146,16 +107,6 @@
   display: inline-flex;
   align-items: center;
   gap: 4px;
-}
-.clip {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  padding: 1px 8px;
-  border-radius: 999px;
-  background: var(--selected);
-  color: var(--selected-ink);
-  font-weight: 500;
 }
 
 /* Hero card: the one large moment on the page. */

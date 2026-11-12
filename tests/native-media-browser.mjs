@@ -1,6 +1,7 @@
 import {chromium} from '@playwright/test';
 import fs from 'node:fs';import assert from 'node:assert/strict';
 import {execFileSync} from 'node:child_process';
+const BASE=process.env.BASE_URL||'http://127.0.0.1:3040';
 const expected=JSON.parse(execFileSync('./node_modules/.bin/tsx',['-e','import {skills} from "./lib/catalog"; console.log(JSON.stringify(skills.filter(s=>s.examples[0]?.video).map(s=>"/skills/"+s.slug)))'],{encoding:'utf8'}));
 const dir='.qa/project-visual-audit',audit=JSON.parse(fs.readFileSync(`${dir}/report.json`));
 const browser=await chromium.launch({headless:true,channel:'chrome'});const results=[];
@@ -9,7 +10,7 @@ try{for(const theme of ['dark','light']){
  await context.addInitScript(t=>localStorage.setItem('jk-theme',t),theme);
  const page=await context.newPage();
  for(const route of audit.routes.filter(r=>r.startsWith('/skills/'))){
-  await page.goto('http://127.0.0.1:3040'+route,{waitUntil:'networkidle'});
+  await page.goto(BASE+route,{waitUntil:'networkidle'});
   const video=page.locator('video').first();if(!await video.count())continue;
   await video.evaluate(async v=>{v.muted=true;await v.play()});
   await page.waitForFunction(()=>document.querySelector('video').currentTime>.25);

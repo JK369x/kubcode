@@ -7,7 +7,7 @@ import { cn } from "@/lib/utils"
  * 15px from `md` up, 3px `--ring` focus outline.
  */
 const fieldClass =
-  "w-full min-w-0 rounded-md border border-solid border-input bg-card px-3.5 text-base leading-[1.6] text-foreground caret-ring transition-colors outline-none placeholder:text-muted-foreground placeholder:opacity-100 focus-visible:border-ring focus-visible:outline-3 focus-visible:outline-solid focus-visible:outline-offset-4 focus-visible:outline-ring disabled:cursor-not-allowed disabled:opacity-60 aria-invalid:border-destructive md:text-[15px] motion-reduce:transition-none"
+  "w-full min-w-0 rounded-md border border-input bg-card px-3.5 text-base leading-[1.6] text-foreground caret-ring transition-colors outline-none placeholder:text-muted-foreground placeholder:opacity-100 focus-visible:border-ring focus-visible:outline-3 focus-visible:outline-solid focus-visible:outline-offset-4 focus-visible:outline-ring disabled:cursor-not-allowed disabled:opacity-60 aria-invalid:border-destructive md:text-[15px] motion-reduce:transition-none"
 
 function Input({ className, type, ...props }: React.ComponentProps<"input">) {
   return (

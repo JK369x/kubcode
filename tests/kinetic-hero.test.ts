@@ -156,7 +156,8 @@ const UNPACKAGED = Object.entries(SHOWCASE_VISUALS).find(([, s]) => s?.skill && 
 
 test("packaged skill, signed in and downloads on: a real download button", () => {
   const html = actions(PACKAGED, { signedIn: true, available: true });
-  assert.match(html, /<button(?![^>]*disabled)[^>]*>[\s\S]*?ดาวน์โหลด/);
+  // Attribute, not the Tailwind `disabled:` class names on the shadcn Button.
+  assert.match(html, /<button(?![^>]*\sdisabled="")[^>]*>[\s\S]*?ดาวน์โหลด/);
   assert.doesNotMatch(html, /เร็วๆ นี้|href="\/account"/);
 });
 
@@ -330,7 +331,7 @@ test("Library: hero, selected example and catalog keep their contracts", () => {
   // The catalogue search stays an editable input (the hero has none since 2026-11-06).
   const inputs = [...html.matchAll(/<input\b[^>]*>/g)].map((m) => m[0]);
   assert.ok(inputs.length >= 1);
-  for (const input of inputs) assert.doesNotMatch(input, /readonly|disabled/i);
+  for (const input of inputs) assert.doesNotMatch(input, /\s(readonly|readOnly|disabled)(=|\s|>)/);
   // Honest disabled downloads, one per full catalogue card (skills with a clip).
   const { showcaseForSkill } = require("../lib/showcase") as typeof import("../lib/showcase");
   const disabled = [...html.matchAll(/<button\b[^>]*\sdisabled=""[^>]*>[\s\S]*?ดาวน์โหลด skill/g)];

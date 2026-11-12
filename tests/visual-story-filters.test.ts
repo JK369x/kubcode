@@ -174,15 +174,18 @@ test("filters round-trip through the address; unknown values are ignored", () =>
 test("homepage: three labelled rows (use case, แนวภาพ, แนวเรื่อง), each starting with ทั้งหมด", () => {
   const { Library } = require("../components/Library") as typeof import("../components/Library");
   const html = renderToStaticMarkup(createElement(Library, { articles: [] }));
+  // Each row is a shadcn ToggleGroup (type="single"): a radio group whose
+  // checked chip is the row's value; arrow keys move between chips.
+  const row = (label: string) =>
+    html.match(new RegExp(`<div[^>]*role="radiogroup"[^>]*aria-label="${label}"[^>]*>([\\s\\S]*?)</div>`))?.[1];
   for (const label of ["อยากทำอะไร", "แนวภาพ", "แนวเรื่อง"]) {
-    const nav = html.match(new RegExp(`<nav[^>]*aria-label="${label}"[^>]*>([\\s\\S]*?)</nav>`))?.[1];
+    const nav = row(label);
     assert.ok(nav, label);
-    assert.match(nav, /^<button[^>]*aria-pressed="true"[^>]*>ทั้งหมด/, `${label} starts with ทั้งหมด, pressed`);
+    assert.match(nav, /^<button[^>]*role="radio"[^>]*aria-checked="true"[^>]*>ทั้งหมด/, `${label} starts with ทั้งหมด, checked`);
+    assert.equal((nav.match(/aria-checked="true"/g) ?? []).length, 1, `${label}: exactly one checked`);
   }
-  const visualNav = html.match(/<nav[^>]*aria-label="แนวภาพ"[^>]*>([\s\S]*?)<\/nav>/)![1];
-  assert.match(visualNav, /data-value="blender-3d"[^>]*>3D Blender/);
-  const storyNav = html.match(/<nav[^>]*aria-label="แนวเรื่อง"[^>]*>([\s\S]*?)<\/nav>/)![1];
-  assert.match(storyNav, /data-value="paradox-fact"[^>]*>ข้อเท็จจริงย้อนแย้ง/);
+  assert.match(row("แนวภาพ")!, /data-value="blender-3d"[^>]*>3D Blender/);
+  assert.match(row("แนวเรื่อง")!, /data-value="paradox-fact"[^>]*>ข้อเท็จจริงย้อนแย้ง/);
 });
 
 test("filtered clips carry their story format on the poster and their visual style under it", () => {

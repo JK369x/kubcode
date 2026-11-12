@@ -7,6 +7,8 @@ import { Morph } from "./Morph";
 import { ToolLogo } from "./ToolLogo";
 import { ToolStars } from "./StarCounts";
 import styles from "./ToolIndex.module.css";
+import { Card, CardDescription, CardFooter, CardHeader } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 
 /** "ใช้ใน 2 บทความ และ 1 skill", or null when nothing links to the tool. */
 export function usageText({ articles, skills }: { articles: number; skills: number }): string | null {
@@ -22,13 +24,13 @@ export function ToolCard({ tool: t, usage }: { tool: Tool; usage: { articles: nu
   const external = t.links.website ?? t.links.repo;
   const used = usageText(usage);
   return (
-    <article className={styles.card}>
-      <div className={styles.top}>
+    <Card as="article" className={styles.card}>
+      <CardHeader>
         <ToolLogo slug={t.slug} logo={t.logo} size="card" />
         <div className={styles.heading}>
           <Morph name={titleTransitionName("tool", t.slug)}>
             <h2 className={styles.name}>
-              <Link href={`/tools/${t.slug}`} transitionTypes={["nav-forward"]} className={styles.link}>
+              <Link href={`/tools/${t.slug}`} transitionTypes={["nav-forward"]} className={styles.link} data-stretch="">
                 {t.name}
               </Link>
             </h2>
@@ -40,11 +42,16 @@ export function ToolCard({ tool: t, usage }: { tool: Tool; usage: { articles: nu
             {CATEGORY_LABELS[t.category]}
           </p>
         </div>
-      </div>
-      <p className={styles.description}>{t.description}</p>
-      <div className={styles.foot}>
+      </CardHeader>
+      <CardDescription className={styles.description}>{t.description}</CardDescription>
+      <CardFooter className={styles.foot}>
         <div className={styles.facts}>
-          <span className={`${styles.price} ${styles[`price-${t.pricing}`]}`}>{PRICING_LABELS[t.pricing]}</span>
+          <Badge
+            variant={t.pricing === "free" ? "default" : t.pricing === "free-tier" ? "outline" : "secondary"}
+            className={styles.price}
+          >
+            {PRICING_LABELS[t.pricing]}
+          </Badge>
           {used && <span>{used}</span>}
           <ToolStars slug={t.slug} className={styles.stars} />
         </div>
@@ -60,7 +67,7 @@ export function ToolCard({ tool: t, usage }: { tool: Tool; usage: { articles: nu
             <ArrowUpRight size={14} aria-hidden />
           </a>
         )}
-      </div>
-    </article>
+      </CardFooter>
+    </Card>
   );
 }

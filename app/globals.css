@@ -77,11 +77,18 @@
     --input: #857896;
     --ring: #7136b9;
   }
-  /* The resets shadcn components rely on, without the rest of preflight. */
+  /* The resets shadcn components rely on, without the rest of preflight.
+     Border: Tailwind sets widths per side (border-t) and expects the rest to
+     be 0 with a solid style; scoped to shadcn parts so legacy CSS is untouched. */
   textarea,
   select {
     font: inherit;
     color: inherit;
+  }
+  [data-slot] {
+    border-width: 0;
+    border-style: solid;
+    border-color: var(--border);
   }
 }
 
@@ -381,11 +388,10 @@ header.header {
 .search:focus-within {
   border-color: var(--purple);
 }
-.search input {
-  width: 100%;
-  background: transparent;
-  border: 0;
-  font-size: 13px;
+/* The Input inside draws no box; the pill is the field, so it takes the ring. */
+.search:has(input:focus-visible) {
+  outline: 3px solid var(--ring);
+  outline-offset: 4px;
 }
 .work-showcase {
   display: grid;
@@ -439,7 +445,7 @@ header.header {
 .feature-tools > span,
 .feature-authors > span {
   display: block;
-  font-size: 11px;
+  font-size: 12px;
   color: var(--muted-foreground);
   margin-bottom: 8px;
 }
@@ -458,7 +464,7 @@ header.header {
   border: 1px solid var(--line);
   border-radius: 999px;
   padding: 4px 9px;
-  font-size: 10px;
+  font-size: 12px;
   line-height: 1.5;
   white-space: nowrap;
 }
@@ -488,7 +494,7 @@ header.header {
 .draft-note {
   order: 5;
   color: var(--muted-foreground);
-  font-size: 11px;
+  font-size: 12px;
   margin-top: 11px;
 }
 .exhibit {
@@ -550,11 +556,11 @@ header.header {
   flex-wrap: wrap;
   gap: 6px 16px;
   color: var(--muted-foreground);
-  font-size: 10px;
+  font-size: 12px;
   margin: 9px 0;
 }
 .credits {
-  font-size: 11px;
+  font-size: 12px;
   color: var(--muted-foreground);
   padding: 0 0 12px;
 }
@@ -623,7 +629,7 @@ header.header {
 }
 .support-caption {
   display: block;
-  font-size: 11px;
+  font-size: 12px;
   color: var(--muted-foreground);
   margin-top: 5px;
 }
@@ -642,14 +648,14 @@ header.header {
   border: 1px solid #6e5b85;
   border-radius: 999px;
   padding: 7px 10px;
-  font-size: 11px;
+  font-size: 12px;
 }
 .local-notice {
   display: flex;
   align-items: center;
   gap: 8px;
   color: var(--muted-foreground);
-  font-size: 11px;
+  font-size: 12px;
   padding: 17px 0;
 }
 .catalog-section {
@@ -690,9 +696,9 @@ header.header {
   gap: 12px;
 }
 .filter-label {
-  padding-top: 12px;
+  padding-top: 10px;
   color: var(--muted-foreground);
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 600;
 }
 @media (max-width: 720px) {
@@ -704,41 +710,10 @@ header.header {
     padding-top: 0;
   }
 }
-.categories {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-}
-.categories button {
-  display: inline-flex;
-  align-items: center;
-  gap: 12px;
-  border-radius: 999px;
-  min-height: 42px;
-  padding: 8px 16px;
-  font-size: 12px;
-}
-.categories button span {
-  font:
-    11px Archivo,
-    sans-serif;
-  color: var(--muted-foreground);
-}
-.categories button[aria-pressed="true"] {
-  border-color: var(--selected);
-  color: var(--selected-ink);
-  background: var(--selected);
-}
-.categories button[aria-pressed="true"] span {
-  color: inherit;
-}
-/* Picking this chip would show nothing with the other rows as they are. */
-.categories button[data-empty]:not([aria-pressed="true"]) {
-  opacity: 0.5;
-}
+/* Filter chips are components/ui/toggle-group.tsx (shadcn ToggleGroup). */
 .result-line {
   white-space: nowrap;
-  font-size: 12px;
+  font-size: 13px;
   color: var(--muted-foreground);
 }
 .skill-grid {
@@ -912,7 +887,7 @@ header.header {
   align-items: center;
   justify-content: space-between;
   gap: 10px;
-  font-size: 10px;
+  font-size: 12px;
   color: var(--muted-foreground);
 }
 .card-bottom a {
@@ -922,7 +897,7 @@ header.header {
   min-height: 32px;
   color: var(--purple);
   text-decoration: none;
-  font-size: 11px;
+  font-size: 12px;
 }
 .empty {
   text-align: center;
@@ -941,13 +916,6 @@ header.header {
 .empty p {
   margin: 13px auto 25px;
   max-width: 55ch;
-}
-.empty button {
-  display: inline-flex;
-  align-items: center;
-  gap: 9px;
-  border-radius: 999px;
-  padding: 10px 18px;
 }
 .article-teasers {
   padding: 48px 0;
@@ -1411,7 +1379,7 @@ footer strong {
 }
 .rights-code {
   display: block;
-  font-size: 10px;
+  font-size: 12px;
   color: var(--muted-foreground);
   overflow-wrap: anywhere;
 }
@@ -1650,12 +1618,6 @@ p[role="status"]:empty {
   .filter-bar {
     align-items: start;
   }
-  .categories {
-    gap: 7px;
-  }
-  .categories button {
-    padding: 8px 12px;
-  }
   .article-teasers {
     gap: 35px;
     grid-template-columns: 1fr 1.4fr;
@@ -1735,7 +1697,7 @@ p[role="status"]:empty {
     font-size: 12px;
   }
   .browse-link {
-    font-size: 11px;
+    font-size: 12px;
     gap: 4px;
     flex-shrink: 0;
     min-height: 44px;
@@ -1759,7 +1721,7 @@ p[role="status"]:empty {
     flex: 1;
   }
   .artifact-caption {
-    font-size: 10px;
+    font-size: 12px;
   }
   .compact-preview .credits {
     padding: 0;
@@ -1807,10 +1769,10 @@ p[role="status"]:empty {
     display: block;
   }
   .support-caption {
-    font-size: 10px;
+    font-size: 12px;
   }
   .local-notice {
-    font-size: 10px;
+    font-size: 12px;
     align-items: start;
     gap: 6px;
     padding-top: 22px;
@@ -1838,15 +1800,9 @@ p[role="status"]:empty {
     display: block;
     margin: 18px 0 20px;
   }
-  .categories button {
-    min-height: 44px;
-    font-size: 11px;
-    gap: 8px;
-  }
   .result-line {
     display: block;
     margin-top: 13px;
-    font-size: 11px;
   }
   .skill-grid {
     grid-template-columns: 1fr;
@@ -1873,10 +1829,10 @@ p[role="status"]:empty {
     margin-top: 18px;
   }
   .tool-chip {
-    font-size: 11px;
+    font-size: 12px;
   }
   .card-bottom {
-    font-size: 11px;
+    font-size: 12px;
   }
   .card-bottom a {
     min-height: 44px;
@@ -1907,7 +1863,7 @@ p[role="status"]:empty {
     margin: 5px 0 0 19px;
   }
   .register-row {
-    font-size: 11px;
+    font-size: 12px;
   }
   footer {
     display: block;
@@ -2220,7 +2176,7 @@ img.tool-mark {
 }
 .compact-preview .artifact-caption {
   margin: 0;
-  font-size: 11px;
+  font-size: 12px;
 }
 .compact-preview .credits {
   padding: 0;
@@ -3081,8 +3037,8 @@ html[data-theme="light"] .shiki span {
 }
 
 /* English name under a Thai style/format chip (owner 2026-11-10). */
-.categories button .chip-en {
-  font-size: 0.72em;
+.categories .chip-en {
+  font-size: 10px;
   opacity: 0.7;
   font-weight: 400;
   letter-spacing: 0.01em;
