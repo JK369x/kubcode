@@ -225,7 +225,9 @@ async function main() {
         // replayed from Node with the edge headers and fulfilled as-is.
         await page.route("http://kubcode-ui.test/**", async (route) => {
           const { pathname, search } = new URL(route.request().url());
-          const response = await route.fetch({
+          let response;
+          try {
+            response = await route.fetch({
             url: `http://127.0.0.1:${port}${pathname}${search}`,
             headers: {
               ...route.request().headers(),
@@ -236,7 +238,10 @@ async function main() {
             },
             maxRedirects: 0,
           });
-          await route.fulfill({ response });
+          } catch {
+            return; // the page closed while this request was in flight
+          }
+          await route.fulfill({ response }).catch(() => undefined); // page may be closing
         });
         await page.goto("http://kubcode-ui.test/tools/remotion");
         const label = `${run.width}-${run.theme}`;
@@ -337,7 +342,9 @@ async function main() {
         page.on("console", (m) => m.type() === "error" && !m.text().startsWith("Failed to load resource") && errors.push(m.text()));
         await page.route("http://kubcode-ui.test/**", async (route) => {
           const { pathname, search } = new URL(route.request().url());
-          const response = await route.fetch({
+          let response;
+          try {
+            response = await route.fetch({
             url: `http://127.0.0.1:${port}${pathname}${search}`,
             headers: {
               ...route.request().headers(),
@@ -348,7 +355,10 @@ async function main() {
             },
             maxRedirects: 0,
           });
-          await route.fulfill({ response });
+          } catch {
+            return; // the page closed while this request was in flight
+          }
+          await route.fulfill({ response }).catch(() => undefined); // page may be closing
         });
         return { page, errors };
       };
@@ -531,9 +541,11 @@ async function main() {
         assert.ok(imageRequests.length > 0 && imageRequests.every((r) => r === undefined), `${label}: no Referer to the image host`);
         assert.equal(await btn.getAttribute("aria-expanded"), "false");
 
+        // shadcn DropdownMenu (Radix): a real menu button and menu.
+        assert.equal(await btn.getAttribute("aria-haspopup"), "menu");
         await btn.click();
         assert.equal(await btn.getAttribute("aria-expanded"), "true");
-        const panel = page.locator(`#${(await btn.getAttribute("aria-controls"))!.replace(/:/g, "\\:")}`);
+        const panel = page.getByRole("menu");
         await panel.getByText(/App Member/).waitFor();
         const box = await panel.boundingBox();
         assert.ok(box && box.x >= 0 && box.x + box.width <= run.width, `${label}: menu stays on screen`);
@@ -541,12 +553,25 @@ async function main() {
 
         await page.keyboard.press("Escape");
         assert.equal(await btn.getAttribute("aria-expanded"), "false");
-        assert.equal(await btn.evaluate((b) => b === document.activeElement), true, `${label}: Esc returns focus`);
+        // Radix hands focus back to the trigger as the menu unmounts.
+        await page
+          .waitForFunction(() => document.activeElement?.getAttribute("aria-haspopup") === "menu", null, { timeout: 3000 })
+          .catch(() => undefined);
+        assert.equal(
+          await btn.evaluate((b) => b === document.activeElement),
+          true,
+          `${label}: Esc returns focus`,
+        );
 
         await page.keyboard.press("Enter");
         assert.equal(await btn.getAttribute("aria-expanded"), "true", `${label}: keyboard opens`);
-        await page.keyboard.press("Tab");
-        assert.equal(await page.evaluate(() => document.activeElement?.textContent), "ตั้งค่าบัญชี", `${label}: Tab enters the menu`);
+        // Radix moves focus into the menu (first item); arrows move between items.
+        await page.waitForFunction(() => document.activeElement?.textContent === "ตั้งค่าบัญชี");
+        await page.keyboard.press("ArrowDown");
+        await page.waitForFunction(() => document.activeElement?.textContent === "ออกจากระบบ", null, { timeout: 3000 }).catch(() => undefined);
+        assert.equal(await page.evaluate(() => document.activeElement?.textContent), "ออกจากระบบ", `${label}: arrows move in the menu`);
+        const ring = await page.evaluate(() => getComputedStyle(document.activeElement!).outlineStyle);
+        assert.equal(ring, "solid", `${label}: visible focus on the menu item`);
         await page.mouse.click(run.width / 2, 600);
         assert.equal(await btn.getAttribute("aria-expanded"), "false", `${label}: outside click closes`);
         assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth), false, `${label}: no horizontal scroll`);
@@ -554,7 +579,7 @@ async function main() {
           // Sign out without next-auth/react: CSRF token, POST signout, go to /account.
           await btn.click();
           const signout = page.waitForResponse((r) => new URL(r.url()).pathname === "/api/auth/signout");
-          await page.getByRole("button", { name: "ออกจากระบบ", exact: true }).click();
+          await page.getByRole("menuitem", { name: "ออกจากระบบ", exact: true }).click();
           const res = await signout;
           assert.equal(res.status(), 200, "signout accepted (CSRF ok)");
           // Set-Cookie is hidden from page-side responses; the proxy's jar
@@ -568,7 +593,7 @@ async function main() {
     } finally {
       await navBrowser.close();
     }
-    step("header: signed-out pill; avatar from provider host with no Referer; initial fallback; menu opens by click/Enter, Tab enters, Esc returns focus, outside click closes (desktop + mobile, light + dark); sign out clears the session and shows the pill");
+    step("header: signed-out pill; avatar from provider host with no Referer; initial fallback; menu (shadcn DropdownMenu) opens by click/Enter with focus on the first item, arrows move, Esc returns focus, outside click closes (desktop + mobile, light + dark); sign out clears the session and shows the pill");
 
     writeFileSync(".qa/interactions-actual-app.json", JSON.stringify({ status: "passed", fictionalMembers: true, steps }, null, 2));
     console.log(`PASS interactions actual app (${steps.length} steps)\n- ${steps.join("\n- ")}`);

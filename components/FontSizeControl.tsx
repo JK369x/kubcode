@@ -1,5 +1,9 @@
 "use client";
 import { useEffect, useState } from "react";
+import { Button } from "@/components/ui/button";
+
+/** 44px on mobile (audit #8), 32px tall from md up. */
+const STEP = "h-11 w-11 rounded-full font-brand text-sm md:h-8 md:w-10";
 
 const STEPS = [0.9, 1, 1.1, 1.2, 1.3];
 const KEY = "kb-prose-scale";
@@ -33,18 +37,20 @@ export function FontSizeControl() {
 
   return (
     <div className="font-size" role="group" aria-label="ขนาดตัวอักษรของบทความ">
-      <button type="button" onClick={() => change(step - 1)} disabled={step === 0} aria-label="A− ลดขนาดตัวอักษร">
+      <Button type="button" variant="ghost" className={STEP} onClick={() => change(step - 1)} disabled={step === 0} aria-label="A− ลดขนาดตัวอักษร">
         A−
-      </button>
+      </Button>
       <span aria-live="polite">{Math.round(STEPS[step] * 100)}%</span>
-      <button
+      <Button
         type="button"
+        variant="ghost"
+        className={STEP}
         onClick={() => change(step + 1)}
         disabled={step === STEPS.length - 1}
         aria-label="A+ เพิ่มขนาดตัวอักษร"
       >
         A+
-      </button>
+      </Button>
     </div>
   );
 }

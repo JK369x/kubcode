@@ -1,30 +1,36 @@
 "use client";
 import Link from "next/link";
-import { useCallback, useEffect, useId, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { avatarInitial, safeAvatarUrl } from "@/lib/avatar";
 import styles from "./AccountMenu.module.css";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 export type MenuUser = { name: string | null; image: string | null };
 
 /**
  * Header account control (presentational). `user`: undefined while the
- * session loads, null when signed out. A disclosure (button + panel of links),
- * not an ARIA menu, so Tab order and screen readers behave like normal links.
+ * session loads, null when signed out. Signed in: a shadcn DropdownMenu
+ * (Radix): opens on click / Enter / Space / ArrowDown with focus on the first
+ * item, arrows move, Esc closes and returns focus to the avatar, outside
+ * click and Tab close it (MASTER.md §Modals).
  */
 export function AccountMenuView({
   user,
   open,
-  onToggle,
+  onOpenChange,
   onSignOut,
-  panelId = "account-panel",
-  buttonRef,
 }: {
   user: MenuUser | null | undefined;
-  open: boolean;
-  onToggle: () => void;
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
   onSignOut: () => void;
-  panelId?: string;
-  buttonRef?: React.Ref<HTMLButtonElement>;
 }) {
   if (user === undefined) return <span className={styles.placeholder} aria-hidden="true" />;
   if (user === null)
@@ -36,16 +42,8 @@ export function AccountMenuView({
   const name = user.name?.trim() || "สมาชิก";
   const image = safeAvatarUrl(user.image);
   return (
-    <div className={styles.wrap}>
-      <button
-        ref={buttonRef}
-        type="button"
-        className={styles.avatar}
-        aria-expanded={open}
-        aria-controls={panelId}
-        aria-label={`บัญชีของ ${name}`}
-        onClick={onToggle}
-      >
+    <DropdownMenu open={open} onOpenChange={onOpenChange} modal={false}>
+      <DropdownMenuTrigger className={styles.avatar} aria-label={`บัญชีของ ${name}`}>
         {image ? (
           // Plain <img>: provider host only, no proxy, no referrer sent.
           // eslint-disable-next-line @next/next/no-img-element
@@ -53,23 +51,18 @@ export function AccountMenuView({
         ) : (
           <span aria-hidden="true">{avatarInitial(user.name)}</span>
         )}
-      </button>
-      {open && (
-        <div id={panelId} className={styles.panel}>
-          <p className={styles.name}>{name}</p>
-          <ul>
-            <li>
-              <Link href="/account/settings">ตั้งค่าบัญชี</Link>
-            </li>
-            <li>
-              <button type="button" onClick={onSignOut}>
-                ออกจากระบบ
-              </button>
-            </li>
-          </ul>
-        </div>
-      )}
-    </div>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end" sideOffset={6} collisionPadding={16}>
+        <DropdownMenuLabel className="px-2 pt-1 pb-2 text-sm font-semibold wrap-anywhere text-foreground">
+          {name}
+        </DropdownMenuLabel>
+        <DropdownMenuSeparator />
+        <DropdownMenuItem asChild>
+          <Link href="/account/settings">ตั้งค่าบัญชี</Link>
+        </DropdownMenuItem>
+        <DropdownMenuItem onSelect={onSignOut}>ออกจากระบบ</DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
   );
 }
 
@@ -100,11 +93,7 @@ type SessionJson = { user?: { name?: string | null; image?: string | null } };
 /** Loads the public session on the client so every page can stay static. */
 export function AccountMenu() {
   const [user, setUser] = useState<MenuUser | null | undefined>(undefined);
-  const [open, setOpen] = useState(false);
   const [broken, setBroken] = useState(false);
-  const button = useRef<HTMLButtonElement>(null);
-  const root = useRef<HTMLDivElement>(null);
-  const panelId = useId();
 
   useEffect(() => {
     let live = true;
@@ -125,45 +114,11 @@ export function AccountMenu() {
     };
   }, []);
 
-  const close = useCallback((returnFocus: boolean) => {
-    setOpen(false);
-    if (returnFocus) button.current?.focus();
-  }, []);
-
-  useEffect(() => {
-    if (!open) return;
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") close(true);
-    };
-    const onPointer = (e: PointerEvent) => {
-      if (root.current && !root.current.contains(e.target as Node)) close(false);
-    };
-    // Focus leaving the control (e.g. Tab past the last item) closes it too.
-    const onFocus = (e: FocusEvent) => {
-      if (root.current && e.target instanceof Node && !root.current.contains(e.target)) close(false);
-    };
-    document.addEventListener("keydown", onKey);
-    document.addEventListener("pointerdown", onPointer);
-    document.addEventListener("focusin", onFocus);
-    return () => {
-      document.removeEventListener("keydown", onKey);
-      document.removeEventListener("pointerdown", onPointer);
-      document.removeEventListener("focusin", onFocus);
-    };
-  }, [open, close]);
-
   // A picture that fails to load falls back to the initial.
   const shown = user && broken ? { ...user, image: null } : user;
   return (
-    <div ref={root} className={styles.root} onErrorCapture={() => setBroken(true)}>
-      <AccountMenuView
-        user={shown}
-        open={open}
-        panelId={panelId}
-        buttonRef={button}
-        onToggle={() => setOpen((v) => !v)}
-        onSignOut={() => void signOutToAccount()}
-      />
+    <div className={styles.root} onErrorCapture={() => setBroken(true)}>
+      <AccountMenuView user={shown} onSignOut={() => void signOutToAccount()} />
     </div>
   );
 }

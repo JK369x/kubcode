@@ -27,7 +27,15 @@ export function Toaster(props: Omit<ComponentProps<typeof DingToaster>, "nonce" 
   const [nonce, setNonce] = useState<string | null>(null);
   useEffect(() => setNonce(pageNonce() ?? ""), []);
   if (nonce === null) return null;
-  return <DingToaster {...props} labels={TOAST_LABELS} nonce={nonce || undefined} />;
+  // aria-live="off" on the wrapper: modal sheets / menus (Radix, aria-hidden)
+  // hide everything outside them except [aria-live] nodes, so this keeps the
+  // toasts and their own polite/assertive regions announced while a sheet is
+  // open. "off" so the wrapper itself adds no extra announcement.
+  return (
+    <div data-toaster="" aria-live="off" className="contents">
+      <DingToaster {...props} labels={TOAST_LABELS} nonce={nonce || undefined} />
+    </div>
+  );
 }
 
 export { toast };

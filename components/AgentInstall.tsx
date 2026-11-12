@@ -3,6 +3,7 @@ import type { AgentInstall as AgentInstallData, Tool } from "@/lib/content";
 import { AGENT_INSTALL_ID, AGENT_INSTALL_TITLE } from "@/lib/agent-install";
 import { CopyButton } from "./CopyButton";
 import { ToolLogo } from "./ToolLogo";
+import { BreakableText } from "./BreakableText";
 
 /**
  * One prompt the reader pastes into their own AI agent, which then installs
@@ -32,7 +33,9 @@ export function AgentInstall({ install, tools }: { install: AgentInstallData; to
         <div className="code-body">
           <CopyButton label="คัดลอก prompt" />
           <pre tabIndex={0}>
-            <code>{install.prompt}</code>
+            <code>
+              <BreakableText text={install.prompt} />
+            </code>
           </pre>
         </div>
       </figure>
