@@ -106,6 +106,10 @@ test("shadcn Button/Input meet the size and focus rules", async () => {
   assert.match(b, /md:h-10/);
   assert.match(b, /focus-visible:outline-3/);
   assert.match(b, /focus-visible:outline-ring/);
+  // outline-none (in the base classes) sets outline-style: none, so the focus
+  // variant has to set the style back or the ring never paints.
+  assert.match(b, /focus-visible:outline-solid/);
+  assert.match(renderToStaticMarkup(createElement(Input)), /focus-visible:outline-solid/);
   assert.doesNotMatch(b, /ring-ring\/50/, "no half-transparent shadcn ring");
   const icon = renderToStaticMarkup(createElement(Button, { size: "icon", "aria-label": "ปิด" }));
   assert.match(icon, /size-11/);

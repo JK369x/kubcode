@@ -13,7 +13,7 @@ import { Slot } from "radix-ui"
  *   shadcn half-transparent ring.
  */
 const buttonVariants = cva(
-  "group/button relative inline-flex shrink-0 cursor-pointer items-center justify-center gap-2 rounded-md border border-transparent text-[15px] leading-[1.4] font-medium whitespace-nowrap transition-[background-color,border-color,color,transform] duration-200 ease-brand outline-none select-none focus-visible:outline-3 focus-visible:outline-offset-4 focus-visible:outline-ring active:not-aria-[haspopup]:translate-y-px disabled:cursor-not-allowed disabled:opacity-60 aria-invalid:border-destructive motion-reduce:transition-none motion-reduce:active:translate-y-0 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-[18px]",
+  "group/button relative inline-flex shrink-0 cursor-pointer items-center justify-center gap-2 rounded-md border border-transparent text-[15px] leading-[1.4] font-medium whitespace-nowrap transition-[background-color,border-color,color,transform] duration-200 ease-brand outline-none select-none focus-visible:outline-3 focus-visible:outline-solid focus-visible:outline-offset-4 focus-visible:outline-ring active:not-aria-[haspopup]:translate-y-px disabled:cursor-not-allowed disabled:opacity-60 aria-invalid:border-destructive motion-reduce:transition-none motion-reduce:active:translate-y-0 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-[18px]",
   {
     variants: {
       variant: {

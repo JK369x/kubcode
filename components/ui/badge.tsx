@@ -9,7 +9,7 @@ import { Slot } from "radix-ui"
  * + dark text, the same in both themes (6.5 / 6.4:1).
  */
 const badgeVariants = cva(
-  "group/badge inline-flex w-fit shrink-0 items-center justify-center gap-1 rounded-full border border-transparent px-2.5 py-0.5 text-[13px] leading-[1.5] font-medium whitespace-nowrap outline-none focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-ring [&>svg]:pointer-events-none [&>svg]:size-3.5",
+  "group/badge inline-flex w-fit shrink-0 items-center justify-center gap-1 rounded-full border border-transparent px-2.5 py-0.5 text-[13px] leading-[1.5] font-medium whitespace-nowrap outline-none focus-visible:outline-3 focus-visible:outline-solid focus-visible:outline-offset-2 focus-visible:outline-ring [&>svg]:pointer-events-none [&>svg]:size-3.5",
   {
     variants: {
       variant: {
