@@ -1,7 +1,7 @@
 /*
  * Homepage hero, option B "phone stage" (DECISION.md 2026-11-11), from the
- * b.html prototype on site tokens. The aura is a CSS gradient in the clip's
- * colours (--deep / --accent set inline); no blur filter over the video.
+ * b.html prototype on site tokens. The aura (ported unchanged) uses the
+ * clip's colours (--deep / --accent set inline); no filter over the video.
  */
 @property --deep {
   syntax: "<color>";
@@ -21,27 +21,33 @@
     --deep 0.9s cubic-bezier(0.16, 1, 0.3, 1),
     --accent 0.9s cubic-bezier(0.16, 1, 0.3, 1);
 }
-/* The aura bleeds to the window edges; the page clips it (no sideways scroll). */
+/* Ported as-is from the b.html prototype (owner, 2026-11-12: "the background
+   was yellow"): three radial gradients in the clip's accent / deep colours,
+   blurred, slowly drifting. The blur is on this background layer only, behind
+   the phone, never over the video. It bleeds to the window edges; the page
+   clips it (no sideways scroll). */
 .aura {
   position: absolute;
-  inset: -12% calc(50% - 50vw) 0;
+  inset: -10% calc(50% - 50vw - 10%);
   z-index: -1;
   pointer-events: none;
   background:
-    radial-gradient(34% 44% at 50% 52%, color-mix(in srgb, var(--accent) 42%, transparent), transparent 72%),
-    radial-gradient(46% 58% at 18% 32%, color-mix(in srgb, var(--deep) 85%, transparent), transparent 72%),
-    radial-gradient(42% 52% at 84% 70%, color-mix(in srgb, #6c38b6 45%, transparent), transparent 72%);
-  opacity: 0.85;
+    radial-gradient(38% 46% at 50% 52%, color-mix(in srgb, var(--accent) 70%, transparent), transparent 70%),
+    radial-gradient(50% 60% at 20% 30%, color-mix(in srgb, var(--deep) 90%, transparent), transparent 70%),
+    radial-gradient(45% 55% at 82% 70%, color-mix(in srgb, #6c38b6 65%, transparent), transparent 70%);
+  filter: blur(40px);
+  opacity: 0.75;
   animation: drift 18s ease-in-out infinite alternate;
 }
+/* .grain in the prototype: fades the glow into the page below. */
 .aura::after {
   content: "";
   position: absolute;
   inset: 0;
-  background: linear-gradient(180deg, transparent 55%, var(--background) 100%);
+  background: linear-gradient(180deg, transparent 60%, var(--background) 100%);
 }
 :global(:root[data-theme="light"]) .aura {
-  opacity: 0.5;
+  opacity: 0.45;
 }
 @keyframes drift {
   0% {

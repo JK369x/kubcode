@@ -78,8 +78,17 @@ test("behaviour contract: only the active preview plays, while visible; still mo
   assert.match(src, /<span>หยุดสลับอัตโนมัติ<\/span>/);
 });
 
-test("CSS: aura is a gradient (no blur over video); reduced motion stops it; mobile has no sideways scroll", () => {
-  assert.doesNotMatch(css.replace(/\/\*[\s\S]*?\*\//g, ""), /(^|[\s;{])filter:\s*blur/m, "no blur filter (backdrop on the arrow buttons is fine)");
+test("CSS: aura ported from b.html (blur only on that layer, not over video); reduced motion stops it; no sideways scroll", () => {
+  // The aura is the prototype's (b.html) as-is, blur included, but only on
+  // that background layer: never on the phone, poster or video.
+  const rules = [...css.replace(/\/\*[\s\S]*?\*\//g, "").matchAll(/([^{}]+)\{([^{}]*)\}/g)];
+  for (const [, sel, body] of rules) if (/(^|[\s;])filter:\s*blur/.test(body)) assert.equal(sel.trim(), ".aura", sel);
+  const aura = css.match(/\n\.aura \{([^}]*)\}/)![1];
+  assert.match(aura, /color-mix\(in srgb, var\(--accent\) 70%, transparent\)/);
+  assert.match(aura, /color-mix\(in srgb, var\(--deep\) 90%, transparent\)/);
+  assert.match(aura, /color-mix\(in srgb, #6c38b6 65%, transparent\)/);
+  assert.match(aura, /opacity: 0\.75;/);
+  assert.match(css, /:root\[data-theme="light"\]\) \.aura \{\s*opacity: 0\.45;/);
   const reduced = css.slice(css.indexOf("@media (prefers-reduced-motion: reduce)"));
   assert.match(reduced, /\.aura,\s*\.tw::after \{\s*animation: none;/);
   assert.match(css, /\.tw\[data-still\]::after \{\s*animation: none;/);
