@@ -298,7 +298,8 @@ test("hero shows the approved clips as one card per visual style", () => {
   const html = render(
     createElement(KineticHero, { skills, activeSlug: "", onSelectSkill: () => {} }),
   );
-  assert.match(html, /คลิปแบบนี้/);
+  assert.match(html, /เห็นคลิปไหนถูกใจ/, "phone-stage hero (owner 2026-11-11)");
+  assert.match(html, /role="radiogroup"[^>]*aria-labelledby="[^"]*-picks"/, "clip picker");
   assert.match(html, /aria-label="ตัวอย่างคลิป แนวภาพละหนึ่งคลิป"/);
   assert.match(html, /data-motion-toggle/);
   assert.doesNotMatch(html, /data-media="none"|รอยืนยันสิทธิ์/);
