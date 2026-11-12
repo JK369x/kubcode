@@ -1,6 +1,7 @@
 import Link from "next/link";
 import type { Tag } from "@/lib/content";
 import { tagHref } from "@/lib/seo";
+import { chipVariants } from "@/components/ui/toggle-variants";
 
 export function TagList({ slugs, tags }: { slugs: string[]; tags: Tag[] }) {
   if (slugs.length === 0) return null;
@@ -8,7 +9,7 @@ export function TagList({ slugs, tags }: { slugs: string[]; tags: Tag[] }) {
     <ul className="tag-list" aria-label="แท็ก">
       {slugs.map((slug) => (
         <li key={slug}>
-          <Link href={tagHref(slug)}>#{tags.find((t) => t.slug === slug)?.th ?? slug}</Link>
+          <Link href={tagHref(slug)} className={chipVariants({ size: "sm", className: "font-normal text-muted-foreground hover:text-foreground" })}>#{tags.find((t) => t.slug === slug)?.th ?? slug}</Link>
         </li>
       ))}
     </ul>

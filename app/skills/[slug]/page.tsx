@@ -18,6 +18,7 @@ import { showcaseForSkill } from "@/lib/showcase";
 import { skillBadges } from "@/lib/skill-badges";
 import { guideFor } from "@/lib/skill-guides";
 import { CopyButton } from "@/components/CopyButton";
+import { BreakableText } from "@/components/BreakableText";
 import { Check } from "lucide-react";
 export function generateStaticParams() {
   return skills.map((s) => ({ slug: s.slug }));
@@ -110,10 +111,14 @@ export default async function Detail({
                     {step.code && <code className="step-code">{step.code}</code>}
                     {step.prompt && (
                       <div className="code-block step-prompt">
-                        <pre>
-                          <code>{step.prompt}</code>
-                        </pre>
-                        <CopyButton />
+                        <div className="code-body">
+                          <CopyButton label="คัดลอก prompt" />
+                          <pre>
+                            <code>
+                              <BreakableText text={step.prompt} />
+                            </code>
+                          </pre>
+                        </div>
                       </div>
                     )}
                   </li>

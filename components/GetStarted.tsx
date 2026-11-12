@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { CopyButton } from "./CopyButton";
+import { BreakableText } from "./BreakableText";
 
 /*
  * "Start with the first skill": install steps, copyable prompts and an FAQ
@@ -81,7 +82,9 @@ export function GetStarted() {
               <div className="code-body">
                 <CopyButton label="คัดลอก prompt" />
                 <pre>
-                  <code>{prompt}</code>
+                  <code>
+                    <BreakableText text={prompt} />
+                  </code>
                 </pre>
               </div>
             </div>

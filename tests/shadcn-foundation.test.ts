@@ -170,3 +170,50 @@ test("no text under 12px in the cards, shelves and filters (audit #7)", () => {
 test("conditions link name starts with its visible word (WCAG 2.5.3, audit #4)", () => {
   assert.match(read("components/CardDownloadAction.tsx"), /const label = "เงื่อนไข: ดาวน์โหลด"/);
 });
+
+/* ---------------- PR3: article page, comments Sheet, account DropdownMenu ---------------- */
+
+test("BreakableText: <wbr> after / - . in long URLs only; copied text is unchanged", async () => {
+  const { BreakableText } = await import("../components/BreakableText");
+  const text = "ช่วยติดตั้ง skill จาก https://github.com/kelano86/what-if-animation ตาม README\n1. ok";
+  const html = renderToStaticMarkup(createElement("code", null, createElement(BreakableText, { text })));
+  assert.match(html, /https:\/<wbr\/>\/<wbr\/>github\.<wbr\/>com\/<wbr\/>kelano86\/<wbr\/>what-<wbr\/>if-<wbr\/>animation/);
+  assert.match(html, /ช่วยติดตั้ง skill จาก /, "short Thai words untouched");
+  assert.equal(html.replace(/<wbr\/>/g, "").replace(/<\/?code>/g, ""), text.replace(/&/g, "&amp;"));
+  // pre-wrap blocks no longer break anywhere mid-word.
+  for (const sel of [".agent-install .code-block pre", ".get-started-prompt pre", ".detail-copy .steps .step-prompt pre"]) {
+    const rule = css.slice(css.indexOf(sel + " {"));
+    assert.match(rule.slice(0, rule.indexOf("}")), /overflow-wrap: break-word/, sel);
+  }
+});
+
+test("mobile comments open in a shadcn bottom Sheet; Back still closes it", () => {
+  const src = read("components/PageInteractions.tsx");
+  assert.match(src, /<SheetContent side="bottom" closeLabel="ปิดคอมเมนต์"/);
+  assert.match(src, /history\.pushState\(\{ \.\.\.history\.state, kbSheet: true \}/);
+  assert.match(src, /addEventListener\("popstate"/);
+  assert.doesNotMatch(src, /<dialog\b/);
+  const sheet = read("components/ui/sheet.tsx");
+  assert.match(sheet, /bg-black\/50/, "scrim keeps the foreground readable");
+  assert.match(sheet, /size="icon"/, "44px close button");
+});
+
+test("account menu is a shadcn DropdownMenu with 44px items on mobile", () => {
+  assert.match(read("components/AccountMenu.tsx"), /<DropdownMenuTrigger className=\{styles\.avatar\} aria-label=\{`บัญชีของ \$\{name\}`\}>/);
+  const dd = read("components/ui/dropdown-menu.tsx");
+  assert.match(dd, /min-h-11 /);
+  assert.match(dd, /border-input bg-popover/);
+  assert.match(dd, /focus-visible:outline-solid/);
+});
+
+test("article chrome meets the touch rules (audit #8)", () => {
+  assert.match(read("components/FontSizeControl.tsx"), /const STEP = "h-11 w-11/);
+  assert.match(read("components/TagList.tsx"), /chipVariants\(\{ size: "sm"/);
+  assert.match(read("components/PageInteractions.tsx"), /const ACT = "h-11 /);
+  assert.match(css, /\.toc-mobile summary \{[^}]*min-height: 44px/);
+  assert.match(css, /\.crumbs a \{[^}]*min-height: 24px/);
+});
+
+test("toasts stay announced while a modal sheet is open (aria-hidden skips [aria-live])", () => {
+  assert.match(read("components/ui/toaster.tsx"), /<div data-toaster="" aria-live="off" className="contents">/);
+});

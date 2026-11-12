@@ -1097,19 +1097,7 @@ footer strong {
   padding: 0;
   margin: 18px 0 0;
 }
-.tag-list a {
-  display: inline-block;
-  text-decoration: none;
-  padding: 4px 12px;
-  border: 1px solid var(--line);
-  border-radius: 999px;
-  font-size: 13px;
-  color: var(--muted-foreground);
-}
-.tag-list a:hover {
-  color: var(--ink);
-  border-color: var(--purple);
-}
+/* Tag chips: chipVariants size sm (36px, 44px hit area on mobile). */
 .tool-facts {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
@@ -1357,7 +1345,7 @@ footer strong {
 }
 .detail-copy .steps .step-prompt pre {
   white-space: pre-wrap;
-  overflow-wrap: anywhere;
+  overflow-wrap: break-word; /* not anywhere: long URLs break at <wbr> (BreakableText) */
 }
 /* Rights and internal notes: kept on the page, folded under one summary. */
 .rights-details {
@@ -2334,7 +2322,11 @@ img.tool-mark {
   margin-right: 6px;
   color: var(--line);
 }
+/* Breadcrumb links: 24px+ tall targets (WCAG 2.5.8, audit #8). */
 .crumbs a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 24px;
   color: var(--purple);
   text-decoration: none;
 }
@@ -2390,27 +2382,11 @@ img.tool-mark {
   border-radius: 999px;
   padding: 2px;
 }
-.font-size button {
-  width: 38px;
-  height: 32px;
-  border: 0;
-  border-radius: 999px;
-  background: transparent;
-  color: var(--ink);
-  font: 500 14px Archivo, Anuphan, sans-serif;
-  cursor: pointer;
-}
-.font-size button:hover:not(:disabled) {
-  background: var(--surface-soft);
-}
-.font-size button:disabled {
-  opacity: 0.4;
-  cursor: default;
-}
+/* A−/A+ are shadcn Buttons (FontSizeControl.tsx). */
 .font-size span {
   min-width: 3.4em;
   text-align: center;
-  font-size: 12px;
+  font-size: 13px;
   color: var(--muted-foreground);
 }
 .reading-grid {
@@ -2497,9 +2473,18 @@ img.tool-mark {
   border: 1px solid var(--line);
   border-radius: 14px;
 }
+/* 44px tall tap row (audit #8). */
 .toc-mobile summary {
+  display: flex;
+  align-items: center;
+  min-height: 44px;
+  margin: -10px -16px;
+  padding: 0 16px;
   cursor: pointer;
   font-weight: 500;
+}
+.toc-mobile[open] summary {
+  margin-bottom: 0;
 }
 .toc-mobile .toc {
   margin-top: 10px;
@@ -2820,7 +2805,7 @@ html[data-theme="light"] .shiki span {
 .agent-install .code-block pre {
   max-height: 18rem;
   white-space: pre-wrap;
-  overflow-wrap: anywhere;
+  overflow-wrap: break-word; /* not anywhere: long URLs break at <wbr> (BreakableText) */
   font-size: 13.5px;
   line-height: 1.75;
 }
@@ -3010,7 +2995,7 @@ html[data-theme="light"] .shiki span {
 /* Prompts are one sentence: wrap them so the whole line is readable on phones. */
 .get-started-prompt pre {
   white-space: pre-wrap;
-  overflow-wrap: anywhere;
+  overflow-wrap: break-word; /* not anywhere: long URLs break at <wbr> (BreakableText) */
 }
 .get-started-faq {
   border-top: 1px solid var(--line);

@@ -1,14 +1,17 @@
 "use client";
 import Link from "next/link";
-import { MessageCircle, Star, X } from "lucide-react";
-import { useCallback, useEffect, useId, useRef, useState, type ReactNode } from "react";
+import { MessageCircle, Star } from "lucide-react";
+import { useCallback, useEffect, useId, useState, type ReactNode } from "react";
 import { send } from "@/lib/interactions/client";
 import type { PageKind, PageState, PublicComment } from "@/lib/interactions/store";
 import { CommentText } from "./CommentText";
 import { SkeletonRows } from "./SkeletonImage";
 import { Button } from "@/components/ui/button";
+import { Toggle } from "@/components/ui/toggle";
+import { cn } from "@/lib/utils";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "@/components/ui/toaster";
+import { Sheet, SheetContent, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import styles from "./PageInteractions.module.css";
 
 export type InteractionTarget = { kind: PageKind; slug: string; title: string };
@@ -18,6 +21,8 @@ type Load = { state: "loading" } | { state: "closed"; message: string } | { stat
 type Act = (run: () => Promise<{ ok: boolean; message?: string }>, done: string) => Promise<boolean>;
 
 const MAX = 2000;
+/** Comment actions (ตอบกลับ / แก้ไข / ลบ …): quiet text buttons, 44px tall on mobile, 32px + 24px+ hit area on desktop (audit #8). */
+const ACT = "h-11 px-2 text-[13px] font-normal text-muted-foreground hover:enabled:text-foreground md:h-8";
 const when = (iso: string) =>
   new Date(iso).toLocaleDateString("th-TH", { day: "numeric", month: "short", year: "numeric" });
 
@@ -101,26 +106,28 @@ export function StarControl({ target, it, compact = false }: { target: Interacti
   if (!data.viewer.signedIn)
     return (
       <div className={styles.starRow}>
-        <Link className={styles.star} href="/account">
-          <Star size={18} aria-hidden /> {compact ? "ให้ดาว" : "เข้าสู่ระบบเพื่อให้ดาว"}
-        </Link>
+        <Button asChild variant="outline" className={cn("rounded-full", styles.star)}>
+          <Link href="/account">
+            <Star size={18} aria-hidden /> {compact ? "ให้ดาว" : "เข้าสู่ระบบเพื่อให้ดาว"}
+          </Link>
+        </Button>
         {count}
       </div>
     );
   return (
     <div className={styles.starRow}>
-      <button
-        type="button"
-        className={styles.star}
-        aria-pressed={data.starred}
+      <Toggle
+        variant="outline"
+        className={cn("pr-4 pl-3.5 text-sm data-[state=on]:border-ring data-[state=on]:bg-transparent data-[state=on]:text-link", styles.star)}
+        pressed={data.starred}
         disabled={it.busy}
-        onClick={() =>
+        onPressedChange={() =>
           it.act(() => send("/api/interactions/star", "POST", { kind: target.kind, slug: target.slug }), data.starred ? "เอาดาวออกแล้ว" : "ให้ดาวแล้ว")
         }
       >
         <Star size={18} fill={data.starred ? "currentColor" : "none"} aria-hidden />
         {data.starred ? "ให้ดาวแล้ว" : "ให้ดาว"}
-      </button>
+      </Toggle>
       {count}
     </div>
   );
@@ -176,9 +183,9 @@ export function CommentsPanel({ target, it, headingId }: { target: InteractionTa
           ))}
         </ol>
         {data.nextCursor && (
-          <button type="button" className={styles.more} onClick={() => it.loadMore()} disabled={it.busy}>
+          <Button type="button" variant="outline" className={cn("mt-4 w-full border-dashed text-link", styles.more)} onClick={() => it.loadMore()} disabled={it.busy}>
             แสดงเพิ่ม
-          </button>
+          </Button>
         )}
       </div>
       <div className={styles.composer}>
@@ -312,33 +319,36 @@ function Comment({
       )}
       <div className={styles.actions}>
         {canReply && mode === "view" && (
-          <button type="button" onClick={() => setMode("reply")}>
+          <Button type="button" variant="ghost" size="sm" className={ACT} onClick={() => setMode("reply")}>
             ตอบกลับ
-          </button>
+          </Button>
         )}
         {c.mine && mode === "view" && !c.hidden && (
-          <button type="button" onClick={() => setMode("edit")}>
+          <Button type="button" variant="ghost" size="sm" className={ACT} onClick={() => setMode("edit")}>
             แก้ไข
-          </button>
+          </Button>
         )}
         {c.mine && (
-          <button type="button" disabled={it.busy} onClick={() => it.act(() => send(path, "DELETE"), "ลบคอมเมนต์แล้ว")}>
+          <Button type="button" variant="ghost" size="sm" className={ACT} disabled={it.busy} onClick={() => it.act(() => send(path, "DELETE"), "ลบคอมเมนต์แล้ว")}>
             ลบ
-          </button>
+          </Button>
         )}
         {data.viewer.signedIn && !c.mine && (
-          <button type="button" disabled={it.busy} onClick={() => it.act(() => send(`${path}/report`, "POST", {}), "รายงานแล้ว ขอบคุณที่แจ้ง")}>
+          <Button type="button" variant="ghost" size="sm" className={ACT} disabled={it.busy} onClick={() => it.act(() => send(`${path}/report`, "POST", {}), "รายงานแล้ว ขอบคุณที่แจ้ง")}>
             รายงาน
-          </button>
+          </Button>
         )}
         {data.viewer.isOwner && (
-          <button
+          <Button
             type="button"
+            variant="ghost"
+            size="sm"
+            className={ACT}
             disabled={it.busy}
             onClick={() => it.act(() => send(`${path}/hide`, "POST", { hidden: !c.hidden }), c.hidden ? "แสดงคอมเมนต์แล้ว" : "ซ่อนคอมเมนต์แล้ว")}
           >
             {c.hidden ? "เลิกซ่อน" : "ซ่อน"}
-          </button>
+          </Button>
         )}
       </div>
       {mode === "reply" && (
@@ -362,45 +372,43 @@ function Comment({
 
 /**
  * Mobile/tablet: a floating star + "คอมเมนต์ (n)" bar; comments open in a
- * modal bottom sheet (native <dialog>: focus stays inside, Esc closes, and the
- * browser back button closes it too).
+ * shadcn bottom Sheet (Radix Dialog: focus trapped, Esc closes, focus returns
+ * to the button). The browser Back button closes it too: opening pushes one
+ * history entry, and every close path pops it.
  */
 export function CommentSheet({ target, it }: { target: InteractionTarget; it: Interactions }) {
-  const dialog = useRef<HTMLDialogElement>(null);
+  const [open, setOpen] = useState(false);
   const headingId = useId();
   const count = it.load.state === "ready" ? it.load.data.commentCount : null;
 
   useEffect(() => {
-    const onPop = () => {
-      if (dialog.current?.open) dialog.current.close();
-    };
+    const onPop = () => setOpen(false);
     window.addEventListener("popstate", onPop);
     return () => window.removeEventListener("popstate", onPop);
   }, []);
 
-  const open = () => {
-    dialog.current?.showModal();
-    history.pushState({ ...history.state, kbSheet: true }, "");
-  };
-  // Every close path (button, Esc, back) ends here; drop our history entry
-  // unless the back button already did.
-  const onClose = () => {
-    if (history.state?.kbSheet) history.back();
+  const onOpenChange = (next: boolean) => {
+    if (next) history.pushState({ ...history.state, kbSheet: true }, "");
+    // Button, Esc or outside click: drop our history entry unless Back already did.
+    else if (history.state?.kbSheet) history.back();
+    setOpen(next);
   };
 
   return (
     <div className={styles.mobileBar}>
       <StarControl target={target} it={it} compact />
-      <button type="button" className={styles.fab} onClick={open} aria-haspopup="dialog">
-        <MessageCircle size={18} aria-hidden />
-        คอมเมนต์{count === null ? "" : ` (${count.toLocaleString("th-TH")})`}
-      </button>
-      <dialog ref={dialog} className={styles.sheet} aria-labelledby={headingId} onClose={onClose}>
-        <button type="button" className={styles.sheetClose} onClick={() => dialog.current?.close()} aria-label="ปิดคอมเมนต์">
-          <X size={20} aria-hidden />
-        </button>
-        <CommentsPanel target={target} it={it} headingId={headingId} />
-      </dialog>
+      <Sheet open={open} onOpenChange={onOpenChange}>
+        <SheetTrigger asChild>
+          <Button type="button" className={styles.fab}>
+            <MessageCircle size={18} aria-hidden />
+            คอมเมนต์{count === null ? "" : ` (${count.toLocaleString("th-TH")})`}
+          </Button>
+        </SheetTrigger>
+        <SheetContent side="bottom" closeLabel="ปิดคอมเมนต์" aria-labelledby={headingId} aria-describedby={undefined} className={styles.sheet}>
+          <SheetTitle className="sr-only">คอมเมนต์ {target.title}</SheetTitle>
+          <CommentsPanel target={target} it={it} headingId={headingId} />
+        </SheetContent>
+      </Sheet>
     </div>
   );
 }
