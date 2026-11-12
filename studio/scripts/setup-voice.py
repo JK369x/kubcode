@@ -16,7 +16,7 @@ if args.dry_run:
     print(json.dumps({"runtime": str(ROOT / ".venv"), "model": profile["model_repository"], "revision": profile["model_revision"]}, indent=2))
     sys.exit(0)
 if platform.system() != "Darwin" or platform.machine() != "arm64":
-    sys.exit("The Thai narrator uses MLX and currently needs an Apple Silicon Mac. Gallery and visuals remain usable on other systems.")
+    sys.exit("The Thai narrator uses MLX and currently needs an Apple Silicon Mac. Styles and visuals remain usable on other systems.")
 if sys.version_info < (3, 11):
     sys.exit("Python 3.11+ is required.")
 subprocess.run([sys.executable, "-m", "venv", str(ROOT / ".venv")], check=True)

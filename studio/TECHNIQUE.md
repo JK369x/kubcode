@@ -2,7 +2,7 @@
 
 ## Runtime responsibilities
 
-- Node.js 22+: catalog, scaffold, gallery, checks and HyperFrames CLI.
+- Node.js 22+: catalog, scaffold, checks and HyperFrames CLI.
 - SVG/HTML + GSAP: editable geometry and motion. The still example includes the selected original scene and named groups.
 - Python 3.11+: local Thai narrator voice through VoxCPM2/MLX, currently Apple Silicon macOS only.
 - FFmpeg/FFprobe: encode/mix/export, convert audio and inspect duration/streams. Install the system binaries for voice normalization and manual checks; HyperFrames also manages its media pipeline.

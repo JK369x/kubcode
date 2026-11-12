@@ -17,7 +17,7 @@ freshstack, …) are credits in provenance/`made_with`, never style or format na
 `soft-2d`, `money-tip` in `low-poly`). Read the VISUAL.md for the look and the FORMAT.md for the script.
 
 `styles/` stays where it is: it still holds the kits, examples and provenance, and existing projects,
-`scripts/library.mjs`, the gallery and tests keep reading it. `visual/*/visual.json` only points at it.
+`scripts/library.mjs` and tests keep reading it. `visual/*/visual.json` only points at it.
 Nothing under `outputs/` was changed.
 
 ## Pairs that exist today (taxonomy `map_from_series`)

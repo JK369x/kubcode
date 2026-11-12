@@ -6,8 +6,6 @@
 
 ```text
 jk-animation-studio/
-├── gallery/index.html       เลือกสไตล์/สลับตัวอย่างผู้สร้าง/คัดลอกโจทย์
-├── CATALOG.md               ทะเบียนสไตล์จาก style.json
 ├── styles/<style-id>/
 │   ├── style.json           สถานะ ภาพหลัก ตัวอย่าง และ attribution
 │   ├── STYLE.md             แนวภาพ วิธีเริ่ม และข้อจำกัด
@@ -16,7 +14,7 @@ jk-animation-studio/
 │   ├── source/              source ตัวอย่างที่คัดมา (เฉพาะชุดที่มี)
 │   └── kit/                 เครื่องมือของแนวนั้น (เฉพาะชุดที่นำเข้าได้)
 ├── shared/                  ผู้บรรยายไทย สุขุม / ซับ / ปก ที่ใช้ร่วมกัน
-└── scripts/                 ตรวจ metadata / สร้าง gallery
+└── scripts/                 ตรวจ metadata / สร้าง draft
 ```
 
 โฟลเดอร์ `source`, `kit`, `examples` ไม่บังคับทุกแนว: สไตล์ที่มีเพียงคู่มือจะระบุชัด ไม่มีการสร้างวิดีโอหลอกแทนหลักฐานที่ขาด
@@ -43,8 +41,7 @@ jk-animation-studio/
 ```sh
 npm test
 npm run check
-npm run gallery
-npm run preview
+npm run styles
 ```
 
-`style.json` และ STYLE.md เป็นข้อมูลต้นทาง อย่าแก้ gallery/index.html ด้วยมือ เพราะจะถูกสร้างใหม่ คำสั่ง render แต่ละชุดอยู่ใน STYLE.md ไม่ใช่คำสั่งเดียวสำหรับทุกแนว
+`style.json` และ STYLE.md เป็นข้อมูลต้นทาง ไม่มี UI ใน studio/ (UI ผลิตภัณฑ์อยู่ในเว็บ kubcode) คำสั่ง render แต่ละชุดอยู่ใน STYLE.md ไม่ใช่คำสั่งเดียวสำหรับทุกแนว

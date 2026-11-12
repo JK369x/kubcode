@@ -2,6 +2,8 @@
 
 Status: accepted (2026-11-11, owner)
 
+> Update 2026-11-12: the createui-react prototype (`docs/studio-design-2026-10-29/`) and the local `gallery/` were removed (owner decision: no UI in studio/; all UI work is on kubcode.dev). Git history keeps them.
+
 ## Context
 
 - `docs/studio-design-2026-10-29/createui-react/` is a React prototype of a clip studio

@@ -26,13 +26,11 @@ jk-animation-studio/
 ├── CLAUDE.md          ชี้ให้ Claude อ่านกติกากลาง ไม่ใช่ workflow ใหม่
 ├── DIRECTOR.md        หลักเล่าเรื่อง จัดช็อต แสดงอารมณ์ ตรวจงาน
 ├── TECHNIQUE.md       วิธีใช้เทคโนโลยี/ข้อกำหนด render ของชุดเดิม
-├── CATALOG.md         ทะเบียนสไตล์ สร้างจาก metadata
-├── gallery/           หน้าเลือกแนวและดูคลิป สร้างจาก metadata
 ├── styles/            แนวภาพ + ตัวอย่าง + ชุดเครื่องมือบางแนว
 ├── pipelines/         โค้ดนำแผนไปสร้างงาน เช่น low-poly mall / JK Window
 ├── shared/            ผู้บรรยายไทย สุขุม, รูปแบบซับ, คู่มือปก ที่ใช้ร่วมกัน
 ├── .agents/skills/    วิธีทำงานให้ agent โหลดเฉพาะงานที่เกี่ยวข้อง
-├── scripts/           โปรแกรมช่วย catalog / gallery / setup / ตรวจความพร้อม
+├── scripts/           โปรแกรมช่วย catalog / setup / ตรวจความพร้อม
 ├── tests/             โปรแกรมทดสอบ ป้องกันแก้แล้วของเก่าพัง
 ├── package.json       รายการคำสั่ง npm และ dependency โดยตรง
 ├── package-lock.json  ล็อกรุ่น dependency เพื่อให้ติดตั้งใกล้เคียงกัน
@@ -106,7 +104,7 @@ jk-animation-studio/
 - กฎเสียงอยู่ `shared/voice/` ไม่คัดกฎ/เสียงซ้ำทุกสไตล์
 - นโยบายซับและค่าตั้งอยู่ `shared/captions/` ส่วน adapter ของ renderer ยังแยกได้
 - กฎ account/publishing อยู่ใน provider skill ไม่คัดลงทุก skill วิดีโอ
-- gallery/CATALOG เป็นไฟล์สร้างอัตโนมัติ มี source เดียว ไม่ใช่สองฐานข้อมูล
+- ไม่มี UI ใน studio/ (gallery/CATALOG ถูกลบ 2026-11-12) UI ผลิตภัณฑ์อยู่ในเว็บ kubcode
 
 ### ชื่อซ้ำแต่ลบแทนกันทันทีไม่ได้
 

@@ -5,7 +5,7 @@ palette, characters/rigs, lighting, camera, renderer. Story rules live in [`../f
 Keys come from `~/Studio/taxonomy.json` (`visual_styles`).
 
 Each `visual/<key>/` holds only `VISUAL.md` + `visual.json`. **The kits are not moved or copied**: they stay
-under `styles/` so existing projects, `scripts/library.mjs`, the gallery and tests keep working. Upstream kit
+under `styles/` so existing projects, `scripts/library.mjs` and tests keep working. Upstream kit
 authors appear only in the credit/provenance column, never as a style name.
 
 | visual style | ไทย | English | kit path (in repo) | renderer | status | licence / provenance (credit) |
