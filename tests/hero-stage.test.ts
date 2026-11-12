@@ -92,5 +92,7 @@ test("CSS: aura ported from b.html (blur only on that layer, not over video); re
   const reduced = css.slice(css.indexOf("@media (prefers-reduced-motion: reduce)"));
   assert.match(reduced, /\.aura,\s*\.tw::after \{\s*animation: none;/);
   assert.match(css, /\.tw\[data-still\]::after \{\s*animation: none;/);
+  // Full-bleed at any width (owner, 2026-11-12): the aura spans the window, the body clips it.
   assert.match(readFileSync("app/globals.css", "utf8"), /\.library-page \{[^}]*overflow-x: clip;/);
+  assert.match(css, /\n\.aura \{[^}]*inset: [^;]*calc\(50% - 50vw - 10vw\)/);
 });

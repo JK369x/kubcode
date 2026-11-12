@@ -26,9 +26,13 @@
    blurred, slowly drifting. The blur is on this background layer only, behind
    the phone, never over the video. It bleeds to the window edges; the page
    clips it (no sideways scroll). */
+/* Full-bleed: from the left to the right edge of the window at any width
+   (50vw either side of the column centre, plus the prototype's 10% overscan
+   for the blur), and up behind the header. The body clips it (overflow-x:
+   clip), so there is no sideways scroll. */
 .aura {
   position: absolute;
-  inset: -10% calc(50% - 50vw - 10%);
+  inset: -140px calc(50% - 50vw - 10vw) -10%;
   z-index: -1;
   pointer-events: none;
   background:
@@ -40,11 +44,13 @@
   animation: drift 18s ease-in-out infinite alternate;
 }
 /* .grain in the prototype: fades the glow into the page below. */
+/* Fades into the page at the top (header) and bottom (next section), so
+   there is no seam with either. */
 .aura::after {
   content: "";
   position: absolute;
   inset: 0;
-  background: linear-gradient(180deg, transparent 60%, var(--background) 100%);
+  background: linear-gradient(180deg, var(--background) 0%, transparent 18%, transparent 62%, var(--background) 100%);
 }
 :global(:root[data-theme="light"]) .aura {
   opacity: 0.45;
