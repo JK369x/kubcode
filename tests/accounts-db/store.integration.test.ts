@@ -70,7 +70,14 @@ const ACCOUNT_TABLES = [
   // 0012: "แจ้งฉันเมื่อเปิด" waitlist.
   "plan_waitlist",
   "waitlist_toggles",
+  // 0013: billing (ADR 0008).
+  "billing_purchases",
+  "billing_entitlements",
+  "stripe_events",
+  "billing_reminders",
+  "billing_channel_pauses",
 ];
+const BILLING_TABLES = ["billing_purchases", "billing_entitlements", "stripe_events", "billing_reminders", "billing_channel_pauses"];
 const PUBLISHING_MEMBER_TABLES = [
   "workspaces",
   "workspace_members",
@@ -110,7 +117,7 @@ const PUBLISHING_WORKER_TABLES = [
   "plan_waitlist",
   "waitlist_toggles",
 ];
-const ALL_VERSIONS = ["0001_accounts", "0002_interactions", "0003_downloads", "0004_settings_keys", "0005_owner_flag", "0006_connect_app_source", "0007_publishing_channels", "0008_publishing_posts", "0009_publishing_owner_lookup", "0010_comment_automations", "0011_article_interactions", "0012_plan_waitlist"];
+const ALL_VERSIONS = ["0001_accounts", "0002_interactions", "0003_downloads", "0004_settings_keys", "0005_owner_flag", "0006_connect_app_source", "0007_publishing_channels", "0008_publishing_posts", "0009_publishing_owner_lookup", "0010_comment_automations", "0011_article_interactions", "0012_plan_waitlist", "0013_billing"];
 
 // Refuses anything that is not clearly a local test database BEFORE any
 // connection is attempted.
@@ -362,7 +369,10 @@ test("account data lives only in kubcode_accounts: no public objects, RLS on, po
       ...PUBLISHING_WORKER_TABLES,
     ],
     // 0007/0008: members read their own workspaces' rows; routes are readable by all.
-    kubcode_member_scope: PUBLISHING_MEMBER_TABLES,
+    kubcode_member_scope: [...PUBLISHING_MEMBER_TABLES, "billing_purchases", "billing_entitlements", "billing_reminders", "billing_channel_pauses"],
+    // 0013: the billing Lambda role; the publishing Lambda reads entitlements and pauses.
+    kubcode_billing_access: [...BILLING_TABLES, "workspaces", "workspace_members", "users", "channels", "channel_connections"],
+    kubcode_worker_read: ["billing_entitlements", "billing_channel_pauses"],
     kubcode_read_all: ["provider_routes"],
     // 0009: the Lambda role may see only the active owner's row.
     kubcode_worker_owner_lookup: ["users"],
@@ -374,6 +384,8 @@ test("account data lives only in kubcode_accounts: no public objects, RLS on, po
     kubcode_member_scope: "kubcode_app",
     kubcode_read_all: "kubcode_app",
     kubcode_worker_owner_lookup: "kubcode_worker",
+    kubcode_billing_access: "kubcode_billing",
+    kubcode_worker_read: "kubcode_worker",
   };
   for (const p of policies.rows) {
     assert.ok(allowed[p.policyname]?.includes(p.tablename), `${p.policyname} on ${p.tablename}`);
