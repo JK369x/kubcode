@@ -581,13 +581,13 @@ test("billing role: its own kubcode-lambda-* role, boundary, logs + its own SSM 
   for (const banned of ["s3:", "kms:", "lambda:", "iam:", "\"*\""]) assert.ok(!text.includes(banned), banned);
 });
 
-test("billing function: Rust custom runtime, one Function URL, no secrets in env, live mode off", async () => {
+test("billing function: Rust custom runtime, one Function URL, no secrets in env, live mode allowed in prod", async () => {
   const out = await build({ billing: true });
   const fn = byName("aws:lambda/function:Function", NAMES.billingFunction)!.inputs;
   assert.equal(fn.runtime, "provided.al2023");
   assert.equal(fn.handler, "bootstrap");
   assert.equal(fn.role, BILLING_ROLE_ARN);
-  assert.deepEqual(fn.environment.variables, { KUBCODE_SITE_ORIGIN: "https://kubcode.dev" });
+  assert.deepEqual(fn.environment.variables, { KUBCODE_SITE_ORIGIN: "https://kubcode.dev", KUBCODE_STRIPE_ALLOW_LIVE: "true" });
   assert.ok(seen({ kind: "FileArchive", path: "../services/crates/kubcode-billing-lambda/dist/bootstrap.zip" }));
   const urls = byType("aws:lambda/functionUrl:FunctionUrl").filter((u) => u.inputs.functionName === NAMES.billingFunction);
   assert.equal(urls.length, 1);

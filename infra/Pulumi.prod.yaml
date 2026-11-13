@@ -3,6 +3,7 @@ encryptedkey: AQICAHg/qnhkdb+lGzfqTWldTMzjWH4VOnlPQ5apDFUq6eejTQF5y6B3NTTTAWXwse
 config:
   kubcode:oauthConnect: "true"
   kubcode:publishing: "true"
+  kubcode:billing: "true"
   kubcode:breakGlassAdminArns:
     - arn:aws:iam::955758449820:user/super_admin
   pulumi:disable-default-providers:

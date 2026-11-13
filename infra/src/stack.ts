@@ -587,8 +587,10 @@ export function createStack(cfg: StackConfig) {
         timeout: 30,
         code: new pulumi.asset.FileArchive(BILLING_BINARY),
         // Not secrets: the site origin for Checkout return URLs. Secrets come from SSM.
-        // Live mode stays off: no KUBCODE_STRIPE_ALLOW_LIVE (ADR 0008).
-        environment: { variables: { KUBCODE_SITE_ORIGIN: "https://kubcode.dev" } },
+        // Production takes live Stripe (ADR 0008 amendment 2026-11-13); the local
+        // runner and E2E keep refusing live keys. Customers can still not pay
+        // until the web host sets KUBCODE_BILLING_ENABLED.
+        environment: { variables: { KUBCODE_SITE_ORIGIN: "https://kubcode.dev", KUBCODE_STRIPE_ALLOW_LIVE: "true" } },
         tags: billingTags,
       },
       { ...opts, dependsOn: [rolePolicy, logGroup] },
