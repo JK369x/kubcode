@@ -80,10 +80,16 @@
 .copy {
   min-width: 0;
   max-width: 470px;
+  container-type: inline-size;
 }
+/* Sized from the copy column, never clipped (lead, 2026-11-12): the longest
+   typed phrase in the data, "ทำแนวเบื้องหลังเมือง", is 8.53em wide at this
+   weight, so 100cqi / 9 always fits it; capped at the design's 54px. The
+   line still never wraps or overflows (HeroStage.tsx also shrinks a longer
+   phrase via --tw-fit). */
 .title {
   margin: 0;
-  font-size: clamp(36px, 3.5vw, 54px);
+  font-size: clamp(28px, calc(100cqi / 9), 54px);
   font-weight: 600;
   line-height: 1.22;
   letter-spacing: -0.02em;
@@ -94,13 +100,13 @@
   white-space: nowrap;
 }
 .line2 {
-  overflow: hidden;
+  overflow: visible;
 }
 .tw {
   display: inline-block;
   max-width: 100%;
   min-height: 1.2em;
-  overflow: hidden;
+  font-size: calc(1em * var(--tw-fit, 1));
   white-space: nowrap;
   vertical-align: bottom;
   color: var(--link);
@@ -136,14 +142,6 @@
   align-items: center;
   gap: 10px 20px;
   margin-top: 28px;
-}
-.cta {
-  font-weight: 600;
-}
-.ghost {
-  text-decoration: underline;
-  text-decoration-thickness: 1px;
-  text-underline-offset: 6px;
 }
 .works {
   display: flex;
@@ -360,7 +358,9 @@
   }
   .title {
     order: 1;
-    font-size: clamp(30px, 9.4vw, 38px);
+    /* Full-width column here (the copy is display: contents): the longest
+       phrase (8.53em) fits 90vw at 90vw / 9. */
+    font-size: clamp(26px, calc(90vw / 9), 38px);
     text-align: center;
   }
   .lead {
@@ -381,9 +381,8 @@
     justify-content: center;
     margin-top: 20px;
   }
-  .actions > :first-child {
-    width: 100%;
-    justify-content: center;
+  .actions > * {
+    flex: 1 1 100%;
   }
   .works {
     order: 6;

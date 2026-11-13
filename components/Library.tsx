@@ -6,6 +6,7 @@ import {
   Search,
   ArrowUpRight,
   RotateCcw,
+  ChevronDown,
 } from "lucide-react";
 import { skills, useCases, styles, type Skill } from "@/lib/catalog";
 import { Preview } from "./Preview";
@@ -30,6 +31,14 @@ import { ClipResults } from "./ClipResults";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuLabel,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { KineticHero } from "./KineticHero";
 import heroStyles from "./KineticHero.module.css";
 
@@ -38,49 +47,90 @@ const PUBLISHED = publishedShowcase();
 const HOME: HomeData = { skills, clips: cartoonShowcase(PUBLISHED), published: PUBLISHED };
 const USE_CASE_IDS = useCases.map((u) => u.id);
 
+type Option = { id: string; label: string; en?: string; count: number };
+
 /**
- * One row of filter chips: a shadcn ToggleGroup (single, radio semantics:
- * arrow keys move between chips). One chip is always checked, so clicking the
- * checked chip again keeps it.
+ * "อยากทำอะไร": one calm row of chips (shadcn ToggleGroup, single: a radio
+ * group, arrows move). Thai label only; the count is small and muted. One
+ * chip is always checked. At phone widths the row scrolls sideways.
  */
-function FilterRow({
-  label,
-  name,
-  options,
-  value,
-  onPick,
-}: {
-  label: string;
-  name: string;
-  options: readonly { id: string; label: string; en?: string; count: number }[];
-  value: string;
-  onPick: (id: string) => void;
-}) {
+function UseCaseRow({ label, options, value, onPick }: { label: string; options: readonly Option[]; value: string; onPick: (id: string) => void }) {
   return (
-    <div className="filter-row" data-filter={name}>
-      <span className="filter-label" aria-hidden="true">{label}</span>
-      <ToggleGroup
-        type="single"
-        className="categories"
-        aria-label={label}
-        value={value}
-        onValueChange={(id) => id && onPick(id)}
-      >
-        {options.map((item) => (
-          <ToggleGroupItem
-            key={item.id}
-            value={item.id}
-            data-value={item.id}
-            {...(item.count === 0 ? { "data-empty": "" } : {})}
-            className="gap-2 data-empty:not-data-[state=on]:opacity-50"
-          >
-            {item.label}
-            {item.en && <small lang="en" className="chip-en">{item.en}</small>}
-            <span className="font-brand text-xs text-muted-foreground group-data-[state=on]/toggle:text-inherit">{item.count}</span>
-          </ToggleGroupItem>
-        ))}
-      </ToggleGroup>
-    </div>
+    <ToggleGroup
+      type="single"
+      // Phones: one row that scrolls sideways (bleeds to the screen edge)
+      // instead of wrapping into several rows.
+      className="filter-chips categories max-[560px]:-mx-[5.5vw] max-[560px]:flex-nowrap max-[560px]:overflow-x-auto max-[560px]:px-[5.5vw] max-[560px]:py-1.5 max-[560px]:[scrollbar-width:none]"
+      aria-label={label}
+      data-filter="use"
+      value={value}
+      onValueChange={(id) => id && onPick(id)}
+    >
+      {options.map((item) => (
+        <ToggleGroupItem
+          key={item.id}
+          value={item.id}
+          data-value={item.id}
+          {...(item.count === 0 ? { "data-empty": "" } : {})}
+          className="gap-1.5 data-empty:not-data-[state=on]:opacity-50"
+        >
+          {item.label}
+          <span className="font-brand text-xs text-muted-foreground group-data-[state=on]/toggle:text-inherit group-data-[state=on]/toggle:opacity-80">{item.count}</span>
+        </ToggleGroupItem>
+      ))}
+    </ToggleGroup>
+  );
+}
+
+/**
+ * "แนวภาพ" / "แนวเรื่อง": a compact trigger that shows the current value
+ * ("แนวภาพ: ทั้งหมด ▾") and opens a shadcn DropdownMenu of radio items (Thai
+ * name, small English name, count). Radix gives the menu semantics: arrows,
+ * Home/End, type-ahead, Esc returns focus to the trigger.
+ */
+function FacetMenu({ label, name, options, value, onPick }: { label: string; name: string; options: readonly Option[]; value: string; onPick: (id: string) => void }) {
+  const current = options.find((o) => o.id === value) ?? options[0];
+  const active = value !== "all";
+  return (
+    <DropdownMenu modal={false}>
+      <DropdownMenuTrigger asChild>
+        <Button
+          type="button"
+          variant="outline"
+          data-filter={name}
+          data-active={active ? "" : undefined}
+          aria-label={`${label}: ${current.label}`}
+          className="facet-trigger rounded-full px-4 text-sm data-active:border-primary data-active:bg-secondary data-active:text-secondary-foreground"
+        >
+          <span className="text-muted-foreground in-data-active:text-inherit">{label}:</span>
+          <span className="max-w-[12em] truncate font-semibold">{current.label}</span>
+          <ChevronDown className="size-4 opacity-70" aria-hidden="true" />
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="start" className="max-h-[min(70vh,440px)] min-w-[260px]">
+        <DropdownMenuLabel className="px-2 pt-1 pb-1.5 text-[13px] font-semibold text-muted-foreground">{label}</DropdownMenuLabel>
+        <DropdownMenuRadioGroup value={value} onValueChange={(id) => id && onPick(id)}>
+          {options.map((o) => (
+            <DropdownMenuRadioItem
+              key={o.id}
+              value={o.id}
+              data-value={o.id}
+              className={o.count === 0 && o.id !== value ? "opacity-60" : undefined}
+            >
+              <span className="min-w-0 flex-1">
+                {o.label}
+                {o.en && (
+                  <small lang="en" className="ml-1.5 text-xs font-normal text-muted-foreground">
+                    {o.en}
+                  </small>
+                )}
+              </span>
+              <span className="font-brand text-xs font-normal text-muted-foreground">{o.count}</span>
+            </DropdownMenuRadioItem>
+          ))}
+        </DropdownMenuRadioGroup>
+      </DropdownMenuContent>
+    </DropdownMenu>
   );
 }
 
@@ -249,15 +299,17 @@ export function Library({
             />
           </label>
         </div>
+        {/* Calm filter bar (owner, 2026-11-12): one row of use-case chips and
+            two compact menus for แนวภาพ / แนวเรื่อง; same filter, same URL. */}
         <div className="filter-bar">
-          <div className="filter-rows">
-            <FilterRow label="อยากทำอะไร" name="use" options={useCaseOptions} value={useCase} onPick={(id) => set({ useCase: id })} />
-            <FilterRow label="แนวภาพ" name="visual" options={facetOptions("visual", HOME, filter)} value={filter.visual} onPick={(id) => set({ visual: id })} />
-            <FilterRow label="แนวเรื่อง" name="story" options={facetOptions("story", HOME, filter)} value={filter.story} onPick={(id) => set({ story: id })} />
+          <UseCaseRow label="อยากทำอะไร" options={useCaseOptions} value={useCase} onPick={(id) => set({ useCase: id })} />
+          <div className="filter-menus">
+            <FacetMenu label="แนวภาพ" name="visual" options={facetOptions("visual", HOME, filter)} value={filter.visual} onPick={(id) => set({ visual: id })} />
+            <FacetMenu label="แนวเรื่อง" name="story" options={facetOptions("story", HOME, filter)} value={filter.story} onPick={(id) => set({ story: id })} />
+            <span className="result-line" role="status" aria-live="polite">
+              {total} รายการ
+            </span>
           </div>
-          <span className="result-line" role="status" aria-live="polite">
-            {total} รายการ
-          </span>
         </div>
         {total ? (
           <>

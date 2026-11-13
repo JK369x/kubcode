@@ -36,6 +36,29 @@ function useStill(): boolean | null {
 function Typewriter({ text, still }: { text: string; still: boolean }) {
   const [shown, setShown] = useState(text);
   const shownRef = useRef(graphemes(text));
+  const line = useRef<HTMLSpanElement>(null);
+  // Never clip (lead, 2026-11-12): the CSS size fits every phrase in the data;
+  // if a longer one ever appears, shrink line 2 so the full phrase fits.
+  useEffect(() => {
+    const el = line.current;
+    if (!el) return;
+    const fit = () => {
+      el.style.removeProperty("--tw-fit");
+      const probe = document.createElement("span");
+      probe.className = el.firstElementChild?.className ?? "";
+      probe.style.cssText = "position:absolute;visibility:hidden;white-space:nowrap";
+      probe.textContent = text;
+      el.append(probe);
+      const need = probe.getBoundingClientRect().width;
+      probe.remove();
+      const have = el.clientWidth;
+      if (need > have && have > 0) el.style.setProperty("--tw-fit", String(Math.max(0.6, (have - 2) / need)));
+    };
+    fit();
+    const ro = new ResizeObserver(fit);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [text]);
   useEffect(() => {
     const target = graphemes(text);
     if (still) {
@@ -67,7 +90,7 @@ function Typewriter({ text, still }: { text: string; still: boolean }) {
     return () => clearTimeout(timer);
   }, [text, still]);
   return (
-    <span className={styles.line2}>
+    <span ref={line} className={styles.line2}>
       <span className={styles.tw} data-still={still ? "" : undefined} aria-hidden="true">
         {shown}
       </span>
@@ -204,13 +227,16 @@ export function HeroStage({ clips, headingId }: { clips: readonly HeroClip[]; he
           </h1>
           <p className={styles.lead}>ทุกคลิปในจอนี้ทำด้วยสกิลฟรีบน kubcode กับ AI agent ในคอมคุณเอง ไม่ต้องตัดต่อเอง</p>
           <div className={styles.actions}>
-            <Button asChild variant="feature" className={cn("h-13 px-6 text-base md:h-13", styles.cta)}>
+            {/* Primary: solid brand purple (MASTER.md --primary / --primary-foreground,
+                9.4 / 7.2:1); secondary: outline of the same 48px height. Buttons
+                never carry the link underline (components/ui/button.tsx). */}
+            <Button asChild size="lg" className="rounded-full px-6 text-base font-semibold">
               <a href="#get-started">
                 เริ่มทำคลิปแรก
                 <ArrowRight aria-hidden="true" />
               </a>
             </Button>
-            <Button asChild variant="link" className={cn("h-13 text-base text-foreground", styles.ghost)}>
+            <Button asChild size="lg" variant="outline" className="rounded-full bg-background/40 px-6 text-base">
               <a href="#skill-index">ดูทุกแนวคลิป</a>
             </Button>
           </div>

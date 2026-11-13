@@ -49,8 +49,18 @@ test("hero promises the outcome in plain Thai (phone stage, owner 2026-11-11)", 
 });
 
 test("hero has exactly one primary action and no search box", () => {
-  const links = hero.match(/<a\b[^>]*data-variant="feature"[^>]*>[\s\S]*?<\/a>/g) || [];
-  assert.equal(links.length, 1, "one primary (feature) action");
+  // Owner 2026-11-12: one solid primary Button + one outline Button, no underlines.
+  const copy = hero.slice(0, hero.indexOf('role="radiogroup"'));
+  const buttons = copy.match(/<a\b[^>]*data-slot="button"[^>]*>[\s\S]*?<\/a>/g) || [];
+  const links = buttons.filter((b) => /data-variant="default"/.test(b));
+  assert.equal(links.length, 1, "one primary action");
+  const secondary = buttons.filter((b) => /data-variant="outline"/.test(b));
+  assert.equal(secondary.length, 1);
+  assert.match(secondary[0], /href="#skill-index"[^>]*>ดูทุกแนวคลิป/);
+  for (const b of [links[0], secondary[0]]) {
+    assert.match(b, /data-size="lg"/, "48px");
+    assert.match(b, /\bno-underline\b/);
+  }
   assert.match(links[0], /href="#get-started"/);
   assert.match(text(links[0]), /^เริ่มทำคลิปแรก/);
   assert.doesNotMatch(hero, /<input\b/, "search lives in the catalogue, not the hero");

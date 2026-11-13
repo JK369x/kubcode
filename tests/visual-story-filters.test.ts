@@ -7,6 +7,7 @@ import { existsSync, readFileSync } from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { createElement } from "react";
+import { useCases } from "../lib/catalog";
 import { renderToStaticMarkup } from "react-dom/server";
 
 const NodeModule = require("node:module") as {
@@ -171,21 +172,31 @@ test("filters round-trip through the address; unknown values are ignored", () =>
 
 /* ------------------------------------------------------------- homepage */
 
-test("homepage: three labelled rows (use case, แนวภาพ, แนวเรื่อง), each starting with ทั้งหมด", () => {
+test("homepage: calm filter bar: use-case chips + แนวภาพ / แนวเรื่อง menus (owner 2026-11-12)", () => {
   const { Library } = require("../components/Library") as typeof import("../components/Library");
   const html = renderToStaticMarkup(createElement(Library, { articles: [] }));
-  // Each row is a shadcn ToggleGroup (type="single"): a radio group whose
-  // checked chip is the row's value; arrow keys move between chips.
-  const row = (label: string) =>
-    html.match(new RegExp(`<div[^>]*role="radiogroup"[^>]*aria-label="${label}"[^>]*>([\\s\\S]*?)</div>`))?.[1];
-  for (const label of ["อยากทำอะไร", "แนวภาพ", "แนวเรื่อง"]) {
-    const nav = row(label);
-    assert.ok(nav, label);
-    assert.match(nav, /^<button[^>]*role="radio"[^>]*aria-checked="true"[^>]*>ทั้งหมด/, `${label} starts with ทั้งหมด, checked`);
-    assert.equal((nav.match(/aria-checked="true"/g) ?? []).length, 1, `${label}: exactly one checked`);
+  // อยากทำอะไร: one radio group of chips, Thai only, ทั้งหมด first and checked.
+  const row = html.match(/<div[^>]*role="radiogroup"[^>]*aria-label="อยากทำอะไร"[^>]*>([\s\S]*?)<\/div>/)?.[1];
+  assert.ok(row);
+  assert.match(row, /^<button[^>]*role="radio"[^>]*aria-checked="true"[^>]*>ทั้งหมด/);
+  assert.equal((row.match(/aria-checked="true"/g) ?? []).length, 1);
+  assert.equal((row.match(/role="radio"/g) ?? []).length, useCases.length);
+  assert.doesNotMatch(row, /lang="en"|chip-en/, "no English sub-label on the chips");
+  // แนวภาพ / แนวเรื่อง: one compact menu button each, showing the current value.
+  for (const [name, label] of [["visual", "แนวภาพ"], ["story", "แนวเรื่อง"]] as const) {
+    const trigger = html.match(new RegExp(`<button[^>]*data-filter="${name}"[^>]*>[\\s\\S]*?</button>`))?.[0];
+    assert.ok(trigger, name);
+    assert.match(trigger, /aria-haspopup="menu"/);
+    assert.match(trigger, new RegExp(`aria-label="${label}: ทั้งหมด"`));
+    assert.match(trigger.replace(/<[^>]+>/g, ""), new RegExp(`${label}:ทั้งหมด`));
   }
-  assert.match(row("แนวภาพ")!, /data-value="blender-3d"[^>]*>3D Blender/);
-  assert.match(row("แนวเรื่อง")!, /data-value="paradox-fact"[^>]*>ข้อเท็จจริงย้อนแย้ง/);
+  // The menus' radio items (Thai, small English, count) come from facetOptions.
+  const src = require("node:fs").readFileSync("components/Library.tsx", "utf8") as string;
+  assert.match(src, /<DropdownMenuRadioItem[\s\S]*?\{o\.label\}[\s\S]*?lang="en"[\s\S]*?\{o\.en\}[\s\S]*?\{o\.count\}/);
+  assert.match(src, /options=\{facetOptions\("visual", HOME, filter\)\}/);
+  assert.match(src, /options=\{facetOptions\("story", HOME, filter\)\}/);
+  // Phones: the chip row scrolls sideways instead of wrapping.
+  assert.match(src, /max-\[560px\]:flex-nowrap max-\[560px\]:overflow-x-auto/);
 });
 
 test("filtered clips carry their story format on the poster and their visual style under it", () => {

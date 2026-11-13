@@ -96,3 +96,15 @@ test("CSS: aura ported from b.html (blur only on that layer, not over video); re
   assert.match(readFileSync("app/globals.css", "utf8"), /\.library-page \{[^}]*overflow-x: clip;/);
   assert.match(css, /\n\.aura \{[^}]*inset: [^;]*calc\(50% - 50vw - 10vw\)/);
 });
+
+test("headline never clips: sized from its column so the longest phrase in the data fits", () => {
+  // At 600 weight Anuphan, "ทำแนวเบื้องหลังเมือง" is 8.53em wide (measured in Chrome):
+  // a font size of (column width / 9) always fits it, and line 2 can shrink further.
+  const longest = Math.max(...CLIPS.map((c) => headlinePhrase(c).length));
+  assert.ok(longest <= "ทำแนวเบื้องหลังเมือง".length, "a longer phrase needs a new measurement");
+  assert.match(css, /\.copy \{[^}]*container-type: inline-size;/);
+  assert.match(css, /\.title \{[^}]*font-size: clamp\(28px, calc\(100cqi \/ 9\), 54px\);/);
+  assert.match(css, /font-size: clamp\(26px, calc\(90vw \/ 9\), 38px\);/);
+  assert.doesNotMatch(css.match(/\n\.tw \{([^}]*)\}/)![1], /overflow: hidden/, "the typed line is never cut off");
+  assert.match(src, /setProperty\("--tw-fit"/);
+});

@@ -585,39 +585,27 @@ header.header {
   font-size: 13px;
   margin-top: 8px;
 }
+/* Calm filter bar (owner, 2026-11-12): use-case chips, then the แนวภาพ /
+   แนวเรื่อง menus and the result count on one line. */
 .filter-bar {
   display: flex;
-  align-items: flex-end;
-  gap: 16px;
-  justify-content: space-between;
-  margin: 25px 0 26px;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px 16px;
+  margin: 22px 0 26px;
 }
-/* Three filter rows that combine: use case, แนวภาพ, แนวเรื่อง. */
-.filter-rows {
-  display: grid;
-  gap: 10px;
+.filter-chips {
+  flex: 0 1 auto;
   min-width: 0;
 }
-.filter-row {
-  display: grid;
-  grid-template-columns: 92px 1fr;
-  align-items: start;
-  gap: 12px;
+.filter-menus {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 10px;
 }
-.filter-label {
-  padding-top: 10px;
-  color: var(--muted-foreground);
-  font-size: 13px;
-  font-weight: 600;
-}
-@media (max-width: 720px) {
-  .filter-row {
-    grid-template-columns: 1fr;
-    gap: 6px;
-  }
-  .filter-label {
-    padding-top: 0;
-  }
+.filter-menus .result-line {
+  margin-left: 4px;
 }
 /* Filter chips are components/ui/toggle-group.tsx (shadcn ToggleGroup). */
 .result-line {
@@ -1440,9 +1428,6 @@ p[role="status"]:empty {
   .skill-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
-  .filter-bar {
-    align-items: start;
-  }
   .article-teasers {
     gap: 35px;
     grid-template-columns: 1fr 1.4fr;
@@ -1563,14 +1548,14 @@ p[role="status"]:empty {
     width: 100%;
     margin-top: 18px;
   }
+  /* Phones: the chip row scrolls sideways (full bleed to the screen edge)
+     instead of wrapping; the two menus and the count sit under it. */
   .filter-bar {
-    display: block;
+    display: grid;
+    gap: 12px;
     margin: 18px 0 20px;
   }
-  .result-line {
-    display: block;
-    margin-top: 13px;
-  }
+  /* (the chip row's sideways scroll is on the component: Library.tsx) */
   .skill-grid {
     grid-template-columns: 1fr;
     gap: 22px;
@@ -2761,13 +2746,6 @@ html[data-theme="light"] .shiki span {
   }
 }
 
-/* English name under a Thai style/format chip (owner 2026-11-10). */
-.categories .chip-en {
-  font-size: 10px;
-  opacity: 0.7;
-  font-weight: 400;
-  letter-spacing: 0.01em;
-}
 
 /* ---------- loading skeletons (components/SkeletonImage.tsx) ----------
    A soft shimmer in the image box until the image loads, and placeholder
