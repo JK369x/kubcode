@@ -17,6 +17,8 @@ export interface WaitlistStore {
   /** Targets this member has joined (empty when the session does not check out). */
   joined(session: SessionClaims): Promise<WaitlistTarget[]>;
   toggle(session: SessionClaims, target: WaitlistTarget): Promise<{ ok: true; joined: boolean } | WaitlistFailure>;
+  /** Public aggregate: members per target, no identities. */
+  publicCounts(): Promise<WaitlistCount[]>;
   /** Owner only: members per target. */
   counts(session: SessionClaims): Promise<{ ok: true; counts: WaitlistCount[] } | WaitlistFailure>;
 }
@@ -63,6 +65,13 @@ export function createPgWaitlistStore(pool: Pool): WaitlistStore {
         await c.query("INSERT INTO kubcode_accounts.waitlist_toggles (user_id) VALUES ($1)", [m.id]);
         return { ok: true as const, joined: removed.rowCount === 0 };
       });
+    },
+
+    async publicCounts() {
+      const { rows } = await pool.query<{ target_kind: WaitlistKind; target_id: string; n: string }>(
+        "SELECT target_kind, target_id, count(*) AS n FROM kubcode_accounts.plan_waitlist GROUP BY 1, 2",
+      );
+      return rows.map((r) => ({ kind: r.target_kind, id: r.target_id, members: Number(r.n) }));
     },
 
     async counts(session) {

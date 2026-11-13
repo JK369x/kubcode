@@ -90,8 +90,17 @@ test("toggle: signed out → 401, bad CSRF → 403, accounts off → 503, rate l
 test("state: off when accounts are off, signed-out without a session, joined list when signed in", async () => {
   const get = (cookie?: string) => new Request("https://kubcode.dev/api/waitlist", { headers: cookie ? { cookie } : {} });
   assert.deepEqual(await (await handleWaitlistState(get(), deps(untouchable, AUTH_ENV))).json(), { available: false });
-  assert.deepEqual(await (await handleWaitlistState(get(), deps(untouchable))).json(), { available: true, signedIn: false, joined: [] });
-  const res = await handleWaitlistState(get(await sessionCookie()), deps({ joined: async () => [{ kind: "plan", id: "skill-pack" }] }));
-  assert.deepEqual(await res.json(), { available: true, signedIn: true, joined: [{ kind: "plan", id: "skill-pack" }] });
+  const publicCounts = async () => [
+    { kind: "plan" as const, id: "skill-pack", members: 7 },
+    { kind: "roadmap" as const, id: "facebook", members: 2 },
+  ];
+  assert.deepEqual(await (await handleWaitlistState(get(), deps({ publicCounts }))).json(), {
+    available: true,
+    signedIn: false,
+    joined: [],
+    counts: { "plan:skill-pack": 7 },
+  });
+  const res = await handleWaitlistState(get(await sessionCookie()), deps({ publicCounts, joined: async () => [{ kind: "plan", id: "skill-pack" }] }));
+  assert.deepEqual(await res.json(), { available: true, signedIn: true, joined: [{ kind: "plan", id: "skill-pack" }], counts: { "plan:skill-pack": 7 } });
   assert.equal(res.headers.get("cache-control"), "no-store");
 });

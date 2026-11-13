@@ -15,6 +15,7 @@ import { sessionClaims, type SessionClaims } from "../accounts/session";
 import { guardWrite } from "../interactions/http";
 import { getWaitlistStore, type WaitlistStore } from "./store";
 import { isWaitlistKind, waitlistTargetOpen } from "./targets";
+import { WAITLIST_COUNT_MIN } from "../roadmap";
 
 export type WaitlistDeps = { env?: AuthEnv; storeFor?: (databaseUrl: string) => WaitlistStore };
 
@@ -33,15 +34,30 @@ async function sessionOf(request: Request, env: AuthEnv): Promise<SessionClaims 
   return token && providerReadiness(auth)[token.provider] ? sessionClaims(token) : null;
 }
 
+/**
+ * Public counts: open targets only, and only at WAITLIST_COUNT_MIN or more,
+ * so a count never points at one person. Keyed "kind:id".
+ */
+export function publicCountMap(counts: { kind: string; id: string; members: number }[]): Record<string, number> {
+  const out: Record<string, number> = {};
+  for (const c of counts) {
+    if (!isWaitlistKind(c.kind) || !waitlistTargetOpen({ kind: c.kind, id: c.id })) continue;
+    if (c.members >= WAITLIST_COUNT_MIN) out[`${c.kind}:${c.id}`] = c.members;
+  }
+  return out;
+}
+
 export async function handleWaitlistState(request: Request, deps: WaitlistDeps = {}): Promise<Response> {
   const env = deps.env ?? process.env;
   const accounts = readAccountsConfig(env);
   if (accounts.mode !== "on") return jsonNoStore({ available: false });
   const session = await sessionOf(request, env);
-  if (!session) return jsonNoStore({ available: true, signedIn: false, joined: [] });
   try {
-    const joined = await (deps.storeFor ?? getWaitlistStore)(accounts.databaseUrl).joined(session);
-    return jsonNoStore({ available: true, signedIn: true, joined });
+    const store = (deps.storeFor ?? getWaitlistStore)(accounts.databaseUrl);
+    const counts = publicCountMap(await store.publicCounts());
+    if (!session) return jsonNoStore({ available: true, signedIn: false, joined: [], counts });
+    const joined = await store.joined(session);
+    return jsonNoStore({ available: true, signedIn: true, joined, counts });
   } catch (error) {
     logDbFailure("WAITLIST_STATE", error);
     return jsonNoStore({ available: false });

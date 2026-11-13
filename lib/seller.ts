@@ -9,7 +9,7 @@
  */
 export const SELLER = {
   /** Legal name of the individual seller, as on the Stripe account. */
-  name: "PLACEHOLDER_SELLER_NAME",
+  name: "JAKKARIN NINPAN",
   /** Public support/billing email. */
   email: "PLACEHOLDER_SELLER_EMAIL",
   /** Thai wording, shown as-is. */

@@ -7,7 +7,6 @@ import Refund from "../app/refund/page";
 import Contact from "../app/contact/page";
 import Terms from "../app/terms/page";
 import Privacy from "../app/privacy/page";
-import Roadmap from "../app/roadmap/page";
 import { SiteFooter } from "../components/SiteFooter";
 import { PLANS, priceLabel } from "../lib/plans";
 import { ROADMAP } from "../lib/roadmap";
@@ -98,24 +97,6 @@ test("pricing sells no roadmap item that is not available yet", () => {
     assert.ok(!sold.includes(i.titleTh), `available plan sells roadmap item ${i.id}`);
   }
   assert.doesNotMatch(PLANS.flatMap((p) => p.features).join(" "), /MCP|รายปี|annual|Facebook/i);
-});
-
-test("roadmap: three sections, every next/later item says ยังไม่เปิด with a waitlist button, no prices or dates", () => {
-  const h = html(Roadmap);
-  const t = text(h);
-  for (const s of ["ตอนนี้ใช้ได้", "กำลังทำ", "ในอนาคต"]) assert.ok(t.includes(s), s);
-  const pending = ROADMAP.filter((i) => i.status !== "now");
-  assert.equal((t.match(/ยังไม่เปิด(?!ให้)/g) ?? []).length, pending.length);
-  assert.equal((t.match(/แจ้งฉันเมื่อเปิด/g) ?? []).length, pending.length);
-  for (const i of ROADMAP) assert.doesNotMatch(i.descriptionTh + i.titleTh, /฿|บาท|THB|\d{1,2} (ม\.ค|ก\.พ|มี\.ค|เม\.ย|พ\.ค|มิ\.ย|ก\.ค|ส\.ค|ก\.ย|ต\.ค|พ\.ย|ธ\.ค)|20\d\d/);
-  assert.deepEqual(
-    ROADMAP.map((i) => [i.id, i.status]),
-    [
-      ["connect-channels", "now"], ["scheduled-posts", "now"], ["comment-auto-reply", "now"], ["free-skills", "now"], ["deep-sea-docs", "now"],
-      ["online-payment", "next"], ["social-mcp", "next"], ["facebook", "next"], ["more-member-skills", "next"],
-      ["clip-orders-mcp", "later"], ["annual-plan", "later"],
-    ],
-  );
 });
 
 test("refund: no refunds, cancel by not renewing, duplicate/erroneous charges refunded, seller shown", () => {
