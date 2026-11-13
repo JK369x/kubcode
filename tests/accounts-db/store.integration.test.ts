@@ -76,8 +76,9 @@ const ACCOUNT_TABLES = [
   "stripe_events",
   "billing_reminders",
   "billing_channel_pauses",
+  "billing_request_nonces",
 ];
-const BILLING_TABLES = ["billing_purchases", "billing_entitlements", "stripe_events", "billing_reminders", "billing_channel_pauses"];
+const BILLING_TABLES = ["billing_purchases", "billing_entitlements", "stripe_events", "billing_reminders", "billing_channel_pauses", "billing_request_nonces"];
 const PUBLISHING_MEMBER_TABLES = [
   "workspaces",
   "workspace_members",

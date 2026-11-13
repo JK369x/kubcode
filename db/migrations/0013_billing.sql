@@ -1,6 +1,6 @@
 -- 0013_billing: kubcode Social month pass (ADR 0008, docs/design/billing-stripe.md §4.4).
 --
--- ADDITIVE ONLY: five new tables, indexes, RLS, grants and one new role
+-- ADDITIVE ONLY: six new tables, indexes, RLS, grants and one new role
 -- (kubcode_billing). No existing table, column or row is changed or removed.
 -- THE OWNER APPROVES THIS MIGRATION BEFORE IT RUNS IN PRODUCTION.
 --
@@ -87,6 +87,15 @@ CREATE TABLE IF NOT EXISTS kubcode_accounts.billing_channel_pauses (
 CREATE UNIQUE INDEX IF NOT EXISTS billing_channel_pauses_open
   ON kubcode_accounts.billing_channel_pauses (channel_id) WHERE resumed_at IS NULL;
 
+-- Replay guard for web host → billing Lambda requests (KUBCODE-HMAC-V1 nonce,
+-- SHA-256 of it). Rows older than 20 minutes are pruned by the Lambda; this is
+-- the one table the billing role may DELETE from (nonces, never money).
+CREATE TABLE IF NOT EXISTS kubcode_accounts.billing_request_nonces (
+  nonce_hash bytea PRIMARY KEY CHECK (octet_length(nonce_hash) = 32),
+  created_at timestamptz NOT NULL DEFAULT now()
+);
+
+ALTER TABLE kubcode_accounts.billing_request_nonces ENABLE ROW LEVEL SECURITY;
 ALTER TABLE kubcode_accounts.billing_purchases ENABLE ROW LEVEL SECURITY;
 ALTER TABLE kubcode_accounts.billing_entitlements ENABLE ROW LEVEL SECURITY;
 ALTER TABLE kubcode_accounts.stripe_events ENABLE ROW LEVEL SECURITY;
@@ -160,7 +169,7 @@ $$;
 
 -- Billing Lambda role: its own tables, plus the reads it needs to price and
 -- sweep (workspaces, members, owner flag, channels and their connections).
--- No DDL, no deletes anywhere: money records are kept.
+-- No DDL, no deletes except expired request nonces: money records are kept.
 DO $$
 DECLARE
   tab text;
@@ -177,13 +186,14 @@ BEGIN
   GRANT SELECT, INSERT ON kubcode_accounts.stripe_events TO kubcode_billing;
   GRANT SELECT, INSERT ON kubcode_accounts.billing_reminders TO kubcode_billing;
   GRANT SELECT, INSERT, UPDATE (disconnected_at, resumed_at) ON kubcode_accounts.billing_channel_pauses TO kubcode_billing;
+  GRANT SELECT, INSERT, DELETE ON kubcode_accounts.billing_request_nonces TO kubcode_billing;
   GRANT SELECT ON kubcode_accounts.workspaces TO kubcode_billing;
   GRANT SELECT ON kubcode_accounts.workspace_members TO kubcode_billing;
   GRANT SELECT (id, is_owner, status) ON kubcode_accounts.users TO kubcode_billing;
   GRANT SELECT (id, workspace_id, platform, created_at) ON kubcode_accounts.channels TO kubcode_billing;
   GRANT SELECT (id, channel_id, provider, status) ON kubcode_accounts.channel_connections TO kubcode_billing;
   FOREACH tab IN ARRAY ARRAY['billing_purchases', 'billing_entitlements', 'stripe_events', 'billing_reminders',
-                             'billing_channel_pauses', 'workspaces', 'workspace_members', 'users', 'channels',
+                             'billing_channel_pauses', 'billing_request_nonces', 'workspaces', 'workspace_members', 'users', 'channels',
                              'channel_connections'] LOOP
     IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname = 'kubcode_accounts'
                    AND tablename = tab AND policyname = 'kubcode_billing_access') THEN

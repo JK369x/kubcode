@@ -78,6 +78,9 @@ test("billing role: creates a pending purchase, fulfils it once, records events 
   );
   await assert.rejects(billing.query("DELETE FROM kubcode_accounts.billing_purchases WHERE id = $1", [id]), (e: { code?: string }) => e.code === "42501");
   await assert.rejects(billing.query("DELETE FROM kubcode_accounts.stripe_events"), (e: { code?: string }) => e.code === "42501");
+  // Nonces are the only thing billing may delete.
+  await billing.query("INSERT INTO kubcode_accounts.billing_request_nonces (nonce_hash) VALUES (sha256('n1'::bytea))");
+  await billing.query("DELETE FROM kubcode_accounts.billing_request_nonces WHERE created_at < now() - interval '20 minutes'");
   await assert.rejects(
     billing.query("UPDATE kubcode_accounts.billing_purchases SET amount_satang = 1 WHERE id = $1", [id]),
     (e: { code?: string }) => e.code === "42501",
@@ -149,7 +152,7 @@ test("pauses: one open pause per channel; the worker reads pauses and entitlemen
 });
 
 test("API roles have nothing on the billing tables", async () => {
-  for (const t of ["billing_purchases", "billing_entitlements", "stripe_events", "billing_reminders", "billing_channel_pauses"]) {
+  for (const t of ["billing_purchases", "billing_entitlements", "stripe_events", "billing_reminders", "billing_channel_pauses", "billing_request_nonces"]) {
     const r = await db.pool.query(
       "SELECT has_table_privilege('anon', $1, 'SELECT') AS a, has_table_privilege('authenticated', $1, 'SELECT') AS b",
       [`kubcode_accounts.${t}`],

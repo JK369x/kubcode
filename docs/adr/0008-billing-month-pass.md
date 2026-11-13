@@ -46,9 +46,10 @@ The publishing core (ADR 0004) already runs as a Rust Lambda holding the Zernio 
     it with HMAC (`/checkout`, `/fulfil`); Stripe calls `/stripe/webhook`. Crates: `kubcode-billing` (pure
     domain), `kubcode-billing-store` (Postgres), `kubcode-billing-lambda`.
 11. **Database (migration 0013, additive)**: `billing_purchases`, `billing_entitlements`, `stripe_events`,
-    `billing_reminders`, `billing_channel_pauses`, and the role `kubcode_billing`. The web role reads its own
+    `billing_reminders`, `billing_channel_pauses`, `billing_request_nonces` (HMAC replay guard), and the role
+    `kubcode_billing`. The web role reads its own
     workspace's rows (never Stripe ids) and writes nothing but a banner dismissal; the publishing role reads
-    entitlements and pauses; nothing grants DELETE on money records.
+    entitlements and pauses; nothing grants DELETE on money records (only expired request nonces).
 
 ## Delivery
 
