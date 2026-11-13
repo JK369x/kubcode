@@ -1,0 +1,12 @@
+# Runs the billing sweep hourly (ADR 0008 §5). It does nothing until
+# KUBCODE_BILLING_ENABLED=true in /etc/kubcode/web.env.
+[Unit]
+Description=kubcode billing sweep, hourly
+
+[Timer]
+OnCalendar=*-*-* *:07:00
+AccuracySec=1min
+Persistent=true
+
+[Install]
+WantedBy=timers.target

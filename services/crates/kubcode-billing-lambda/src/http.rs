@@ -44,6 +44,11 @@ struct CheckoutBody {
     email: Option<String>,
 }
 
+/// The timer sends `{}`: nothing else is a sweep.
+#[derive(Deserialize)]
+#[serde(deny_unknown_fields)]
+struct SweepBody {}
+
 #[derive(Deserialize)]
 #[serde(deny_unknown_fields)]
 struct FulfilBody {
@@ -178,6 +183,12 @@ pub async fn handle<S: BillingStore + Nonces, T: Transport + ?Sized>(
                 "checkout",
                 svc.checkout(b.user_id, kind, b.slots, email).await,
             )
+        }
+        "/api/sweep" => {
+            if serde_json::from_slice::<SweepBody>(body).is_err() {
+                return fail(400, "bad_request");
+            }
+            ("sweep", svc.sweep().await)
         }
         "/api/fulfil" => {
             let Ok(b) = serde_json::from_slice::<FulfilBody>(body) else {

@@ -1,0 +1,56 @@
+#!/usr/local/bin/node
+// Billing sweep tick (ADR 0008 §5): grace → pause, renewal → resume. Run
+// hourly by kubcode-billing-sweep.timer: one signed POST {} to the billing
+// Function URL's /api/sweep (KUBCODE-HMAC-V1, as lib/keys/connect-config.ts).
+// Does nothing until billing is enabled. Env comes from /etc/kubcode/web.env.
+// Disconnecting long-paused channels from Zernio is done by the publishing
+// worker (it holds the Zernio key), not here.
+"use strict";
+const { createHash, createHmac, randomBytes } = require("node:crypto");
+
+const LAMBDA_URL = /^https:\/\/[a-z0-9]{20,64}\.lambda-url\.ap-southeast-1\.on\.aws\/$/;
+const PATH = "/api/sweep";
+
+/** The request to send, or null while billing is off. Throws on bad config. */
+function signedRequest(env, timestamp, nonce) {
+  if (env.KUBCODE_BILLING_ENABLED !== "true") return null;
+  const url = env.KUBCODE_BILLING_URL || "";
+  const key = env.KUBCODE_BILLING_HMAC_KEY || "";
+  if (!LAMBDA_URL.test(url)) throw new Error("billing-sweep: KUBCODE_BILLING_URL is not a Function URL");
+  if (Buffer.byteLength(key, "utf8") < 32) throw new Error("billing-sweep: KUBCODE_BILLING_HMAC_KEY too short");
+  const body = "{}";
+  const bodyHash = createHash("sha256").update(body, "utf8").digest("hex");
+  const toSign = ["KUBCODE-HMAC-V1", "POST", PATH, String(timestamp), nonce, bodyHash].join("\n");
+  return {
+    url: new URL(PATH.slice(1), url).href,
+    init: {
+      method: "POST",
+      headers: {
+        "content-type": "application/json",
+        "x-kubcode-timestamp": String(timestamp),
+        "x-kubcode-nonce": nonce,
+        "x-kubcode-signature": createHmac("sha256", key).update(toSign, "utf8").digest("hex"),
+      },
+      body,
+      redirect: "error",
+    },
+  };
+}
+
+async function main() {
+  const req = signedRequest(process.env, Math.floor(Date.now() / 1000), randomBytes(16).toString("hex"));
+  if (!req) return;
+  const res = await fetch(req.url, { ...req.init, signal: AbortSignal.timeout(55_000) });
+  const text = await res.text();
+  // Counts only.
+  console.log(`billing-sweep: ${res.status} ${text.slice(0, 200)}`);
+  if (!res.ok) process.exitCode = 1;
+}
+
+module.exports = { signedRequest };
+if (require.main === module) {
+  main().catch((e) => {
+    console.error(`billing-sweep: ${e && e.message ? e.message : e}`);
+    process.exitCode = 1;
+  });
+}

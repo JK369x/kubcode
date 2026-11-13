@@ -241,6 +241,12 @@ impl BillingStore for MemStore {
     async fn event_seen(&self, id: &str) -> Result<bool, StoreError> {
         Ok(self.0.lock().unwrap().events.iter().any(|e| e == id))
     }
+    async fn sweep(
+        &mut self,
+        _now: OffsetDateTime,
+    ) -> Result<(usize, usize, usize, usize), StoreError> {
+        Ok((1, 0, 0, 0))
+    }
 }
 
 #[async_trait]
@@ -801,4 +807,15 @@ fn every_fixture_event_parses_and_has_a_valid_id() {
         assert!(webhook::valid_event_id(&e.id), "{f}");
         assert!(!e.livemode);
     }
+}
+
+#[tokio::test]
+async fn sweep_is_signed_and_takes_only_an_empty_body() {
+    let mut h = h();
+    let (s, b) = h.call("/api/sweep", "{}", &nonce(40)).await;
+    assert_eq!(
+        (s, b["ok"].clone(), b["workspaces"].clone()),
+        (200, Value::Bool(true), Value::from(1))
+    );
+    assert_eq!(h.call("/api/sweep", r#"{"x":1}"#, &nonce(41)).await.0, 400);
 }

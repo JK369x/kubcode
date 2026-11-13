@@ -72,6 +72,9 @@ install -o root -g root -m 755 worker-tick /usr/local/lib/kubcode/worker-tick
 install -o root -g root -m 644 kubcode-web.service /etc/systemd/system/kubcode-web.service
 install -o root -g root -m 644 kubcode-worker.service /etc/systemd/system/kubcode-worker.service
 install -o root -g root -m 644 kubcode-worker.timer /etc/systemd/system/kubcode-worker.timer
+install -o root -g root -m 755 billing-sweep /usr/local/lib/kubcode/billing-sweep
+install -o root -g root -m 644 kubcode-billing-sweep.service /etc/systemd/system/kubcode-billing-sweep.service
+install -o root -g root -m 644 kubcode-billing-sweep.timer /etc/systemd/system/kubcode-billing-sweep.timer
 install -o root -g root -m 644 Caddyfile /etc/caddy/Caddyfile
 install -o root -g root -m 644 sshd-kubcode.conf /etc/ssh/sshd_config.d/10-kubcode.conf
 install -o root -g root -m 440 sudoers-kubcode-deploy /etc/sudoers.d/kubcode-deploy
@@ -92,6 +95,7 @@ if [ "$NO_SYSTEMD" != 1 ]; then
   systemctl enable kubcode-web.service >/dev/null
   # The tick does nothing until publishing and automations are enabled in web.env.
   systemctl enable --now kubcode-worker.timer >/dev/null
+  systemctl enable --now kubcode-billing-sweep.timer >/dev/null
   systemctl reload caddy || systemctl restart caddy
   # Ubuntu 24.04 starts sshd per connection (ssh.socket): new logins read the
   # new config; reload only if a daemon is running.
