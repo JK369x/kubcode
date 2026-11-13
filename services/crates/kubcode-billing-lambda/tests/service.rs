@@ -819,3 +819,18 @@ async fn sweep_is_signed_and_takes_only_an_empty_body() {
     );
     assert_eq!(h.call("/api/sweep", r#"{"x":1}"#, &nonce(41)).await.0, 400);
 }
+
+#[test]
+fn the_method_used_comes_from_the_charge_not_the_allowed_list() {
+    use billing_lambda::stripe::{payment_method, Session};
+    // Recorded shape (2026-11-13 local E2E): the intent allows card and
+    // promptpay; only the charge says which one paid.
+    let card: Session = serde_json::from_slice(&fixture("session_paid_card.json")).unwrap();
+    let pp: Session = serde_json::from_slice(&fixture("session_paid_promptpay.json")).unwrap();
+    assert_eq!(payment_method(&card), Some("card"));
+    assert_eq!(payment_method(&pp), Some("promptpay"));
+    let mut v = fixture_json("session_paid_card.json");
+    v["payment_intent"]["latest_charge"] = Value::String("ch_notexpanded".into());
+    let s: Session = serde_json::from_value(v).unwrap();
+    assert_eq!(payment_method(&s), None);
+}
