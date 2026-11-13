@@ -7,6 +7,7 @@ import fs from "node:fs";
 import path from "node:path";
 import {
   ACCOUNT_ID,
+  BILLING_PARAMETERS,
   GITHUB_OIDC_PROVIDER_ARN,
   NAMES,
   PACKAGES,
@@ -18,7 +19,7 @@ import {
   packageSourceDir,
   validatePackageSignerKey,
 } from "../src/constants";
-import { lambdaTrustPolicy, oauthConnectPolicy, packageSignerPolicy, publishingPolicy } from "../src/policies";
+import { billingPolicy, lambdaTrustPolicy, oauthConnectPolicy, packageSignerPolicy, publishingPolicy } from "../src/policies";
 
 type Recorded = { type: string; name: string; inputs: any; provider?: string };
 let resources: Recorded[] = [];
@@ -90,6 +91,7 @@ async function build(
     packageSignerKey?: pulumi.Input<string>;
     oauthConnect?: boolean;
     publishing?: boolean;
+    billing?: boolean;
   } = {},
 ) {
   resources = [];
@@ -104,6 +106,7 @@ async function build(
     packageSignerKey: opts.packageSignerKey,
     oauthConnect: opts.oauthConnect ?? false,
     publishing: opts.publishing ?? false,
+    billing: opts.billing ?? false,
   });
   await Promise.all(Object.values(out).map((o) => settle(pulumi.output(o))));
   // Let dependent resources (policies built from other outputs) register.
@@ -550,4 +553,64 @@ test("publishing role: decrypt only through SSM and only its own parameters; not
   );
   const wrap = JSON.parse(byType("aws:kms/keyPolicy:KeyPolicy").find((p) => p.name === "secrets-wrap-key-policy")!.inputs.policy);
   assert.deepEqual(wrap.Statement.find((s: any) => s.Sid === "KeyDecrypt").Principal.AWS, [CONNECT_ROLE_ARN]);
+});
+
+const BILLING_ROLE_ARN = `arn:aws:iam::${ACCOUNT_ID}:role/${NAMES.billingRole}`;
+
+test("billing: off unless kubcode:billing is true", async () => {
+  await build({ publishing: true });
+  assert.equal(byName("aws:iam/role:Role", NAMES.billingRole), undefined);
+  assert.equal(byName("aws:lambda/function:Function", NAMES.billingFunction), undefined);
+  const secrets = JSON.parse(byType("aws:kms/keyPolicy:KeyPolicy").find((p) => p.name === "secrets-key-policy")!.inputs.policy);
+  assert.equal(secrets.Statement.find((s: any) => s.Sid === "BillingSsmParameterRead"), undefined);
+});
+
+test("billing role: its own kubcode-lambda-* role, boundary, logs + its own SSM parameters only", async () => {
+  await build({ publishing: true, billing: true });
+  const role = byName("aws:iam/role:Role", NAMES.billingRole)!;
+  assert.match(NAMES.billingRole, /^kubcode-lambda-/);
+  assert.notEqual(NAMES.billingRole, NAMES.publishingRole, "the Stripe key never shares the Zernio key's role");
+  assert.equal(role.inputs.permissionsBoundary, BOUNDARY_ARN);
+  assert.deepEqual(JSON.parse(role.inputs.assumeRolePolicy), lambdaTrustPolicy());
+  const policy = JSON.parse(byName("aws:iam/rolePolicy:RolePolicy", NAMES.billingRole)!.inputs.policy);
+  assert.deepEqual(policy, billingPolicy({ logGroupName: NAMES.billingLogGroup }));
+  const ssm: any = policy.Statement.find((s: any) => s.Sid === "ReadOwnParameters");
+  assert.deepEqual(ssm.Resource, Object.values(BILLING_PARAMETERS).map((n) => `arn:aws:ssm:ap-southeast-1:${ACCOUNT_ID}:parameter${n}`));
+  assert.ok(!ssm.Resource.some((r: string) => r.includes("zernio") || r.includes("worker-db-url") || r.includes("publishing")));
+  const text = JSON.stringify(policy);
+  for (const banned of ["s3:", "kms:", "lambda:", "iam:", "\"*\""]) assert.ok(!text.includes(banned), banned);
+});
+
+test("billing function: Rust custom runtime, one Function URL, no secrets in env, live mode off", async () => {
+  const out = await build({ billing: true });
+  const fn = byName("aws:lambda/function:Function", NAMES.billingFunction)!.inputs;
+  assert.equal(fn.runtime, "provided.al2023");
+  assert.equal(fn.handler, "bootstrap");
+  assert.equal(fn.role, BILLING_ROLE_ARN);
+  assert.deepEqual(fn.environment.variables, { KUBCODE_SITE_ORIGIN: "https://kubcode.dev" });
+  assert.ok(seen({ kind: "FileArchive", path: "../services/crates/kubcode-billing-lambda/dist/bootstrap.zip" }));
+  const urls = byType("aws:lambda/functionUrl:FunctionUrl").filter((u) => u.inputs.functionName === NAMES.billingFunction);
+  assert.equal(urls.length, 1);
+  assert.equal(urls[0].inputs.authorizationType, "NONE");
+  assert.equal(byName("aws:cloudwatch/logGroup:LogGroup", NAMES.billingLogGroup)!.inputs.retentionInDays, 14);
+  assert.ok(await new Promise((r) => pulumi.output(out.billingUrl).apply(r)));
+});
+
+test("billing role: decrypts only its own SSM parameters, in a statement separate from publishing", async () => {
+  await build({ publishing: true, billing: true });
+  const secrets = JSON.parse(byType("aws:kms/keyPolicy:KeyPolicy").find((p) => p.name === "secrets-key-policy")!.inputs.policy);
+  const pub = secrets.Statement.find((s: any) => s.Sid === "SsmParameterRead");
+  const bill = secrets.Statement.find((s: any) => s.Sid === "BillingSsmParameterRead");
+  assert.ok(!pub.Principal.AWS.includes(BILLING_ROLE_ARN));
+  assert.deepEqual(bill.Principal.AWS, [BILLING_ROLE_ARN]);
+  assert.equal(bill.Action, "kms:Decrypt");
+  assert.equal(bill.Condition.StringEquals["kms:ViaService"], "ssm.ap-southeast-1.amazonaws.com");
+  assert.deepEqual(
+    bill.Condition.StringEquals["kms:EncryptionContext:PARAMETER_ARN"],
+    Object.values(BILLING_PARAMETERS).map((n) => `arn:aws:ssm:ap-southeast-1:${ACCOUNT_ID}:parameter${n}`),
+  );
+  const keyUse = secrets.Statement.find((s: any) => s.Sid === "KeyUse");
+  assert.ok(!keyUse || !JSON.stringify(keyUse).includes(NAMES.billingRole));
+  const wrap = JSON.parse(byType("aws:kms/keyPolicy:KeyPolicy").find((p) => p.name === "secrets-wrap-key-policy")!.inputs.policy);
+  assert.ok(!JSON.stringify(wrap).includes(NAMES.billingRole), "never the wrap key");
 });

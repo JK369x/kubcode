@@ -114,6 +114,10 @@ jobs:
       - name: Build publishing Lambda (static musl binary)
         working-directory: ${{ github.workspace }}
         run: bash services/crates/kubcode-publishing-lambda/build-lambda.sh
+      # Same for the billing Lambda (kubcode:billing).
+      - name: Build billing Lambda (static musl binary)
+        working-directory: ${{ github.workspace }}
+        run: bash services/crates/kubcode-billing-lambda/build-lambda.sh
       - name: Install Pulumi CLI (pinned, checksum verified)
         run: |
           tgz="$RUNNER_TEMP/pulumi.tgz"
@@ -191,6 +195,10 @@ jobs:
       - name: Build publishing Lambda (static musl binary)
         working-directory: ${{ github.workspace }}
         run: bash services/crates/kubcode-publishing-lambda/build-lambda.sh
+      # Same for the billing Lambda (kubcode:billing).
+      - name: Build billing Lambda (static musl binary)
+        working-directory: ${{ github.workspace }}
+        run: bash services/crates/kubcode-billing-lambda/build-lambda.sh
       - name: Install Pulumi CLI (pinned, checksum verified)
         run: |
           tgz="$RUNNER_TEMP/pulumi.tgz"

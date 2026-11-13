@@ -8,6 +8,8 @@ import * as pulumi from "@pulumi/pulumi";
 import * as aws from "@pulumi/aws";
 import {
   ACCOUNT_ID,
+  BILLING_BINARY,
+  BILLING_PARAMETERS,
   GITHUB_OIDC_PROVIDER_ARN,
   GITHUB_SUBJECTS,
   MEDIA_CORS_ORIGIN,
@@ -26,6 +28,7 @@ import {
   validatePackageSignerKey,
 } from "./constants";
 import {
+  billingPolicy,
   deployBoundaryPolicy,
   deployPolicy,
   githubTrustPolicy,
@@ -56,6 +59,8 @@ export type StackConfig = {
   oauthConnect: boolean;
   /** Deploy the publishing Lambda pair (kubcode:publishing). Its role joins the secrets key's KeyUse. */
   publishing?: boolean;
+  /** Deploy the billing Lambda (kubcode:billing, ADR 0008). Its role may only decrypt its own SSM parameters. */
+  billing?: boolean;
 };
 
 const json = (v: unknown) => JSON.stringify(v);
@@ -197,10 +202,27 @@ export function createStack(cfg: StackConfig) {
         opts,
       )
     : undefined;
+  // --- Billing Lambda role (ADR 0008): its own role, so the Stripe key and the
+  // Zernio key never share one. Reads only its own SSM SecureStrings.
+  const billingTags = { service: "billing" };
+  const billingRole = cfg.billing
+    ? new aws.iam.Role(
+        "billing-role",
+        {
+          name: NAMES.billingRole,
+          description: "kubcode-billing Lambda: Stripe Checkout month pass and Stripe webhooks",
+          assumeRolePolicy: json(lambdaTrustPolicy()),
+          permissionsBoundary: boundary.arn,
+          tags: billingTags,
+        },
+        opts,
+      )
+    : undefined;
   const secretsKeyUsers = [...cfg.secretsKeyUserArns, ...(connectRole ? [connectRole.arn] : [])];
   // The publishing role only reads its own SecureStrings: a narrow statement,
   // not KeyUse.
   const ssmReaderArns = publishingRole ? [publishingRole.arn] : [];
+  const billingReaderArns = billingRole ? [billingRole.arn] : [];
   const wrapKeyDecrypters = [...cfg.wrapKeyDecryptArns, ...(connectRole ? [connectRole.arn] : [])];
 
   new aws.kms.KeyPolicy(
@@ -208,8 +230,8 @@ export function createStack(cfg: StackConfig) {
     {
       keyId: secretsKey.keyId,
       policy: pulumi
-        .all([deployRole.arn, previewRole.arn, pulumi.all(secretsKeyUsers), pulumi.all(ssmReaderArns)])
-        .apply(([deployArn, previewArn, userArns, readerArns]) =>
+        .all([deployRole.arn, previewRole.arn, pulumi.all(secretsKeyUsers), pulumi.all(ssmReaderArns), pulumi.all(billingReaderArns)])
+        .apply(([deployArn, previewArn, userArns, readerArns, billingArns]) =>
           json(
             secretsKeyPolicy({
               adminArns: [deployArn, ...cfg.breakGlassAdminArns],
@@ -218,6 +240,8 @@ export function createStack(cfg: StackConfig) {
               // The admin sets the step-5 SSM SecureStrings with this key.
               ssmWriterArns: cfg.breakGlassAdminArns,
               ssmReaders: { arns: readerArns, parameterNames: Object.values(PUBLISHING_PARAMETERS) },
+              // A second, separate reader statement: billing decrypts only its own parameters.
+              billingSsmReaders: { arns: billingArns, parameterNames: Object.values(BILLING_PARAMETERS) },
             }),
           ),
         ),
@@ -536,7 +560,55 @@ export function createStack(cfg: StackConfig) {
     publishingUrl = url.functionUrl;
   }
 
+  // --- Billing Lambda (ADR 0008): one function behind a Function URL. The web
+  // host signs /api/* with HMAC; Stripe signs /stripe/webhook.
+  let billingUrl: pulumi.Output<string> | undefined;
+  if (billingRole) {
+    const rolePolicy = new aws.iam.RolePolicy(
+      "billing-policy",
+      { name: NAMES.billingRole, role: billingRole.name, policy: json(billingPolicy({ logGroupName: NAMES.billingLogGroup })) },
+      opts,
+    );
+    const logGroup = new aws.cloudwatch.LogGroup(
+      "billing-logs",
+      { name: NAMES.billingLogGroup, retentionInDays: PACKAGE_LOG_RETENTION_DAYS, tags: billingTags },
+      opts,
+    );
+    const fn = new aws.lambda.Function(
+      "billing",
+      {
+        name: NAMES.billingFunction,
+        description: "Billing: Stripe Checkout month pass (web host HMAC) and Stripe webhooks",
+        role: billingRole.arn,
+        runtime: "provided.al2023",
+        architectures: ["x86_64"],
+        handler: "bootstrap",
+        memorySize: 256,
+        timeout: 30,
+        code: new pulumi.asset.FileArchive(BILLING_BINARY),
+        // Not secrets: the site origin for Checkout return URLs. Secrets come from SSM.
+        // Live mode stays off: no KUBCODE_STRIPE_ALLOW_LIVE (ADR 0008).
+        environment: { variables: { KUBCODE_SITE_ORIGIN: "https://kubcode.dev" } },
+        tags: billingTags,
+      },
+      { ...opts, dependsOn: [rolePolicy, logGroup] },
+    );
+    const url = new aws.lambda.FunctionUrl("billing-url", { functionName: fn.name, authorizationType: "NONE" }, opts);
+    new aws.lambda.Permission(
+      "billing-url-access",
+      { function: fn.name, action: "lambda:InvokeFunctionUrl", principal: "*", functionUrlAuthType: "NONE" },
+      opts,
+    );
+    new aws.lambda.Permission(
+      "billing-url-invoke",
+      { function: fn.name, action: "lambda:InvokeFunction", principal: "*", invokedViaFunctionUrl: true },
+      opts,
+    );
+    billingUrl = url.functionUrl;
+  }
+
   return {
+    billingUrl,
     mediaBucket: media.bucket,
     secretsKeyArn: secretsKey.arn,
     secretsKeyAlias: pulumi.output(NAMES.secretsKeyAlias),

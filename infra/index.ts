@@ -28,6 +28,8 @@ const outputs = createStack({
   oauthConnect: config.getBoolean("oauthConnect") ?? false,
   // The publishing Lambdas (docs/design/publishing-core.md §4).
   publishing: config.getBoolean("publishing") ?? false,
+  // The billing Lambda (ADR 0008). Off until the owner sets kubcode:billing.
+  billing: config.getBoolean("billing") ?? false,
 });
 
 export const mediaBucket = outputs.mediaBucket;
@@ -41,3 +43,4 @@ export const boundaryPolicyArn = outputs.boundaryPolicyArn;
 export const packageSignerUrl = outputs.packageSignerUrl;
 export const oauthConnectUrl = outputs.oauthConnectUrl;
 export const publishingUrl = outputs.publishingUrl;
+export const billingUrl = outputs.billingUrl;
