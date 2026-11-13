@@ -20,6 +20,8 @@ import { connectHeaders } from "../keys/connect-config";
 import { sessionOf } from "../keys/connect-routes";
 import { isConnectable, readPublishingConfig, type PublishingConfig } from "./config";
 import { getChannelStore, type ChannelStore } from "./store";
+import { readBillingConfig } from "../billing/config";
+import { canConnectAnother, getBillingStore, type BillingStore } from "../billing/store";
 
 export type ChannelRouteDeps = {
   env?: AuthEnv;
@@ -27,6 +29,7 @@ export type ChannelRouteDeps = {
   fetch?: typeof fetch;
   /** Milliseconds since the epoch. */
   now?: () => number;
+  billingStoreFor?: (databaseUrl: string) => BillingStore;
 };
 
 export const CHANNEL_COOKIE = "__Host-kubcode-chconnect";
@@ -37,7 +40,7 @@ const CALL_TIMEOUT_MS = 20_000;
 /** Our own parameter on the callback; never forwarded. */
 const OWN_PARAMS = new Set(["i"]);
 
-type RouteError = "NOT_FOUND_FEATURE" | "UNAVAILABLE" | "FORBIDDEN" | "NOT_SIGNED_IN" | "CHANNEL_NOT_FOUND" | "PROVIDER_QUOTA";
+type RouteError = "NOT_FOUND_FEATURE" | "UNAVAILABLE" | "FORBIDDEN" | "NOT_SIGNED_IN" | "CHANNEL_NOT_FOUND" | "PROVIDER_QUOTA" | "SLOTS_FULL";
 const ERRORS: Record<RouteError, { status: number; message: string }> = {
   NOT_FOUND_FEATURE: { status: 404, message: "ไม่พบหน้านี้" },
   UNAVAILABLE: { status: 503, message: "ระบบเชื่อมช่องยังไม่พร้อม ลองใหม่ภายหลัง" },
@@ -46,6 +49,8 @@ const ERRORS: Record<RouteError, { status: number; message: string }> = {
   CHANNEL_NOT_FOUND: { status: 404, message: "ไม่พบช่องนี้" },
   // The provider refuses another account until its billing allows one.
   PROVIDER_QUOTA: { status: 409, message: "บัญชีผู้ให้บริการเชื่อมต่อใช้โควตาช่องเต็มแล้ว แจ้งผู้ดูแลระบบ" },
+  // ADR 0008: connected channels ≤ paid slots (the owner is exempt).
+  SLOTS_FULL: { status: 402, message: "ช่องที่จ่ายไว้เต็มแล้ว ซื้อช่องเพิ่มที่หน้าการชำระเงินก่อนเชื่อมช่องใหม่" },
 };
 
 const errorResponse = (code: RouteError) =>
@@ -125,6 +130,22 @@ export async function handleChannelConnect(request: Request, deps: ChannelRouteD
   );
   if (ctx instanceof Response) return ctx;
   const session = ctx.session;
+  // Billing gate, only while billing is on: a member may connect another
+  // channel only with a free paid slot. Off = today's behaviour (owner-only beta).
+  const env = deps.env ?? process.env;
+  if (readBillingConfig(env).mode !== "off") {
+    const accounts = readAccountsConfig(env);
+    if (accounts.mode !== "on") return errorResponse("UNAVAILABLE");
+    try {
+      const store = deps.billingStoreFor?.(accounts.databaseUrl) ?? getBillingStore(accounts.databaseUrl);
+      const view = await store.view(session, new Date((deps.now ?? Date.now)()));
+      if (!view) return errorResponse("NOT_SIGNED_IN");
+      if (!canConnectAnother(view, new Date((deps.now ?? Date.now)()))) return errorResponse("SLOTS_FULL");
+    } catch (error) {
+      logDbFailure("BILLING_GATE", error);
+      return errorResponse("UNAVAILABLE");
+    }
+  }
   const state = randomBytes(32).toString("hex");
   const cookieToken = newOpaqueToken();
   const answer = await callLambda(

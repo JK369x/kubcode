@@ -67,6 +67,8 @@ test("pricing: available paid plan shows a disabled 'soon' button while billing 
 
 test("pricing: coming-soon plans can never be bought, even with billing on", () => {
   process.env.KUBCODE_BILLING_ENABLED = "true";
+  process.env.KUBCODE_BILLING_URL = "https://abcdefghijklmnopqrstuvwxyz012345.lambda-url.ap-southeast-1.on.aws/";
+  process.env.KUBCODE_BILLING_HMAC_KEY = "FIXTURE-ONLY-billing-hmac-key-000000000000000000";
   try {
     const h = html(Pricing);
     assert.match(cardOf(h, "social"), /href="\/account\/billing"/);
@@ -79,6 +81,8 @@ test("pricing: coming-soon plans can never be bought, even with billing on", () 
     }
   } finally {
     delete process.env.KUBCODE_BILLING_ENABLED;
+    delete process.env.KUBCODE_BILLING_URL;
+    delete process.env.KUBCODE_BILLING_HMAC_KEY;
   }
 });
 
