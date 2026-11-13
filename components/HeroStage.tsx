@@ -1,15 +1,21 @@
 "use client";
 import { useCallback, useEffect, useRef, useState, type CSSProperties } from "react";
 import Image from "next/image";
-import { ArrowRight, ChevronLeft, ChevronRight, Pause, Play } from "lucide-react";
+import { ArrowRight, BadgeCheck, CalendarClock, Check, ChevronLeft, ChevronRight, Clapperboard, MessageCircle, MessagesSquare, Pause, Play } from "lucide-react";
 import { commonPrefix, graphemes, headlinePhrase, type HeroClip } from "@/lib/hero-stage";
 import { Button } from "@/components/ui/button";
 import { Toggle } from "@/components/ui/toggle";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { cn } from "@/lib/utils";
 import styles from "./HeroStage.module.css";
+import { PLATFORMS, PlatformLogo } from "./PlatformLogo";
+import { SOCIAL_SCREENS, SocialStage } from "./SocialStage";
+import { PRODUCTS, productFromSearch, type ProductId } from "@/lib/products";
 
 const AUTO_MS = 6000;
+const SOCIAL_MS = 4000;
+/** Social aura: a fixed brand palette (Instagram pink → kubcode purple → TikTok cyan) instead of clip colours. */
+const SOCIAL_AURA = { deep: "#3b1a6b", accent: "#ff3d8b", cool: "#25f4ee" } as const;
 
 /** Reduced motion or Save-Data: posters only, no autoplay, no typing. */
 function useStill(): boolean | null {
@@ -46,7 +52,8 @@ function Typewriter({ text, still }: { text: string; still: boolean }) {
       el.style.removeProperty("--tw-fit");
       const probe = document.createElement("span");
       probe.className = el.firstElementChild?.className ?? "";
-      probe.style.cssText = "position:absolute;visibility:hidden;white-space:nowrap";
+      // max-width:none: the typed span is capped at the line width, the probe must not be.
+      probe.style.cssText = "position:absolute;visibility:hidden;white-space:nowrap;max-width:none;width:max-content";
       probe.textContent = text;
       el.append(probe);
       const need = probe.getBoundingClientRect().width;
@@ -148,10 +155,30 @@ function Layer({ clip, on, play, priority }: { clip: HeroClip; on: boolean; play
  * active preview plays, only while visible; reduced motion / Save-Data show
  * posters only. Only the next clip's poster is preloaded.
  */
-export function HeroStage({ clips, headingId }: { clips: readonly HeroClip[]; headingId: string }) {
+export function HeroStage({ clips, headingId, pricing = false }: { clips: readonly HeroClip[]; headingId: string; pricing?: boolean }) {
+  const [product, setProduct] = useState<ProductId>("studio");
+  const copy = PRODUCTS[product];
+  // ?product=studio|social, read after hydration so the static page stays one HTML.
+  useEffect(() => setProduct(productFromSearch(window.location.search)), []);
+  const chooseProduct = (p: ProductId) => {
+    setProduct(p);
+    const url = new URL(window.location.href);
+    if (p === "studio") url.searchParams.delete("product");
+    else url.searchParams.set("product", p);
+    window.history.replaceState(window.history.state, "", url);
+  };
   const checked = useStill();
   const still = checked !== false;
+  // Social: line 2 types its phrases in turn (still: the first one only).
+  const [socialIndex, setSocialIndex] = useState(0);
+  const socialPhrase = PRODUCTS.social.line2[socialIndex % PRODUCTS.social.line2.length];
+  useEffect(() => {
+    if (product !== "social" || still) return;
+    const t = setTimeout(() => setSocialIndex((i) => i + 1), 3200);
+    return () => clearTimeout(t);
+  }, [product, still, socialIndex]);
   const [index, setIndex] = useState(0);
+  const [screen, setScreen] = useState(0);
   const [auto, setAuto] = useState(true);
   const [held, setHeld] = useState(false); // hover / focus in the picker pauses, without turning auto off
   const [visible, setVisible] = useState(true);
@@ -197,10 +224,24 @@ export function HeroStage({ clips, headingId }: { clips: readonly HeroClip[]; he
   // Auto-advance: off for good once someone picks; held while they browse.
   const running = auto && !held && !still && visible;
   useEffect(() => {
-    if (!running) return;
+    if (!running || product !== "studio") return;
     const t = setTimeout(() => select(index + 1), AUTO_MS);
     return () => clearTimeout(t);
-  }, [running, index, select]);
+  }, [running, index, select, product]);
+  // Social demo: ~4 s per screen, same rules (stops on a pick, held while browsing, only when visible).
+  const pickScreen = (n: number, opts: { user?: boolean } = {}) => {
+    const k = (n + SOCIAL_SCREENS.length) % SOCIAL_SCREENS.length;
+    setScreen(k);
+    if (opts.user) {
+      setAuto(false);
+      setLive(`กำลังโชว์ ${SOCIAL_SCREENS[k].title}`);
+    }
+  };
+  useEffect(() => {
+    if (!running || product !== "social") return;
+    const t = setTimeout(() => setScreen((k) => (k + 1) % SOCIAL_SCREENS.length), SOCIAL_MS);
+    return () => clearTimeout(t);
+  }, [running, screen, product]);
 
   // Preload only the next clip's poster.
   useEffect(() => {
@@ -213,70 +254,155 @@ export function HeroStage({ clips, headingId }: { clips: readonly HeroClip[]; he
     return () => link.remove();
   }, [next, still]);
 
-  const aura = { "--deep": clip.deep, "--accent": clip.accent } as CSSProperties;
+  const aura: Record<string, string> =
+    product === "social"
+      ? { "--deep": SOCIAL_AURA.deep, "--accent": SOCIAL_AURA.accent, "--cool": SOCIAL_AURA.cool }
+      : { "--deep": clip.deep, "--accent": clip.accent };
   const by = clip.agent;
 
   return (
-    <div className={styles.stageArea} style={aura}>
+    <div className={styles.stageArea} style={aura as CSSProperties} data-product={product}>
       <div className={styles.aura} aria-hidden="true" />
       <div className={styles.grid}>
         <div className={styles.copy}>
-          <h1 id={headingId} className={styles.title}>
-            <span className={styles.line1}>เห็นคลิปไหนถูกใจ</span>{" "}
-            <Typewriter text={headlinePhrase(clip)} still={still} />
+          {/* Owner 2026-11-13: two product families; ?product=studio|social. */}
+          <ToggleGroup
+            type="single"
+            value={product}
+            onValueChange={(v) => v && chooseProduct(v as ProductId)}
+            aria-label="เลือกผลิตภัณฑ์"
+            className={styles.products}
+          >
+            <ToggleGroupItem value="studio" data-product="studio" className={styles.productTab}>
+              <Clapperboard aria-hidden="true" />
+              <span>
+                <b>Studio</b> · {PRODUCTS.studio.tab}
+              </span>
+            </ToggleGroupItem>
+            <ToggleGroupItem value="social" data-product="social" className={styles.productTab}>
+              <MessagesSquare aria-hidden="true" />
+              <span>
+                <b>Social</b> · {PRODUCTS.social.tab}
+              </span>
+            </ToggleGroupItem>
+          </ToggleGroup>
+          <p className={styles.productEyebrow}>{copy.eyebrow}</p>
+          <h1 id={headingId} className={styles.title} data-product={product}>
+            <span className={styles.line1}>{copy.line1}</span>{" "}
+            <Typewriter text={product === "studio" ? headlinePhrase(clip) : socialPhrase} still={still} />
           </h1>
-          <p className={styles.lead}>ทุกคลิปในจอนี้ทำด้วยสกิลฟรีบน kubcode กับ AI agent ในคอมคุณเอง ไม่ต้องตัดต่อเอง</p>
+          <p className={styles.lead}>{copy.lead}</p>
+          <ul className={styles.points} aria-label={`${copy.name} เหมาะกับ`}>
+            {copy.points.map((pt) => (
+              <li key={pt}>
+                <Check aria-hidden="true" />
+                {pt}
+              </li>
+            ))}
+          </ul>
           <div className={styles.actions}>
             {/* Primary: solid brand purple (MASTER.md --primary / --primary-foreground,
                 9.4 / 7.2:1); secondary: outline of the same 48px height. Buttons
                 never carry the link underline (components/ui/button.tsx). */}
-            <Button asChild size="lg" className="rounded-full px-6 text-base font-semibold">
-              <a href="#get-started">
-                เริ่มทำคลิปแรก
+            <Button asChild size="lg" className={cn("rounded-full px-6 text-base font-semibold", styles.cta)}>
+              <a href={copy.cta.href}>
+                {copy.cta.label}
                 <ArrowRight aria-hidden="true" />
               </a>
             </Button>
-            <Button asChild size="lg" variant="outline" className="rounded-full bg-background/40 px-6 text-base">
-              <a href="#skill-index">ดูทุกแนวคลิป</a>
-            </Button>
+            {pricing ? (
+              <Button asChild size="lg" variant="outline" className="rounded-full bg-background/40 px-6 text-base">
+                <a href="/pricing">ดูราคา</a>
+              </Button>
+            ) : product === "studio" ? (
+              <Button asChild size="lg" variant="outline" className="rounded-full bg-background/40 px-6 text-base">
+                <a href="#skill-index">ดูทุกแนวคลิป</a>
+              </Button>
+            ) : null}
           </div>
-          <p className={styles.works}>
-            ทำได้ด้วย{" "}
-            <a href="/tools/claude-code">
-              <img src="/tool-icons/claudecode.svg" alt="" width={18} height={18} decoding="async" loading="eager" />
-              Claude Code
-            </a>{" "}
-            หรือ{" "}
-            <a href="/tools/opencode">
-              <img src="/tool-icons/opencode.svg" alt="" width={18} height={18} decoding="async" loading="eager" />
-              OpenCode
-            </a>
+          {product === "studio" ? (
+            <p className={styles.works}>
+              ทำได้ด้วย{" "}
+              <a href="/tools/claude-code">
+                <img src="/tool-icons/claudecode.svg" alt="" width={18} height={18} decoding="async" loading="eager" />
+                Claude Code
+              </a>{" "}
+              หรือ{" "}
+              <a href="/tools/opencode">
+                <img src="/tool-icons/opencode.svg" alt="" width={18} height={18} decoding="async" loading="eager" />
+                OpenCode
+              </a>
+            </p>
+          ) : null}
+          {/* Owner 2026-11-13: posting and replies run through kubcode, in one place. */}
+          <p className={styles.social}>
+            <span>ตั้งเวลาโพสต์และตอบคอมเมนต์ผ่าน kubcode ได้ในที่เดียว</span>
+            {(["youtube", "instagram", "tiktok"] as const).map((p) => (
+              <span key={p} className={styles.socialChip}>
+                <PlatformLogo platform={p} size={16} decorative />
+                {PLATFORMS[p].name}
+              </span>
+            ))}
           </p>
         </div>
 
         <div className={styles.stageWrap}>
           <div className={styles.phone}>
-            <div ref={stage} className={styles.screen} role="img" aria-label={`${clip.label} · ${clip.visualTh} · ${clip.storyTh}`}>
-              {rendered.map((i) => (
-                <Layer
-                  key={clips[i].id}
-                  clip={clips[i]}
-                  on={i === index}
-                  play={i === index && visible && !still}
-                  priority={i === 0}
-                />
-              ))}
+            {/* Both stages stay mounted in the same box: switching products only
+                crossfades (≤200 ms, none under reduced motion), so nothing jumps. */}
+            <div ref={stage} className={styles.screen}>
+              <div
+                className={styles.stageLayer}
+                data-on={product === "studio" ? "" : undefined}
+                aria-hidden={product !== "studio"}
+                role="img"
+                aria-label={`${clip.label} · ${clip.visualTh} · ${clip.storyTh}`}
+              >
+                {rendered.map((i) => (
+                  <Layer
+                    key={clips[i].id}
+                    clip={clips[i]}
+                    on={i === index}
+                    play={product === "studio" && i === index && visible && !still}
+                    priority={i === 0}
+                  />
+                ))}
+              </div>
+              <div
+                className={styles.stageLayer}
+                data-on={product === "social" ? "" : undefined}
+                aria-hidden={product !== "social"}
+                role="img"
+                aria-label={`ตัวอย่างบนช่องของคุณ: ${SOCIAL_SCREENS[screen].title}`}
+              >
+                {product === "social" && <SocialStage screen={screen} />}
+              </div>
             </div>
-            <Button type="button" variant="outline" size="icon" className={cn(styles.ctrl, styles.prev)} aria-label="คลิปก่อนหน้า" onClick={() => select(index - 1, { user: true })}>
-              <ChevronLeft aria-hidden="true" />
-            </Button>
-            <Button type="button" variant="outline" size="icon" className={cn(styles.ctrl, styles.next)} aria-label="คลิปถัดไป" onClick={() => select(index + 1, { user: true })}>
-              <ChevronRight aria-hidden="true" />
-            </Button>
+            {product === "studio" ? (
+              <>
+                <Button type="button" variant="outline" size="icon" className={cn(styles.ctrl, styles.prev)} aria-label="คลิปก่อนหน้า" onClick={() => select(index - 1, { user: true })}>
+                  <ChevronLeft aria-hidden="true" />
+                </Button>
+                <Button type="button" variant="outline" size="icon" className={cn(styles.ctrl, styles.next)} aria-label="คลิปถัดไป" onClick={() => select(index + 1, { user: true })}>
+                  <ChevronRight aria-hidden="true" />
+                </Button>
+              </>
+            ) : (
+              <>
+                <Button type="button" variant="outline" size="icon" className={cn(styles.ctrl, styles.prev)} aria-label="ตัวอย่างก่อนหน้า" onClick={() => pickScreen(screen - 1, { user: true })}>
+                  <ChevronLeft aria-hidden="true" />
+                </Button>
+                <Button type="button" variant="outline" size="icon" className={cn(styles.ctrl, styles.next)} aria-label="ตัวอย่างถัดไป" onClick={() => pickScreen(screen + 1, { user: true })}>
+                  <ChevronRight aria-hidden="true" />
+                </Button>
+              </>
+            )}
           </div>
         </div>
 
         <div className={styles.side}>
+          {product === "studio" ? (
+            <>
           <p className={styles.eyebrow} aria-hidden="true">กำลังเล่น</p>
           <div className={styles.meta}>
             <strong>{clip.label}</strong>
@@ -332,6 +458,44 @@ export function HeroStage({ clips, headingId }: { clips: readonly HeroClip[]; he
               </ToggleGroupItem>
             ))}
           </ToggleGroup>
+            </>
+          ) : (
+            <>
+          <p className={styles.eyebrow} aria-hidden="true">กำลังโชว์</p>
+          <div className={styles.meta}>
+            <strong>{SOCIAL_SCREENS[screen].title}</strong>
+            <p>{SOCIAL_SCREENS[screen].detail}</p>
+          </div>
+          <p className={styles.eyebrow} id={`${headingId}-social`}>
+            ดูทีละขั้น
+          </p>
+          <ToggleGroup
+            type="single"
+            value={SOCIAL_SCREENS[screen].id}
+            onValueChange={(id) => id && pickScreen(SOCIAL_SCREENS.findIndex((x) => x.id === id), { user: true })}
+            aria-labelledby={`${headingId}-social`}
+            className={cn(styles.picks, styles.socialPicks)}
+            onPointerEnter={() => setHeld(true)}
+            onPointerLeave={() => setHeld(false)}
+            onFocus={() => setHeld(true)}
+            onBlur={(e) => {
+              if (!e.currentTarget.contains(e.relatedTarget as Node | null)) setHeld(false);
+            }}
+          >
+            {SOCIAL_SCREENS.map((x, k) => (
+              <ToggleGroupItem key={x.id} value={x.id} data-screen={x.id} className={styles.pick}>
+                <span className={styles.stepIcon} aria-hidden="true">
+                  {k === 0 ? <CalendarClock /> : k === 1 ? <BadgeCheck /> : <MessageCircle />}
+                </span>
+                <span className={styles.pickText}>
+                  {x.card}
+                  <small>ขั้นที่ {k + 1}</small>
+                </span>
+              </ToggleGroupItem>
+            ))}
+          </ToggleGroup>
+            </>
+          )}
           {!still && (
             <Toggle
               variant="outline"

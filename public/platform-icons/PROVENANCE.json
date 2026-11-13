@@ -1,0 +1,46 @@
+[
+  {
+    "file": "youtube.svg",
+    "status": "fetched",
+    "package": "simple-icons@16.37.0",
+    "license": "CC0-1.0 (SVG path data); the mark is a trademark of its owner",
+    "source": "https://unpkg.com/simple-icons@16.37.0/icons/youtube.svg",
+    "sha256": "5038808acbbc4e6edda16cbeb1cc6dec80e4e4ee4e227e039c41229fa222aa8c",
+    "brandColor": "#FF0000",
+    "guidelines": "https://www.youtube.com/howyoutubeworks/resources/brand-resources/#logos-icons-and-colors",
+    "modifications": "none"
+  },
+  {
+    "file": "instagram.svg",
+    "status": "fetched",
+    "package": "simple-icons@16.37.0",
+    "license": "CC0-1.0 (SVG path data); the mark is a trademark of its owner",
+    "source": "https://unpkg.com/simple-icons@16.37.0/icons/instagram.svg",
+    "sha256": "f53af2d1fc5292ba1433b5c1faf50005ce6a997fa302d1816989929f379a59dc",
+    "brandColor": "#FF0069",
+    "guidelines": "https://about.meta.com/brand/resources/instagram",
+    "modifications": "none"
+  },
+  {
+    "file": "tiktok.svg",
+    "status": "fetched",
+    "package": "simple-icons@16.37.0",
+    "license": "CC0-1.0 (SVG path data); the mark is a trademark of its owner",
+    "source": "https://unpkg.com/simple-icons@16.37.0/icons/tiktok.svg",
+    "sha256": "6f54ac8d325faacea8935bdc44cbed60206a6b408641799e5fea1cba7c1a0af7",
+    "brandColor": "#000000",
+    "guidelines": null,
+    "modifications": "none"
+  },
+  {
+    "file": "facebook.svg",
+    "status": "fetched",
+    "package": "simple-icons@16.37.0",
+    "license": "CC0-1.0 (SVG path data); the mark is a trademark of its owner",
+    "source": "https://unpkg.com/simple-icons@16.37.0/icons/facebook.svg",
+    "sha256": "b06d18d844ed621b89faffb1a33440cc0ec4f1ffea9f36191f50db19a47c59a6",
+    "brandColor": "#0866FF",
+    "guidelines": "https://about.meta.com/brand/resources/facebook/logo",
+    "modifications": "none"
+  }
+]

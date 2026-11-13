@@ -51,9 +51,10 @@ test("server render: one h1, typed span hidden from screen readers, full phrase 
   const html = renderToStaticMarkup(createElement(HeroStage, { clips: CLIPS, headingId: "h" }));
   assert.equal((html.match(/<h1\b/g) || []).length, 1);
   assert.match(html, /<span[^>]*aria-hidden="true"[^>]*>ทำแนวซอมบี้คอนโด<\/span><span class="sr-only">ทำแนวซอมบี้คอนโด<\/span>/);
-  assert.match(html, /role="radiogroup"/);
-  assert.equal((html.match(/role="radio"/g) || []).length, CLIPS.length);
-  assert.equal((html.match(/aria-checked="true"/g) || []).length, 1);
+  // Two radio groups: the product switch (Studio / Social) and the clip picker.
+  assert.match(html, /role="radiogroup"[^>]*aria-label="เลือกผลิตภัณฑ์"/);
+  assert.equal((html.match(/role="radio"/g) || []).length, CLIPS.length + 2);
+  assert.equal((html.match(/aria-checked="true"/g) || []).length, 2, "one product + one clip");
   assert.match(html, /aria-label="คลิปก่อนหน้า"/);
   assert.match(html, /aria-label="คลิปถัดไป"/);
   // Nothing plays or downloads before the client knows motion is allowed.
@@ -66,7 +67,7 @@ test("server render: one h1, typed span hidden from screen readers, full phrase 
 });
 
 test("behaviour contract: only the active preview plays, while visible; still mode is poster-only; next poster preloaded", () => {
-  assert.match(src, /play=\{i === index && visible && !still\}/);
+  assert.match(src, /play=\{product === "studio" && i === index && visible && !still\}/, "and only in Studio mode");
   assert.match(src, /prefers-reduced-motion: reduce/);
   assert.match(src, /saveData/);
   assert.match(src, /link\.rel = "preload";/);
@@ -87,8 +88,8 @@ test("CSS: aura ported from b.html (blur only on that layer, not over video); re
   assert.match(aura, /color-mix\(in srgb, var\(--accent\) 70%, transparent\)/);
   assert.match(aura, /color-mix\(in srgb, var\(--deep\) 90%, transparent\)/);
   assert.match(aura, /color-mix\(in srgb, #6c38b6 65%, transparent\)/);
-  assert.match(aura, /opacity: 0\.75;/);
-  assert.match(css, /:root\[data-theme="light"\]\) \.aura \{\s*opacity: 0\.45;/);
+  assert.match(aura, /opacity: 0\.95;/, "stronger than the prototype's .75 (owner 2026-11-13: not washed out)");
+  assert.match(css, /:root\[data-theme="light"\]\) \.aura \{\s*opacity: 0\.6;/);
   const reduced = css.slice(css.indexOf("@media (prefers-reduced-motion: reduce)"));
   assert.match(reduced, /\.aura,\s*\.tw::after \{\s*animation: none;/);
   assert.match(css, /\.tw\[data-still\]::after \{\s*animation: none;/);

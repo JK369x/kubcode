@@ -43,14 +43,15 @@ test("hero promises the outcome in plain Thai (phone stage, owner 2026-11-11)", 
   assert.match(h1, /เห็นคลิปไหนถูกใจ/);
   assert.match(h1, /<span[^>]*aria-hidden="true"[^>]*>ทำแนวซอมบี้คอนโด<\/span><span class="sr-only">ทำแนวซอมบี้คอนโด<\/span>/);
   const lead = text(hero.match(/<p\b[^>]*class="[^"]*\blead\b[^"]*"[^>]*>([\s\S]*?)<\/p>/)?.[1] ?? "");
-  assert.match(lead, /สกิลฟรี/);
+  assert.match(lead, /สกิลบน kubcode/);
   assert.match(lead, /ในคอมคุณเอง/);
   assert.doesNotMatch(text(h1), /template|render|เรนเดอร์|เทมเพลต/i);
 });
 
 test("hero has exactly one primary action and no search box", () => {
   // Owner 2026-11-12: one solid primary Button + one outline Button, no underlines.
-  const copy = hero.slice(0, hero.indexOf('role="radiogroup"'));
+  // The hero text column: from the h1 to the clip picker.
+  const copy = hero.slice(hero.indexOf("<h1"), hero.indexOf('-picks"'));
   const buttons = copy.match(/<a\b[^>]*data-slot="button"[^>]*>[\s\S]*?<\/a>/g) || [];
   const links = buttons.filter((b) => /data-variant="default"/.test(b));
   assert.equal(links.length, 1, "one primary action");

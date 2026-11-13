@@ -28,6 +28,7 @@ import {
   type HomeFilter,
 } from "@/lib/facets";
 import { ClipResults } from "./ClipResults";
+import { SocialSection } from "./SocialSection";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -170,8 +171,11 @@ function NoClipItem({ skill }: { skill: Skill }) {
 export function Library({
   articles,
   styleTools,
+  links = { pricing: false, roadmap: false },
 }: {
   articles: ArticleTeaser[];
+  /** Optional pages that ship in this build (lib/site-routes hasPage). */
+  links?: { pricing: boolean; roadmap: boolean };
   /** Homepage style cards' tools with logos (see lib/showcase styleToolsFrom). */
   styleTools?: Readonly<Record<string, readonly StyleTool[]>>;
 }) {
@@ -230,6 +234,7 @@ export function Library({
   return (
     <main id="main" className="library-page">
       <KineticHero
+        pricing={links.pricing}
         styleTools={styleTools}
         skills={skills}
         activeSlug={selected ?? ""}
@@ -276,6 +281,7 @@ export function Library({
           </Preview>
         </div>
       </div>
+      <SocialSection pricing={links.pricing} roadmap={links.roadmap} />
       <section
         className="catalog-section"
         id="skill-index"
