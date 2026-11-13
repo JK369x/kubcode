@@ -395,3 +395,37 @@ run about a day later; `webhook URL --compromised` drops the old secret at once.
 
 The role decrypts with `alias/kubcode-secrets` only through SSM and only for these five
 parameter ARNs (`SsmParameterRead` in the key policy); it is not in the broad `KeyUse`.
+
+## Billing Lambda (ADR 0008) — test mode only
+
+`kubcode-billing`: one function behind a Function URL, its own role `kubcode-lambda-billing` (never the
+publishing role, so the Stripe key and the Zernio key never share a role). Off until `kubcode:billing` is
+`"true"` in `Pulumi.prod.yaml`; this PR leaves it off.
+
+- **Routes**: `/api/status`, `/api/checkout`, `/api/fulfil` (KUBCODE-HMAC-V1 from the web host, nonces in
+  `billing_request_nonces`); `/stripe/webhook` (Stripe-Signature, raw body, 5-minute tolerance).
+- **IAM**: logs to `/aws/lambda/kubcode-billing`, `ssm:GetParameters` on its own five parameters, and a
+  separate `BillingSsmParameterRead` statement in the secrets key policy (decrypt via SSM, those parameters
+  only). No S3, no wrap key, no other parameters.
+- **Parameters** (SecureStrings, admin CLI only, never the stack):
+  `/kubcode/prod/billing-db-url`, `/kubcode/prod/billing-hmac-key`, `/kubcode/prod/stripe-secret-key`,
+  `/kubcode/prod/stripe-webhook-secret`, `/kubcode/prod/stripe-webhook-secret-previous`.
+- **Live mode is refused**: the Lambda rejects `sk_live_`/`rk_live_` keys and ignores `livemode: true`
+  events unless `KUBCODE_STRIPE_ALLOW_LIVE=true`, which no environment sets.
+
+Enable (owner, after migration 0013 is approved and applied):
+
+```bash
+# 1. DB login for the billing role (Supabase SQL editor), then its URL to SSM like the worker's:
+#    ALTER ROLE kubcode_billing LOGIN PASSWORD '<generated>';
+#    aws ssm put-parameter --type SecureString --key-id alias/kubcode-secrets \
+#      --name /kubcode/prod/billing-db-url --value "file://$F"
+infra/scripts/billing-secrets.sh stripe-key        # test key from the vault
+infra/scripts/billing-secrets.sh hmac              # web host ⇄ billing Lambda
+# 2. Set kubcode:billing "true" in Pulumi.prod.yaml (PR), merge, Infra applies.
+# 3. In the Stripe Dashboard (test mode) add the endpoint <billingUrl>/stripe/webhook for
+#    checkout.session.completed, .async_payment_succeeded, .async_payment_failed, .expired;
+#    pbpaste | infra/scripts/secret.sh put stripe-webhook-secret
+infra/scripts/billing-secrets.sh webhook-secret
+infra/scripts/billing-secrets.sh status
+```

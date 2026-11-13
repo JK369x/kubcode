@@ -7,7 +7,7 @@
 // boundary. So even if CI rewrote its own role policy, it could not reach
 // beyond kubcode-* resources (this account also holds client resources).
 // Changing the boundary is an admin-only, local `pulumi up` (see README).
-import { ACCOUNT_ID, GITHUB_SUB_PREFIX, LAMBDA_ROLE_PREFIX, NAMES, REGION, PUBLISHING_PARAMETERS, SSM_PARAMETERS } from "./constants";
+import { ACCOUNT_ID, BILLING_PARAMETERS, GITHUB_SUB_PREFIX, LAMBDA_ROLE_PREFIX, NAMES, REGION, PUBLISHING_PARAMETERS, SSM_PARAMETERS } from "./constants";
 
 export type Statement = {
   Sid?: string;
@@ -135,6 +135,29 @@ export function publishingPolicy(opts: { logGroupNames: readonly string[]; bucke
       Resource: Object.values(PUBLISHING_PARAMETERS).map(param),
     },
     { Sid: "ReadClipMedia", Effect: "Allow", Action: "s3:GetObject", Resource: `arn:aws:s3:::${opts.bucket}/clips/*` },
+  ]);
+}
+
+/**
+ * The billing Lambda's role (ADR 0008): write its own log stream and read its
+ * own SSM SecureStrings. No S3, no other parameters, nothing else.
+ */
+export function billingPolicy(opts: { logGroupName: string }): PolicyDocument {
+  if (!opts.logGroupName.startsWith("/aws/lambda/kubcode-")) throw new Error(`log group must be /aws/lambda/kubcode-*: ${opts.logGroupName}`);
+  const param = (name: string) => `arn:aws:ssm:${REGION}:${ACCOUNT_ID}:parameter${name}`;
+  return doc([
+    {
+      Sid: "WriteOwnLogStreams",
+      Effect: "Allow",
+      Action: ["logs:CreateLogStream", "logs:PutLogEvents"],
+      Resource: [`arn:aws:logs:${REGION}:${ACCOUNT_ID}:log-group:${opts.logGroupName}:*`],
+    },
+    {
+      Sid: "ReadOwnParameters",
+      Effect: "Allow",
+      Action: "ssm:GetParameters",
+      Resource: Object.values(BILLING_PARAMETERS).map(param),
+    },
   ]);
 }
 
@@ -501,6 +524,8 @@ export function secretsKeyPolicy(opts: {
   ssmWriterArns?: string[];
   /** Roles that may only decrypt their own SSM SecureStrings, through SSM. */
   ssmReaders?: { arns: string[]; parameterNames: readonly string[] };
+  /** The billing role: decrypt only its own SSM parameters (ADR 0008). */
+  billingSsmReaders?: { arns: string[]; parameterNames: readonly string[] };
 }): PolicyDocument {
   if (opts.adminArns.length === 0) throw new Error("the secrets key needs at least one admin (lockout safety)");
   const root = `arn:aws:iam::${ACCOUNT_ID}:root`;
@@ -558,6 +583,22 @@ export function secretsKeyPolicy(opts: {
         StringEquals: {
           "kms:ViaService": `ssm.${REGION}.amazonaws.com`,
           "kms:EncryptionContext:PARAMETER_ARN": opts.ssmReaders.parameterNames.map(
+            (n) => `arn:aws:ssm:${REGION}:${ACCOUNT_ID}:parameter${n}`,
+          ),
+        },
+      },
+    });
+  if (opts.billingSsmReaders?.arns.length)
+    statements.push({
+      Sid: "BillingSsmParameterRead",
+      Effect: "Allow",
+      Principal: { AWS: opts.billingSsmReaders.arns },
+      Action: "kms:Decrypt",
+      Resource: "*",
+      Condition: {
+        StringEquals: {
+          "kms:ViaService": `ssm.${REGION}.amazonaws.com`,
+          "kms:EncryptionContext:PARAMETER_ARN": opts.billingSsmReaders.parameterNames.map(
             (n) => `arn:aws:ssm:${REGION}:${ACCOUNT_ID}:parameter${n}`,
           ),
         },

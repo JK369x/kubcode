@@ -37,6 +37,11 @@ export const NAMES = {
   publishingRole: "kubcode-lambda-publishing",
   publishingLogGroup: "/aws/lambda/kubcode-publishing",
   publishingOpsLogGroup: "/aws/lambda/kubcode-publishing-ops",
+  // Billing Lambda (ADR 0008): its own role, so the Stripe key and the Zernio
+  // key never share one.
+  billingFunction: "kubcode-billing",
+  billingRole: "kubcode-lambda-billing",
+  billingLogGroup: "/aws/lambda/kubcode-billing",
   // Spike resources that predate this stack; denied to every kubcode role.
   outOfScopePrefix: "kubcode-igtest-",
 } as const;
@@ -124,6 +129,19 @@ export const PUBLISHING_PARAMETERS = {
   // Signs the owner CLI's ops commands; the other copy is in the owner's vault.
   opsKey: "/kubcode/prod/publishing-ops-key",
 } as const;
+
+// What the billing Lambda reads (SecureStrings set by the admin CLI, never the
+// stack). Its own DB URL logs in as kubcode_billing, not kubcode_worker.
+export const BILLING_PARAMETERS = {
+  dbUrl: "/kubcode/prod/billing-db-url",
+  hmacKey: "/kubcode/prod/billing-hmac-key",
+  stripeSecretKey: "/kubcode/prod/stripe-secret-key",
+  stripeWebhookSecret: "/kubcode/prod/stripe-webhook-secret",
+  stripeWebhookSecretPrevious: "/kubcode/prod/stripe-webhook-secret-previous",
+} as const;
+
+// services/crates/kubcode-billing-lambda/build-lambda.sh output. Relative to infra/.
+export const BILLING_BINARY = "../services/crates/kubcode-billing-lambda/dist/bootstrap.zip";
 
 // services/crates/kubcode-publishing-lambda/build-lambda.sh output. Relative to infra/.
 export const PUBLISHING_BINARY = "../services/crates/kubcode-publishing-lambda/dist/bootstrap.zip";

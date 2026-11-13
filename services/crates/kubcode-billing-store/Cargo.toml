@@ -1,0 +1,18 @@
+[package]
+name = "kubcode-billing-store"
+version = "0.1.0"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish.workspace = true
+description = "Postgres store for billing (db/migrations/0013, ADR 0008). Runs as the kubcode_billing role."
+
+[dependencies]
+kubcode-billing = { path = "../kubcode-billing" }
+thiserror = "2"
+time = "0.3"
+tokio-postgres = { version = "0.7", features = ["with-uuid-1", "with-time-0_3"] }
+uuid = { version = "1", features = ["v4"] }
+
+[dev-dependencies]
+tokio = { version = "1", features = ["macros", "rt", "rt-multi-thread"] }

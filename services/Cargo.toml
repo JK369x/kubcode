@@ -1,6 +1,6 @@
 [workspace]
 resolver = "2"
-members = ["crates/kubcode-envelope", "crates/kubcode-oauth-connect", "crates/kubcode-publishing", "crates/kubcode-publishing-zernio", "crates/kubcode-publishing-store", "crates/kubcode-publishing-lambda", "crates/kubcode-cli", "crates/kubcode-billing"]
+members = ["crates/kubcode-envelope", "crates/kubcode-oauth-connect", "crates/kubcode-publishing", "crates/kubcode-publishing-zernio", "crates/kubcode-publishing-store", "crates/kubcode-publishing-lambda", "crates/kubcode-cli", "crates/kubcode-billing", "crates/kubcode-billing-store", "crates/kubcode-billing-lambda"]
 
 [workspace.package]
 edition = "2021"

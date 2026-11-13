@@ -1,0 +1,804 @@
+//! Contract tests: the billing service and HTTP routing against recorded
+//! Stripe fixtures (tests/fixtures) and an in-memory store with the same
+//! transition rules as the Postgres one.
+
+use std::collections::HashMap;
+use std::sync::{Arc, Mutex};
+
+use async_trait::async_trait;
+use billing_lambda::http::{handle, Nonces};
+use billing_lambda::service::{BillingStore, Config, Service};
+use billing_lambda::stripe::{
+    valid_session_id, HttpRequest, HttpResponse, Stripe, Transport, TransportError, API_VERSION,
+};
+use billing_lambda::webhook::{self, sign, Event};
+use kubcode_billing::entitlement::{entitlement, Entitlement, PaidSpan};
+use kubcode_billing::money::Satang;
+use kubcode_billing::purchase::Status;
+use kubcode_billing::quote::{Kind, Quote};
+use kubcode_billing_store::{Fulfilled, Payer, Purchase, StoreError};
+use lambda_http::http::HeaderMap;
+use serde_json::Value;
+use time::OffsetDateTime;
+use uuid::Uuid;
+
+fn fixture(name: &str) -> Vec<u8> {
+    std::fs::read(format!(
+        "{}/tests/fixtures/{name}",
+        env!("CARGO_MANIFEST_DIR")
+    ))
+    .unwrap()
+}
+fn fixture_json(name: &str) -> Value {
+    serde_json::from_slice(&fixture(name)).unwrap()
+}
+
+// ---------------- fake Stripe ----------------
+
+#[derive(Default)]
+struct FakeStripe {
+    /// Response to the next create, by default the recorded one.
+    create: Mutex<Option<(u16, Vec<u8>)>>,
+    /// session id → (status, body) for GET.
+    sessions: Mutex<HashMap<String, (u16, Vec<u8>)>>,
+    requests: Mutex<Vec<HttpRequest>>,
+}
+
+#[async_trait]
+impl Transport for FakeStripe {
+    async fn send(&self, req: HttpRequest) -> Result<HttpResponse, TransportError> {
+        self.requests.lock().unwrap().push(req.clone());
+        if req.method == "POST" {
+            let (status, body) = self
+                .create
+                .lock()
+                .unwrap()
+                .clone()
+                .unwrap_or((200, fixture("session_created.json")));
+            return Ok(HttpResponse { status, body });
+        }
+        let id = req
+            .path
+            .trim_start_matches("/checkout/sessions/")
+            .split('?')
+            .next()
+            .unwrap()
+            .to_owned();
+        match self.sessions.lock().unwrap().get(&id) {
+            Some((s, b)) => Ok(HttpResponse {
+                status: *s,
+                body: b.clone(),
+            }),
+            None => Ok(HttpResponse {
+                status: 404,
+                body: fixture("error_404.json"),
+            }),
+        }
+    }
+}
+
+impl FakeStripe {
+    /// Same session as `name`, with metadata.purchase_id replaced.
+    fn serve_for(&self, name: &str, purchase: Uuid) {
+        let mut v = fixture_json(name);
+        v["metadata"]["purchase_id"] = Value::String(purchase.to_string());
+        let id = v["id"].as_str().unwrap().to_owned();
+        self.sessions
+            .lock()
+            .unwrap()
+            .insert(id, (200, serde_json::to_vec(&v).unwrap()));
+    }
+}
+
+// ---------------- in-memory store ----------------
+
+#[derive(Default)]
+struct Mem {
+    payers: HashMap<Uuid, Payer>,
+    purchases: Vec<Purchase>,
+    reviews: Vec<(Uuid, String)>,
+    events: Vec<String>,
+    nonces: Vec<[u8; 32]>,
+    grants: u32,
+    pi: HashMap<Uuid, (Option<String>, Option<String>)>,
+}
+
+#[derive(Clone, Default)]
+struct MemStore(Arc<Mutex<Mem>>);
+
+fn spans(m: &Mem, ws: Uuid) -> Vec<PaidSpan> {
+    m.purchases
+        .iter()
+        .filter(|p| p.workspace == ws && p.status == Status::Paid)
+        .map(|p| PaidSpan {
+            slots: p.slots,
+            period_start: p.period_start,
+            period_end: p.period_end,
+        })
+        .collect()
+}
+
+#[async_trait]
+impl BillingStore for MemStore {
+    async fn payer(&self, user: Uuid) -> Result<Option<Payer>, StoreError> {
+        Ok(self.0.lock().unwrap().payers.get(&user).cloned())
+    }
+    async fn entitlement(
+        &self,
+        ws: Uuid,
+        exempt: bool,
+        now: OffsetDateTime,
+    ) -> Result<Entitlement, StoreError> {
+        Ok(entitlement(
+            &spans(&self.0.lock().unwrap(), ws),
+            now,
+            exempt,
+        ))
+    }
+    async fn create_purchase(&self, ws: Uuid, _user: Uuid, q: &Quote) -> Result<Uuid, StoreError> {
+        let id = Uuid::new_v4();
+        self.0.lock().unwrap().purchases.push(Purchase {
+            id,
+            workspace: ws,
+            kind: q.kind,
+            slots: q.slots,
+            amount: q.amount,
+            period_start: q.period_start,
+            period_end: q.period_end,
+            status: Status::Pending,
+            session_id: None,
+        });
+        Ok(id)
+    }
+    async fn attach_session(&self, purchase: Uuid, session: &str) -> Result<(), StoreError> {
+        let mut m = self.0.lock().unwrap();
+        let p = m
+            .purchases
+            .iter_mut()
+            .find(|p| p.id == purchase && p.status == Status::Pending && p.session_id.is_none())
+            .ok_or(StoreError::NotFound)?;
+        p.session_id = Some(session.into());
+        Ok(())
+    }
+    async fn abandon(&self, purchase: Uuid) -> Result<(), StoreError> {
+        let mut m = self.0.lock().unwrap();
+        if let Some(p) = m
+            .purchases
+            .iter_mut()
+            .find(|p| p.id == purchase && p.status == Status::Pending)
+        {
+            p.status = Status::Failed;
+        }
+        Ok(())
+    }
+    async fn purchase(&self, id: Uuid) -> Result<Option<Purchase>, StoreError> {
+        Ok(self
+            .0
+            .lock()
+            .unwrap()
+            .purchases
+            .iter()
+            .find(|p| p.id == id)
+            .cloned())
+    }
+    async fn record_event(&self, id: &str, _k: &str, _l: bool) -> Result<bool, StoreError> {
+        let mut m = self.0.lock().unwrap();
+        if m.events.iter().any(|e| e == id) {
+            return Ok(false);
+        }
+        m.events.push(id.into());
+        Ok(true)
+    }
+    async fn fulfil(
+        &mut self,
+        purchase: Uuid,
+        pi: Option<&str>,
+        method: Option<&str>,
+        exempt: bool,
+        now: OffsetDateTime,
+    ) -> Result<Fulfilled, StoreError> {
+        let mut m = self.0.lock().unwrap();
+        let Some(p) = m
+            .purchases
+            .iter_mut()
+            .find(|p| p.id == purchase && p.status == Status::Pending)
+        else {
+            return Ok(Fulfilled::AlreadyPaid);
+        };
+        p.status = Status::Paid;
+        let ws = p.workspace;
+        m.grants += 1;
+        m.pi.insert(purchase, (pi.map(Into::into), method.map(Into::into)));
+        Ok(Fulfilled::Granted(entitlement(&spans(&m, ws), now, exempt)))
+    }
+    async fn close(&self, purchase: Uuid, to: Status) -> Result<bool, StoreError> {
+        let mut m = self.0.lock().unwrap();
+        match m
+            .purchases
+            .iter_mut()
+            .find(|p| p.id == purchase && p.status == Status::Pending)
+        {
+            Some(p) => {
+                p.status = to;
+                Ok(true)
+            }
+            None => Ok(false),
+        }
+    }
+    async fn flag_review(&self, purchase: Uuid, code: &str) -> Result<(), StoreError> {
+        self.0.lock().unwrap().reviews.push((purchase, code.into()));
+        Ok(())
+    }
+    async fn workspace_exempt(&self, ws: Uuid) -> Result<bool, StoreError> {
+        Ok(self
+            .0
+            .lock()
+            .unwrap()
+            .payers
+            .values()
+            .any(|p| p.workspace == ws && p.exempt))
+    }
+    async fn event_seen(&self, id: &str) -> Result<bool, StoreError> {
+        Ok(self.0.lock().unwrap().events.iter().any(|e| e == id))
+    }
+}
+
+#[async_trait]
+impl Nonces for MemStore {
+    async fn use_nonce(&self, hash: &[u8; 32]) -> Result<bool, ()> {
+        let mut m = self.0.lock().unwrap();
+        if m.nonces.contains(hash) {
+            return Ok(false);
+        }
+        m.nonces.push(*hash);
+        Ok(true)
+    }
+}
+
+// ---------------- harness ----------------
+
+const HMAC: &[u8] = b"FIXTURE-ONLY-billing-hmac-key-000000000000000000";
+const WHSEC: &[u8] = b"whsec_FIXTUREONLY0000000000000000";
+const NOW: u64 = 1_794_549_300;
+const USER: Uuid = Uuid::from_u128(0x0000_0000_0000_4000_8000_0000_0000_00c1);
+const WS: Uuid = Uuid::from_u128(0x0000_0000_0000_4000_8000_0000_0000_00a1);
+
+fn now_dt() -> OffsetDateTime {
+    OffsetDateTime::from_unix_timestamp(NOW as i64).unwrap()
+}
+
+struct H {
+    store: MemStore,
+    stripe: Stripe<FakeStripe>,
+    cfg: Config,
+}
+
+fn h() -> H {
+    let store = MemStore::default();
+    store.0.lock().unwrap().payers.insert(
+        USER,
+        Payer {
+            workspace: WS,
+            exempt: false,
+        },
+    );
+    H {
+        store,
+        stripe: Stripe {
+            transport: Arc::new(FakeStripe::default()),
+        },
+        cfg: Config {
+            site_origin: "https://kubcode.dev".into(),
+            allow_live: false,
+        },
+    }
+}
+
+impl H {
+    fn fake(&self) -> &FakeStripe {
+        &self.stripe.transport
+    }
+    async fn call(&mut self, path: &str, body: &str, nonce: &str) -> (u16, Value) {
+        let mut st = self.store.clone();
+        let mut svc = Service {
+            store: &mut st,
+            stripe: &self.stripe,
+            cfg: &self.cfg,
+            now: now_dt(),
+        };
+        let mut hm = HeaderMap::new();
+        let ts = NOW.to_string();
+        hm.insert("x-kubcode-timestamp", ts.parse().unwrap());
+        hm.insert("x-kubcode-nonce", nonce.parse().unwrap());
+        hm.insert(
+            "x-kubcode-signature",
+            oauth_connect::auth::sign(HMAC, path, &ts, nonce, body.as_bytes())
+                .parse()
+                .unwrap(),
+        );
+        let r = handle(
+            &mut svc,
+            HMAC,
+            &[WHSEC.to_vec()],
+            "POST",
+            path,
+            &hm,
+            body.as_bytes(),
+            NOW,
+        )
+        .await;
+        (r.status, r.body)
+    }
+    async fn hook(&mut self, body: &[u8], header: Option<String>) -> (u16, Value) {
+        let mut st = self.store.clone();
+        let mut svc = Service {
+            store: &mut st,
+            stripe: &self.stripe,
+            cfg: &self.cfg,
+            now: now_dt(),
+        };
+        let mut hm = HeaderMap::new();
+        if let Some(h) = header {
+            hm.insert("stripe-signature", h.parse().unwrap());
+        }
+        let r = handle(
+            &mut svc,
+            HMAC,
+            &[WHSEC.to_vec()],
+            "POST",
+            "/stripe/webhook",
+            &hm,
+            body,
+            NOW,
+        )
+        .await;
+        (r.status, r.body)
+    }
+    /// Creates a purchase through /api/checkout for 2 slots and returns it.
+    async fn bought(&mut self) -> Purchase {
+        // The recorded session is 2 × ฿289.
+        let (s, b) = self
+            .call(
+                "/api/checkout",
+                r#"{"user_id":"00000000-0000-4000-8000-0000000000c1","kind":"new","slots":2}"#,
+                &nonce(1),
+            )
+            .await;
+        assert_eq!((s, b["ok"].clone()), (200, Value::Bool(true)), "{b}");
+        self.store
+            .0
+            .lock()
+            .unwrap()
+            .purchases
+            .last()
+            .cloned()
+            .unwrap()
+    }
+    fn grants(&self) -> u32 {
+        self.store.0.lock().unwrap().grants
+    }
+}
+
+fn nonce(n: u8) -> String {
+    format!("{:032x}", n)
+}
+
+fn signed_event(name: &str, purchase: Uuid) -> (Vec<u8>, String) {
+    let mut v = fixture_json(name);
+    v["data"]["object"]["metadata"]["purchase_id"] = Value::String(purchase.to_string());
+    let body = serde_json::to_vec(&v).unwrap();
+    let header = sign(WHSEC, NOW, &body);
+    (body, header)
+}
+
+// ---------------- tests ----------------
+
+#[test]
+fn recorded_session_parses_with_card_and_promptpay_in_thb() {
+    let s: billing_lambda::stripe::Session =
+        serde_json::from_slice(&fixture("session_created.json")).unwrap();
+    assert!(valid_session_id(&s.id));
+    assert!(!s.livemode);
+    assert_eq!(
+        (s.amount_total, s.currency.as_deref()),
+        (Some(57_800), Some("thb"))
+    );
+    assert_eq!(s.payment_method_types, vec!["card", "promptpay"]);
+    assert_eq!(API_VERSION, "2026-10-28.endive");
+}
+
+#[tokio::test]
+async fn checkout_sends_one_thb_line_adaptive_off_and_an_idempotency_key() {
+    let mut h = h();
+    let p = h.bought().await;
+    assert_eq!(
+        (p.kind, p.slots, p.amount, p.status),
+        (Kind::New, 2, Satang(57_800), Status::Pending)
+    );
+    assert!(p.session_id.as_deref().is_some_and(valid_session_id));
+    let reqs = h.fake().requests.lock().unwrap().clone();
+    let req = &reqs[0];
+    let f: HashMap<_, _> = req.form.iter().cloned().collect();
+    assert_eq!(f["mode"], "payment");
+    assert_eq!(f["currency"], "thb");
+    assert_eq!(f["adaptive_pricing[enabled]"], "false");
+    assert_eq!(f["line_items[0][quantity]"], "2");
+    assert_eq!(f["line_items[0][price_data][unit_amount]"], "28900");
+    assert_eq!(f["metadata[purchase_id]"], p.id.to_string());
+    assert!(
+        !f.contains_key("payment_method_types"),
+        "methods come from the Dashboard"
+    );
+    assert!(f["success_url"].starts_with(
+        "https://kubcode.dev/account/billing/success?session_id={CHECKOUT_SESSION_ID}"
+    ));
+    assert_eq!(
+        req.idempotency_key.as_deref(),
+        Some(format!("kubcode-purchase-{}", p.id).as_str())
+    );
+}
+
+#[tokio::test]
+async fn checkout_refuses_a_session_whose_total_differs_from_the_quote() {
+    let mut h = h();
+    // Recorded session is 2 slots; ask for 3.
+    let (s, b) = h
+        .call(
+            "/api/checkout",
+            r#"{"user_id":"00000000-0000-4000-8000-0000000000c1","kind":"new","slots":3}"#,
+            &nonce(1),
+        )
+        .await;
+    assert_eq!(
+        (s, b["code"].as_str()),
+        (200, Some("stripe_amount_mismatch"))
+    );
+    assert_eq!(
+        h.store.0.lock().unwrap().purchases[0].status,
+        Status::Failed
+    );
+}
+
+#[tokio::test]
+async fn stripe_outage_closes_the_purchase_and_answers_503() {
+    let mut h = h();
+    *h.fake().create.lock().unwrap() = Some((500, b"{}".to_vec()));
+    let (s, _) = h
+        .call(
+            "/api/checkout",
+            r#"{"user_id":"00000000-0000-4000-8000-0000000000c1","kind":"new","slots":2}"#,
+            &nonce(1),
+        )
+        .await;
+    assert_eq!(s, 503);
+    assert_eq!(
+        h.store.0.lock().unwrap().purchases[0].status,
+        Status::Failed
+    );
+}
+
+#[tokio::test]
+async fn owner_workspace_cannot_buy_and_bad_input_is_refused() {
+    let mut h = h();
+    h.store.0.lock().unwrap().payers.insert(
+        USER,
+        Payer {
+            workspace: WS,
+            exempt: true,
+        },
+    );
+    let (_, b) = h
+        .call(
+            "/api/checkout",
+            r#"{"user_id":"00000000-0000-4000-8000-0000000000c1","kind":"new","slots":1}"#,
+            &nonce(1),
+        )
+        .await;
+    assert_eq!(b["code"], "exempt");
+    for (i, body) in [
+        r#"{"user_id":"00000000-0000-4000-8000-0000000000c1","kind":"renew","slots":1}"#,
+        r#"{"user_id":"00000000-0000-4000-8000-0000000000c1","kind":"new","slots":1,"amount":1}"#,
+        r#"{"user_id":"x","kind":"new","slots":1}"#,
+    ]
+    .iter()
+    .enumerate()
+    {
+        let (s, _) = h.call("/api/checkout", body, &nonce(10 + i as u8)).await;
+        assert_eq!(s, 400, "{body}");
+    }
+    assert!(h.fake().requests.lock().unwrap().is_empty());
+}
+
+#[tokio::test]
+async fn api_calls_need_a_fresh_signature() {
+    let mut h = h();
+    let body = r#"{"user_id":"00000000-0000-4000-8000-0000000000c1"}"#;
+    assert_eq!(h.call("/api/status", body, &nonce(1)).await.0, 200);
+    assert_eq!(
+        h.call("/api/status", body, &nonce(1)).await.0,
+        401,
+        "replayed nonce"
+    );
+    let mut st = h.store.clone();
+    let mut svc = Service {
+        store: &mut st,
+        stripe: &h.stripe,
+        cfg: &h.cfg,
+        now: now_dt(),
+    };
+    let r = handle(
+        &mut svc,
+        HMAC,
+        &[],
+        "POST",
+        "/api/status",
+        &HeaderMap::new(),
+        body.as_bytes(),
+        NOW,
+    )
+    .await;
+    assert_eq!(r.status, 401);
+    let r = handle(
+        &mut svc,
+        HMAC,
+        &[],
+        "GET",
+        "/api/status",
+        &HeaderMap::new(),
+        b"",
+        NOW,
+    )
+    .await;
+    assert_eq!(r.status, 405);
+}
+
+#[tokio::test]
+async fn webhook_completed_grants_once_and_a_replay_grants_nothing() {
+    let mut h = h();
+    let p = h.bought().await;
+    h.fake().serve_for("session_paid_card.json", p.id);
+    let (body, sig) = signed_event("event_completed.json", p.id);
+    assert_eq!(h.hook(&body, Some(sig.clone())).await.0, 200);
+    assert_eq!(h.grants(), 1);
+    assert_eq!(h.store.0.lock().unwrap().purchases[0].status, Status::Paid);
+    assert_eq!(
+        h.store.0.lock().unwrap().pi[&p.id],
+        (Some("pi_3FixtureCardPaid0001".into()), Some("card".into()))
+    );
+    // Same event again (Stripe retry / `stripe events resend`).
+    assert_eq!(h.hook(&body, Some(sig)).await.0, 200);
+    assert_eq!(h.grants(), 1, "no double credit");
+}
+
+#[tokio::test]
+async fn success_page_racing_the_webhook_grants_once() {
+    let mut h = h();
+    let p = h.bought().await;
+    h.fake().serve_for("session_paid_promptpay.json", p.id);
+    let sid = p.session_id.clone().unwrap();
+    let (_, b) = h
+        .call(
+            "/api/fulfil",
+            &format!(r#"{{"user_id":"{USER}","session_id":"{sid}"}}"#),
+            &nonce(2),
+        )
+        .await;
+    assert_eq!(b["result"], "granted");
+    assert_eq!(b["entitlement"]["slots"], 2);
+    assert_eq!(b["entitlement"]["standing"], "active");
+    let (body, sig) = signed_event("event_completed.json", p.id);
+    assert_eq!(h.hook(&body, Some(sig)).await.0, 200);
+    let (_, b) = h
+        .call(
+            "/api/fulfil",
+            &format!(r#"{{"user_id":"{USER}","session_id":"{sid}"}}"#),
+            &nonce(3),
+        )
+        .await;
+    assert_eq!(b["result"], "already_paid");
+    assert_eq!(h.grants(), 1);
+    assert_eq!(
+        h.store.0.lock().unwrap().pi[&p.id].1.as_deref(),
+        Some("promptpay")
+    );
+}
+
+#[tokio::test]
+async fn webhook_body_is_never_trusted_for_money() {
+    let mut h = h();
+    let p = h.bought().await;
+    // Stripe (the source of truth) says unpaid, though the event body says paid.
+    h.fake().serve_for("session_complete_unpaid.json", p.id);
+    let (body, sig) = signed_event("event_completed.json", p.id);
+    assert_eq!(h.hook(&body, Some(sig)).await.0, 200);
+    assert_eq!(h.grants(), 0);
+    assert_eq!(
+        h.store.0.lock().unwrap().purchases[0].status,
+        Status::Pending,
+        "PromptPay not scanned yet: wait"
+    );
+}
+
+#[tokio::test]
+async fn wrong_amount_at_stripe_is_flagged_not_granted() {
+    let mut h = h();
+    let p = h.bought().await;
+    let mut v = fixture_json("session_paid_card.json");
+    v["metadata"]["purchase_id"] = Value::String(p.id.to_string());
+    v["amount_total"] = Value::from(100);
+    h.fake().sessions.lock().unwrap().insert(
+        p.session_id.clone().unwrap(),
+        (200, serde_json::to_vec(&v).unwrap()),
+    );
+    let (body, sig) = signed_event("event_completed.json", p.id);
+    assert_eq!(h.hook(&body, Some(sig)).await.0, 200);
+    assert_eq!(h.grants(), 0);
+    assert_eq!(
+        h.store.0.lock().unwrap().reviews,
+        vec![(p.id, "amount_mismatch".into())]
+    );
+}
+
+#[tokio::test]
+async fn expired_and_async_failed_close_the_purchase() {
+    let mut h = h();
+    let p = h.bought().await;
+    h.fake().serve_for("session_expired.json", p.id);
+    let (body, sig) = signed_event("event_expired.json", p.id);
+    assert_eq!(h.hook(&body, Some(sig)).await.0, 200);
+    assert_eq!(
+        h.store.0.lock().unwrap().purchases[0].status,
+        Status::Expired
+    );
+
+    let mut h2 = self::h();
+    let p2 = h2.bought().await;
+    let (body, sig) = signed_event("event_async_failed.json", p2.id);
+    assert_eq!(h2.hook(&body, Some(sig)).await.0, 200);
+    assert_eq!(
+        h2.store.0.lock().unwrap().purchases[0].status,
+        Status::Failed
+    );
+}
+
+#[tokio::test]
+async fn a_payment_after_expiry_is_flagged_never_granted() {
+    let mut h = h();
+    let p = h.bought().await;
+    h.fake().serve_for("session_expired.json", p.id);
+    let (body, sig) = signed_event("event_expired.json", p.id);
+    h.hook(&body, Some(sig)).await;
+    h.fake().serve_for("session_paid_card.json", p.id);
+    let (body, sig) = signed_event("event_async_succeeded.json", p.id);
+    assert_eq!(h.hook(&body, Some(sig)).await.0, 200);
+    assert_eq!(h.grants(), 0);
+    assert_eq!(
+        h.store.0.lock().unwrap().reviews.last().unwrap().1,
+        "paid_after_close"
+    );
+}
+
+#[tokio::test]
+async fn webhook_signature_is_required_and_checked_on_the_raw_body() {
+    let mut h = h();
+    let p = h.bought().await;
+    h.fake().serve_for("session_paid_card.json", p.id);
+    let (body, sig) = signed_event("event_completed.json", p.id);
+    assert_eq!(h.hook(&body, None).await.0, 400);
+    // Same JSON re-serialized with different whitespace: the signature no longer matches.
+    let pretty =
+        serde_json::to_vec_pretty(&serde_json::from_slice::<Value>(&body).unwrap()).unwrap();
+    assert_eq!(h.hook(&pretty, Some(sig.clone())).await.0, 400);
+    // Wrong secret, stale timestamp.
+    assert_eq!(
+        h.hook(&body, Some(sign(b"whsec_other000000000000000", NOW, &body)))
+            .await
+            .0,
+        400
+    );
+    assert_eq!(
+        h.hook(
+            &body,
+            Some(sign(WHSEC, NOW - webhook::TOLERANCE_SECS - 1, &body))
+        )
+        .await
+        .0,
+        400
+    );
+    assert_eq!(h.grants(), 0);
+    // Several v1 values (secret rotation): any match passes.
+    let both = format!("{sig},v1={}", "0".repeat(64));
+    assert_eq!(h.hook(&body, Some(both)).await.0, 200);
+    assert_eq!(h.grants(), 1);
+}
+
+#[tokio::test]
+async fn a_session_that_is_not_ours_changes_nothing() {
+    let mut h = h();
+    let p = h.bought().await;
+    // Metadata names our purchase but the session id differs from the one we attached.
+    let mut v = fixture_json("session_paid_card.json");
+    v["id"] = Value::String("cs_test_someoneelse0001".into());
+    v["metadata"]["purchase_id"] = Value::String(p.id.to_string());
+    h.fake().sessions.lock().unwrap().insert(
+        "cs_test_someoneelse0001".into(),
+        (200, serde_json::to_vec(&v).unwrap()),
+    );
+    let mut ev = fixture_json("event_completed.json");
+    ev["data"]["object"] = v;
+    let body = serde_json::to_vec(&ev).unwrap();
+    assert_eq!(h.hook(&body, Some(sign(WHSEC, NOW, &body))).await.0, 200);
+    assert_eq!(h.grants(), 0);
+    // Another member cannot fulfil this purchase from the success page.
+    let other = Uuid::new_v4();
+    h.store.0.lock().unwrap().payers.insert(
+        other,
+        Payer {
+            workspace: Uuid::new_v4(),
+            exempt: false,
+        },
+    );
+    h.fake().serve_for("session_paid_card.json", p.id);
+    let sid = p.session_id.unwrap();
+    let (_, b) = h
+        .call(
+            "/api/fulfil",
+            &format!(r#"{{"user_id":"{other}","session_id":"{sid}"}}"#),
+            &nonce(9),
+        )
+        .await;
+    assert_eq!(b["code"], "not_found");
+    assert_eq!(h.grants(), 0);
+}
+
+#[tokio::test]
+async fn live_events_are_ignored_in_test_mode() {
+    let mut h = h();
+    let p = h.bought().await;
+    let mut v = fixture_json("event_completed.json");
+    v["livemode"] = Value::Bool(true);
+    v["data"]["object"]["metadata"]["purchase_id"] = Value::String(p.id.to_string());
+    let body = serde_json::to_vec(&v).unwrap();
+    assert_eq!(h.hook(&body, Some(sign(WHSEC, NOW, &body))).await.0, 200);
+    assert_eq!(h.grants(), 0);
+    assert!(
+        h.fake()
+            .requests
+            .lock()
+            .unwrap()
+            .iter()
+            .all(|r| r.method == "POST"),
+        "no session read for a live event"
+    );
+}
+
+#[tokio::test]
+async fn a_stripe_outage_during_a_webhook_asks_for_a_retry_and_does_not_mark_the_event_seen() {
+    let mut h = h();
+    let p = h.bought().await;
+    h.fake()
+        .sessions
+        .lock()
+        .unwrap()
+        .insert(p.session_id.clone().unwrap(), (503, b"{}".to_vec()));
+    let (body, sig) = signed_event("event_completed.json", p.id);
+    assert_eq!(h.hook(&body, Some(sig.clone())).await.0, 500);
+    assert!(h.store.0.lock().unwrap().events.is_empty());
+    h.fake().serve_for("session_paid_card.json", p.id);
+    assert_eq!(h.hook(&body, Some(sig)).await.0, 200);
+    assert_eq!(h.grants(), 1);
+}
+
+#[test]
+fn every_fixture_event_parses_and_has_a_valid_id() {
+    for f in [
+        "event_completed.json",
+        "event_expired.json",
+        "event_async_failed.json",
+        "event_async_succeeded.json",
+    ] {
+        let e: Event = serde_json::from_slice(&fixture(f)).unwrap();
+        assert!(webhook::valid_event_id(&e.id), "{f}");
+        assert!(!e.livemode);
+    }
+}
