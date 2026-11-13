@@ -1022,6 +1022,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "kubcode-billing"
+version = "0.1.0"
+dependencies = [
+ "serde",
+ "thiserror",
+ "time",
+]
+
+[[package]]
 name = "kubcode-cli"
 version = "0.1.0"
 dependencies = [
