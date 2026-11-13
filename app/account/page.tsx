@@ -1,7 +1,9 @@
 import Link from "next/link";
-import { headers } from "next/headers";
+import { cookies, headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { AccountForm } from "@/components/AccountForm";
+import { BillingBanner } from "@/components/BillingBanner";
+import { getBillingPage } from "@/lib/billing/view";
 import { getAccountView } from "@/lib/auth";
 import { authErrorMessage, canonicalHostRedirect, readAuthConfig } from "@/lib/auth-policy";
 import { accountsEnabled } from "@/lib/accounts/view";
@@ -16,6 +18,8 @@ export default async function Account({ searchParams }: Props) {
     if (redirectTo) redirect(redirectTo);
   }
   const view = await getAccountView();
+  // In-site renewal reminder (ADR 0008); nothing when billing is off.
+  const billing = view.state === "signed-in" ? await getBillingPage(process.env, () => cookies()) : null;
   const { error, account_notice: accountNotice } = await searchParams;
   // Central accounts are ON with a usable configuration (DB truth is checked per request).
   const settingsAvailable = accountsEnabled();
@@ -51,7 +55,13 @@ export default async function Account({ searchParams }: Props) {
           <br />
           ดาวน์โหลดยังปิดอยู่สำหรับทุกคน
         </p>
+        {billing?.state === "ready" && <BillingBanner view={billing.view} />}
         <AccountForm {...formProps} />
+        {billing?.state === "ready" && (
+          <p>
+            <Link href="/account/billing">การชำระเงินและแพ็กเกจ</Link>
+          </p>
+        )}
         {view.state === "signed-in" && process.env.TIKTOK_SANDBOX_BRIDGE && process.env.TIKTOK_SANDBOX_ORIGIN && <p><Link href="/account/tiktok">โพสต์คลิปบน TikTok</Link></p>}
       </div>
       <section className="membership">

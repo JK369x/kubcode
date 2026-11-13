@@ -128,5 +128,7 @@ export function extraChannelLabel(p: Plan): string | null {
  * yet (ADR 0007), so available paid plans show a disabled
  * "เปิดให้สมัครเร็ว ๆ นี้" button.
  */
-export const BILLING_FLAG = "KUBCODE_BILLING_ENABLED";
-export const billingOpen = (env: Record<string, string | undefined> = process.env) => env[BILLING_FLAG] === "true";
+export { BILLING_FLAG } from "./billing/config";
+import { readBillingConfig } from "./billing/config";
+/** The Social CTA is live only when billing is fully configured (flag + Lambda URL + key). */
+export const billingOpen = (env: Record<string, string | undefined> = process.env) => readBillingConfig(env).mode === "on";
