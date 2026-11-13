@@ -52,6 +52,8 @@ pub async fn db() -> Db {
                version text PRIMARY KEY, checksum text NOT NULL, applied_at timestamptz NOT NULL DEFAULT now());
              DO $$ BEGIN CREATE ROLE kubcode_worker NOLOGIN;
              EXCEPTION WHEN duplicate_object OR unique_violation THEN NULL; END $$;
+             DO $$ BEGIN CREATE ROLE kubcode_billing NOLOGIN;
+             EXCEPTION WHEN duplicate_object OR unique_violation THEN NULL; END $$;
              DO $$ BEGIN CREATE ROLE kubcode_app NOLOGIN;
              EXCEPTION WHEN duplicate_object OR unique_violation THEN NULL; END $$;",
         )
