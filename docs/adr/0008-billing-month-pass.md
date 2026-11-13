@@ -2,7 +2,7 @@
 
 Status: accepted (2026-11-13, owner: "start everything") · Implements ADR 0007 (pricing) · Design
 `docs/design/billing-stripe.md` (option A) · Facts `docs/research/stripe-thailand-2026-11-09.md`
-· Test mode only; live keys and the production webhook are a later, separate step.
+· Test mode only at first; production went live in steps (see the amendment at the end).
 
 ## Context
 
@@ -75,3 +75,25 @@ Four PRs, each green before the next, none merged without the owner:
   paths and more webhook states for the first version.
 - **Monthly Stripe invoices (option A2)**: Stripe would send the emails, but the owner chose in-site reminders.
 - **Billing inside the publishing Lambda**: one role would hold both the Stripe and the Zernio keys.
+
+## Amendment 2026-11-13: live mode in production
+
+The owner approved going live in steps (2026-11-13). The first version shipped test mode only (line 5);
+this amendment replaces that for production and leaves every other decision unchanged.
+
+- **Production takes live Stripe.** The `kubcode-billing` Lambda runs with `KUBCODE_STRIPE_ALLOW_LIVE=true`
+  (set in `infra/src/stack.ts`), so it accepts an `sk_live_`/`rk_live_` key from SSM and handles `livemode: true`
+  events. Its webhook endpoint is created in the **live** Dashboard.
+- **Everything else stays test.** The local runner (`examples/billing_local.rs`), the local E2E and the CI
+  contract tests keep `allow_live = false` and refuse live keys. No test calls the live API.
+- **One key slot, mode-checked writes.** `/kubcode/prod/stripe-secret-key` holds whichever key production
+  uses. `infra/scripts/billing-secrets.sh stripe-key-live` writes only `sk_live_`/`rk_live_` keys (vault
+  `kubcode/stripe-secret-key-live`); `stripe-key` writes only test keys. The same applies to the webhook
+  secret (`webhook-secret-live` / `webhook-secret`), with the `-previous` rotation window.
+- **Least privilege.** The live key is a restricted key. The Lambda calls exactly
+  `POST /v1/checkout/sessions` (Checkout Sessions: Write) and
+  `GET /v1/checkout/sessions/{id}?expand[]=payment_intent&expand[]=payment_intent.latest_charge`
+  (Checkout Sessions read is included in Write; the expansions need PaymentIntents: Read and Charges: Read).
+  Webhooks are verified by signature and need no key permission. Events: Read is not used by the Lambda.
+- **Customers still cannot pay** until the web host sets `KUBCODE_BILLING_ENABLED=true`, a separate owner
+  decision after a live smoke test.

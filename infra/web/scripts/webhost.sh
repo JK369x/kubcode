@@ -24,6 +24,12 @@
 #                            (kubcode/publishing-hmac-key, made by
 #                            infra/scripts/publishing-secrets.sh hmac) and the flag
 #                            are merged into web.env. No value is printed
+#   webhost.sh set-billing   billing (docs/adr/0008): the billing Function URL and the
+#                            HMAC key from the vault (kubcode/billing-hmac-key, made by
+#                            infra/scripts/billing-secrets.sh hmac) are merged into
+#                            web.env with KUBCODE_BILLING_ENABLED='false': customers
+#                            still cannot pay. Turning billing on is a separate owner
+#                            step (set the flag to 'true'). No value is printed
 #   webhost.sh smoke         run the on-box smoke test
 #   webhost.sh tls           right after the DNS flip: restart Caddy so it gets the
 #                            certificate now, and wait until the box serves it
@@ -228,6 +234,21 @@ set_publishing() {
   echo "webhost: publishing settings stored; /account/channels is on for the owner" >&2
 }
 
+# Prepares billing on the web host but keeps it OFF: the flag is written as
+# 'false' explicitly, so an earlier 'true' can never survive this step.
+set_billing() {
+  local url key env
+  url=$(cd "$HERE/.." && pulumi stack output --stack prod billingUrl)
+  [[ "$url" =~ ^https://[a-z0-9]+[.]lambda-url[.]ap-southeast-1[.]on[.]aws/$ ]] || die "no billingUrl stack output (pulumi up with kubcode:billing first)"
+  kc_has billing-hmac-key || die "vault has no kubcode/billing-hmac-key; run infra/scripts/billing-secrets.sh hmac"
+  key=$(kc_get billing-hmac-key)
+  [[ "$key" =~ ^[0-9a-f]{64}$ ]] || die "kubcode/billing-hmac-key is not 64 hex characters"
+  env=$(printf "KUBCODE_BILLING_URL='%s'\nKUBCODE_BILLING_HMAC_KEY='%s'\nKUBCODE_BILLING_ENABLED='false'\n" "$url" "$key")
+  unset key
+  admin_ssh sudo /usr/local/lib/kubcode/write-env --merge <<<"$env"
+  echo "webhost: billing settings stored, billing still OFF (KUBCODE_BILLING_ENABLED='false')" >&2
+}
+
 # Caddy tried for the certificate at provision time, while DNS still pointed
 # at Vercel, and is now backing off. A restart makes it try again at once.
 tls() {
@@ -254,6 +275,7 @@ set-downloads) set_downloads ;;
 set-worker-db) TMP=$(mktemp -d) && set_worker_db ;;
 set-connect) TMP=$(mktemp -d) && set_connect ;;
 set-publishing) set_publishing ;;
+set-billing) set_billing ;;
 smoke) admin_ssh /usr/local/lib/kubcode/smoke ;;
 tls) tls ;;
 status | rollback) admin_ssh sudo -u deploy env SSH_ORIGINAL_COMMAND="$1" /usr/local/bin/kubcode-deploy ;;
