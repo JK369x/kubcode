@@ -1,0 +1,25 @@
+# Billing sweep (ADR 0008 §5): one signed call to the billing Function URL.
+# Started by kubcode-billing-sweep.timer every hour.
+[Unit]
+Description=kubcode billing sweep (grace → pause, renewal → resume)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+User=kubcode
+Group=kubcode
+EnvironmentFile=/etc/kubcode/web.env
+ExecStart=/usr/local/bin/node /usr/local/lib/kubcode/billing-sweep
+TimeoutStartSec=60
+
+NoNewPrivileges=yes
+ProtectSystem=strict
+ProtectHome=yes
+PrivateTmp=yes
+PrivateDevices=yes
+ProtectKernelTunables=yes
+ProtectKernelModules=yes
+ProtectControlGroups=yes
+RestrictSUIDSGID=yes
+LockPersonality=yes

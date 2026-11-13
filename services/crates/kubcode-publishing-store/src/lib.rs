@@ -1395,6 +1395,62 @@ impl Store {
 
     // ------------------------------------------------------------ requests
 
+    // ------------------------------------------------------------ billing (0013)
+
+    /// Paused by billing (ADR 0008): no new deliveries, no automations.
+    pub async fn channel_paused(&self, channel: ChannelId) -> Result<bool> {
+        Ok(self
+            .c
+            .query_opt(
+                "SELECT 1 FROM kubcode_accounts.billing_channel_pauses WHERE channel_id = $1 AND resumed_at IS NULL",
+                &[&channel.0],
+            )
+            .await?
+            .is_some())
+    }
+
+    /// Deliveries still waiting to publish on billing-paused channels: the
+    /// sweep cancels them at the provider (nothing is deleted on our side).
+    pub async fn deliveries_on_paused_channels(&self, limit: i64) -> Result<Vec<DeliveryId>> {
+        let rows = self
+            .c
+            .query(
+                "SELECT d.id FROM kubcode_accounts.deliveries d
+                   JOIN kubcode_accounts.billing_channel_pauses p ON p.channel_id = d.channel_id AND p.resumed_at IS NULL
+                  WHERE d.status IN ('pending', 'scheduled')
+                  ORDER BY d.publish_at LIMIT $1",
+                &[&limit],
+            )
+            .await?;
+        Ok(rows.iter().map(|r| DeliveryId(r.get(0))).collect())
+    }
+
+    /// Channels paused for `after` or longer and still connected: due to be
+    /// disconnected from the provider (it bills per connected account).
+    pub async fn paused_channels_due(
+        &self,
+        after: Duration,
+        now: OffsetDateTime,
+        limit: i64,
+    ) -> Result<Vec<(ChannelId, WorkspaceId)>> {
+        let rows = self
+            .c
+            .query(
+                "SELECT ch.id, ch.workspace_id FROM kubcode_accounts.billing_channel_pauses p
+                   JOIN kubcode_accounts.channels ch ON ch.id = p.channel_id
+                  WHERE p.resumed_at IS NULL AND p.paused_at <= $1
+                    AND EXISTS (SELECT 1 FROM kubcode_accounts.channel_connections cc
+                                 WHERE cc.channel_id = ch.id AND cc.status <> 'revoked')
+                  ORDER BY p.paused_at LIMIT $2",
+                &[&(now - after), &limit],
+            )
+            .await?;
+        Ok(rows
+            .iter()
+            .map(|r| (ChannelId(r.get(0)), WorkspaceId(r.get(1))))
+            .collect())
+    }
+
     /// HMAC replay guard shared with the connect Lambda (table from 0004):
     /// false when the nonce was already used. Old nonces are pruned.
     pub async fn use_nonce(&self, nonce_hash: &[u8; 32]) -> Result<bool> {

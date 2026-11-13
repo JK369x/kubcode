@@ -108,6 +108,7 @@
         "currency": "thb",
         "status": "succeeded",
         "payment_method_types": [
+          "card",
           "promptpay"
         ],
         "livemode": false

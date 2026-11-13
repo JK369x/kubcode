@@ -95,9 +95,18 @@
     "currency": "thb",
     "status": "succeeded",
     "payment_method_types": [
+      "card",
       "promptpay"
     ],
-    "livemode": false
+    "livemode": false,
+    "latest_charge": {
+      "id": "ch_3FixturePromptpay0001",
+      "object": "charge",
+      "paid": true,
+      "payment_method_details": {
+        "type": "promptpay"
+      }
+    }
   },
   "payment_link": null,
   "payment_method_collection": "if_required",

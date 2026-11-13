@@ -919,3 +919,64 @@ async fn the_post_picker_lists_the_channels_posts_and_ours_first() {
     );
     db.drop().await;
 }
+
+#[tokio::test]
+#[ignore = "needs KUBCODE_TEST_DATABASE_URL; run with --ignored"]
+async fn billing_paused_channels_take_no_posts_and_disconnect_after_14_days() {
+    let db = db().await;
+    let mut store = db.store().await;
+    let fake = Arc::new(FakeProvider::default());
+    let (reg, cfg) = (registry(&fake), cfg());
+    let mut s = svc(&mut store, &reg, &cfg);
+    let owner = db.user(true).await;
+    let yt = connect(&mut s, &fake, owner, Platform::YouTube).await;
+    let (video, cover) = assets(&mut s, owner, true).await;
+    let req = request(video, cover, &[yt]);
+    let before = s.schedule(owner, req.clone(), digest(&req)).await.unwrap();
+    let pending = before.deliveries[0].delivery.unwrap();
+    assert_eq!(before.deliveries[0].status, DeliveryStatus::Scheduled);
+
+    // The billing sweep pauses the channel (written by kubcode_billing).
+    let paused_at = s.now - Duration::days(1);
+    db.owner
+        .execute(
+            "INSERT INTO kubcode_accounts.billing_channel_pauses (channel_id, reason, paused_at) VALUES ($1, 'lapsed', $2)",
+            &[&yt.0, &paused_at],
+        )
+        .await
+        .unwrap();
+    // New posts are refused before the provider.
+    let posts_before = fake.post_count();
+    let refused = s.schedule(owner, req.clone(), digest(&req)).await.unwrap();
+    assert_eq!(
+        refused.deliveries[0].codes,
+        vec!["channel_paused".to_owned()]
+    );
+    assert_eq!(fake.post_count(), posts_before);
+
+    // The publishing half of the sweep cancels the scheduled post; not yet 14 days.
+    let (cancelled, disconnected) = s.billing_sweep().await.unwrap();
+    assert_eq!((cancelled, disconnected), (1, 0));
+    assert_eq!(
+        s.store.delivery(pending).await.unwrap().unwrap().status,
+        DeliveryStatus::Cancelled
+    );
+    assert_eq!(s.billing_sweep().await.unwrap(), (0, 0), "idempotent");
+
+    // 14 days paused: disconnected from the provider; our rows stay.
+    s.now = paused_at + Duration::days(14);
+    assert_eq!(s.billing_sweep().await.unwrap(), (0, 1));
+    assert!(s
+        .store
+        .connections(yt)
+        .await
+        .unwrap()
+        .iter()
+        .all(|c| c.status == kubcode_publishing::domain::ConnectionStatus::Revoked));
+    assert!(
+        s.store.channel(yt).await.unwrap().is_some(),
+        "the channel is kept"
+    );
+    assert_eq!(s.billing_sweep().await.unwrap(), (0, 0));
+    db.drop().await;
+}

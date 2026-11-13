@@ -241,6 +241,12 @@ impl BillingStore for MemStore {
     async fn event_seen(&self, id: &str) -> Result<bool, StoreError> {
         Ok(self.0.lock().unwrap().events.iter().any(|e| e == id))
     }
+    async fn sweep(
+        &mut self,
+        _now: OffsetDateTime,
+    ) -> Result<(usize, usize, usize, usize), StoreError> {
+        Ok((1, 0, 0, 0))
+    }
 }
 
 #[async_trait]
@@ -801,4 +807,30 @@ fn every_fixture_event_parses_and_has_a_valid_id() {
         assert!(webhook::valid_event_id(&e.id), "{f}");
         assert!(!e.livemode);
     }
+}
+
+#[tokio::test]
+async fn sweep_is_signed_and_takes_only_an_empty_body() {
+    let mut h = h();
+    let (s, b) = h.call("/api/sweep", "{}", &nonce(40)).await;
+    assert_eq!(
+        (s, b["ok"].clone(), b["workspaces"].clone()),
+        (200, Value::Bool(true), Value::from(1))
+    );
+    assert_eq!(h.call("/api/sweep", r#"{"x":1}"#, &nonce(41)).await.0, 400);
+}
+
+#[test]
+fn the_method_used_comes_from_the_charge_not_the_allowed_list() {
+    use billing_lambda::stripe::{payment_method, Session};
+    // Recorded shape (2026-11-13 local E2E): the intent allows card and
+    // promptpay; only the charge says which one paid.
+    let card: Session = serde_json::from_slice(&fixture("session_paid_card.json")).unwrap();
+    let pp: Session = serde_json::from_slice(&fixture("session_paid_promptpay.json")).unwrap();
+    assert_eq!(payment_method(&card), Some("card"));
+    assert_eq!(payment_method(&pp), Some("promptpay"));
+    let mut v = fixture_json("session_paid_card.json");
+    v["payment_intent"]["latest_charge"] = Value::String("ch_notexpanded".into());
+    let s: Session = serde_json::from_value(v).unwrap();
+    assert_eq!(payment_method(&s), None);
 }

@@ -319,3 +319,129 @@ async fn renewal_chains_and_owner_is_exempt() {
     assert!(!st.workspace_exempt(ws).await.unwrap());
     db.drop().await;
 }
+
+impl Db {
+    async fn channel(&self, ws: Uuid, days_ago: i64) -> Uuid {
+        let id: Uuid = self
+            .owner
+            .query_one(
+                "INSERT INTO kubcode_accounts.channels (workspace_id, platform, display_name, created_at) VALUES ($1, 'tiktok', 'c', now() - make_interval(days => $2::int)) RETURNING id",
+                &[&ws, &(days_ago as i32)],
+            )
+            .await
+            .unwrap()
+            .get(0);
+        self.owner
+            .execute(
+                "INSERT INTO kubcode_accounts.channel_connections (channel_id, provider, provider_ref, status) VALUES ($1, 'zernio', $2, 'active')",
+                &[&id, &format!("acct-{id}")],
+            )
+            .await
+            .unwrap();
+        id
+    }
+    async fn open_pauses(&self, ws: Uuid) -> Vec<Uuid> {
+        self.owner
+            .query(
+                "SELECT p.channel_id FROM kubcode_accounts.billing_channel_pauses p JOIN kubcode_accounts.channels c ON c.id = p.channel_id
+                  WHERE c.workspace_id = $1 AND p.resumed_at IS NULL ORDER BY c.created_at",
+                &[&ws],
+            )
+            .await
+            .unwrap()
+            .iter()
+            .map(|r| r.get(0))
+            .collect()
+    }
+}
+
+#[tokio::test]
+#[ignore = "needs KUBCODE_TEST_DATABASE_URL"]
+async fn sweep_pauses_after_grace_and_resumes_on_renewal_newest_first() {
+    let db = db().await;
+    let (user, ws) = db.member(false).await;
+    let old = db.channel(ws, 30).await;
+    let newer = db.channel(ws, 2).await;
+    let mut st = db.billing().await;
+    let t0 = now();
+    let q = month_pass(&st.entitlement(ws, false, t0).await.unwrap(), 1, t0).unwrap();
+    let p = st.create_purchase(ws, user, &q).await.unwrap();
+    st.fulfil(p, None, None, false, t0).await.unwrap();
+    // Active with 1 slot and 2 channels: the newer one pauses.
+    let o = st
+        .sweep_workspace(ws, t0 + Duration::days(1))
+        .await
+        .unwrap();
+    assert_eq!((o.paused, o.resumed), (1, 0));
+    assert_eq!(db.open_pauses(ws).await, vec![newer]);
+    // Idempotent.
+    assert_eq!(
+        st.sweep_workspace(ws, t0 + Duration::days(1))
+            .await
+            .unwrap()
+            .paused,
+        0
+    );
+    // Grace: nothing more pauses.
+    let grace = q.period_end + Duration::days(2);
+    assert_eq!(st.sweep_workspace(ws, grace).await.unwrap().paused, 0);
+    // Lapsed: the older one pauses too.
+    let lapsed = q.period_end + Duration::days(3);
+    assert_eq!(st.sweep_workspace(ws, lapsed).await.unwrap().paused, 1);
+    assert_eq!(db.open_pauses(ws).await, vec![old, newer]);
+    let ent: i32 = db
+        .owner
+        .query_one(
+            "SELECT slots FROM kubcode_accounts.billing_entitlements WHERE workspace_id = $1",
+            &[&ws],
+        )
+        .await
+        .unwrap()
+        .get(0);
+    assert_eq!(ent, 0);
+    // 14 days paused: due for disconnect (the publishing worker does it).
+    assert_eq!(
+        st.sweep_workspace(ws, lapsed + Duration::days(14))
+            .await
+            .unwrap()
+            .disconnect_due,
+        2
+    );
+    // Renew 2 slots: both resume, history kept.
+    let q2 = month_pass(&st.entitlement(ws, false, lapsed).await.unwrap(), 2, lapsed).unwrap();
+    let p2 = st.create_purchase(ws, user, &q2).await.unwrap();
+    st.fulfil(p2, None, None, false, lapsed).await.unwrap();
+    let o = st
+        .sweep_workspace(ws, lapsed + Duration::minutes(1))
+        .await
+        .unwrap();
+    assert_eq!(o.resumed, 2);
+    assert!(db.open_pauses(ws).await.is_empty());
+    // One pause row per channel (the newer one's over-slots pause carried
+    // through the lapse); both kept with resumed_at set, nothing deleted.
+    let rows: i64 = db
+        .owner
+        .query_one("SELECT count(*) FROM kubcode_accounts.billing_channel_pauses WHERE resumed_at IS NOT NULL", &[])
+        .await
+        .unwrap()
+        .get(0);
+    assert_eq!(rows, 2, "history kept");
+    db.drop().await;
+}
+
+#[tokio::test]
+#[ignore = "needs KUBCODE_TEST_DATABASE_URL"]
+async fn sweep_skips_never_paid_and_owner_workspaces() {
+    let db = db().await;
+    let (_u, free_ws) = db.member(false).await;
+    db.channel(free_ws, 1).await;
+    let (_o, owner_ws) = db.member(true).await;
+    db.channel(owner_ws, 1).await;
+    let st = db.billing().await;
+    let list = st.sweep_workspaces().await.unwrap();
+    assert!(!list.contains(&free_ws) && !list.contains(&owner_ws));
+    let mut st = st;
+    assert_eq!(st.sweep_workspace(owner_ws, now()).await.unwrap().paused, 0);
+    assert_eq!(st.sweep_workspace(free_ws, now()).await.unwrap().paused, 0);
+    db.drop().await;
+}

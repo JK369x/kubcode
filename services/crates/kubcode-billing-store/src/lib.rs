@@ -8,6 +8,7 @@ use kubcode_billing::entitlement::{entitlement, Entitlement, PaidSpan};
 use kubcode_billing::money::Satang;
 use kubcode_billing::purchase::Status;
 use kubcode_billing::quote::{Kind, Quote};
+use kubcode_billing::sweep::{plan, ChannelSlot};
 use time::OffsetDateTime;
 use tokio_postgres::{Client, GenericClient};
 use uuid::Uuid;
@@ -345,4 +346,130 @@ impl Store {
             .await?;
         Ok(())
     }
+
+    /// Workspaces the sweep must look at: every workspace that has ever paid,
+    /// or still has an open pause (a never-paid workspace is not swept).
+    pub async fn sweep_workspaces(&self) -> Result<Vec<Uuid>> {
+        let rows = self
+            .c
+            .query(
+                "SELECT DISTINCT workspace_id FROM kubcode_accounts.billing_purchases WHERE status = 'paid'
+                 UNION
+                 SELECT DISTINCT ch.workspace_id FROM kubcode_accounts.billing_channel_pauses p
+                   JOIN kubcode_accounts.channels ch ON ch.id = p.channel_id WHERE p.resumed_at IS NULL",
+                &[],
+            )
+            .await?;
+        Ok(rows.iter().map(|r| r.get(0)).collect())
+    }
+
+    /// One workspace: pause channels past their slots, resume those that fit
+    /// again, keep the entitlement row current. One transaction under the
+    /// workspace lock, so it cannot interleave with a fulfilment.
+    pub async fn sweep_workspace(
+        &mut self,
+        workspace: Uuid,
+        now: OffsetDateTime,
+    ) -> Result<SweepOutcome> {
+        let tx = self.c.transaction().await?;
+        tx.execute(
+            "SELECT pg_advisory_xact_lock(hashtextextended('kubcode-billing:' || $1::text, 0))",
+            &[&workspace.to_string()],
+        )
+        .await?;
+        let exempt: bool = tx
+            .query_opt(
+                "SELECT bool_or(u.is_owner) FROM kubcode_accounts.workspace_members m
+                   JOIN kubcode_accounts.users u ON u.id = m.user_id WHERE m.workspace_id = $1",
+                &[&workspace],
+            )
+            .await?
+            .and_then(|r| r.get::<_, Option<bool>>(0))
+            .unwrap_or(false);
+        let ent = entitlement(&paid_spans(&tx, workspace).await?, now, exempt);
+        // Channels with a live connection, or with an open pause.
+        let rows = tx
+            .query(
+                "SELECT ch.id, ch.created_at,
+                        (SELECT p.paused_at FROM kubcode_accounts.billing_channel_pauses p
+                          WHERE p.channel_id = ch.id AND p.resumed_at IS NULL) AS paused_at,
+                        (SELECT p.disconnected_at FROM kubcode_accounts.billing_channel_pauses p
+                          WHERE p.channel_id = ch.id AND p.resumed_at IS NULL) AS disconnected_at,
+                        EXISTS (SELECT 1 FROM kubcode_accounts.channel_connections cc
+                                 WHERE cc.channel_id = ch.id AND cc.status <> 'revoked') AS live
+                   FROM kubcode_accounts.channels ch WHERE ch.workspace_id = $1",
+                &[&workspace],
+            )
+            .await?;
+        let ids: Vec<String> = rows
+            .iter()
+            .map(|r| r.get::<_, Uuid>(0).to_string())
+            .collect();
+        let mut slots_in: Vec<ChannelSlot<'_>> = Vec::new();
+        for (r, id) in rows.iter().zip(ids.iter()) {
+            let paused: Option<OffsetDateTime> = r.get(2);
+            let disconnected: Option<OffsetDateTime> = r.get(3);
+            let live: bool = r.get(4);
+            // A channel the creator disconnected themselves holds no slot.
+            if !live && paused.is_none() {
+                continue;
+            }
+            slots_in.push(ChannelSlot {
+                id,
+                created_at: r.get(1),
+                paused_at: paused,
+                disconnected: disconnected.is_some(),
+            });
+        }
+        let p = plan(&ent, &slots_in, now);
+        let reason = if matches!(ent.standing, kubcode_billing::entitlement::Standing::Lapsed) {
+            "lapsed"
+        } else {
+            "over_slots"
+        };
+        for id in &p.pause {
+            let id: Uuid = id.parse().map_err(|_| StoreError::Corrupt)?;
+            tx.execute(
+                "INSERT INTO kubcode_accounts.billing_channel_pauses (channel_id, reason, paused_at) VALUES ($1, $2, $3)
+                 ON CONFLICT (channel_id) WHERE resumed_at IS NULL DO NOTHING",
+                &[&id, &reason, &now],
+            )
+            .await?;
+        }
+        for id in &p.resume {
+            let id: Uuid = id.parse().map_err(|_| StoreError::Corrupt)?;
+            tx.execute(
+                "UPDATE kubcode_accounts.billing_channel_pauses SET resumed_at = $2 WHERE channel_id = $1 AND resumed_at IS NULL",
+                &[&id, &now],
+            )
+            .await?;
+        }
+        let slots = i32::try_from(ent.slots.min(50)).map_err(|_| StoreError::Corrupt)?;
+        if !exempt {
+            tx.execute(
+                "INSERT INTO kubcode_accounts.billing_entitlements (workspace_id, slots, period_start, paid_until, updated_at)
+                 VALUES ($1, $2, $3, $4, now())
+                 ON CONFLICT (workspace_id) DO UPDATE
+                   SET slots = EXCLUDED.slots, period_start = EXCLUDED.period_start,
+                       paid_until = EXCLUDED.paid_until, updated_at = now()",
+                &[&workspace, &slots, &ent.period_start, &ent.paid_until],
+            )
+            .await?;
+        }
+        tx.commit().await?;
+        Ok(SweepOutcome {
+            paused: p.pause.len(),
+            resumed: p.resume.len(),
+            disconnect_due: p.disconnect.len(),
+        })
+    }
+}
+
+/// Counts only (logged; no ids).
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+pub struct SweepOutcome {
+    pub paused: usize,
+    pub resumed: usize,
+    /// Paused 14+ days: the publishing Lambda disconnects these from Zernio.
+    pub disconnect_due: usize,
 }

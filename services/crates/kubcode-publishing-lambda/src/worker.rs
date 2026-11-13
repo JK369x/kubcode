@@ -17,8 +17,21 @@ pub async fn run(svc: &mut Service<'_>, minute: u8) -> Value {
     } else {
         0
     };
+    // Billing sweep (ADR 0008): every 10 minutes, after catch-up.
+    let (cancelled, disconnected) = if minute % 10 == 5 {
+        match svc.billing_sweep().await {
+            Ok(n) => n,
+            Err(f) => {
+                return json!({"ok": false, "code": f.code, "step": "billing_sweep", "kept": kept})
+            }
+        }
+    } else {
+        (0, 0)
+    };
     match svc.work().await {
-        Ok(done) => json!({"ok": true, "kept": kept, "handled": done.len()}),
+        Ok(done) => {
+            json!({"ok": true, "kept": kept, "handled": done.len(), "paused_cancelled": cancelled, "paused_disconnected": disconnected})
+        }
         Err(f) => json!({"ok": false, "code": f.code, "step": "work", "kept": kept}),
     }
 }

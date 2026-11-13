@@ -530,6 +530,14 @@ impl Service<'_> {
                 ));
                 continue;
             };
+            // Billing (ADR 0008): a paused channel takes no new deliveries.
+            if self.store.channel_paused(ch.id).await? {
+                out.push(fail(
+                    vec!["channel_paused".into()],
+                    DeliveryStatus::Rejected,
+                ));
+                continue;
+            }
             let conns = self.store.connections(ch.id).await?;
             let views: Vec<ConnectionView> = conns
                 .iter()
@@ -831,6 +839,8 @@ const PRIVATE_REPLY_WINDOW: Duration = Duration::days(7);
 /// A ledger row left in dm_sending this long (a crash or a lost answer)
 /// becomes dm_unknown.
 const SENDING_TIMEOUT: Duration = Duration::minutes(2);
+/// ADR 0008: a channel paused this long is disconnected from the provider.
+pub const DISCONNECT_AFTER_PAUSE: Duration = Duration::days(14);
 /// Comments handled per worker run.
 const WORK_BATCH: i64 = 25;
 /// Catch-up reads this many recently commented posts per channel,
@@ -944,6 +954,69 @@ impl Service<'_> {
 
     /// The worker: sends what was recorded, oldest first. Returns
     /// (comment id, outcome) per comment handled, for tests and the caller.
+    /// Billing sweep, publishing half (ADR 0008 §5): cancel pending/scheduled
+    /// deliveries on paused channels at the provider, and disconnect channels
+    /// paused for 14 days (the provider bills per connected account). The
+    /// billing Lambda decides who is paused; this Lambda holds the Zernio key.
+    /// Our rows stay: cancelled deliveries and revoked connections are kept.
+    pub async fn billing_sweep(&mut self) -> Result<(usize, usize)> {
+        let mut cancelled = 0;
+        for d in self.store.deliveries_on_paused_channels(WORK_BATCH).await? {
+            let Some(row) = self.store.delivery(d).await? else {
+                continue;
+            };
+            if row.status.is_final() || !row.status.can_move_to(DeliveryStatus::Cancelled) {
+                continue;
+            }
+            if let (Some(post_ref), Some(profile)) = (&row.provider_ref, &row.profile) {
+                let publisher = Arc::clone(&self.providers(row.provider)?.publisher);
+                publisher
+                    .cancel(
+                        &ConnectionRef {
+                            platform: row.platform,
+                            profile: profile.clone(),
+                            account: row.account.clone(),
+                        },
+                        post_ref,
+                    )
+                    .await?;
+            }
+            self.store
+                .transition(d, DeliveryStatus::Cancelled, Some("channel_paused"))
+                .await?;
+            cancelled += 1;
+        }
+        let mut disconnected = 0;
+        for (channel, ws) in self
+            .store
+            .paused_channels_due(DISCONNECT_AFTER_PAUSE, self.now, WORK_BATCH)
+            .await?
+        {
+            let Ok(ch) = self.own_channel(ws, channel).await else {
+                continue;
+            };
+            for c in self.store.connections(channel).await? {
+                if c.status == kubcode_publishing::domain::ConnectionStatus::Revoked {
+                    continue;
+                }
+                let set = self.providers(c.provider)?;
+                let Some(profile) = self.store.profile(ws, c.provider).await? else {
+                    continue;
+                };
+                set.connect
+                    .disconnect(&ConnectionRef {
+                        platform: ch.platform,
+                        profile,
+                        account: c.provider_ref.clone(),
+                    })
+                    .await?;
+                self.store.revoke_connection(c.id).await?;
+            }
+            disconnected += 1;
+        }
+        Ok((cancelled, disconnected))
+    }
+
     pub async fn work(&mut self) -> Result<Vec<(String, &'static str)>> {
         self.store.stale_sending_to_unknown(SENDING_TIMEOUT).await?;
         let mut done = Vec::new();
@@ -964,6 +1037,10 @@ impl Service<'_> {
             .is_some_and(|t| self.now - t > PRIVATE_REPLY_WINDOW)
         {
             return Ok("too_old");
+        }
+        // Billing (ADR 0008): no automation runs on a paused channel.
+        if self.store.channel_paused(c.channel).await? {
+            return Ok("channel_paused");
         }
         let rules = self.store.rules_of(c.channel).await?;
         let Some(rule) = rules

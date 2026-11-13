@@ -101,8 +101,31 @@ pub enum PaymentIntentRef {
 #[derive(Debug, Clone, Deserialize, PartialEq, Eq)]
 pub struct ExpandedIntent {
     pub id: String,
+    /// What the intent ALLOWS (e.g. card and promptpay), not what was used.
     #[serde(default)]
     pub payment_method_types: Vec<String>,
+    /// Expanded `latest_charge`: its `payment_method_details.type` is what was used.
+    #[serde(default)]
+    pub latest_charge: Option<ChargeRef>,
+}
+
+#[derive(Debug, Clone, Deserialize, PartialEq, Eq)]
+#[serde(untagged)]
+pub enum ChargeRef {
+    Id(String),
+    Expanded(ExpandedCharge),
+}
+
+#[derive(Debug, Clone, Deserialize, PartialEq, Eq)]
+pub struct ExpandedCharge {
+    #[serde(default)]
+    pub payment_method_details: Option<MethodDetails>,
+}
+
+#[derive(Debug, Clone, Deserialize, PartialEq, Eq)]
+pub struct MethodDetails {
+    #[serde(rename = "type")]
+    pub kind: String,
 }
 
 impl Session {
@@ -223,7 +246,9 @@ impl<T: Transport + ?Sized> Stripe<T> {
         }
         self.session_call(HttpRequest {
             method: "GET",
-            path: format!("/checkout/sessions/{id}?expand%5B%5D=payment_intent"),
+            path: format!(
+                "/checkout/sessions/{id}?expand%5B%5D=payment_intent&expand%5B%5D=payment_intent.latest_charge"
+            ),
             form: vec![],
             idempotency_key: None,
         })
@@ -240,15 +265,19 @@ pub fn valid_session_id(id: &str) -> bool {
     })
 }
 
-/// Card or PromptPay, from the expanded intent; anything else is not recorded.
+/// Card or PromptPay: the method actually used, from the intent's latest
+/// charge (found by the local E2E: the intent's `payment_method_types` lists
+/// every allowed method). Anything else is not recorded.
 pub fn payment_method(s: &Session) -> Option<&'static str> {
-    let types = match &s.payment_intent {
-        Some(PaymentIntentRef::Expanded(e)) => &e.payment_method_types,
-        _ => return None,
+    let Some(PaymentIntentRef::Expanded(e)) = &s.payment_intent else {
+        return None;
     };
-    match types.as_slice() {
-        [t] if t == "card" => Some("card"),
-        [t] if t == "promptpay" => Some("promptpay"),
+    let Some(ChargeRef::Expanded(c)) = &e.latest_charge else {
+        return None;
+    };
+    match c.payment_method_details.as_ref()?.kind.as_str() {
+        "card" => Some("card"),
+        "promptpay" => Some("promptpay"),
         _ => None,
     }
 }

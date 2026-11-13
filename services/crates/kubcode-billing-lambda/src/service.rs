@@ -43,6 +43,11 @@ pub trait BillingStore: Send {
     async fn flag_review(&self, purchase: Uuid, code: &str) -> Result<(), StoreError>;
     async fn workspace_exempt(&self, ws: Uuid) -> Result<bool, StoreError>;
     async fn event_seen(&self, id: &str) -> Result<bool, StoreError>;
+    /// The daily sweep: (workspaces, paused, resumed, disconnect_due).
+    async fn sweep(
+        &mut self,
+        now: OffsetDateTime,
+    ) -> Result<(usize, usize, usize, usize), StoreError>;
 }
 
 #[async_trait]
@@ -94,6 +99,20 @@ impl BillingStore for Store {
     }
     async fn event_seen(&self, id: &str) -> Result<bool, StoreError> {
         Store::event_seen(self, id).await
+    }
+    async fn sweep(
+        &mut self,
+        now: OffsetDateTime,
+    ) -> Result<(usize, usize, usize, usize), StoreError> {
+        let mut out = (0, 0, 0, 0);
+        for ws in self.sweep_workspaces().await? {
+            let o = self.sweep_workspace(ws, now).await?;
+            out.0 += 1;
+            out.1 += o.paused;
+            out.2 += o.resumed;
+            out.3 += o.disconnect_due;
+        }
+        Ok(out)
     }
 }
 
@@ -335,6 +354,15 @@ impl<S: BillingStore, T: Transport + ?Sized> Service<'_, S, T> {
                 Applied::Stale
             }
         })
+    }
+
+    /// Grace → pause, renewal → resume, for every workspace that has paid.
+    /// Disconnecting from Zernio is the publishing Lambda's half.
+    pub async fn sweep(&mut self) -> Result<Value, Refusal> {
+        let (ws, paused, resumed, due) = self.store.sweep(self.now).await?;
+        Ok(
+            json!({"ok": true, "workspaces": ws, "paused": paused, "resumed": resumed, "disconnect_due": due}),
+        )
     }
 
     /// The success page: the browser sends a session id; we ask Stripe.

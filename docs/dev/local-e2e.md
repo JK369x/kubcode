@@ -173,3 +173,45 @@ the Zernio dashboard for a leftover `kubcode-<8 hex>` profile and its accounts.
 - Webhooks: Zernio cannot reach 127.0.0.1. Use a tunnel when a change needs them.
 - S3 itself (publish mode uses a local directory) and the ops Lambda's IAM
   invoke (the CLI talks to the runner over loopback).
+
+# Billing (ADR 0008) — Stripe TEST mode only
+
+Same idea as the channel loop: production code paths on this machine, real
+Stripe in **test mode**, a throwaway database. Live keys and live events are
+refused by the runner and the Lambda.
+
+| Piece | Local stand-in | Same code as production? |
+|---|---|---|
+| Database | throwaway DB, all migrations; `kubcode_billing` and `kubcode_app` get a random local password | yes (migrations, grants, RLS) |
+| Billing Lambda | `services/crates/kubcode-billing-lambda/examples/billing_local.rs` on 127.0.0.1:3191 | yes: `http::handle`, `Service`, Stripe client, `Store`; only the HTTP server, secret source and the no-TLS DB connection differ |
+| Stripe webhooks | `stripe listen --forward-to 127.0.0.1:3191/stripe/webhook` | real Stripe events, signed with the CLI's `whsec_` |
+| Web host | `next start` (production build), billing flag on, Function URL replaced by the loopback runner (`KUBCODE_BILLING_LOCAL=true`) | yes |
+| Browser | headless Chromium; `https://kubcode.dev/**` answered by the local Next server; Stripe Checkout real (test) | yes |
+
+## Run
+
+```bash
+docker start kubcode-pub-test
+export KUBCODE_TEST_DATABASE_URL=postgres://postgres:fixture-only@127.0.0.1:55432/kubcode_local_test
+stripe login                         # once; choose the kubcode TEST account, never Live
+npm run build
+scripts/local-e2e/run-billing.sh
+```
+
+`run-billing.sh` checks the vault key is a **test** key and that the CLI is
+logged in to the **same Stripe account** as that key (compared by account id
+through a read-only call), then starts the runner, `stripe listen`, Next and
+the browser. The Stripe key and the `whsec_` go to the runner's stdin; nothing
+secret is printed (session/event ids are shortened in the log).
+
+## What it proves
+
+1. Card `4242 4242 4242 4242`, 2 channels → purchase `paid`, method `card`, ฿578, entitlement 2 slots.
+2. `stripe events resend` of that `checkout.session.completed` → still **one** grant (dedupe + idempotent fulfil).
+3. Declined card `4000 0000 0000 0002` → nothing granted, purchase stays `pending` (expires later).
+4. PromptPay test page → **Authorize Test Payment** → `paid`, method `promptpay`.
+5. Success page and webhook both fulfil the same session → one grant (covered by 1 and 4; the success page polls the Lambda).
+
+The sweep (grace → pause → 14-day disconnect) is covered by the store and
+publishing DB tests (`cargo test -- --include-ignored`), because it depends on
+time, not on Stripe.
