@@ -11,7 +11,7 @@ export const SELLER = {
   /** Legal name of the individual seller, as on the Stripe account. */
   name: "JAKKARIN NINPAN",
   /** Public support/billing email. */
-  email: "PLACEHOLDER_SELLER_EMAIL",
+  email: "jakkarinlmc@gmail.com",
   /** Thai wording, shown as-is. */
   kind: "บุคคลธรรมดา",
   country: "ประเทศไทย",
