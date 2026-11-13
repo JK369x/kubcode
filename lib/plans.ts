@@ -9,6 +9,17 @@
  */
 export type PlanStatus = "available" | "coming_soon";
 
+/**
+ * kubcode's two product families (owner, 2026-11-13). One place to rename
+ * them; the home page hero uses the same names (lib/products.ts on the home
+ * branch).
+ */
+export const PRODUCT_FAMILIES = {
+  studio: "kubcode Studio",
+  social: "kubcode Social",
+} as const;
+export type ProductFamily = keyof typeof PRODUCT_FAMILIES;
+
 export type Plan = {
   id: string;
   nameTh: string;
@@ -24,6 +35,8 @@ export type Plan = {
   features: readonly string[];
   /** At most one plan is highlighted. */
   highlighted: boolean;
+  /** Product families the plan covers, shown under its name. */
+  families: readonly ProductFamily[];
 };
 
 export const PLANS: readonly Plan[] = [
@@ -42,6 +55,7 @@ export const PLANS: readonly Plan[] = [
       "ดาวน์โหลด skill ฟรีเมื่อเข้าสู่ระบบ: What If Lab, Podcast Shorts, Make Short และ EGM (MIT / Apache-2.0)",
     ],
     highlighted: false,
+    families: [],
   },
   {
     id: "social",
@@ -60,6 +74,7 @@ export const PLANS: readonly Plan[] = [
       "ไม่รวม skill สำหรับสมาชิก",
     ],
     highlighted: true,
+    families: ["social"],
   },
   {
     id: "skill-pack",
@@ -72,6 +87,7 @@ export const PLANS: readonly Plan[] = [
     summaryTh: "skill สำหรับสมาชิก สำหรับคนทำคลิปด้วย AI agent ของตัวเอง",
     features: ["skill สำหรับสมาชิก: Deep Sea Docs และชุดใหม่ที่จะเพิ่มต่อไป", "ทุกอย่างในแพ็กเกจฟรี"],
     highlighted: false,
+    families: ["studio"],
   },
   {
     id: "social-skill",
@@ -84,6 +100,7 @@ export const PLANS: readonly Plan[] = [
     summaryTh: "ทุกอย่างในโซเชียลและสกิลแพ็ก ในแพ็กเกจเดียว",
     features: ["ทุกอย่างในแพ็กเกจโซเชียล", "ทุกอย่างในสกิลแพ็ก"],
     highlighted: false,
+    families: ["social", "studio"],
   },
 ];
 

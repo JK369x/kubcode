@@ -18,6 +18,7 @@ import {
   extraChannelLabel,
   priceLabel,
   type Plan,
+  PRODUCT_FAMILIES,
 } from "@/lib/plans";
 
 export const metadata: Metadata = {
@@ -148,7 +149,7 @@ function PlanCard({ plan, open }: { plan: Plan; open: boolean }) {
         >
           {plan.nameTh}{" "}
           <span className="block font-brand text-[15px] font-medium text-muted-foreground">
-            {plan.nameEn}
+            {plan.families.length > 0 ? plan.families.map((f) => PRODUCT_FAMILIES[f]).join(" + ") : plan.nameEn}
           </span>
         </h2>
         {plan.highlighted && <Badge>แนะนำ</Badge>}

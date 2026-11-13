@@ -139,3 +139,12 @@ test("footer links pricing, refund, contact, terms, privacy and roadmap", () => 
   }
   for (const label of ["ราคา", "นโยบายคืนเงิน", "ติดต่อเรา", "ข้อกำหนด", "ความเป็นส่วนตัว"]) assert.ok(text(h).includes(label));
 });
+
+test("plan cards name the product family: Skill Pack = kubcode Studio, Social = kubcode Social", async () => {
+  const { PLANS, PRODUCT_FAMILIES } = await import("../lib/plans");
+  const fam = (id: string) => PLANS.find((p) => p.id === id)!.families.map((f) => PRODUCT_FAMILIES[f]).join(" + ");
+  assert.equal(fam("skill-pack"), "kubcode Studio");
+  assert.equal(fam("social"), "kubcode Social");
+  assert.equal(fam("social-skill"), "kubcode Social + kubcode Studio");
+  assert.equal(fam("free"), "");
+});
