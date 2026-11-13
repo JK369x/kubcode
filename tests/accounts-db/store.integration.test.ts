@@ -67,6 +67,9 @@ const ACCOUNT_TABLES = [
   "automation_rules",
   "comment_items",
   "dm_ledger",
+  // 0012: "แจ้งฉันเมื่อเปิด" waitlist.
+  "plan_waitlist",
+  "waitlist_toggles",
 ];
 const PUBLISHING_MEMBER_TABLES = [
   "workspaces",
@@ -81,6 +84,9 @@ const PUBLISHING_MEMBER_TABLES = [
   "automation_rules",
   "comment_items",
   "dm_ledger",
+  // 0012: "แจ้งฉันเมื่อเปิด" waitlist.
+  "plan_waitlist",
+  "waitlist_toggles",
 ];
 const PUBLISHING_WORKER_TABLES = [
   "workspaces",
@@ -100,8 +106,11 @@ const PUBLISHING_WORKER_TABLES = [
   "automation_rules",
   "comment_items",
   "dm_ledger",
+  // 0012: "แจ้งฉันเมื่อเปิด" waitlist.
+  "plan_waitlist",
+  "waitlist_toggles",
 ];
-const ALL_VERSIONS = ["0001_accounts", "0002_interactions", "0003_downloads", "0004_settings_keys", "0005_owner_flag", "0006_connect_app_source", "0007_publishing_channels", "0008_publishing_posts", "0009_publishing_owner_lookup", "0010_comment_automations", "0011_article_interactions"];
+const ALL_VERSIONS = ["0001_accounts", "0002_interactions", "0003_downloads", "0004_settings_keys", "0005_owner_flag", "0006_connect_app_source", "0007_publishing_channels", "0008_publishing_posts", "0009_publishing_owner_lookup", "0010_comment_automations", "0011_article_interactions", "0012_plan_waitlist"];
 
 // Refuses anything that is not clearly a local test database BEFORE any
 // connection is attempted.
@@ -346,7 +355,7 @@ test("account data lives only in kubcode_accounts: no public objects, RLS on, po
     "SELECT tablename, policyname, roles::text[] AS roles FROM pg_policies WHERE schemaname = 'kubcode_accounts'",
   );
   const allowed: Record<string, string[]> = {
-    kubcode_server_access: ["page_stars", "star_toggles", "page_comments", "comment_reports", "download_events"],
+    kubcode_server_access: ["page_stars", "star_toggles", "page_comments", "comment_reports", "download_events", "plan_waitlist", "waitlist_toggles"],
     kubcode_user_scope: ["user_secrets", "oauth_connections", "oauth_connect_intents", "secret_audit_events", "channel_connect_intents"],
     kubcode_worker_access: [
       "user_secrets", "oauth_connections", "oauth_connect_intents", "connect_request_nonces", "secret_audit_events",

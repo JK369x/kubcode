@@ -889,15 +889,26 @@ footer strong {
   max-width: 34em;
   line-height: 1.6;
 }
-.site-footer-links {
+.site-footer-nav {
   margin-left: auto;
   display: flex;
   flex-wrap: wrap;
-  gap: 8px 22px;
+  gap: 4px 40px;
+}
+.site-footer-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 22px;
+  list-style: none;
+  margin: 0;
+  padding: 0;
 }
 .site-footer-links a {
   color: var(--ink);
   text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  min-height: 32px;
 }
 .site-footer-links a:hover {
   color: var(--purple);
@@ -1455,12 +1466,15 @@ p[role="status"]:empty {
   }
   .header nav {
     width: 100%;
-    gap: 10px;
-    justify-content: space-between;
+    gap: 0 14px;
+    flex-wrap: wrap;
+    justify-content: flex-start;
   }
+  /* Thai words never break mid-word; with ราคา added the row wraps instead. */
   .header nav > a {
     min-height: 44px;
-    font-size: 12px;
+    font-size: 13px;
+    white-space: nowrap;
   }
   .theme-toggle {
     order: 4;
@@ -1606,9 +1620,17 @@ p[role="status"]:empty {
     display: block;
     padding: 28px 5%;
   }
-  .site-footer-links {
+  .site-footer-nav {
     margin-top: 18px;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0 16px;
+  }
+  .site-footer-links {
     flex-direction: column;
+  }
+  .site-footer-links a {
+    min-height: 44px;
   }
   .reading,
   .reading-index {
@@ -2870,6 +2892,38 @@ img[data-img-state="loading"] {
   .route-skeleton-detail {
     grid-template-columns: 1fr;
     gap: 24px;
+  }
+}
+/* Seller name / email / response time (/contact, /refund). */
+.seller-contact {
+  display: grid;
+  grid-template-columns: max-content minmax(0, 1fr);
+  gap: 10px 24px;
+  margin: 20px 0;
+  padding: 20px;
+  border: 1px solid var(--line);
+  border-radius: 22px;
+  background: var(--surface);
+  font-size: 16px;
+  line-height: 1.7;
+}
+.seller-contact dt {
+  color: var(--muted-foreground);
+}
+.seller-contact dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+.reading a {
+  color: var(--link);
+}
+@media (max-width: 560px) {
+  .seller-contact {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 2px;
+  }
+  .seller-contact dd + dt {
+    margin-top: 12px;
   }
 }
 } /* @layer legacy */

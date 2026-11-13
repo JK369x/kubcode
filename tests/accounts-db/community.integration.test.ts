@@ -163,6 +163,7 @@ test("0011 upgrades a database that already has tool and skill rows, keeping the
   try {
     const all = loadMigrations();
     const upTo10 = all.filter((m) => m.version < "0011");
+    const upTo11 = all.filter((m) => m.version < "0012");
     await migrate(p, upTo10);
     const u = await p.query<{ id: string }>("INSERT INTO kubcode_accounts.users DEFAULT VALUES RETURNING id");
     const uid = u.rows[0].id;
@@ -176,7 +177,7 @@ test("0011 upgrades a database that already has tool and skill rows, keeping the
       (e: { code?: string }) => e.code === "23514",
       "before 0011 articles are refused",
     );
-    assert.deepEqual((await migrate(p, all)).applied, ["0011_article_interactions"]);
+    assert.deepEqual((await migrate(p, upTo11)).applied, ["0011_article_interactions"]);
     assert.equal(Number((await p.query("SELECT count(*) AS n FROM kubcode_accounts.page_stars")).rows[0].n), 2);
     assert.equal(Number((await p.query("SELECT count(*) AS n FROM kubcode_accounts.page_comments")).rows[0].n), 1);
     await p.query("INSERT INTO kubcode_accounts.page_stars (user_id, page_kind, page_slug) VALUES ($1, 'article', 'a')", [uid]);
