@@ -18,7 +18,9 @@ use std::sync::Arc;
 use std::time::{SystemTime, UNIX_EPOCH};
 
 use billing_lambda::http;
-use billing_lambda::runtime::{secrets_from, PARAM_DB_URL, PARAM_HMAC_KEY, PARAM_STRIPE_KEY, PARAM_WEBHOOK_SECRET};
+use billing_lambda::runtime::{
+    secrets_from, PARAM_DB_URL, PARAM_HMAC_KEY, PARAM_STRIPE_KEY, PARAM_WEBHOOK_SECRET,
+};
 use billing_lambda::service::{Config, Service};
 use billing_lambda::stripe::{ReqwestTransport, Stripe, API_BASE};
 use http_body_util::{BodyExt, Full, Limited};
@@ -45,45 +47,107 @@ async fn main() {
     let db_url = env("KUBCODE_LOCAL_BILLING_DB_URL");
     assert!(loopback(&db_url), "local database only");
     let mut lines = std::io::stdin().lock().lines();
-    let stripe_key = Zeroizing::new(lines.next().expect("line 1: Stripe test key").expect("stdin"));
-    let whsec = Zeroizing::new(lines.next().expect("line 2: whsec from stripe listen").expect("stdin"));
+    let stripe_key = Zeroizing::new(
+        lines
+            .next()
+            .expect("line 1: Stripe test key")
+            .expect("stdin"),
+    );
+    let whsec = Zeroizing::new(
+        lines
+            .next()
+            .expect("line 2: whsec from stripe listen")
+            .expect("stdin"),
+    );
     let mut found: HashMap<String, Zeroizing<String>> = HashMap::new();
     found.insert(PARAM_DB_URL.into(), Zeroizing::new(db_url.clone()));
-    found.insert(PARAM_HMAC_KEY.into(), Zeroizing::new(env("KUBCODE_LOCAL_HMAC_KEY")));
-    found.insert(PARAM_STRIPE_KEY.into(), Zeroizing::new(stripe_key.trim().to_owned()));
-    found.insert(PARAM_WEBHOOK_SECRET.into(), Zeroizing::new(whsec.trim().to_owned()));
+    found.insert(
+        PARAM_HMAC_KEY.into(),
+        Zeroizing::new(env("KUBCODE_LOCAL_HMAC_KEY")),
+    );
+    found.insert(
+        PARAM_STRIPE_KEY.into(),
+        Zeroizing::new(stripe_key.trim().to_owned()),
+    );
+    found.insert(
+        PARAM_WEBHOOK_SECRET.into(),
+        Zeroizing::new(whsec.trim().to_owned()),
+    );
     // allow_live = false: a live key aborts here.
     let secrets = Arc::new(secrets_from(found, false).unwrap_or_else(|code| panic!("{code}")));
     let stripe = Arc::new(Stripe {
-        transport: Arc::new(ReqwestTransport::new(secrets.stripe_key.clone(), API_BASE.into()).expect("http client")),
+        transport: Arc::new(
+            ReqwestTransport::new(secrets.stripe_key.clone(), API_BASE.into())
+                .expect("http client"),
+        ),
     });
     let cfg = Arc::new(Config {
-        site_origin: std::env::var("KUBCODE_LOCAL_SITE_ORIGIN").unwrap_or_else(|_| "https://kubcode.dev".into()),
+        site_origin: std::env::var("KUBCODE_LOCAL_SITE_ORIGIN")
+            .unwrap_or_else(|_| "https://kubcode.dev".into()),
         allow_live: false,
     });
     let listener = TcpListener::bind(("127.0.0.1", port)).await.expect("bind");
     println!("billing_local: READY on 127.0.0.1:{port} (test mode)");
     loop {
         let (stream, _) = listener.accept().await.expect("accept");
-        let (secrets, stripe, cfg, db_url) = (Arc::clone(&secrets), Arc::clone(&stripe), Arc::clone(&cfg), db_url.clone());
+        let (secrets, stripe, cfg, db_url) = (
+            Arc::clone(&secrets),
+            Arc::clone(&stripe),
+            Arc::clone(&cfg),
+            db_url.clone(),
+        );
         tokio::spawn(async move {
             let svc = hyper::service::service_fn(move |req: Request<Incoming>| {
-                let (secrets, stripe, cfg, db_url) = (Arc::clone(&secrets), Arc::clone(&stripe), Arc::clone(&cfg), db_url.clone());
+                let (secrets, stripe, cfg, db_url) = (
+                    Arc::clone(&secrets),
+                    Arc::clone(&stripe),
+                    Arc::clone(&cfg),
+                    db_url.clone(),
+                );
                 async move {
                     let (parts, body) = req.into_parts();
                     let bytes = match Limited::new(body, http::MAX_WEBHOOK_BODY).collect().await {
                         Ok(b) => b.to_bytes(),
-                        Err(_) => return Ok::<_, Infallible>(Response::builder().status(413).body(Full::new(Bytes::from_static(b"{}"))).unwrap()),
+                        Err(_) => {
+                            return Ok::<_, Infallible>(
+                                Response::builder()
+                                    .status(413)
+                                    .body(Full::new(Bytes::from_static(b"{}")))
+                                    .unwrap(),
+                            )
+                        }
                     };
-                    let reply = match tokio_postgres::connect(&db_url, tokio_postgres::NoTls).await {
+                    let reply = match tokio_postgres::connect(&db_url, tokio_postgres::NoTls).await
+                    {
                         Ok((client, conn)) => {
                             tokio::spawn(conn);
                             let mut store = Store::new(client);
-                            let mut s = Service { store: &mut store, stripe: &stripe, cfg: &cfg, now: time::OffsetDateTime::now_utc() };
-                            let now = SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_secs();
-                            http::handle(&mut s, &secrets.hmac_key, &secrets.webhook_secrets, parts.method.as_str(), parts.uri.path(), &parts.headers, &bytes, now).await
+                            let mut s = Service {
+                                store: &mut store,
+                                stripe: &stripe,
+                                cfg: &cfg,
+                                now: time::OffsetDateTime::now_utc(),
+                            };
+                            let now = SystemTime::now()
+                                .duration_since(UNIX_EPOCH)
+                                .unwrap()
+                                .as_secs();
+                            http::handle(
+                                &mut s,
+                                &secrets.hmac_key,
+                                &secrets.webhook_secrets,
+                                parts.method.as_str(),
+                                parts.uri.path(),
+                                &parts.headers,
+                                &bytes,
+                                now,
+                            )
+                            .await
                         }
-                        Err(_) => http::Reply { status: 503, body: json!({"ok": false, "code": "unavailable"}) },
+                        Err(_) => http::Reply {
+                            status: 503,
+                            body: json!({"ok": false, "code": "unavailable"}),
+                        },
                     };
                     Ok(Response::builder()
                         .status(reply.status)
@@ -92,7 +156,9 @@ async fn main() {
                         .unwrap())
                 }
             });
-            let _ = http1::Builder::new().serve_connection(TokioIo::new(stream), svc).await;
+            let _ = http1::Builder::new()
+                .serve_connection(TokioIo::new(stream), svc)
+                .await;
         });
     }
 }
