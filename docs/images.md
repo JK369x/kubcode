@@ -9,7 +9,7 @@ Caddy passes the app's headers through unchanged; `tests/image-performance.test.
 | `/covers/<slug>/*.jpg` | `public, max-age=31536000, immutable` | A replaced cover gets a new file name (`cover-vN.jpg`, [covers.md](covers.md)). |
 | `/showcase/<id>/*?v=<sha>` | `public, max-age=31536000, immutable` | `npm run showcase` rewrites `poster.jpg`/`preview.mp4` in place, so the site links them with `?v=` + the first 12 hex of the file's sha256 from `lib/showcase.json` (`lib/showcase.ts`). New content = new URL. |
 | `/showcase/<id>/*` without `?v` | `public, max-age=86400, stale-while-revalidate=604800` | Same file name, content may change. |
-| `/tools/*`, `/tool-icons/*`, `/kubcode-icon.png` | `public, max-age=86400, stale-while-revalidate=604800` | Logos may be swapped under the same name. |
+| `/tools/*`, `/tool-icons/*`, `/platform-icons/*`, `/kubcode-icon.png` | `public, max-age=86400, stale-while-revalidate=604800` | Logos may be swapped under the same name. |
 | `/_next/static/*` (JS, CSS, fonts) | Next: `public, max-age=31536000, immutable` | Hashed names. |
 | `/_next/image` | the source's max-age, at least `images.minimumCacheTTL` (31 days) | Sources are versioned as above. |
 

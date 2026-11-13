@@ -20,6 +20,7 @@ export function KineticHero({
   clips = SHOWCASE,
   styleTools,
   children,
+  pricing = false,
 }: {
   skills: readonly Skill[];
   activeSlug: string;
@@ -30,6 +31,8 @@ export function KineticHero({
   styleTools?: Readonly<Record<string, readonly StyleTool[]>>;
   /** Search / browse actions owned by the page (query state stays there). */
   children?: ReactNode;
+  /** /pricing ships in this build (lib/site-routes hasPage). */
+  pricing?: boolean;
 }) {
   const headingId = useId();
   const active = skills.find((skill) => skill.slug === activeSlug);
@@ -47,7 +50,7 @@ export function KineticHero({
       aria-labelledby={headingId}
       data-media={hasClips ? "clips" : "none"}
     >
-      {stage.length > 0 && <HeroStage clips={stage} headingId={headingId} />}
+      {stage.length > 0 && <HeroStage clips={stage} headingId={headingId} pricing={pricing} />}
       <div className={styles.copy}>
         {stage.length > 0 ? null : hasClips ? (
           <>

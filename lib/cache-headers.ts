@@ -35,6 +35,7 @@ export function publicCacheRules(): Rule[] {
     { source: "/showcase/:path*", missing: [{ type: "query", key: "v" }], headers: cache(SHORT) },
     { source: "/tools/:slug/:file", headers: cache(SHORT) },
     { source: "/tool-icons/:file", headers: cache(SHORT) },
+    { source: "/platform-icons/:file", headers: cache(SHORT) },
     { source: "/kubcode-icon.png", headers: cache(SHORT) },
   ];
 }

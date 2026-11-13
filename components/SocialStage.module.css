@@ -1,0 +1,333 @@
+/* kubcode Social demo in the hero phone. Light "app" surface on the dark
+   phone frame; entrance animations run once per screen and are replaced by
+   the final frame under reduced motion. */
+.root {
+  container-type: inline-size;
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  background: #faf8fd;
+  color: #1b1523;
+  font-size: 12px;
+  line-height: 1.5;
+}
+.bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 44px 14px 10px;
+  border-bottom: 1px solid #ece6f4;
+  font-weight: 600;
+  font-size: 13px;
+}
+.avatar {
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 999px;
+  background: #e9e3f5;
+  color: #6c38b6;
+}
+.demo {
+  margin-left: auto;
+  padding: 1px 8px;
+  border: 1px solid #d9cdea;
+  border-radius: 999px;
+  color: #5c4a72;
+  font-size: 11px;
+  font-weight: 500;
+}
+.body {
+  flex: 1;
+  min-height: 0;
+  padding: 12px;
+  overflow: hidden;
+}
+.dots {
+  display: flex;
+  justify-content: center;
+  gap: 6px;
+  margin: 0;
+  padding: 10px 0 16px;
+  list-style: none;
+}
+.dots li {
+  width: 6px;
+  height: 6px;
+  border-radius: 999px;
+  background: #d6cce4;
+  transition: width 0.2s ease;
+}
+.dots li[data-on] {
+  width: 18px;
+  background: #7136b9;
+}
+.heading {
+  margin: 0 0 8px;
+  font-weight: 600;
+  font-size: 13px;
+}
+
+/* 1 · weekly schedule */
+.week {
+  display: grid;
+  gap: 5px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.day {
+  display: grid;
+  grid-template-columns: 26px 1fr;
+  align-items: center;
+  gap: 6px;
+  min-height: 30px;
+  padding: 3px 6px;
+  border-radius: 8px;
+  background: #fff;
+  box-shadow: inset 0 0 0 1px #eee8f6;
+}
+.dayName {
+  color: #6b5d7d;
+  font-weight: 600;
+}
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  width: fit-content;
+  padding: 2px 8px 2px 6px;
+  border-radius: 999px;
+  background: #f1eafb;
+  color: #2c1f3d;
+  font-size: 11px;
+}
+.chip b {
+  margin-left: 4px;
+  font-weight: 600;
+}
+.chip svg {
+  color: #111;
+}
+.drop {
+  background: #ffe6f0;
+  animation: drop 0.6s cubic-bezier(0.16, 1, 0.3, 1) 0.9s both;
+}
+.added {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 10px 0 0;
+  color: #6b4aa0;
+  font-weight: 600;
+  animation: fade 0.4s ease 1.4s both;
+}
+
+/* 2 · published */
+.post {
+  display: grid;
+  gap: 8px;
+}
+.thumb {
+  height: 210px;
+  border-radius: 12px;
+  background: linear-gradient(160deg, #3a1f6e, #c04ad0 55%, #ff7a3c);
+}
+.caption {
+  margin: 0;
+  font-weight: 600;
+  font-size: 13px;
+}
+.status {
+  display: grid;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.status li {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 8px;
+  border-radius: 8px;
+  background: #fff;
+  box-shadow: inset 0 0 0 1px #eee8f6;
+  animation: fade 0.35s ease both;
+  animation-delay: calc(0.4s + var(--i) * 0.45s);
+}
+.status svg[data-platform="tiktok"] {
+  color: #111;
+}
+.ok {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  margin-left: auto;
+  color: #13734a;
+  font-weight: 600;
+}
+
+/* 3 · comment → DM */
+.dm {
+  display: grid;
+  gap: 8px;
+  align-content: start;
+}
+.comment,
+.reply {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  width: fit-content;
+  max-width: 100%;
+  padding: 7px 11px;
+  border-radius: 14px;
+}
+.comment {
+  border-bottom-left-radius: 4px;
+  background: #efefef;
+  animation: rise 0.45s cubic-bezier(0.16, 1, 0.3, 1) 0.2s both;
+}
+.comment svg,
+.reply svg {
+  flex: none;
+  margin-top: 3px;
+}
+.key {
+  margin: 0 2px;
+  padding: 0 5px;
+  border-radius: 5px;
+  background: #ffe6f0;
+  color: #b0004b;
+  font-weight: 600;
+}
+.small {
+  margin: 6px 0 0;
+  color: #737373;
+  font-size: 11px;
+  animation: fade 0.3s ease 0.9s both;
+}
+.reply {
+  justify-self: end;
+  flex-direction: row;
+  border-bottom-right-radius: 4px;
+  background: #3797f0;
+  color: #fff;
+  animation: rise 0.45s cubic-bezier(0.16, 1, 0.3, 1) 1.2s both;
+}
+.reply > span {
+  display: grid;
+  min-width: 0;
+}
+.link {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  overflow-wrap: anywhere;
+}
+.sent {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 4px;
+  margin: 0;
+  color: #13734a;
+  font-weight: 600;
+  animation: fade 0.3s ease 1.8s both;
+}
+
+.platformRow {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  margin: 0;
+  color: #5c4a72;
+  font-size: 11px;
+  font-weight: 600;
+}
+.platformRow svg[data-platform="tiktok"] {
+  color: #111;
+}
+.tiktok {
+  display: grid;
+  gap: 6px;
+  margin-top: 8px;
+  padding-top: 10px;
+  border-top: 1px solid #ece6f4;
+  animation: fade 0.35s ease 2.3s both;
+}
+.thread {
+  margin-left: 18px;
+  padding: 6px 10px;
+  border-left: 2px solid #d9cdea;
+  color: #2c1f3d;
+  overflow-wrap: anywhere;
+}
+.threadBy {
+  display: block;
+  color: #6b4aa0;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+@keyframes drop {
+  from {
+    opacity: 0;
+    translate: 0 -14px;
+  }
+}
+@keyframes rise {
+  from {
+    opacity: 0;
+    translate: 0 8px;
+  }
+}
+@keyframes fade {
+  from {
+    opacity: 0;
+  }
+}
+/* Reduced motion / still: the final frame, no entrances. */
+@media (prefers-reduced-motion: reduce) {
+  .root *,
+  .dots li {
+    animation: none !important;
+    transition: none !important;
+  }
+}
+/* The phone is 200px wide on phones: tighter header, shorter post. */
+@container (max-width: 220px) {
+  .bar {
+    padding: 34px 10px 8px;
+    font-size: 12px;
+    white-space: nowrap;
+  }
+  .demo {
+    display: none;
+  }
+  .body {
+    padding: 8px;
+  }
+  .thumb {
+    height: 110px;
+  }
+  .day {
+    min-height: 24px;
+    padding: 2px 5px;
+  }
+  .week {
+    gap: 3px;
+  }
+  .status li {
+    padding: 4px 6px;
+    font-size: 11px;
+  }
+  .tiktok {
+    display: none;
+  }
+}
+.root[data-still] * {
+  animation: none !important;
+}
