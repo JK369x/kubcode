@@ -160,3 +160,43 @@ test("API roles have nothing on the billing tables", async () => {
     assert.deepEqual(r.rows[0], { a: false, b: false }, t);
   }
 });
+
+test("0014: refund/dispute columns — billing writes them, the web reads them, constraints hold", async () => {
+  const { ws } = await workspace();
+  const id = await insertPurchase(billing, purchase(ws));
+  await billing.query(
+    "UPDATE kubcode_accounts.billing_purchases SET status = 'paid', paid_at = now(), stripe_payment_intent_id = 'pi_refund0001' WHERE id = $1",
+    [id],
+  );
+  const r = await billing.query(
+    `UPDATE kubcode_accounts.billing_purchases
+        SET refunded_satang = 28900, revoked_at = now(), revoked_reason = 'refunded', dispute = 'lost'
+      WHERE stripe_payment_intent_id = 'pi_refund0001'`,
+  );
+  assert.equal(r.rowCount, 1);
+  const bad = (sql: string) => assert.rejects(db.pool.query(sql, [id]), (e: { code?: string }) => e.code === "23514", sql);
+  await bad("UPDATE kubcode_accounts.billing_purchases SET refunded_satang = -1 WHERE id = $1");
+  await bad("UPDATE kubcode_accounts.billing_purchases SET dispute = 'maybe' WHERE id = $1");
+  await bad("UPDATE kubcode_accounts.billing_purchases SET revoked_reason = NULL WHERE id = $1");
+  await bad("UPDATE kubcode_accounts.billing_purchases SET revoked_reason = 'whim' WHERE id = $1");
+  // Only a paid purchase can be revoked.
+  const pending = await insertPurchase(billing, purchase(ws));
+  await assert.rejects(
+    db.pool.query("UPDATE kubcode_accounts.billing_purchases SET revoked_at = now(), revoked_reason = 'refunded' WHERE id = $1", [pending]),
+    (e: { code?: string }) => e.code === "23514",
+  );
+  const idx = await db.pool.query("SELECT 1 FROM pg_indexes WHERE schemaname = 'kubcode_accounts' AND indexname = 'billing_purchases_payment_intent_idx'");
+  assert.equal(idx.rowCount, 1);
+  // The web reads the new columns (never Stripe ids) for the history labels.
+  const cols = await db.pool.query(
+    `SELECT column_name FROM information_schema.column_privileges
+      WHERE grantee = 'kubcode_app' AND table_name = 'billing_purchases' AND privilege_type = 'SELECT'
+        AND column_name IN ('refunded_satang', 'dispute', 'revoked_at', 'revoked_reason', 'stripe_payment_intent_id')`,
+  );
+  assert.deepEqual(cols.rows.map((x) => x.column_name).sort(), ["dispute", "refunded_satang", "revoked_at", "revoked_reason"]);
+  const upd = await db.pool.query(
+    `SELECT 1 FROM information_schema.column_privileges
+      WHERE grantee = 'kubcode_app' AND table_name = 'billing_purchases' AND privilege_type = 'UPDATE'`,
+  );
+  assert.equal(upd.rowCount, 0, "the web never writes purchases");
+});

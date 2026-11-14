@@ -56,7 +56,7 @@ test("view: entitlement, active channels and paid history for the member's own w
   assert.equal(v.standing, "active");
   assert.equal(v.reminder, "t3");
   assert.equal(v.purchases.length, 1);
-  assert.deepEqual({ ...v.purchases[0], paidAt: null }, { kind: "new", slots: 2, amountSatang: 57800, status: "paid", paidAt: null, periodEnd: paidUntil.toISOString(), method: "promptpay" });
+  assert.deepEqual({ ...v.purchases[0], paidAt: null }, { kind: "new", slots: 2, amountSatang: 57800, status: "paid", paidAt: null, periodEnd: paidUntil.toISOString(), method: "promptpay", refundedSatang: 0, dispute: null, revoked: null });
   assert.ok(!JSON.stringify(v).includes("cs_test_"), "no Stripe ids reach the web host");
   const vb = (await store.view(b.s, new Date("2026-12-10T05:00:00Z")))!;
   assert.equal(vb.slots, 9);

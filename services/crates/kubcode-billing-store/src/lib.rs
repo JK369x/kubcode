@@ -4,11 +4,12 @@
 //! and rewrites the workspace's entitlement row in the same transaction, so a
 //! replayed webhook or a racing success page cannot grant twice.
 
-use kubcode_billing::entitlement::{entitlement, Entitlement, PaidSpan};
+use kubcode_billing::entitlement::{entitlement, slots_at, Entitlement, PaidSpan};
 use kubcode_billing::money::Satang;
 use kubcode_billing::purchase::Status;
 use kubcode_billing::quote::{Kind, Quote};
-use kubcode_billing::sweep::{plan, ChannelSlot};
+use kubcode_billing::refund::{on_dispute, on_refund, Change, Dispute, PaidFacts, Review};
+use kubcode_billing::sweep::{pause_after_revoke, plan, ChannelSlot};
 use time::OffsetDateTime;
 use tokio_postgres::{Client, GenericClient};
 use uuid::Uuid;
@@ -37,6 +38,28 @@ pub struct Purchase {
     pub period_end: OffsetDateTime,
     pub status: Status,
     pub session_id: Option<String>,
+}
+
+/// A Stripe charge or dispute event about a paid purchase.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum AfterPayment {
+    /// `charge.refunded`: the charge's running `amount_refunded`.
+    Refunded(Satang),
+    /// `charge.dispute.created` (Open) or `.closed` (Won / Lost).
+    Dispute(Dispute),
+}
+
+/// What applying an [`AfterPayment`] event did.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum AfterOutcome {
+    /// No purchase has this payment intent (not ours, or not paid through us).
+    Unknown,
+    /// Already applied (replay, older event): nothing changed.
+    Unchanged,
+    /// Recorded (partial refund, dispute opened/won); access unchanged.
+    Recorded,
+    /// Revoked: entitlement rebuilt, `paused` channels paused now.
+    Revoked { paused: usize },
 }
 
 /// The member who asked to pay, resolved from the session the web host signed.
@@ -80,7 +103,7 @@ async fn paid_spans<C: GenericClient>(c: &C, workspace: Uuid) -> Result<Vec<Paid
     let rows = c
         .query(
             "SELECT slots, period_start, period_end FROM kubcode_accounts.billing_purchases
-              WHERE workspace_id = $1 AND status = 'paid' ORDER BY period_start",
+              WHERE workspace_id = $1 AND status = 'paid' AND revoked_at IS NULL ORDER BY period_start",
             &[&workspace],
         )
         .await?;
@@ -94,6 +117,70 @@ async fn paid_spans<C: GenericClient>(c: &C, workspace: Uuid) -> Result<Vec<Paid
             })
         })
         .collect()
+}
+
+/// Whether the workspace belongs to the site owner (never pays, never paused).
+async fn exempt_in<C: GenericClient>(c: &C, workspace: Uuid) -> Result<bool> {
+    Ok(c.query_opt(
+        "SELECT bool_or(u.is_owner) FROM kubcode_accounts.workspace_members m
+               JOIN kubcode_accounts.users u ON u.id = m.user_id WHERE m.workspace_id = $1",
+        &[&workspace],
+    )
+    .await?
+    .and_then(|r| r.get::<_, Option<bool>>(0))
+    .unwrap_or(false))
+}
+
+/// Channels that hold a slot: a live connection, or an open billing pause.
+struct LoadedChannels {
+    rows: Vec<(String, OffsetDateTime, Option<OffsetDateTime>, bool)>,
+}
+
+impl LoadedChannels {
+    fn as_slots(&self) -> Vec<ChannelSlot<'_>> {
+        self.rows
+            .iter()
+            .map(|(id, created_at, paused_at, disconnected)| ChannelSlot {
+                id,
+                created_at: *created_at,
+                paused_at: *paused_at,
+                disconnected: *disconnected,
+            })
+            .collect()
+    }
+}
+
+async fn channel_slots<C: GenericClient>(c: &C, workspace: Uuid) -> Result<LoadedChannels> {
+    let rows = c
+        .query(
+            "SELECT ch.id, ch.created_at,
+                    (SELECT p.paused_at FROM kubcode_accounts.billing_channel_pauses p
+                      WHERE p.channel_id = ch.id AND p.resumed_at IS NULL) AS paused_at,
+                    (SELECT p.disconnected_at FROM kubcode_accounts.billing_channel_pauses p
+                      WHERE p.channel_id = ch.id AND p.resumed_at IS NULL) AS disconnected_at,
+                    EXISTS (SELECT 1 FROM kubcode_accounts.channel_connections cc
+                             WHERE cc.channel_id = ch.id AND cc.status <> 'revoked') AS live
+               FROM kubcode_accounts.channels ch WHERE ch.workspace_id = $1",
+            &[&workspace],
+        )
+        .await?;
+    let mut out = Vec::new();
+    for r in &rows {
+        let paused: Option<OffsetDateTime> = r.get(2);
+        let disconnected: Option<OffsetDateTime> = r.get(3);
+        let live: bool = r.get(4);
+        // A channel the creator disconnected themselves holds no slot.
+        if !live && paused.is_none() {
+            continue;
+        }
+        out.push((
+            r.get::<_, Uuid>(0).to_string(),
+            r.get(1),
+            paused,
+            disconnected.is_some(),
+        ));
+    }
+    Ok(LoadedChannels { rows: out })
 }
 
 pub struct Store {
@@ -319,6 +406,129 @@ impl Store {
         Ok(Fulfilled::Granted(ent))
     }
 
+    /// A refund or dispute on a paid purchase (ADR 0008 amendment 2026-11-14),
+    /// found by its payment intent. One transaction under the workspace lock:
+    /// the purchase row (refunded total, dispute, review flag, revoke), and on a
+    /// revoke the entitlement row and immediate pauses (newest first, no grace).
+    /// Idempotent: the domain decides from the stored state, so a replay or an
+    /// older event changes nothing.
+    pub async fn after_payment(
+        &mut self,
+        payment_intent: &str,
+        ev: AfterPayment,
+        now: OffsetDateTime,
+    ) -> Result<AfterOutcome> {
+        let tx = self.c.transaction().await?;
+        let Some(head) = tx
+            .query_opt(
+                "SELECT workspace_id FROM kubcode_accounts.billing_purchases
+                  WHERE stripe_payment_intent_id = $1 AND status = 'paid'",
+                &[&payment_intent],
+            )
+            .await?
+        else {
+            tx.commit().await?;
+            return Ok(AfterOutcome::Unknown);
+        };
+        let workspace: Uuid = head.get(0);
+        tx.execute(
+            "SELECT pg_advisory_xact_lock(hashtextextended('kubcode-billing:' || $1::text, 0))",
+            &[&workspace.to_string()],
+        )
+        .await?;
+        let r = tx
+            .query_one(
+                "SELECT id, amount_satang, refunded_satang, dispute, revoked_at IS NOT NULL
+                   FROM kubcode_accounts.billing_purchases
+                  WHERE stripe_payment_intent_id = $1 AND status = 'paid' FOR UPDATE",
+                &[&payment_intent],
+            )
+            .await?;
+        let id: Uuid = r.get(0);
+        let dispute: Option<String> = r.get(3);
+        let facts = PaidFacts {
+            amount: Satang(r.get(1)),
+            refunded: Satang(r.get(2)),
+            dispute: match dispute.as_deref() {
+                None => None,
+                Some(d) => Some(Dispute::parse(d).ok_or(StoreError::Corrupt)?),
+            },
+            revoked: r.get(4),
+        };
+        let change: Change = match ev {
+            AfterPayment::Refunded(total) => on_refund(&facts, total),
+            AfterPayment::Dispute(d) => on_dispute(&facts, d),
+        };
+        if change.is_noop() {
+            tx.commit().await?;
+            return Ok(AfterOutcome::Unchanged);
+        }
+        let review: Option<Option<&str>> = match change.review {
+            None => None,
+            Some(Review::Flag(code)) => Some(Some(code)),
+            Some(Review::Clear) => Some(None),
+        };
+        tx.execute(
+            "UPDATE kubcode_accounts.billing_purchases
+                SET refunded_satang = COALESCE($2, refunded_satang),
+                    dispute = COALESCE($3, dispute),
+                    revoked_at = CASE WHEN $4::text IS NOT NULL AND revoked_at IS NULL THEN now() ELSE revoked_at END,
+                    revoked_reason = CASE WHEN $4::text IS NOT NULL AND revoked_at IS NULL THEN $4 ELSE revoked_reason END,
+                    review_code = CASE WHEN $5 THEN $6 ELSE review_code END
+              WHERE id = $1",
+            &[
+                &id,
+                &change.refunded.map(|s| s.0),
+                &change.dispute.map(Dispute::as_str),
+                &change.revoke.map(|r| r.as_str()),
+                &review.is_some(),
+                &review.flatten(),
+            ],
+        )
+        .await?;
+        let Some(_) = change.revoke else {
+            tx.commit().await?;
+            return Ok(AfterOutcome::Recorded);
+        };
+        let exempt = exempt_in(&tx, workspace).await?;
+        let spans = paid_spans(&tx, workspace).await?;
+        let ent = entitlement(&spans, now, exempt);
+        if !exempt {
+            let slots = i32::try_from(ent.slots.min(50)).map_err(|_| StoreError::Corrupt)?;
+            tx.execute(
+                "INSERT INTO kubcode_accounts.billing_entitlements (workspace_id, slots, period_start, paid_until, updated_at)
+                 VALUES ($1, $2, $3, $4, now())
+                 ON CONFLICT (workspace_id) DO UPDATE
+                   SET slots = EXCLUDED.slots, period_start = EXCLUDED.period_start,
+                       paid_until = EXCLUDED.paid_until, updated_at = now()",
+                &[&workspace, &slots, &ent.period_start, &ent.paid_until],
+            )
+            .await?;
+        }
+        // No grace for money given back: only what covers `now` counts.
+        let loaded = channel_slots(&tx, workspace).await?;
+        let slots_in = loaded.as_slots();
+        let pause = pause_after_revoke(slots_at(&spans, now), exempt, &slots_in);
+        let reason = if slots_at(&spans, now) == 0 {
+            "lapsed"
+        } else {
+            "over_slots"
+        };
+        for cid in &pause {
+            let cid: Uuid = cid.parse().map_err(|_| StoreError::Corrupt)?;
+            tx.execute(
+                "INSERT INTO kubcode_accounts.billing_channel_pauses (channel_id, reason, paused_at) VALUES ($1, $2, $3)
+                 ON CONFLICT (channel_id) WHERE resumed_at IS NULL DO NOTHING",
+                &[&cid, &reason, &now],
+            )
+            .await?;
+        }
+        tx.commit().await?;
+        Ok(AfterOutcome::Revoked {
+            paused: pause.len(),
+        })
+    }
+
     /// pending → failed | expired. No effect on any other state.
     pub async fn close(&self, purchase: Uuid, to: Status) -> Result<bool> {
         if !matches!(to, Status::Failed | Status::Expired) {
@@ -353,7 +563,7 @@ impl Store {
         let rows = self
             .c
             .query(
-                "SELECT DISTINCT workspace_id FROM kubcode_accounts.billing_purchases WHERE status = 'paid'
+                "SELECT DISTINCT workspace_id FROM kubcode_accounts.billing_purchases WHERE status = 'paid' AND revoked_at IS NULL
                  UNION
                  SELECT DISTINCT ch.workspace_id FROM kubcode_accounts.billing_channel_pauses p
                    JOIN kubcode_accounts.channels ch ON ch.id = p.channel_id WHERE p.resumed_at IS NULL",
@@ -377,50 +587,10 @@ impl Store {
             &[&workspace.to_string()],
         )
         .await?;
-        let exempt: bool = tx
-            .query_opt(
-                "SELECT bool_or(u.is_owner) FROM kubcode_accounts.workspace_members m
-                   JOIN kubcode_accounts.users u ON u.id = m.user_id WHERE m.workspace_id = $1",
-                &[&workspace],
-            )
-            .await?
-            .and_then(|r| r.get::<_, Option<bool>>(0))
-            .unwrap_or(false);
+        let exempt = exempt_in(&tx, workspace).await?;
         let ent = entitlement(&paid_spans(&tx, workspace).await?, now, exempt);
-        // Channels with a live connection, or with an open pause.
-        let rows = tx
-            .query(
-                "SELECT ch.id, ch.created_at,
-                        (SELECT p.paused_at FROM kubcode_accounts.billing_channel_pauses p
-                          WHERE p.channel_id = ch.id AND p.resumed_at IS NULL) AS paused_at,
-                        (SELECT p.disconnected_at FROM kubcode_accounts.billing_channel_pauses p
-                          WHERE p.channel_id = ch.id AND p.resumed_at IS NULL) AS disconnected_at,
-                        EXISTS (SELECT 1 FROM kubcode_accounts.channel_connections cc
-                                 WHERE cc.channel_id = ch.id AND cc.status <> 'revoked') AS live
-                   FROM kubcode_accounts.channels ch WHERE ch.workspace_id = $1",
-                &[&workspace],
-            )
-            .await?;
-        let ids: Vec<String> = rows
-            .iter()
-            .map(|r| r.get::<_, Uuid>(0).to_string())
-            .collect();
-        let mut slots_in: Vec<ChannelSlot<'_>> = Vec::new();
-        for (r, id) in rows.iter().zip(ids.iter()) {
-            let paused: Option<OffsetDateTime> = r.get(2);
-            let disconnected: Option<OffsetDateTime> = r.get(3);
-            let live: bool = r.get(4);
-            // A channel the creator disconnected themselves holds no slot.
-            if !live && paused.is_none() {
-                continue;
-            }
-            slots_in.push(ChannelSlot {
-                id,
-                created_at: r.get(1),
-                paused_at: paused,
-                disconnected: disconnected.is_some(),
-            });
-        }
+        let loaded = channel_slots(&tx, workspace).await?;
+        let slots_in = loaded.as_slots();
         let p = plan(&ent, &slots_in, now);
         let reason = if matches!(ent.standing, kubcode_billing::entitlement::Standing::Lapsed) {
             "lapsed"

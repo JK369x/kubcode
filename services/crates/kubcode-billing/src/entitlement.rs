@@ -64,7 +64,7 @@ impl Entitlement {
 }
 
 /// Slots active at `t` (sum of every paid span that contains `t`).
-fn slots_at(spans: &[PaidSpan], t: OffsetDateTime) -> u32 {
+pub fn slots_at(spans: &[PaidSpan], t: OffsetDateTime) -> u32 {
     spans
         .iter()
         .filter(|s| s.period_start <= t && t < s.period_end)

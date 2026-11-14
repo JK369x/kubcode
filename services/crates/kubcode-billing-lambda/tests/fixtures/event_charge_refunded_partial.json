@@ -1,0 +1,135 @@
+{
+  "id": "evt_3UbdQlRvKU0DrNBi0ZoHIrSs",
+  "object": "event",
+  "api_version": "2026-10-28.endive",
+  "created": 1794649173,
+  "data": {
+    "object": {
+      "id": "ch_3UbdQlRvKU0DrNBi0QrWsy0W",
+      "object": "charge",
+      "amount": 57800,
+      "amount_captured": 57800,
+      "amount_refunded": 10000,
+      "application": null,
+      "application_fee": null,
+      "application_fee_amount": null,
+      "balance_transaction": "txn_3UbdQlRvKU0DrNBi0gykZo4m",
+      "billing_details": {
+        "address": {
+          "city": null,
+          "country": null,
+          "line1": null,
+          "line2": null,
+          "postal_code": null,
+          "state": null
+        },
+        "email": null,
+        "name": null,
+        "phone": null,
+        "tax_id": null
+      },
+      "calculated_statement_descriptor": "KUBCODE.DEV",
+      "captured": true,
+      "created": 1794649171,
+      "currency": "thb",
+      "customer": null,
+      "description": null,
+      "destination": null,
+      "dispute": null,
+      "disputed": false,
+      "failure_balance_transaction": null,
+      "failure_code": null,
+      "failure_message": null,
+      "fraud_details": {},
+      "livemode": false,
+      "metadata": {
+        "fixture": "kubcode-refund"
+      },
+      "on_behalf_of": null,
+      "order": null,
+      "outcome": {
+        "advice_code": null,
+        "network_advice_code": null,
+        "network_decline_code": null,
+        "network_status": "approved_by_network",
+        "reason": null,
+        "risk_level": "normal",
+        "risk_score": 23,
+        "seller_message": "Payment complete.",
+        "type": "authorized"
+      },
+      "paid": true,
+      "payment_intent": "pi_3UbdQlRvKU0DrNBi0wqETssN",
+      "payment_method": "pm_1UbdQlRvKU0DrNBishgIesw6",
+      "payment_method_details": {
+        "card": {
+          "amount_authorized": 57800,
+          "authorization_code": "361594",
+          "brand": "visa",
+          "checks": {
+            "address_line1_check": null,
+            "address_postal_code_check": null,
+            "cvc_check": "pass"
+          },
+          "country": "US",
+          "electronic_commerce_indicator": "07",
+          "exp_month": 11,
+          "exp_year": 2027,
+          "extended_authorization": {
+            "status": "disabled"
+          },
+          "fingerprint": "znQZNuFNM3QcMEQ8",
+          "funding": "credit",
+          "incremental_authorization": {
+            "status": "unavailable"
+          },
+          "installments": null,
+          "last4": "4242",
+          "mandate": null,
+          "multicapture": {
+            "status": "unavailable"
+          },
+          "network": "visa",
+          "network_token": {
+            "used": false
+          },
+          "network_transaction_id": "122110819078117",
+          "overcapture": {
+            "maximum_amount_capturable": 57800,
+            "status": "unavailable"
+          },
+          "regulated_status": "unregulated",
+          "three_d_secure": null,
+          "transaction_link_id": null,
+          "wallet": null
+        },
+        "type": "card"
+      },
+      "radar_options": {},
+      "receipt_email": null,
+      "receipt_number": null,
+      "receipt_url": "https://pay.stripe.com/receipts/REDACTED",
+      "refunded": false,
+      "review": null,
+      "shipping": null,
+      "source": null,
+      "source_transfer": null,
+      "statement_descriptor": null,
+      "statement_descriptor_suffix": null,
+      "status": "succeeded",
+      "transfer_data": null,
+      "transfer_group": null
+    },
+    "previous_attributes": {
+      "amount_refunded": 0,
+      "receipt_url": "https://pay.stripe.com/receipts/REDACTED"
+    }
+  },
+  "livemode": false,
+  "pending_webhooks": 0,
+  "request": {
+    "id": "req_hurcszWcqVRwmN",
+    "idempotency_key": "263a2fa6-519f-4873-8fd7-88540d36f191"
+  },
+  "type": "charge.refunded"
+}

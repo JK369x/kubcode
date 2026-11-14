@@ -9,10 +9,12 @@
 //! - [`entitlement`]: paid slots, `paid_until`, grace, pause and disconnect dates.
 //! - [`purchase`]: purchase states, the fulfilment transition and the payment check.
 //! - [`sweep`]: which channels pause, which reminder is due, fair use.
+//! - [`refund`]: refunds and disputes after payment (revoke, record, flag).
 
 pub mod entitlement;
 pub mod money;
 pub mod period;
 pub mod purchase;
 pub mod quote;
+pub mod refund;
 pub mod sweep;

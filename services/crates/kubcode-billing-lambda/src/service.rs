@@ -4,10 +4,14 @@
 
 use async_trait::async_trait;
 use kubcode_billing::entitlement::{Entitlement, Standing};
+use kubcode_billing::money::Satang;
 use kubcode_billing::money::PRICE_PER_CHANNEL;
 use kubcode_billing::purchase::{decide, on_async_failed, Fulfil, Mismatch, SessionFacts, Status};
 use kubcode_billing::quote::{add_slots, month_pass, Kind, Quote, QuoteError};
-use kubcode_billing_store::{Fulfilled, Payer, Purchase, Store, StoreError};
+use kubcode_billing::refund::Dispute;
+use kubcode_billing_store::{
+    AfterOutcome, AfterPayment, Fulfilled, Payer, Purchase, Store, StoreError,
+};
 use serde_json::{json, Value};
 use time::{Duration, OffsetDateTime};
 use uuid::Uuid;
@@ -43,6 +47,13 @@ pub trait BillingStore: Send {
     async fn flag_review(&self, purchase: Uuid, code: &str) -> Result<(), StoreError>;
     async fn workspace_exempt(&self, ws: Uuid) -> Result<bool, StoreError>;
     async fn event_seen(&self, id: &str) -> Result<bool, StoreError>;
+    /// A refund or dispute on the paid purchase with this payment intent.
+    async fn after_payment(
+        &mut self,
+        payment_intent: &str,
+        ev: AfterPayment,
+        now: OffsetDateTime,
+    ) -> Result<AfterOutcome, StoreError>;
     /// The daily sweep: (workspaces, paused, resumed, disconnect_due).
     async fn sweep(
         &mut self,
@@ -99,6 +110,14 @@ impl BillingStore for Store {
     }
     async fn event_seen(&self, id: &str) -> Result<bool, StoreError> {
         Store::event_seen(self, id).await
+    }
+    async fn after_payment(
+        &mut self,
+        payment_intent: &str,
+        ev: AfterPayment,
+        now: OffsetDateTime,
+    ) -> Result<AfterOutcome, StoreError> {
+        Store::after_payment(self, payment_intent, ev, now).await
     }
     async fn sweep(
         &mut self,
@@ -465,11 +484,70 @@ impl<S: BillingStore, T: Transport + ?Sized> Service<'_, S, T> {
                     None => "unknown_purchase",
                 }
             }
+            // Refunds and disputes (ADR 0008 amendment 2026-11-14). The event is
+            // authenticated by its signature; its body is used as is (re-reading
+            // a dispute would need a Disputes permission the live key lacks).
+            // Ordering and replays are safe: the refunded total only grows and
+            // a final dispute outcome is never reopened.
+            "charge.refunded" => {
+                let o = &ev.data.object;
+                match (
+                    payment_intent_of(o),
+                    o.get("amount_refunded").and_then(Value::as_i64),
+                    o.get("currency").and_then(Value::as_str),
+                ) {
+                    (Some(pi), Some(total), Some("thb")) if total >= 0 => after_code(
+                        self.store
+                            .after_payment(pi, AfterPayment::Refunded(Satang(total)), self.now)
+                            .await?,
+                    ),
+                    (Some(_), Some(_), Some(_)) => "refused",
+                    _ => "malformed",
+                }
+            }
+            "charge.dispute.created" | "charge.dispute.closed" => {
+                let o = &ev.data.object;
+                let outcome = if ev.kind == "charge.dispute.created" {
+                    Some(Dispute::Open)
+                } else {
+                    o.get("status")
+                        .and_then(Value::as_str)
+                        .and_then(Dispute::from_closed_status)
+                };
+                match (payment_intent_of(o), outcome) {
+                    (Some(pi), Some(d)) => after_code(
+                        self.store
+                            .after_payment(pi, AfterPayment::Dispute(d), self.now)
+                            .await?,
+                    ),
+                    (Some(_), None) => "ignored",
+                    _ => "malformed",
+                }
+            }
             _ => "ignored",
         };
         self.store
             .record_event(&ev.id, &ev.kind, ev.livemode)
             .await?;
         Ok(code)
+    }
+}
+
+/// The payment intent id on a charge or dispute object (string, or expanded).
+fn payment_intent_of(o: &Value) -> Option<&str> {
+    let v = o.get("payment_intent")?;
+    let id = v.as_str().or_else(|| v.get("id").and_then(Value::as_str))?;
+    let ok = id.strip_prefix("pi_").is_some_and(|r| {
+        (1..=200).contains(&r.len()) && r.bytes().all(|b| b.is_ascii_alphanumeric())
+    });
+    ok.then_some(id)
+}
+
+fn after_code(o: AfterOutcome) -> &'static str {
+    match o {
+        AfterOutcome::Unknown => "unknown_purchase",
+        AfterOutcome::Unchanged => "unchanged",
+        AfterOutcome::Recorded => "recorded",
+        AfterOutcome::Revoked { .. } => "revoked",
     }
 }

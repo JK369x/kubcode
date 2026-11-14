@@ -204,3 +204,14 @@ test("channel connect: with billing on, a full workspace gets 402 before the pub
   });
   assert.ok(called);
 });
+
+test("history labels: refunded, partial, disputes (Thai)", async () => {
+  const { purchaseNote } = await import("../lib/billing/view");
+  const base = { amountSatang: 57_800, refundedSatang: 0, dispute: null, revoked: null } as const;
+  assert.equal(purchaseNote(base), null);
+  assert.match(purchaseNote({ ...base, refundedSatang: 57_800, revoked: "refunded" })!.text, /คืนเงินเต็มจำนวนแล้ว/);
+  assert.match(purchaseNote({ ...base, refundedSatang: 10_000 })!.text, /คืนเงินบางส่วน 100 ฿/);
+  assert.equal(purchaseNote({ ...base, dispute: "open" })!.tone, "warn");
+  assert.match(purchaseNote({ ...base, dispute: "lost", revoked: "dispute_lost" })!.text, /ยกเลิกสิทธิ์แล้ว/);
+  assert.match(purchaseNote({ ...base, dispute: "won" })!.text, /ปกติ/);
+});
