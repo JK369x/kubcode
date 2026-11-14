@@ -21,6 +21,10 @@ import {
   PRODUCT_FAMILIES,
 } from "@/lib/plans";
 
+// The Social CTA follows KUBCODE_BILLING_ENABLED, which the web host can change
+// without a rebuild (webhost.sh write-env), so render at request time.
+export const dynamic = "force-dynamic";
+
 export const metadata: Metadata = {
   title: "ราคา — kubcode",
   description:
