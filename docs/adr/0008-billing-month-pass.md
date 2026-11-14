@@ -97,3 +97,27 @@ this amendment replaces that for production and leaves every other decision unch
   Webhooks are verified by signature and need no key permission. Events: Read is not used by the Lambda.
 - **Customers still cannot pay** until the web host sets `KUBCODE_BILLING_ENABLED=true`, a separate owner
   decision after a live smoke test.
+
+## Amendment 2026-11-14: refunds and disputes
+
+The owner refunds in the Stripe Dashboard; kubcode reacts to Stripe's webhooks instead of a manual fix.
+Migration `0014_billing_refunds.sql` (additive, **owner approval required**) adds `refunded_satang`,
+`dispute`, `revoked_at` and `revoked_reason` to `billing_purchases`, plus an index on the payment intent.
+
+- **Events** (signature-verified, deduplicated like the Checkout events): `charge.refunded`,
+  `charge.dispute.created`, `charge.dispute.closed`. The charge's or dispute's `payment_intent` finds the
+  purchase (`stripe_payment_intent_id`, stored at fulfilment). The event body is used as is: re-reading the
+  object would need extra key permissions, and ordering is safe because `amount_refunded` only grows and a
+  final dispute outcome is never reopened.
+- **FULL refund, or dispute LOST → revoked.** The purchase stays `paid` (money moved) with `revoked_at` set;
+  revoked purchases leave the entitlement, so `slots`/`paid_until` are recomputed from what remains (a
+  refunded early renewal shortens `paid_until`; a refunded mid-pass add removes its slots). Channels over the
+  slots covering *now* pause immediately, newest first, **without grace** (the money is gone). Nothing is
+  deleted. The sweep never resumes channels during grace, so an older pass's grace cannot undo a revoke.
+- **PARTIAL refund → recorded only** (`refunded_satang`); access unchanged. Partial refunds that add up to
+  the full amount revoke.
+- **Dispute OPENED → `review_code = 'dispute_open'`, access unchanged. WON → flag cleared. LOST → revoke.**
+- The owner's exempt workspace is never paused.
+- `/account/billing` history shows Thai labels (refunded, partially refunded, disputed, dispute lost/closed).
+- **Live webhook endpoint** needs these events added: `charge.refunded`, `charge.dispute.created`,
+  `charge.dispute.closed`. The restricted key needs no new permission (no extra API calls).

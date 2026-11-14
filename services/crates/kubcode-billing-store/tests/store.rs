@@ -445,3 +445,259 @@ async fn sweep_skips_never_paid_and_owner_workspaces() {
     assert_eq!(st.sweep_workspace(free_ws, now()).await.unwrap().paused, 0);
     db.drop().await;
 }
+
+// ---------------- refunds and disputes (0014) ----------------
+
+use kubcode_billing::money::Satang as Sat;
+use kubcode_billing::quote::add_slots;
+use kubcode_billing::refund::Dispute;
+use kubcode_billing_store::{AfterOutcome, AfterPayment};
+
+impl Db {
+    async fn paid(
+        &self,
+        st: &mut Store,
+        user: Uuid,
+        ws: Uuid,
+        q: &kubcode_billing::quote::Quote,
+        pi: &str,
+        t: OffsetDateTime,
+    ) -> Uuid {
+        let id = st.create_purchase(ws, user, q).await.unwrap();
+        st.fulfil(id, Some(pi), Some("card"), false, t)
+            .await
+            .unwrap();
+        id
+    }
+    async fn ent(&self, ws: Uuid) -> (i32, Option<OffsetDateTime>) {
+        let r = self.owner.query_one("SELECT slots, paid_until FROM kubcode_accounts.billing_entitlements WHERE workspace_id = $1", &[&ws]).await.unwrap();
+        (r.get(0), r.get(1))
+    }
+}
+
+#[tokio::test]
+#[ignore = "needs KUBCODE_TEST_DATABASE_URL"]
+async fn refunding_an_early_renewal_shortens_paid_until_and_keeps_channels() {
+    let db = db().await;
+    let (user, ws) = db.member(false).await;
+    db.channel(ws, 10).await;
+    let mut st = db.billing().await;
+    let t = now();
+    let q1 = month_pass(&st.entitlement(ws, false, t).await.unwrap(), 1, t).unwrap();
+    db.paid(&mut st, user, ws, &q1, "pi_first0001", t).await;
+    let t2 = t + Duration::days(5);
+    let q2 = month_pass(&st.entitlement(ws, false, t2).await.unwrap(), 1, t2).unwrap();
+    db.paid(&mut st, user, ws, &q2, "pi_renew0001", t2).await;
+    assert_eq!(db.ent(ws).await, (1, Some(q2.period_end)));
+    let o = st
+        .after_payment("pi_renew0001", AfterPayment::Refunded(Sat(28_900)), t2)
+        .await
+        .unwrap();
+    assert_eq!(
+        o,
+        AfterOutcome::Revoked { paused: 0 },
+        "the first month still covers the one channel"
+    );
+    assert_eq!(db.ent(ws).await, (1, Some(q1.period_end)));
+    assert!(db.open_pauses(ws).await.is_empty());
+    let r = db.owner.query_one("SELECT status, refunded_satang, revoked_reason FROM kubcode_accounts.billing_purchases WHERE stripe_payment_intent_id = 'pi_renew0001'", &[]).await.unwrap();
+    assert_eq!(
+        (
+            r.get::<_, String>(0),
+            r.get::<_, i64>(1),
+            r.get::<_, Option<String>>(2)
+        ),
+        ("paid".into(), 28_900, Some("refunded".into()))
+    );
+    db.drop().await;
+}
+
+#[tokio::test]
+#[ignore = "needs KUBCODE_TEST_DATABASE_URL"]
+async fn refunding_a_mid_pass_add_pauses_the_newest_channel_now() {
+    let db = db().await;
+    let (user, ws) = db.member(false).await;
+    let _old = db.channel(ws, 20).await;
+    let newer = db.channel(ws, 1).await;
+    let mut st = db.billing().await;
+    let t = now();
+    let q1 = month_pass(&st.entitlement(ws, false, t).await.unwrap(), 1, t).unwrap();
+    db.paid(&mut st, user, ws, &q1, "pi_pass0001", t).await;
+    let t2 = t + Duration::days(3);
+    let add = add_slots(&st.entitlement(ws, false, t2).await.unwrap(), 1, t2).unwrap();
+    db.paid(&mut st, user, ws, &add, "pi_add0001", t2).await;
+    assert_eq!(db.ent(ws).await.0, 2);
+    // Partial refund of the add: recorded, nothing else.
+    assert_eq!(
+        st.after_payment("pi_add0001", AfterPayment::Refunded(Sat(1_000)), t2)
+            .await
+            .unwrap(),
+        AfterOutcome::Recorded
+    );
+    assert_eq!(db.ent(ws).await.0, 2);
+    assert!(db.open_pauses(ws).await.is_empty());
+    // Full refund: back to 1 slot, the newer channel pauses at once (no grace).
+    let full = Sat(add.amount.0);
+    assert_eq!(
+        st.after_payment("pi_add0001", AfterPayment::Refunded(full), t2)
+            .await
+            .unwrap(),
+        AfterOutcome::Revoked { paused: 1 }
+    );
+    assert_eq!(db.ent(ws).await, (1, Some(q1.period_end)));
+    assert_eq!(db.open_pauses(ws).await, vec![newer]);
+    // The regular sweep agrees (no resume, no extra pause).
+    let o = st
+        .sweep_workspace(ws, t2 + Duration::minutes(1))
+        .await
+        .unwrap();
+    assert_eq!((o.paused, o.resumed), (0, 0));
+    db.drop().await;
+}
+
+#[tokio::test]
+#[ignore = "needs KUBCODE_TEST_DATABASE_URL"]
+async fn refunding_the_only_pass_pauses_everything_now_and_grace_does_not_resume() {
+    let db = db().await;
+    let (user, ws) = db.member(false).await;
+    let a = db.channel(ws, 5).await;
+    let mut st = db.billing().await;
+    let t = now();
+    let q = month_pass(&st.entitlement(ws, false, t).await.unwrap(), 1, t).unwrap();
+    db.paid(&mut st, user, ws, &q, "pi_only0001", t).await;
+    let o = st
+        .after_payment(
+            "pi_only0001",
+            AfterPayment::Refunded(Sat(28_900)),
+            t + Duration::days(1),
+        )
+        .await
+        .unwrap();
+    assert_eq!(o, AfterOutcome::Revoked { paused: 1 });
+    assert_eq!(db.open_pauses(ws).await, vec![a]);
+    assert_eq!(db.ent(ws).await, (0, None));
+    let o = st.sweep_workspace(ws, t + Duration::days(1)).await.unwrap();
+    assert_eq!(o.resumed, 0);
+    db.drop().await;
+}
+
+#[tokio::test]
+#[ignore = "needs KUBCODE_TEST_DATABASE_URL"]
+async fn double_delivery_in_parallel_has_one_effect() {
+    let db = db().await;
+    let (user, ws) = db.member(false).await;
+    db.channel(ws, 5).await;
+    db.channel(ws, 1).await;
+    let mut st = db.billing().await;
+    let t = now();
+    let q = month_pass(&st.entitlement(ws, false, t).await.unwrap(), 2, t).unwrap();
+    db.paid(&mut st, user, ws, &q, "pi_twice0001", t).await;
+    let mut stores = Vec::new();
+    for _ in 0..4 {
+        stores.push(db.billing().await);
+    }
+    let results = futures_join(
+        stores
+            .iter_mut()
+            .map(|s| s.after_payment("pi_twice0001", AfterPayment::Refunded(Sat(57_800)), t)),
+    )
+    .await;
+    let revoked = results
+        .iter()
+        .filter(|r| matches!(r, Ok(AfterOutcome::Revoked { .. })))
+        .count();
+    let unchanged = results
+        .iter()
+        .filter(|r| matches!(r, Ok(AfterOutcome::Unchanged)))
+        .count();
+    assert_eq!((revoked, unchanged), (1, 3));
+    assert_eq!(db.open_pauses(ws).await.len(), 2);
+    db.drop().await;
+}
+
+#[tokio::test]
+#[ignore = "needs KUBCODE_TEST_DATABASE_URL"]
+async fn disputes_flag_win_or_revoke_and_the_owner_is_never_touched() {
+    let db = db().await;
+    let (user, ws) = db.member(false).await;
+    db.channel(ws, 5).await;
+    let mut st = db.billing().await;
+    let t = now();
+    let q = month_pass(&st.entitlement(ws, false, t).await.unwrap(), 1, t).unwrap();
+    db.paid(&mut st, user, ws, &q, "pi_disp0001", t).await;
+    assert_eq!(
+        st.after_payment("pi_disp0001", AfterPayment::Dispute(Dispute::Open), t)
+            .await
+            .unwrap(),
+        AfterOutcome::Recorded
+    );
+    let r = db.owner.query_one("SELECT review_code, dispute FROM kubcode_accounts.billing_purchases WHERE stripe_payment_intent_id = 'pi_disp0001'", &[]).await.unwrap();
+    assert_eq!(
+        (r.get::<_, Option<String>>(0), r.get::<_, Option<String>>(1)),
+        (Some("dispute_open".into()), Some("open".into()))
+    );
+    assert!(
+        db.open_pauses(ws).await.is_empty(),
+        "opened: no access change"
+    );
+    assert_eq!(
+        st.after_payment("pi_disp0001", AfterPayment::Dispute(Dispute::Open), t)
+            .await
+            .unwrap(),
+        AfterOutcome::Unchanged
+    );
+    assert!(matches!(
+        st.after_payment("pi_disp0001", AfterPayment::Dispute(Dispute::Lost), t)
+            .await
+            .unwrap(),
+        AfterOutcome::Revoked { paused: 1 }
+    ));
+    let r = db.owner.query_one("SELECT review_code, dispute FROM kubcode_accounts.billing_purchases WHERE stripe_payment_intent_id = 'pi_disp0001'", &[]).await.unwrap();
+    assert_eq!(
+        (r.get::<_, Option<String>>(0), r.get::<_, Option<String>>(1)),
+        (None, Some("lost".into()))
+    );
+    // Won path on another purchase.
+    let (u2, ws2) = db.member(false).await;
+    let q2 = month_pass(&st.entitlement(ws2, false, t).await.unwrap(), 1, t).unwrap();
+    db.paid(&mut st, u2, ws2, &q2, "pi_won0001", t).await;
+    st.after_payment("pi_won0001", AfterPayment::Dispute(Dispute::Open), t)
+        .await
+        .unwrap();
+    assert_eq!(
+        st.after_payment("pi_won0001", AfterPayment::Dispute(Dispute::Won), t)
+            .await
+            .unwrap(),
+        AfterOutcome::Recorded
+    );
+    assert_eq!(db.ent(ws2).await.0, 1);
+    // Unknown payment intent.
+    assert_eq!(
+        st.after_payment("pi_nobody0001", AfterPayment::Refunded(Sat(1)), t)
+            .await
+            .unwrap(),
+        AfterOutcome::Unknown
+    );
+    // The owner: a refund on an owner workspace purchase never pauses.
+    let (owner, ows) = db.member(true).await;
+    db.channel(ows, 2).await;
+    let oq = kubcode_billing::quote::Quote {
+        kind: Kind::New,
+        slots: 1,
+        amount: Sat(28_900),
+        period_start: t,
+        period_end: t + Duration::days(30),
+    };
+    let oid = st.create_purchase(ows, owner, &oq).await.unwrap();
+    st.fulfil(oid, Some("pi_owner0001"), None, true, t)
+        .await
+        .unwrap();
+    assert_eq!(
+        st.after_payment("pi_owner0001", AfterPayment::Refunded(Sat(28_900)), t)
+            .await
+            .unwrap(),
+        AfterOutcome::Revoked { paused: 0 }
+    );
+    assert!(db.open_pauses(ows).await.is_empty());
+    db.drop().await;
+}

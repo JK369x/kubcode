@@ -21,7 +21,19 @@ export type BillingView = {
   /** Channels connected now (not disconnected), for the slot check. */
   activeChannels: number;
   pausedChannels: number;
-  purchases: { kind: string; slots: number; amountSatang: number; status: string; paidAt: string | null; periodEnd: string; method: string | null }[];
+  purchases: {
+    kind: string;
+    slots: number;
+    amountSatang: number;
+    status: string;
+    paidAt: string | null;
+    periodEnd: string;
+    method: string | null;
+    /// Refunds and disputes (migration 0014): shown as Thai labels in the history.
+    refundedSatang: number;
+    dispute: "open" | "won" | "lost" | null;
+    revoked: "refunded" | "dispute_lost" | null;
+  }[];
 };
 
 const DAY = 86_400_000;
@@ -69,8 +81,10 @@ async function read(c: PoolClient, s: SessionClaims, now: Date): Promise<Billing
   );
   const purchases = await c.query<{
     kind: string; slots: number; amount_satang: string; status: string; paid_at: Date | null; period_end: Date; payment_method: string | null;
+    refunded_satang: string; dispute: string | null; revoked_reason: string | null;
   }>(
-    `SELECT kind, slots, amount_satang, status, paid_at, period_end, payment_method
+    `SELECT kind, slots, amount_satang, status, paid_at, period_end, payment_method,
+            refunded_satang, dispute, revoked_reason
        FROM kubcode_accounts.billing_purchases WHERE workspace_id = $1 AND status = 'paid'
       ORDER BY paid_at DESC LIMIT 12`,
     [workspaceId],
@@ -94,6 +108,9 @@ async function read(c: PoolClient, s: SessionClaims, now: Date): Promise<Billing
       paidAt: r.paid_at ? r.paid_at.toISOString() : null,
       periodEnd: r.period_end.toISOString(),
       method: r.payment_method,
+      refundedSatang: Number(r.refunded_satang),
+      dispute: r.dispute === "open" || r.dispute === "won" || r.dispute === "lost" ? r.dispute : null,
+      revoked: r.revoked_reason === "refunded" || r.revoked_reason === "dispute_lost" ? r.revoked_reason : null,
     })),
   };
 }

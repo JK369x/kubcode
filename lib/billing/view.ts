@@ -48,3 +48,16 @@ export const REMINDER_TEXT: Record<Exclude<BillingView["reminder"], null>, { ton
   grace: { tone: "warn", text: (u) => `แพ็กเกจหมดอายุแล้วเมื่อ ${u} ทุกอย่างยังทำงานอีก 3 วัน หลังจากนั้นช่องจะถูกพักไว้` },
   paused: { tone: "warn", text: () => "แพ็กเกจหมดอายุแล้ว ช่องถูกพักไว้ (ข้อมูลยังอยู่ครบ) ต่ออายุเพื่อใช้ต่อ" },
 };
+
+type HistoryItem = BillingView["purchases"][number];
+
+/** Thai label for a refunded or disputed purchase in the history, or null. */
+export function purchaseNote(p: Pick<HistoryItem, "amountSatang" | "refundedSatang" | "dispute" | "revoked">): { text: string; tone: "warn" | "muted" } | null {
+  const baht = (s: number) => `${(s / 100).toLocaleString("en-US", { maximumFractionDigits: 2 })} ฿`;
+  if (p.revoked === "dispute_lost") return { text: "ข้อโต้แย้งการชำระเงินไม่สำเร็จ · ยกเลิกสิทธิ์แล้ว", tone: "warn" };
+  if (p.revoked === "refunded") return { text: "คืนเงินเต็มจำนวนแล้ว · ยกเลิกสิทธิ์แล้ว", tone: "muted" };
+  if (p.dispute === "open") return { text: "มีการโต้แย้งการชำระเงิน · กำลังตรวจสอบ", tone: "warn" };
+  if (p.refundedSatang > 0) return { text: `คืนเงินบางส่วน ${baht(p.refundedSatang)}`, tone: "muted" };
+  if (p.dispute === "won") return { text: "ข้อโต้แย้งปิดแล้ว · สิทธิ์ใช้งานตามปกติ", tone: "muted" };
+  return null;
+}

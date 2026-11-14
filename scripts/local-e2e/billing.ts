@@ -69,7 +69,7 @@ async function main() {
 
     // 1. stripe listen (as the key's account) → forward to the runner; read whsec from its output.
     const listen = spawn("stripe", ["listen", "--skip-update", "--forward-to", `127.0.0.1:${RUNNER_PORT}/stripe/webhook`, "--events",
-      "checkout.session.completed,checkout.session.async_payment_succeeded,checkout.session.async_payment_failed,checkout.session.expired"], { stdio: ["ignore", "pipe", "pipe"], env: stripeEnv(key, cliHome) });
+      "checkout.session.completed,checkout.session.async_payment_succeeded,checkout.session.async_payment_failed,checkout.session.expired,charge.refunded,charge.dispute.created,charge.dispute.closed"], { stdio: ["ignore", "pipe", "pipe"], env: stripeEnv(key, cliHome) });
     kids.push(listen);
     const whsec = await new Promise<string>((resolve, reject) => {
       const t = setTimeout(() => reject(new Error("stripe listen gave no secret")), 30_000);
@@ -295,6 +295,48 @@ async function main() {
     const ent = (await db.pool.query("SELECT slots FROM kubcode_accounts.billing_entitlements WHERE workspace_id = $1", [ws])).rows[0];
     assert.equal(ent.slots, 3, "2 + 1 added");
     log("entitlement: 3 slots ✓");
+
+    // Scenario 6: refunds (ADR 0008 amendment 2026-11-14), through real
+    // test-mode refunds and the charge.refunded webhook via stripe listen.
+    // Three connected channels on 3 paid slots, so revoking 1 slot pauses one.
+    for (const n of ["e2e-ch-old", "e2e-ch-mid", "e2e-ch-new"]) {
+      const id = (await db.pool.query("INSERT INTO kubcode_accounts.channels (workspace_id, platform, display_name) VALUES ($1, 'tiktok', $2) RETURNING id", [ws, n])).rows[0].id;
+      await db.pool.query("INSERT INTO kubcode_accounts.channel_connections (channel_id, provider, provider_ref, status) VALUES ($1, 'zernio', $2, 'active')", [id, `e2e-${id}`]);
+      await new Promise((r) => setTimeout(r, 20));
+    }
+    const piOf = async (kind: string) =>
+      (await db.pool.query("SELECT stripe_payment_intent_id AS pi, amount_satang AS a FROM kubcode_accounts.billing_purchases WHERE workspace_id = $1 AND kind = $2 AND status = 'paid' ORDER BY paid_at DESC LIMIT 1", [ws, kind])).rows[0];
+    const refund = async (pi: string, amount?: number) => {
+      const form = new URLSearchParams({ payment_intent: pi, ...(amount ? { amount: String(amount) } : {}) });
+      const r = await fetch("https://api.stripe.com/v1/refunds", { method: "POST", body: form, headers: { Authorization: `Basic ${Buffer.from(`${key}:`).toString("base64")}`, "Stripe-Version": "2026-10-28.endive", "content-type": "application/x-www-form-urlencoded" } });
+      if (!r.ok) throw new Error(`refund → ${r.status}`);
+    };
+    const waitFor = async (what: string, ok: () => Promise<boolean>) => {
+      for (let i = 0; i < 60; i++) {
+        if (await ok()) return;
+        await new Promise((r) => setTimeout(r, 1000));
+      }
+      throw new Error(`timed out waiting for ${what}`);
+    };
+    const addPi = await piOf("add");
+    // 6a partial refund of the PromptPay add → recorded only.
+    // (PromptPay refunds in test mode are instant like cards.)
+    await refund(addPi.pi, 1000);
+    await waitFor("partial refund recorded", async () => (await db.pool.query("SELECT refunded_satang FROM kubcode_accounts.billing_purchases WHERE stripe_payment_intent_id = $1", [addPi.pi])).rows[0].refunded_satang === "1000");
+    assert.equal((await db.pool.query("SELECT slots FROM kubcode_accounts.billing_entitlements WHERE workspace_id = $1", [ws])).rows[0].slots, 3);
+    log("6a partial refund ฿10 of the add: recorded, still 3 slots ✓");
+    // 6b refund the rest → revoked, back to 2 slots; 3 channels → the newest pauses now.
+    await refund(addPi.pi);
+    await waitFor("add revoked", async () => (await db.pool.query("SELECT revoked_reason FROM kubcode_accounts.billing_purchases WHERE stripe_payment_intent_id = $1", [addPi.pi])).rows[0].revoked_reason === "refunded");
+    assert.equal((await db.pool.query("SELECT slots FROM kubcode_accounts.billing_entitlements WHERE workspace_id = $1", [ws])).rows[0].slots, 2);
+    const paused = (await db.pool.query("SELECT ch.display_name AS n FROM kubcode_accounts.billing_channel_pauses p JOIN kubcode_accounts.channels ch ON ch.id = p.channel_id WHERE ch.workspace_id = $1 AND p.resumed_at IS NULL", [ws])).rows.map((r) => r.n);
+    assert.deepEqual(paused, ["e2e-ch-new"]);
+    log("6b refund of the rest: add revoked, 2 slots, newest channel paused now ✓");
+    // 6c the history shows it.
+    await page.goto("https://kubcode.dev/account/billing");
+    await page.getByText("คืนเงินเต็มจำนวนแล้ว").first().waitFor();
+    await page.screenshot({ path: ".qa/local-e2e/billing-refunded.png", fullPage: true }).catch(() => {});
+    log("6c /account/billing shows คืนเงินเต็มจำนวนแล้ว ✓");
     await browser.close();
     log("PASS");
   } catch (e) {

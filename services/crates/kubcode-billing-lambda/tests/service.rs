@@ -101,6 +101,9 @@ struct Mem {
     nonces: Vec<[u8; 32]>,
     grants: u32,
     pi: HashMap<Uuid, (Option<String>, Option<String>)>,
+    /// Per purchase: (refunded total, dispute, revoked).
+    after: HashMap<Uuid, (i64, Option<kubcode_billing::refund::Dispute>, bool)>,
+    revokes: u32,
 }
 
 #[derive(Clone, Default)]
@@ -109,7 +112,11 @@ struct MemStore(Arc<Mutex<Mem>>);
 fn spans(m: &Mem, ws: Uuid) -> Vec<PaidSpan> {
     m.purchases
         .iter()
-        .filter(|p| p.workspace == ws && p.status == Status::Paid)
+        .filter(|p| {
+            p.workspace == ws
+                && p.status == Status::Paid
+                && !m.after.get(&p.id).is_some_and(|a| a.2)
+        })
         .map(|p| PaidSpan {
             slots: p.slots,
             period_start: p.period_start,
@@ -240,6 +247,54 @@ impl BillingStore for MemStore {
     }
     async fn event_seen(&self, id: &str) -> Result<bool, StoreError> {
         Ok(self.0.lock().unwrap().events.iter().any(|e| e == id))
+    }
+    async fn after_payment(
+        &mut self,
+        payment_intent: &str,
+        ev: kubcode_billing_store::AfterPayment,
+        _now: OffsetDateTime,
+    ) -> Result<kubcode_billing_store::AfterOutcome, StoreError> {
+        use kubcode_billing::refund::{on_dispute, on_refund, PaidFacts};
+        use kubcode_billing_store::{AfterOutcome, AfterPayment};
+        let mut m = self.0.lock().unwrap();
+        let Some(id) =
+            m.pi.iter()
+                .find(|(_, v)| v.0.as_deref() == Some(payment_intent))
+                .map(|(k, _)| *k)
+        else {
+            return Ok(AfterOutcome::Unknown);
+        };
+        let amount = m.purchases.iter().find(|p| p.id == id).unwrap().amount;
+        let (refunded, dispute, revoked) = m.after.get(&id).copied().unwrap_or((0, None, false));
+        let facts = PaidFacts {
+            amount,
+            refunded: Satang(refunded),
+            dispute,
+            revoked,
+        };
+        let c = match ev {
+            AfterPayment::Refunded(t) => on_refund(&facts, t),
+            AfterPayment::Dispute(d) => on_dispute(&facts, d),
+        };
+        if c.is_noop() {
+            return Ok(AfterOutcome::Unchanged);
+        }
+        let entry = (
+            c.refunded.map(|s| s.0).unwrap_or(refunded),
+            c.dispute.or(dispute),
+            revoked || c.revoke.is_some(),
+        );
+        m.after.insert(id, entry);
+        match c.review {
+            Some(kubcode_billing::refund::Review::Flag(code)) => m.reviews.push((id, code.into())),
+            Some(kubcode_billing::refund::Review::Clear) => m.reviews.retain(|r| r.0 != id),
+            None => {}
+        }
+        if c.revoke.is_some() {
+            m.revokes += 1;
+            return Ok(AfterOutcome::Revoked { paused: 0 });
+        }
+        Ok(AfterOutcome::Recorded)
     }
     async fn sweep(
         &mut self,
@@ -833,4 +888,142 @@ fn the_method_used_comes_from_the_charge_not_the_allowed_list() {
     v["payment_intent"]["latest_charge"] = Value::String("ch_notexpanded".into());
     let s: Session = serde_json::from_value(v).unwrap();
     assert_eq!(payment_method(&s), None);
+}
+
+// ---------------- refunds and disputes (recorded TEST-mode events) ----------------
+
+/// A recorded charge/dispute event, re-pointed at our purchase's payment intent.
+fn charge_event(name: &str, pi: &str) -> (Vec<u8>, String) {
+    let mut v = fixture_json(name);
+    v["data"]["object"]["payment_intent"] = Value::String(pi.into());
+    let body = serde_json::to_vec(&v).unwrap();
+    let header = sign(WHSEC, NOW, &body);
+    (body, header)
+}
+
+async fn paid_purchase(h: &mut H) -> (Purchase, String) {
+    let p = h.bought().await;
+    h.fake().serve_for("session_paid_card.json", p.id);
+    let (body, sig) = signed_event("event_completed.json", p.id);
+    assert_eq!(h.hook(&body, Some(sig)).await.0, 200);
+    let pi = h.store.0.lock().unwrap().pi[&p.id].0.clone().unwrap();
+    (p, pi)
+}
+
+#[test]
+fn recorded_refund_and_dispute_events_have_what_we_read() {
+    for (f, kind) in [
+        ("event_charge_refunded_partial.json", "charge.refunded"),
+        ("event_charge_refunded_full.json", "charge.refunded"),
+        ("event_dispute_created.json", "charge.dispute.created"),
+        ("event_dispute_closed_lost.json", "charge.dispute.closed"),
+    ] {
+        let e: Event = serde_json::from_slice(&fixture(f)).unwrap();
+        assert_eq!(e.kind, kind, "{f}");
+        assert!(!e.livemode);
+        assert!(
+            e.data.object["payment_intent"]
+                .as_str()
+                .unwrap()
+                .starts_with("pi_"),
+            "{f}"
+        );
+        assert_eq!(e.data.object["currency"], "thb");
+    }
+    let full = fixture_json("event_charge_refunded_full.json");
+    assert_eq!(
+        full["data"]["object"]["amount_refunded"],
+        full["data"]["object"]["amount"]
+    );
+    assert_eq!(
+        fixture_json("event_dispute_closed_lost.json")["data"]["object"]["status"],
+        "lost"
+    );
+}
+
+#[tokio::test]
+async fn a_full_refund_revokes_once_even_when_redelivered() {
+    let mut h = h();
+    let (p, pi) = paid_purchase(&mut h).await;
+    // Partial first (recorded, access unchanged). The recorded charge was ฿578.
+    let (b, s) = charge_event("event_charge_refunded_partial.json", &pi);
+    assert_eq!(h.hook(&b, Some(s)).await.0, 200);
+    assert_eq!(
+        h.store.0.lock().unwrap().after[&p.id],
+        (10_000, None, false)
+    );
+    // Then full: revoked.
+    let (b, s) = charge_event("event_charge_refunded_full.json", &pi);
+    assert_eq!(h.hook(&b, Some(s.clone())).await.0, 200);
+    assert_eq!(h.store.0.lock().unwrap().after[&p.id], (57_800, None, true));
+    // Same event again (dedupe) and an older partial arriving late: nothing more.
+    assert_eq!(h.hook(&b, Some(s)).await.0, 200);
+    let mut late = fixture_json("event_charge_refunded_partial.json");
+    late["id"] = Value::String("evt_1LatePartialRefund0001".into());
+    late["data"]["object"]["payment_intent"] = Value::String(pi.clone());
+    let lb = serde_json::to_vec(&late).unwrap();
+    assert_eq!(h.hook(&lb, Some(sign(WHSEC, NOW, &lb))).await.0, 200);
+    let m = h.store.0.lock().unwrap();
+    assert_eq!((m.revokes, m.after[&p.id]), (1, (57_800, None, true)));
+}
+
+#[tokio::test]
+async fn a_dispute_flags_then_lost_revokes() {
+    let mut h = h();
+    let (p, pi) = paid_purchase(&mut h).await;
+    let (b, s) = charge_event("event_dispute_created.json", &pi);
+    assert_eq!(h.hook(&b, Some(s)).await.0, 200);
+    {
+        let m = h.store.0.lock().unwrap();
+        assert_eq!(m.reviews, vec![(p.id, "dispute_open".to_owned())]);
+        assert!(!m.after[&p.id].2, "opened: access unchanged");
+    }
+    let (b, s) = charge_event("event_dispute_closed_lost.json", &pi);
+    assert_eq!(h.hook(&b, Some(s)).await.0, 200);
+    let m = h.store.0.lock().unwrap();
+    assert!(m.after[&p.id].2);
+    assert_eq!(m.revokes, 1);
+    assert!(m.reviews.is_empty(), "final outcome clears the open flag");
+}
+
+#[tokio::test]
+async fn a_won_dispute_clears_the_flag_and_keeps_access() {
+    let mut h = h();
+    let (p, pi) = paid_purchase(&mut h).await;
+    let (b, s) = charge_event("event_dispute_created.json", &pi);
+    h.hook(&b, Some(s)).await;
+    let mut won = fixture_json("event_dispute_closed_lost.json");
+    won["id"] = Value::String("evt_1DisputeWonFixture0001".into());
+    won["data"]["object"]["status"] = Value::String("won".into());
+    won["data"]["object"]["payment_intent"] = Value::String(pi);
+    let wb = serde_json::to_vec(&won).unwrap();
+    assert_eq!(h.hook(&wb, Some(sign(WHSEC, NOW, &wb))).await.0, 200);
+    let m = h.store.0.lock().unwrap();
+    assert!(m.reviews.is_empty());
+    assert_eq!(
+        m.after[&p.id],
+        (0, Some(kubcode_billing::refund::Dispute::Won), false)
+    );
+    assert_eq!(m.revokes, 0);
+}
+
+#[tokio::test]
+async fn charge_events_that_are_not_ours_or_not_thb_change_nothing() {
+    let mut h = h();
+    let (p, _pi) = paid_purchase(&mut h).await;
+    // A refund of some other charge (the recorded event as is).
+    let b = fixture("event_charge_refunded_full.json");
+    assert_eq!(h.hook(&b, Some(sign(WHSEC, NOW, &b))).await.0, 200);
+    // Wrong currency.
+    let mut usd = fixture_json("event_charge_refunded_full.json");
+    usd["id"] = Value::String("evt_1UsdRefundFixture00001".into());
+    usd["data"]["object"]["currency"] = Value::String("usd".into());
+    let ub = serde_json::to_vec(&usd).unwrap();
+    assert_eq!(h.hook(&ub, Some(sign(WHSEC, NOW, &ub))).await.0, 200);
+    // Unsigned: refused before anything.
+    let (b, _) = charge_event("event_charge_refunded_full.json", "pi_whatever1");
+    assert_eq!(h.hook(&b, None).await.0, 400);
+    let m = h.store.0.lock().unwrap();
+    assert!(!m.after.contains_key(&p.id));
+    assert_eq!(m.revokes, 0);
 }

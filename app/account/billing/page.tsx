@@ -7,7 +7,7 @@ import { BillingCheckout } from "@/components/BillingCheckout";
 import { Badge } from "@/components/ui/badge";
 import { canonicalHostRedirect, readAuthConfig } from "@/lib/auth-policy";
 import { MAX_SLOTS, PRICE_PER_CHANNEL_SATANG } from "@/lib/billing/config";
-import { getBillingPage, thaiDateTime } from "@/lib/billing/view";
+import { getBillingPage, purchaseNote, thaiDateTime } from "@/lib/billing/view";
 
 export const dynamic = "force-dynamic";
 export const metadata: Metadata = { title: "การชำระเงิน — kubcode", robots: { index: false, follow: false } };
@@ -96,15 +96,21 @@ export default async function BillingPage() {
                   ประวัติการชำระ
                 </h2>
                 <ul className="m-0 grid list-none gap-2 p-0 text-[15px]">
-                  {page.view.purchases.map((p, i) => (
-                    <li key={i} className="flex flex-wrap justify-between gap-2 border-b border-border py-2">
-                      <span>
-                        {p.kind === "add" ? `เพิ่ม ${p.slots} ช่อง` : `${p.slots} ช่อง 1 เดือน`} · {(p.amountSatang / 100).toLocaleString("en-US")} ฿
-                        {p.method ? ` · ${p.method === "promptpay" ? "พร้อมเพย์" : "บัตร"}` : ""}
-                      </span>
-                      <span className="text-muted-foreground">{p.paidAt ? thaiDateTime(p.paidAt) : ""}</span>
-                    </li>
-                  ))}
+                  {page.view.purchases.map((p, i) => {
+                    const note = purchaseNote(p);
+                    return (
+                      <li key={i} className="flex flex-wrap justify-between gap-2 border-b border-border py-2">
+                        <span className={p.revoked ? "text-muted-foreground line-through decoration-1" : undefined}>
+                          {p.kind === "add" ? `เพิ่ม ${p.slots} ช่อง` : `${p.slots} ช่อง 1 เดือน`} · {(p.amountSatang / 100).toLocaleString("en-US")} ฿
+                          {p.method ? ` · ${p.method === "promptpay" ? "พร้อมเพย์" : "บัตร"}` : ""}
+                        </span>
+                        <span className="text-muted-foreground">{p.paidAt ? thaiDateTime(p.paidAt) : ""}</span>
+                        {note && (
+                          <span className={`basis-full text-[14px] ${note.tone === "warn" ? "text-[#92400e] dark:text-[#fcd34d]" : "text-muted-foreground"}`}>{note.text}</span>
+                        )}
+                      </li>
+                    );
+                  })}
                 </ul>
               </section>
             )}
