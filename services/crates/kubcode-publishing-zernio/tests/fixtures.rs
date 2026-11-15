@@ -456,3 +456,44 @@ fn tiktok_url_resolved_fills_the_receipt() {
         "the TikTok target, not the post's first platform"
     );
 }
+
+/// Regression (2026-11-15 "harness" report): the documented `comment.received`
+/// shape puts the text in `comment.text` for both TikTok and Instagram; it
+/// reaches the rule matcher unchanged (case, spacing and zero-width chars are
+/// the matcher's job, not the parser's).
+#[test]
+fn webhook_comment_text_reaches_the_rule_matcher_on_tiktok_and_instagram() {
+    use kubcode_publishing::automation::{choose, MatchMode, Rule, Scope};
+    let rule = |k: &str| Rule {
+        id: k.into(),
+        keywords: vec![k.into()],
+        mode: MatchMode::Contains,
+        scope: Scope::AllPosts,
+        active: true,
+    };
+    for (name, keyword) in [
+        ("webhook-comment-received-tiktok", "egm"),
+        ("webhook-comment-received", "love this"),
+    ] {
+        let e = translate(name);
+        let [ProviderEvent::CommentReceived(c)] = e.as_slice() else {
+            panic!("{name}: {e:?}")
+        };
+        assert!(!c.text.is_empty(), "{name}");
+        assert!(
+            choose(&[rule(keyword)], &c.platform_post_id, &c.text).is_some(),
+            "{name}"
+        );
+        assert!(!c.own_account && !c.is_reply, "{name}");
+    }
+    // A TikTok comment whose text is " Harness\u{200b} " still matches.
+    let mut v = fixture("webhook-comment-received-tiktok");
+    v["comment"]["text"] = serde_json::Value::String(" Harness\u{200b} ".into());
+    let (headers, raw) = support::signed(&v);
+    let events = ZernioEvents::new(vec![support::WEBHOOK_SECRET.to_vec()]);
+    let e = events.translate(&events.verify(&headers, &raw).unwrap());
+    let [ProviderEvent::CommentReceived(c)] = e.as_slice() else {
+        panic!()
+    };
+    assert!(choose(&[rule("harness")], &c.platform_post_id, &c.text).is_some());
+}
