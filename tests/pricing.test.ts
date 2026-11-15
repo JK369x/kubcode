@@ -2,7 +2,13 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
-import Pricing from "../app/pricing/page";
+// Node cannot load CSS modules: stub them before the page is required (tsx
+// compiles this file as CommonJS, so the require below runs after this).
+const NodeModule = require("node:module") as { _extensions: Record<string, (m: { exports: unknown }) => void> };
+NodeModule._extensions[".css"] = (m) => {
+  m.exports = new Proxy({}, { get: (_t, key) => (key === "__esModule" ? false : String(key)) });
+};
+const Pricing = (require("../app/pricing/page") as typeof import("../app/pricing/page")).default;
 import Refund from "../app/refund/page";
 import Contact from "../app/contact/page";
 import Terms from "../app/terms/page";
@@ -151,4 +157,20 @@ test("plan cards name the product family: Skill Pack = kubcode Studio, Social = 
   assert.equal(fam("social"), "kubcode Social");
   assert.equal(fam("social-skill"), "kubcode Social + kubcode Studio");
   assert.equal(fam("free"), "");
+});
+
+test("pricing design (owner pick A): product switch, family marks, real platform logos, honest Facebook, accordion FAQ", () => {
+  const h = html(Pricing);
+  assert.match(h, /role="radiogroup"[^>]*aria-label="ดูแพ็กเกจของ"/);
+  for (const name of ["kubcode Studio", "kubcode Social"]) assert.match(h, new RegExp(name));
+  for (const p of ["youtube", "instagram", "tiktok"]) assert.match(h, new RegExp(`data-platform="${p}"[^>]*data-tone="brand"`));
+  assert.match(h, /data-platform="facebook"[^>]*data-tone="muted"/);
+  assert.match(text(h), /Facebook เร็ว ๆ นี้/);
+  assert.match(h, /aria-label="คำนวณราคาตามจำนวนช่อง"/);
+  assert.match(h, /<caption[^>]*>เทียบสิ่งที่ได้ในแต่ละแพ็กเกจ<\/caption>/);
+  assert.match(h, /data-slot="accordion-trigger"[^>]*>ยกเลิกยังไง/);
+  assert.match(text(h), /kubcode MCP \(สั่งจาก AI agent\) กำลังทำ/);
+  assert.doesNotMatch(h, /data-wide|\?v=/, "variant B and its switch are gone");
+  // No official payment marks: neutral icons + text (license not clean).
+  assert.doesNotMatch(h, /visa\.svg|mastercard\.svg|promptpay\.svg/i);
 });
