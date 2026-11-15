@@ -236,3 +236,41 @@ async fn an_expired_token_on_the_post_list_is_an_error() {
         .await
         .is_err());
 }
+
+/// Regression (2026-11-15 "harness" report): the TikTok listing carries the
+/// comment text in `message` (the webhook uses `text`). Read from the live
+/// response's shape, the text reaches the rule matcher, and our own inline
+/// reply is never a comment to answer.
+#[tokio::test]
+async fn tiktok_listing_text_reaches_the_rule_matcher() {
+    use kubcode_publishing::automation::{choose, MatchMode, Rule, Scope};
+    let h = Harness::default();
+    h.fake
+        .answer_next_inbox(200, fixture("post-comments-tiktok"));
+    let comments = h
+        .zernio
+        .post_comments(&ProviderRef(ACCOUNT.into()), "7300000000000000001")
+        .await
+        .unwrap();
+    assert_eq!(
+        comments.len(),
+        2,
+        "top level only; our inline reply is not listed"
+    );
+    assert_eq!(comments[0].text, "harness");
+    assert!(comments.iter().all(|c| !c.own_account && !c.is_reply));
+    let rules = vec![Rule {
+        id: "r1".into(),
+        keywords: vec!["harness".into()],
+        mode: MatchMode::Contains,
+        scope: Scope::AllPosts,
+        active: true,
+    }];
+    for c in &comments {
+        assert!(
+            choose(&rules, &c.platform_post_id, &c.text).is_some(),
+            "{:?}",
+            c.text
+        );
+    }
+}

@@ -1,0 +1,92 @@
+{
+  "_source": "Shape of a real GET /v1/inbox/comments/{tiktokVideoId}?accountId=… answer for the kubcode TikTok account (2026-11-15), keys and nesting copied from the live response; every value is synthetic (no real comment text, ids, names or URLs).",
+  "status": "success",
+  "comments": [
+    {
+      "id": "7500000000000000001",
+      "message": "harness",
+      "createdTime": "2026-11-15T15:16:17.000Z",
+      "from": {
+        "id": "0000000000000000000000000000000000000000000000000000000000000000",
+        "name": "Viewer",
+        "username": "viewer_one",
+        "picture": "https://p16.example/tiktok/a.jpeg",
+        "isOwner": false
+      },
+      "likeCount": 0,
+      "replyCount": 1,
+      "platform": "tiktok",
+      "url": null,
+      "replies": [
+        {
+          "id": "7500000000000000002",
+          "message": "ลิงก์บทความ + วิธีติดตั้งอยู่ที่ kubcode.dev/go/dsh",
+          "createdTime": "2026-11-15T15:17:01.000Z",
+          "from": {
+            "id": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+            "name": "kubcode",
+            "username": "kubcode",
+            "picture": "https://p16.example/tiktok/k.jpeg",
+            "isOwner": true
+          },
+          "likeCount": 0,
+          "replyCount": 0,
+          "platform": "tiktok",
+          "url": null,
+          "replies": [],
+          "isHidden": false,
+          "canReply": false,
+          "canDelete": true,
+          "canHide": true,
+          "canLike": true,
+          "isLiked": false,
+          "canPin": false,
+          "isPinned": false,
+          "parentId": "7500000000000000001"
+        }
+      ],
+      "isHidden": false,
+      "canReply": true,
+      "canDelete": false,
+      "canHide": true,
+      "canLike": true,
+      "isLiked": false,
+      "canPin": true,
+      "isPinned": false
+    },
+    {
+      "id": "7500000000000000003",
+      "message": "  HARNESS​ ",
+      "createdTime": "2026-11-15T02:52:46.000Z",
+      "from": {
+        "id": "1111111111111111111111111111111111111111111111111111111111111111",
+        "name": "Viewer2",
+        "username": "viewer_two",
+        "picture": "https://p16.example/tiktok/b.jpeg",
+        "isOwner": false
+      },
+      "likeCount": 0,
+      "replyCount": 0,
+      "platform": "tiktok",
+      "url": null,
+      "replies": [],
+      "isHidden": false,
+      "canReply": true,
+      "canDelete": false,
+      "canHide": true,
+      "canLike": true,
+      "isLiked": false,
+      "canPin": true,
+      "isPinned": false
+    }
+  ],
+  "pagination": {
+    "hasMore": false
+  },
+  "meta": {
+    "accountsQueried": 1,
+    "accountsFailed": 0,
+    "failedAccounts": [],
+    "lastUpdated": "2026-11-15T15:20:00.000Z"
+  }
+}

@@ -826,6 +826,28 @@ impl Service<'_> {
 
 /// One line per comment: the channel and the outcome code, never the text,
 /// ids or usernames (docs/design/ig-comment-dm.md §4.5).
+/// `[automations] no_rule_shape …`: the comment's text length (UTF-16-free
+/// char count), whether any active rule targets this post, and how many
+/// active all-posts rules exist. No text, author or id.
+pub fn no_rule_shape(
+    channel: ChannelId,
+    rules: &[kubcode_publishing::automation::Rule],
+    post: &str,
+    text: &str,
+) -> String {
+    use kubcode_publishing::automation::Scope;
+    let active = rules.iter().filter(|r| r.active);
+    let post_has_rule = active
+        .clone()
+        .any(|r| matches!(&r.scope, Scope::Post(p) if p == post));
+    let all_posts_rules = active.filter(|r| r.scope == Scope::AllPosts).count();
+    format!(
+        "[automations] channel={} no_rule_shape text_len={} post_has_rule={post_has_rule} all_posts_rules={all_posts_rules}",
+        channel.0,
+        text.chars().count()
+    )
+}
+
 fn log_comment(channel: Option<ChannelId>, outcome: &str) {
     match channel {
         Some(c) => println!("[automations] channel={} outcome={outcome}", c.0),
@@ -887,6 +909,14 @@ impl Service<'_> {
         let rules: Vec<_> = rows.iter().map(|r| r.rule.clone()).collect();
         let Some(rule) = choose(&rules, &c.platform_post_id, &c.text) else {
             log(Some(channel), "no_rule");
+            if !quiet {
+                // Shape only, to tell "no rule for this post/keyword" from "the
+                // text never arrived": never the text, the author or any id.
+                println!(
+                    "{}",
+                    no_rule_shape(channel, &rules, &c.platform_post_id, &c.text)
+                );
+            }
             return Ok(false);
         };
         let rule_id = rows.iter().find(|r| r.rule.id == rule.id).map(|r| r.id);
@@ -1259,5 +1289,32 @@ mod tests {
         ] {
             assert_eq!(super::log_safe(bad), "other", "{bad:?}");
         }
+    }
+
+    #[test]
+    fn the_no_rule_log_carries_shape_only() {
+        use kubcode_publishing::automation::{MatchMode, Rule, Scope};
+        use kubcode_publishing::domain::ChannelId;
+        let r = |scope, active| Rule {
+            id: "r".into(),
+            keywords: vec!["harness".into()],
+            mode: MatchMode::Contains,
+            scope,
+            active,
+        };
+        let rules = vec![
+            r(Scope::Post("111".into()), true),
+            r(Scope::AllPosts, true),
+            r(Scope::AllPosts, false),
+        ];
+        let ch = ChannelId(uuid::Uuid::nil());
+        let line = super::no_rule_shape(ch, &rules, "222", "ขอลิงก์ secretword");
+        assert_eq!(
+            line,
+            "[automations] channel=00000000-0000-0000-0000-000000000000 no_rule_shape text_len=18 post_has_rule=false all_posts_rules=1"
+        );
+        assert!(!line.contains("secretword") && !line.contains("222"));
+        assert!(super::no_rule_shape(ch, &rules, "111", "")
+            .ends_with("text_len=0 post_has_rule=true all_posts_rules=1"));
     }
 }
