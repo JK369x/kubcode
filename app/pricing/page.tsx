@@ -1,25 +1,29 @@
 import type { Metadata } from "next";
-import type { CSSProperties } from "react";
 import Link from "next/link";
-import { Check, Minus } from "lucide-react";
-import { WaitlistButton, WaitlistProvider } from "@/components/WaitlistButton";
+import {
+  BookOpen,
+  CalendarClock,
+  CalendarX,
+  Check,
+  Clapperboard,
+  CreditCard,
+  Download,
+  Github,
+  Link2,
+  Minus,
+  QrCode,
+  Receipt,
+  Send,
+  ShieldCheck,
+  MessageSquareReply,
+} from "lucide-react";
+import { PricingShowcase } from "@/components/pricing/PricingShowcase";
+import { COMPARE, type Cell } from "@/components/pricing/compare";
+import { PlatformLogo, type Platform } from "@/components/PlatformLogo";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-} from "@/components/ui/card";
-import {
-  PLANS,
-  billingOpen,
-  extraChannelLabel,
-  priceLabel,
-  type Plan,
-  PRODUCT_FAMILIES,
-} from "@/lib/plans";
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
+import { PLANS, billingOpen } from "@/lib/plans";
+import styles from "./pricing.module.css";
 
 // The Social CTA follows KUBCODE_BILLING_ENABLED, which the web host can change
 // without a rebuild (webhost.sh write-env), so render at request time.
@@ -32,11 +36,11 @@ export const metadata: Metadata = {
   alternates: { canonical: "/pricing" },
 };
 
-const PLATFORMS: readonly { name: string; state: "ok" | "soon" }[] = [
-  { name: "YouTube", state: "ok" },
-  { name: "Instagram", state: "ok" },
-  { name: "TikTok", state: "ok" },
-  { name: "Facebook", state: "soon" },
+const PLATFORMS: readonly { id: Platform; name: string; state: "ok" | "soon"; noteTh: string }[] = [
+  { id: "youtube", name: "YouTube", state: "ok", noteTh: "ตั้งเวลาโพสต์ Shorts และวิดีโอ" },
+  { id: "instagram", name: "Instagram", state: "ok", noteTh: "ตั้งเวลา Reels · คอมเมนต์คีย์เวิร์ด → DM" },
+  { id: "tiktok", name: "TikTok", state: "ok", noteTh: "ตั้งเวลาโพสต์ · ตอบคอมเมนต์แบบสาธารณะ" },
+  { id: "facebook", name: "Facebook", state: "soon", noteTh: "อยู่ในแผนงาน" },
 ];
 
 export const FAQ: readonly { q: string; a: React.ReactNode }[] = [
@@ -50,8 +54,7 @@ export const FAQ: readonly { q: string; a: React.ReactNode }[] = [
       <>
         เดือนที่จ่ายแล้วไม่คืนเงิน รวมถึงกรณีเลิกใช้กลางเดือน
         ยกเว้นเราเรียกเก็บเงินซ้ำหรือเรียกเก็บผิดพลาด ซึ่งเราคืนเต็มจำนวน
-        อ่านรายละเอียดใน{" "}
-        <Link href="/refund">นโยบายการคืนเงินและการยกเลิก</Link>
+        อ่านรายละเอียดใน <Link href="/refund">นโยบายการคืนเงินและการยกเลิก</Link>
       </>
     ),
   },
@@ -81,245 +84,220 @@ export const FAQ: readonly { q: string; a: React.ReactNode }[] = [
   },
 ];
 
-function PlanCta({ plan, open }: { plan: Plan; open: boolean }) {
-  const noteId = `plan-${plan.id}-note`;
-  if (plan.status === "coming_soon") {
+const ROW_ICONS = {
+  book: BookOpen,
+  download: Download,
+  link: Link2,
+  calendar: CalendarClock,
+  send: Send,
+  reply: MessageSquareReply,
+  clapperboard: Clapperboard,
+} as const;
+
+function CellMark({ cell }: { cell: Cell }) {
+  if (cell === true)
     return (
-      <>
-        <WaitlistButton
-          kind="plan"
-          id={plan.id}
-          label={`แพ็กเกจ${plan.nameTh}`}
-          className="w-full"
-        />
-        <p className="m-0 text-center text-[13px] leading-[1.6] text-muted-foreground">
-          ยังซื้อไม่ได้ ยังไม่เปิดขาย
-        </p>
-      </>
+      <span className={styles.yes}>
+        <Check aria-hidden="true" />
+        <span className="sr-only">มี</span>
+      </span>
     );
-  }
-  if (plan.priceThb === 0) {
+  if (cell === false)
     return (
-      <Button asChild variant="outline" className="w-full">
-        <Link href="/account">เข้าสู่ระบบเพื่อเริ่มใช้</Link>
-      </Button>
+      <span className={styles.no}>
+        <Minus aria-hidden="true" />
+        <span className="sr-only">ไม่มี</span>
+      </span>
     );
-  }
-  if (open) {
-    return (
-      <Button asChild className="w-full">
-        <Link href="/account/billing">สมัคร{plan.nameTh}</Link>
-      </Button>
-    );
-  }
-  return (
-    <>
-      <Button disabled className="w-full" aria-describedby={noteId}>
-        เปิดให้สมัครเร็ว ๆ นี้
-      </Button>
-      <p
-        id={noteId}
-        className="m-0 text-center text-[13px] leading-[1.6] text-muted-foreground"
-      >
-        ยังไม่เปิดรับชำระเงิน
-      </p>
-    </>
-  );
+  return <span className={styles.cellText}>{cell}</span>;
 }
 
-function PlanCard({ plan, open }: { plan: Plan; open: boolean }) {
-  const price = priceLabel(plan);
-  const extra = extraChannelLabel(plan);
-  const titleId = `plan-${plan.id}`;
-  const soon = plan.status === "coming_soon";
+/** Desktop: one table. Phones: one accordion item per plan, listing its rows. */
+function Comparison() {
   return (
-    <Card
-      as="li"
-      aria-labelledby={titleId}
-      data-status={plan.status}
-      edge={soon ? "soft" : "strong"}
-      className={
-        plan.highlighted
-          ? "border-2 border-ring hover:border-ring"
-          : soon
-            ? "bg-muted/60 hover:border-border"
-            : undefined
-      }
-    >
-      <CardHeader className="flex-wrap items-start justify-between gap-2">
-        <h2
-          id={titleId}
-          className="m-0 text-[22px] leading-[1.4] font-semibold"
-        >
-          {plan.nameTh}{" "}
-          <span className="block font-brand text-[15px] font-medium text-muted-foreground">
-            {plan.families.length > 0 ? plan.families.map((f) => PRODUCT_FAMILIES[f]).join(" + ") : plan.nameEn}
-          </span>
-        </h2>
-        {plan.highlighted && <Badge>แนะนำ</Badge>}
-        {soon && <Badge variant="warn">เร็ว ๆ นี้</Badge>}
-      </CardHeader>
-      <CardDescription>{plan.summaryTh}</CardDescription>
-      <p
-        className={`m-0 flex flex-wrap items-baseline gap-x-2 ${soon ? "text-muted-foreground" : ""}`}
-      >
-        <span className="font-brand text-[40px] leading-[1.2] font-semibold tracking-[-0.03em]">
-          {price.amount}
-        </span>
-        <span className="text-[15px] text-muted-foreground">{price.unit}</span>
-      </p>
-      {extra && (
-        <p className="m-0 -mt-2 text-[13px] leading-[1.6] text-muted-foreground">
-          {extra}
-        </p>
-      )}
-      <CardContent className="gap-0">
-        <ul className="m-0 grid list-none gap-2.5 p-0">
-          {plan.features.map((f) => {
-            const excluded = f.startsWith("ไม่รวม");
-            return (
-              <li
-                key={f}
-                className={`flex gap-2.5 text-[15px] leading-[1.7] ${excluded ? "text-muted-foreground" : ""}`}
-              >
-                {excluded ? (
-                  <Minus aria-hidden className="mt-[5px] size-[18px]" />
-                ) : (
-                  <Check
-                    aria-hidden
-                    className="mt-[5px] size-[18px] text-link"
-                  />
-                )}
-                <span className="min-w-0">{f}</span>
-              </li>
-            );
-          })}
-        </ul>
-      </CardContent>
-      <CardFooter className="flex-col items-stretch gap-2 border-t-0 pt-2">
-        <PlanCta plan={plan} open={open} />
-      </CardFooter>
-    </Card>
+    <section aria-labelledby="compare-h" className={styles.section}>
+      <h2 id="compare-h" className={styles.h2}>
+        เทียบแพ็กเกจ
+      </h2>
+      <div className={styles.tableWrap}>
+        <table className={styles.table}>
+          <caption className="sr-only">เทียบสิ่งที่ได้ในแต่ละแพ็กเกจ</caption>
+          <thead>
+            <tr>
+              <th scope="col">
+                <span className="sr-only">สิ่งที่ได้</span>
+              </th>
+              {PLANS.map((p) => (
+                <th key={p.id} scope="col" data-highlighted={p.highlighted ? "" : undefined}>
+                  <span className={styles.thName}>{p.nameTh}</span>
+                  <span className={styles.thPrice}>{p.priceThb === 0 ? "ฟรี" : `${p.priceThb} ฿`}</span>
+                  {p.status === "coming_soon" && <Badge variant="warn">เร็ว ๆ นี้</Badge>}
+                </th>
+              ))}
+            </tr>
+          </thead>
+          {COMPARE.map((g) => (
+            <tbody key={g.titleTh}>
+              <tr className={styles.groupRow}>
+                <th scope="colgroup" colSpan={PLANS.length + 1}>
+                  {g.titleTh}
+                </th>
+              </tr>
+              {g.rows.map((r) => {
+                const Icon = ROW_ICONS[r.icon];
+                return (
+                  <tr key={r.labelTh}>
+                    <th scope="row">
+                      <Icon aria-hidden="true" />
+                      {r.labelTh}
+                    </th>
+                    {PLANS.map((p) => (
+                      <td key={p.id} data-highlighted={p.highlighted ? "" : undefined}>
+                        <CellMark cell={r.cells[p.id] ?? false} />
+                      </td>
+                    ))}
+                  </tr>
+                );
+              })}
+            </tbody>
+          ))}
+        </table>
+      </div>
+      <Accordion type="single" collapsible className={styles.compareMobile}>
+        {PLANS.map((p) => (
+          <AccordionItem key={p.id} value={p.id}>
+            <AccordionTrigger>
+              <span className={styles.accTitle}>
+                {p.nameTh}
+                <span className={styles.thPrice}>{p.priceThb === 0 ? "ฟรี" : `${p.priceThb} ฿`}</span>
+              </span>
+            </AccordionTrigger>
+            <AccordionContent>
+              <ul className={styles.accList}>
+                {COMPARE.flatMap((g) => g.rows).map((r) => {
+                  const Icon = ROW_ICONS[r.icon];
+                  const cell = r.cells[p.id] ?? false;
+                  return (
+                    <li key={r.labelTh} data-off={cell === false ? "" : undefined}>
+                      <Icon aria-hidden="true" />
+                      <span>{r.labelTh}</span>
+                      <CellMark cell={cell} />
+                    </li>
+                  );
+                })}
+              </ul>
+            </AccordionContent>
+          </AccordionItem>
+        ))}
+      </Accordion>
+    </section>
   );
 }
 
 export default function Pricing() {
   const open = billingOpen();
   return (
-    <main
-      id="main"
-      className="mx-auto w-full max-w-[1200px] px-[5%] pt-10 pb-24 md:px-8 md:pt-14"
-    >
-      <header className="max-w-[60ch]">
-        <h1 className="m-0 text-[clamp(32px,4vw,48px)]">ราคา</h1>
-        <p className="lead mt-3">
-          อ่าน เรียนรู้ และโหลด skill ฟรีได้เลย
-          ถ้าต้องการตั้งเวลาโพสต์และตอบคอมเมนต์อัตโนมัติ เลือกแพ็กเกจโซเชียล
-          จ่ายตามจำนวนช่องที่เชื่อม ทีละเดือน
-        </p>
-      </header>
+    <main id="main" className={styles.main}>
+      <PricingShowcase open={open} />
 
-      <WaitlistProvider>
-        <ul
-          className="m-0 mt-10 grid list-none gap-6 p-0 md:grid-cols-2 xl:grid-cols-[repeat(var(--plans),minmax(0,1fr))]"
-          style={{ "--plans": Math.min(PLANS.length, 4) } as CSSProperties}
-          aria-label="แพ็กเกจ"
-        >
-          {PLANS.map((p) => (
-            <PlanCard key={p.id} plan={p} open={open} />
-          ))}
-        </ul>
-      </WaitlistProvider>
-      <p className="mt-5 flex flex-wrap items-center gap-x-4 gap-y-2 text-[15px]">
-        <span>
-          ทุกแพ็กเกจจ่ายทีละเดือน ไม่ตัดเงินอัตโนมัติ · ราคานี้ยังไม่มี VAT
-        </span>
-        <Link
-          href="/roadmap"
-          className="inline-flex min-h-6 items-center text-link underline underline-offset-4"
-        >
-          ดูแผนที่จะมา →
-        </Link>
-      </p>
+      <Comparison />
 
-      <div className="mt-14 grid gap-6 md:grid-cols-2">
-        <section
-          aria-labelledby="pay-h"
-          className="rounded-2xl border border-border bg-card p-5"
-        >
-          <h2 id="pay-h" className="m-0 text-[22px]">
-            การชำระเงิน
-          </h2>
-          <ul className="m-0 mt-3 grid list-disc gap-1.5 pl-5 text-[15px] leading-[1.7]">
-            <li>
-              จ่ายทีละเดือน ไม่ตัดเงินอัตโนมัติ ต่ออายุเองเมื่อต้องการใช้ต่อ
-            </li>
-            <li>
-              บัตรเครดิตหรือเดบิต (Visa / Mastercard) และพร้อมเพย์ ผ่าน Stripe
-            </li>
-            <li>
-              ราคาเป็นเงินบาท ราคานี้ยังไม่มีภาษีมูลค่าเพิ่ม
-              เพราะเรายังไม่ได้จดทะเบียน VAT
-            </li>
-            <li>
-              ไม่คืนเงินสำหรับเดือนที่จ่ายแล้ว ยกเว้นเรียกเก็บซ้ำหรือผิดพลาด ดู{" "}
-              <Link
-                href="/refund"
-                className="text-link underline underline-offset-4"
-              >
-                นโยบายคืนเงิน
-              </Link>
-            </li>
-          </ul>
-        </section>
-        <section
-          aria-labelledby="platforms-h"
-          className="rounded-2xl border border-border bg-card p-5"
-        >
-          <h2 id="platforms-h" className="m-0 text-[22px]">
+      <div className={styles.twoUp}>
+        <section aria-labelledby="platforms-h" className={styles.panel}>
+          <h2 id="platforms-h" className={styles.h3}>
             แพลตฟอร์มที่รองรับ
           </h2>
-          <ul className="m-0 mt-3 grid list-none gap-2 p-0">
+          <ul className={styles.platformGrid}>
             {PLATFORMS.map((pl) => (
-              <li
-                key={pl.name}
-                className="flex items-center justify-between gap-3 text-[15px] leading-[1.7]"
-              >
-                <span className="font-brand">{pl.name}</span>
-                {pl.state === "ok" ? (
-                  <Badge variant="ok">รองรับแล้ว</Badge>
-                ) : (
-                  <Badge variant="warn">ยังไม่รองรับ</Badge>
-                )}
+              <li key={pl.id} data-state={pl.state}>
+                <PlatformLogo platform={pl.id} size={28} tone={pl.state === "ok" ? "brand" : "muted"} decorative />
+                <span className={styles.platformName}>{pl.name}</span>
+                {pl.state === "ok" ? <Badge variant="ok">รองรับแล้ว</Badge> : <Badge variant="warn">ยังไม่รองรับ</Badge>}
+                <span className={styles.platformNote}>{pl.noteTh}</span>
               </li>
             ))}
           </ul>
-          <p className="m-0 mt-3 text-[13px] leading-[1.6] text-muted-foreground">
-            ตอบคอมเมนต์อัตโนมัติ: Instagram ตอบเป็น DM, TikTok
-            ตอบเป็นคอมเมนต์สาธารณะ ใช้ตามสมควร (fair use) ตาม
-            <Link
-              href="/terms#fair-use"
-              className="text-link underline underline-offset-4"
-            >
-              ข้อกำหนด
-            </Link>
+          <p className={styles.small}>
+            ตอบคอมเมนต์อัตโนมัติ: Instagram ตอบเป็น DM, TikTok ตอบเป็นคอมเมนต์สาธารณะ ใช้ตามสมควร (fair use) ตาม
+            <Link href="/terms#fair-use">ข้อกำหนด</Link>
           </p>
+        </section>
+
+        <section aria-labelledby="pay-h" className={styles.panel}>
+          <h2 id="pay-h" className={styles.h3}>
+            การชำระเงิน
+          </h2>
+          <ul className={styles.payMethods} aria-label="วิธีจ่าย">
+            <li>
+              <CreditCard aria-hidden="true" />
+              <span>
+                <b>บัตรเครดิต / เดบิต</b>
+                Visa · Mastercard
+              </span>
+            </li>
+            <li>
+              <QrCode aria-hidden="true" />
+              <span>
+                <b>พร้อมเพย์</b>
+                สแกนจ่ายด้วยแอปธนาคาร
+              </span>
+            </li>
+          </ul>
+          <ul className={styles.payTerms}>
+            <li>
+              <CalendarX aria-hidden="true" />
+              จ่ายทีละเดือน ไม่ตัดเงินอัตโนมัติ ต่ออายุเองเมื่อต้องการใช้ต่อ
+            </li>
+            <li>
+              <Receipt aria-hidden="true" />
+              ราคาเป็นเงินบาท ราคานี้ยังไม่มีภาษีมูลค่าเพิ่ม เพราะเรายังไม่ได้จดทะเบียน VAT
+            </li>
+            <li>
+              <ShieldCheck aria-hidden="true" />
+              จ่ายผ่าน Stripe เราไม่เห็นและไม่เก็บเลขบัตรของคุณ
+            </li>
+            <li>
+              <Minus aria-hidden="true" />
+              <span>
+                ไม่คืนเงินสำหรับเดือนที่จ่ายแล้ว ยกเว้นเรียกเก็บซ้ำหรือผิดพลาด ดู <Link href="/refund">นโยบายคืนเงิน</Link>
+              </span>
+            </li>
+          </ul>
         </section>
       </div>
 
-      <section aria-labelledby="faq-h" className="mt-14 max-w-[820px]">
-        <h2 id="faq-h" className="m-0 text-[clamp(27px,2.35vw,34px)]">
+      <section aria-labelledby="faq-h" className={styles.section}>
+        <h2 id="faq-h" className={styles.h2}>
           คำถามที่พบบ่อย
         </h2>
-        <div className="get-started-faq mt-4">
-          {FAQ.map((f) => (
-            <details key={f.q}>
-              <summary className="text-[16px]">{f.q}</summary>
-              <p className="text-[15px] [&_a]:text-link [&_a]:underline">
+        <Accordion type="multiple" className={styles.faq}>
+          {FAQ.map((f, i) => (
+            <AccordionItem key={f.q} value={`faq-${i}`}>
+              <AccordionTrigger>{f.q}</AccordionTrigger>
+              {/* forceMount: answers stay in the HTML (search, no-JS, tests); Radix hides closed ones. */}
+              <AccordionContent forceMount className={styles.faqAnswer}>
                 {f.a}
-              </p>
-            </details>
+              </AccordionContent>
+            </AccordionItem>
           ))}
+        </Accordion>
+      </section>
+
+      <section aria-labelledby="trust-h" className={styles.trust}>
+        <h2 id="trust-h" className={styles.h3}>
+          เขียนระบบเอง ใช้กับช่องของเราเอง
+        </h2>
+        <p>
+          ระบบตั้งเวลาโพสต์และตอบคอมเมนต์ใน kubcode Social เราเขียนขึ้นเองและใช้กับช่อง YouTube, Instagram และ TikTok ของเรา
+          การโพสต์ส่งผ่าน API ทางการของแต่ละแพลตฟอร์ม ส่วน kubcode MCP (สั่งจาก AI agent) <Badge variant="secondary">กำลังทำ</Badge>
+        </p>
+        <div className={styles.trustLinks}>
+          <Link href="/?product=social#social-heading">ดูตัวอย่างการทำงาน</Link>
+          <Link href="/roadmap">ดูแผนงาน</Link>
+          <a href="https://github.com/JK369x/kubcode" target="_blank" rel="noopener noreferrer">
+            <Github aria-hidden="true" />
+            โค้ดเปิดให้ดูบน GitHub
+          </a>
         </div>
       </section>
     </main>

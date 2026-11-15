@@ -1,0 +1,342 @@
+/* /pricing below the plan cards: comparison, platforms, payment, FAQ, trust. */
+/* The page spans the window so the hero aura can bleed edge to edge; it
+   clips its own overscan (clip: no scroll container). Sections keep a
+   1240px column. */
+.main {
+  width: 100%;
+  padding: 48px 0 96px;
+  overflow-x: clip;
+}
+.main > * {
+  width: min(1240px, 90%);
+  margin-inline: auto;
+}
+.section {
+  margin-top: clamp(56px, 7vw, 96px);
+}
+.h2 {
+  margin: 0 0 20px;
+  font-size: clamp(27px, 2.4vw, 34px);
+  font-weight: 600;
+  line-height: 1.3;
+}
+.h3 {
+  margin: 0 0 14px;
+  font-size: 22px;
+  font-weight: 600;
+  line-height: 1.4;
+}
+.small {
+  margin: 14px 0 0;
+  color: var(--muted-foreground);
+  font-size: 13px;
+  line-height: 1.6;
+}
+.small a,
+.payTerms a {
+  color: var(--link);
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+
+/* ---------- comparison ---------- */
+.tableWrap {
+  overflow-x: auto;
+  border: 1px solid var(--border);
+  border-radius: 22px;
+  background: var(--card);
+}
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 15px;
+}
+.table th,
+.table td {
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--border);
+  text-align: center;
+  vertical-align: middle;
+}
+.table thead th {
+  position: sticky;
+  top: 0;
+  background: var(--card);
+  font-weight: 600;
+}
+.table tbody th[scope="row"] {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 260px;
+  font-weight: 500;
+  text-align: left;
+}
+.table tbody th[scope="row"] svg {
+  flex: none;
+  width: 18px;
+  height: 18px;
+  color: var(--muted-foreground);
+}
+.table [data-highlighted] {
+  background: color-mix(in srgb, #7c3aed 9%, var(--card));
+}
+.thName {
+  display: block;
+  font-size: 16px;
+}
+.thPrice {
+  display: block;
+  color: var(--muted-foreground);
+  font: 500 13px/1.5 Archivo, Anuphan, sans-serif;
+}
+.groupRow th {
+  padding-top: 18px;
+  color: var(--link);
+  font: 600 13px/1.5 Archivo, Anuphan, sans-serif;
+  letter-spacing: 0.04em;
+  text-align: left;
+}
+.table tbody:last-child tr:last-child > * {
+  border-bottom: 0;
+}
+.yes,
+.no {
+  display: inline-grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 999px;
+}
+.yes {
+  background: color-mix(in srgb, #0f766e 22%, transparent);
+  color: #5eead4;
+}
+:global(:root[data-theme="light"]) .yes {
+  color: #0f766e;
+}
+.no {
+  color: var(--muted-foreground);
+}
+.yes svg,
+.no svg {
+  width: 16px;
+  height: 16px;
+}
+.cellText {
+  font-size: 14px;
+  font-weight: 500;
+}
+.compareMobile {
+  display: none;
+}
+.accTitle {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+}
+.accList {
+  display: grid;
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.accList li {
+  display: grid;
+  grid-template-columns: 20px minmax(0, 1fr) auto;
+  gap: 10px;
+  align-items: center;
+  color: var(--foreground);
+}
+.accList li[data-off] {
+  color: var(--muted-foreground);
+}
+.accList svg {
+  width: 18px;
+  height: 18px;
+}
+
+/* ---------- platforms + payment ---------- */
+.twoUp {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 20px;
+  margin-top: clamp(56px, 7vw, 96px);
+}
+.panel {
+  padding: 24px;
+  border: 1px solid var(--border);
+  border-radius: 22px;
+  background: var(--card);
+}
+.platformGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.platformGrid li {
+  display: grid;
+  grid-template-columns: 28px minmax(0, 1fr);
+  grid-template-areas:
+    "logo name"
+    "logo badge"
+    "note note";
+  gap: 4px 12px;
+  align-items: center;
+  padding: 14px;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  background: var(--background);
+}
+.platformGrid li > svg {
+  grid-area: logo;
+  align-self: start;
+}
+/* Not supported yet: dashed edge and a greyed logo (PlatformLogo tone="muted"); text keeps full contrast. */
+.platformGrid li[data-state="soon"] {
+  border-style: dashed;
+  background: transparent;
+}
+.platformName {
+  grid-area: name;
+  font: 600 16px/1.4 Archivo, Anuphan, sans-serif;
+}
+.platformGrid li > [data-slot="badge"] {
+  grid-area: badge;
+}
+.platformNote {
+  grid-area: note;
+  margin-top: 6px;
+  color: var(--muted-foreground);
+  font-size: 13px;
+  line-height: 1.6;
+}
+.payMethods {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.payMethods li {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  padding: 14px;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  background: var(--background);
+}
+.payMethods svg {
+  flex: none;
+  width: 28px;
+  height: 28px;
+  color: var(--link);
+}
+.payMethods span {
+  display: grid;
+  color: var(--muted-foreground);
+  font-size: 13px;
+  line-height: 1.5;
+}
+.payMethods b {
+  color: var(--foreground);
+  font-size: 15px;
+  font-weight: 600;
+}
+.payTerms {
+  display: grid;
+  gap: 10px;
+  margin: 16px 0 0;
+  padding: 0;
+  list-style: none;
+  font-size: 15px;
+  line-height: 1.65;
+}
+.payTerms li {
+  display: grid;
+  grid-template-columns: 20px minmax(0, 1fr);
+  gap: 10px;
+}
+.payTerms svg {
+  width: 18px;
+  height: 18px;
+  margin-top: 4px;
+  color: var(--muted-foreground);
+}
+
+/* ---------- FAQ ---------- */
+.faq {
+  max-width: 860px;
+  border-top: 1px solid var(--border);
+}
+/* Answers are force-mounted (in the HTML for search / no-JS / tests); a
+   closed item hides its region. */
+.faq [data-slot="accordion-content"][data-state="closed"] {
+  display: none;
+}
+
+/* ---------- trust ---------- */
+.trust {
+  margin-top: clamp(56px, 7vw, 96px);
+  padding: 28px;
+  border: 1px solid transparent;
+  border-radius: 22px;
+  background:
+    linear-gradient(var(--card), var(--card)) padding-box,
+    linear-gradient(100deg, #c8215a, #7c3aed 52%, #0f766e) border-box;
+}
+.trust p {
+  max-width: 62em;
+  margin: 0;
+  color: var(--muted-foreground);
+  font-size: 15px;
+  line-height: 1.75;
+}
+.trustLinks {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 22px;
+  margin-top: 14px;
+}
+.trustLinks a {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 32px;
+  color: var(--link);
+  font-weight: 500;
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+.trustLinks svg {
+  width: 16px;
+  height: 16px;
+}
+
+@media (max-width: 900px) {
+  .twoUp {
+    grid-template-columns: 1fr;
+  }
+}
+@media (max-width: 760px) {
+  .tableWrap {
+    display: none;
+  }
+  .compareMobile {
+    display: flex;
+  }
+  .platformGrid,
+  .payMethods {
+    grid-template-columns: 1fr;
+  }
+  .panel,
+  .trust {
+    padding: 20px;
+  }
+}
