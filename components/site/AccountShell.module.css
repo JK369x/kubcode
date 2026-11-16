@@ -1,0 +1,135 @@
+/* Account sub-pages: hero, section strip, content column, cards. */
+.page {
+  width: min(1000px, 90%);
+  margin: 0 auto;
+  padding: 48px 0 96px;
+}
+.wide {
+  width: min(1240px, 90%);
+}
+.head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px 24px;
+}
+.head > header {
+  flex: 1 1 520px;
+  min-width: 0;
+}
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  padding-bottom: 6px;
+}
+
+/* Section strip: the header menu's doors, the current one filled. */
+.strip {
+  margin: 26px 0 0;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.strip ul {
+  display: inline-flex;
+  gap: 4px;
+  margin: 0;
+  padding: 4px;
+  border: 1px solid var(--input);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--card) 70%, transparent);
+  list-style: none;
+}
+.strip a {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  min-height: 40px;
+  padding: 0 14px;
+  border-radius: 999px;
+  color: var(--muted-foreground);
+  font-size: 14px;
+  font-weight: 500;
+  text-decoration: none;
+  white-space: nowrap;
+}
+.strip a:hover {
+  color: var(--foreground);
+}
+.strip a:focus-visible {
+  outline: 3px solid var(--ring);
+  outline-offset: 2px;
+}
+.strip a[aria-current="page"] {
+  background: #7c3aed;
+  color: #fff;
+}
+:global(:root[data-theme="light"]) .strip a[aria-current="page"] {
+  background: #6d28d9;
+}
+.strip svg {
+  width: 16px;
+  height: 16px;
+}
+
+.body {
+  display: grid;
+  gap: 18px;
+  margin-top: 26px;
+  min-width: 0;
+}
+
+/* Card */
+.card {
+  display: grid;
+  align-content: start;
+  gap: 12px;
+  min-width: 0;
+  padding: 24px;
+  border: 1px solid var(--input);
+  border-radius: 22px;
+  background: color-mix(in srgb, var(--card) 92%, transparent);
+}
+.cardHead {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.cardIcon {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%);
+  color: #fff;
+}
+.cardIcon[data-tone="social"] {
+  background: linear-gradient(135deg, #c8215a 0%, #7c3aed 52%, #0f766e 100%);
+}
+.cardIcon[data-tone="muted"] {
+  background: color-mix(in srgb, var(--muted-foreground) 18%, var(--card));
+  color: var(--foreground);
+}
+.cardIcon svg {
+  width: 20px;
+  height: 20px;
+}
+.cardTitle {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 600;
+  line-height: 1.4;
+}
+
+@media (max-width: 560px) {
+  .card {
+    padding: 18px;
+  }
+  .strip a {
+    padding: 0 12px;
+    font-size: 13px;
+  }
+}

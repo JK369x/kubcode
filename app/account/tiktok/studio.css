@@ -1,6 +1,7 @@
+/* Inside AccountShell (redesign 2026-11): the shell sets width and spacing. */
 .tt-studio {
-  width: min(1160px, 92%);
-  margin: 40px auto 80px;
+  width: 100%;
+  margin: 0;
 }
 .tt-heading,
 .tt-actions,

@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { AccountShell, accountCaps } from "@/components/site/AccountShell";
 import { cookies, headers } from "next/headers";
 import { notFound, redirect } from "next/navigation";
 import { KeysSettings } from "@/components/KeysSettings";
@@ -30,26 +31,19 @@ export default async function KeysPage({ searchParams }: Props) {
   if (view.state === "disabled" || view.state === "forbidden") notFound();
   const notice = (await searchParams).notice;
 
+  const caps = await accountCaps();
   return (
-    <main id="main" className={`account-page ${styles.page}`}>
-      <div>
-        <h1>ตั้งค่าคีย์และบัญชีโพสต์</h1>
-        {view.state === "ready" ? (
-          <KeysSettings
-            overview={view.overview}
-            canSave={view.canSave}
-            connect={view.connect}
-            notice={typeof notice === "string" ? notice : null}
-          />
-        ) : (
-          <p className="setup-notice" role="status">
-            ระบบคีย์ใช้งานไม่ได้ชั่วคราว ลองใหม่ภายหลัง
-          </p>
-        )}
-        <p className={styles.back}>
-          <Link href="/account">กลับไปหน้าพื้นที่สมาชิก</Link>
+    <AccountShell caps={caps} section="settings" tone="social" eyebrow="kubcode Social" title="ตั้งค่าคีย์และบัญชีโพสต์">
+      {view.state === "ready" ? (
+        <KeysSettings overview={view.overview} canSave={view.canSave} connect={view.connect} notice={typeof notice === "string" ? notice : null} />
+      ) : (
+        <p className="setup-notice" role="status">
+          ระบบคีย์ใช้งานไม่ได้ชั่วคราว ลองใหม่ภายหลัง
         </p>
-      </div>
-    </main>
+      )}
+      <p className={styles.back}>
+        <Link href="/account">กลับไปหน้าพื้นที่สมาชิก</Link>
+      </p>
+    </AccountShell>
   );
 }

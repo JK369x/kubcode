@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { cookies, headers } from "next/headers";
 import { notFound, redirect } from "next/navigation";
+import { AccountShell, accountCaps } from "@/components/site/AccountShell";
 import { AutomationsPanel } from "@/components/AutomationsPanel";
 import styles from "@/components/KeysSettings.module.css";
 import { canonicalHostRedirect, readAuthConfig, signInPath } from "@/lib/auth-policy";
@@ -35,21 +36,25 @@ export default async function AutomationsPage({ params }: Props) {
   // Off, not allowed, or not this member's Instagram or TikTok channel: no such page.
   if (view.state === "disabled" || view.state === "forbidden" || view.state === "not-found") notFound();
 
+  const caps = await accountCaps();
   return (
-    <main id="main" className={`account-page ${styles.page}`}>
-      <div>
-        <h1>ตอบคอมเมนต์อัตโนมัติ</h1>
-        {view.state === "ready" ? (
-          <AutomationsPanel channel={view.channel} rules={view.rules} usage={view.usage} recent={view.recent} />
-        ) : (
-          <p className="setup-notice" role="status">
-            ระบบตอบคอมเมนต์อัตโนมัติใช้งานไม่ได้ชั่วคราว ลองใหม่ภายหลัง
-          </p>
-        )}
-        <p className={styles.back}>
-          <Link href="/account/channels">กลับไปหน้าช่องที่เชื่อมไว้</Link>
+    <AccountShell caps={caps}
+      section="channels"
+      tone="social"
+      eyebrow="kubcode Social"
+      title="ตอบคอมเมนต์อัตโนมัติ"
+      lead="Instagram ตอบเป็น DM · TikTok ตอบเป็นคอมเมนต์สาธารณะ"
+    >
+      {view.state === "ready" ? (
+        <AutomationsPanel channel={view.channel} rules={view.rules} usage={view.usage} recent={view.recent} />
+      ) : (
+        <p className="setup-notice" role="status">
+          ระบบตอบคอมเมนต์อัตโนมัติใช้งานไม่ได้ชั่วคราว ลองใหม่ภายหลัง
         </p>
-      </div>
-    </main>
+      )}
+      <p className={styles.back}>
+        <Link href="/account/channels">กลับไปหน้าช่องที่เชื่อมไว้</Link>
+      </p>
+    </AccountShell>
   );
 }

@@ -25,22 +25,54 @@ function Toggle({ id, label, hint, checked, onChange }: { id: string; label: str
  * 1.615.0: PlatformTarget.customContent, TikTok/Instagram/YouTube
  * PlatformData). Every option starts at today's default.
  */
-export function PlatformOverrides({
-  channels,
+export const EMPTY_OVERRIDE: Override = { captionOn: false, caption: "", options: {} };
+
+/**
+ * One line saying what differs from the defaults, for the closed step-4 row
+ * (UX audit P1-4). "ใช้ค่าเริ่มต้น" when nothing was changed.
+ */
+export function overrideSummary(platform: string, v: Override | undefined, visibilityLabel?: string | null): string {
+  const parts: string[] = [];
+  if (v?.captionOn) parts.push("แคปชันแยก");
+  const tt = v?.options.tiktok ?? {};
+  const ig = v?.options.instagram ?? {};
+  const yt = v?.options.youtube ?? {};
+  if (platform === "tiktok") {
+    if (tt.allowComment === false) parts.push("ปิดคอมเมนต์");
+    if (tt.allowDuet) parts.push("Duet");
+    if (tt.allowStitch) parts.push("Stitch");
+    if (tt.draft) parts.push("ส่งเป็นร่าง");
+  }
+  if (platform === "instagram") {
+    if (ig.shareToFeed === false) parts.push("เฉพาะแท็บ Reels");
+    if (ig.commentsEnabled === false) parts.push("ปิดคอมเมนต์");
+    if (ig.aiGenerated) parts.push("ป้าย AI");
+    if (ig.firstComment) parts.push("คอมเมนต์แรก");
+  }
+  if (platform === "youtube") {
+    if (yt.categoryId && yt.categoryId !== "22") parts.push(YOUTUBE_CATEGORIES.find((k) => k.id === yt.categoryId)?.label ?? "หมวดหมู่");
+    if (yt.madeForKids) parts.push("สำหรับเด็ก");
+    if (yt.syntheticMedia) parts.push("เนื้อหา AI");
+    if (yt.notifySubscribers === false) parts.push("ไม่แจ้งเตือน");
+    if (yt.firstComment) parts.push("คอมเมนต์แรก");
+  }
+  if (visibilityLabel) parts.unshift(visibilityLabel);
+  return parts.length ? parts.join(" · ") : "ใช้ค่าเริ่มต้น";
+}
+
+/** The per-channel fields (caption override + platform options). */
+export function PlatformOverrideFields({
+  channel: c,
   sharedCaption,
   value,
   onChange,
 }: {
-  channels: OverrideChannel[];
+  channel: OverrideChannel;
   sharedCaption: string;
-  value: Record<string, Override>;
+  value: Override | undefined;
   onChange: (id: string, next: Override) => void;
 }) {
-  if (channels.length === 0) return <p className="m-0 text-[14px] text-muted-foreground">เลือกช่องก่อน แล้วปรับแต่งแต่ละแพลตฟอร์มได้ที่นี่</p>;
-  return (
-    <div className="grid gap-4">
-      {channels.map((c) => {
-        const v = value[c.id] ?? { captionOn: false, caption: "", options: {} };
+        const v = value ?? EMPTY_OVERRIDE;
         const set = (patch: Partial<Override>) => onChange(c.id, { ...v, ...patch });
         const max = PLATFORM_CAPTION_MAX[c.platform] ?? 2200;
         const id = (k: string) => `ovr-${c.id}-${k}`;
@@ -48,11 +80,7 @@ export function PlatformOverrides({
         const ig = v.options.instagram ?? {};
         const yt = v.options.youtube ?? {};
         return (
-          <section key={c.id} aria-labelledby={id("h")} className="grid gap-3 rounded-xl border border-input p-4">
-            <h3 id={id("h")} className="m-0 flex items-center gap-2 text-[16px] font-semibold">
-              {(["youtube", "instagram", "tiktok"] as string[]).includes(c.platform) && <PlatformLogo platform={c.platform as Platform} size={20} decorative />}
-              {c.displayName} <span className="font-normal text-muted-foreground">· {NAME[c.platform] ?? c.platform}</span>
-            </h3>
+          <div className="grid gap-3">
             <Toggle
               id={id("cap")}
               label={`ใช้แคปชันแยกสำหรับ ${NAME[c.platform] ?? c.platform}`}
@@ -117,9 +145,34 @@ export function PlatformOverrides({
                 <FirstComment id={id("yfc")} max={10_000} value={yt.firstComment} onChange={(t) => set({ options: { youtube: { ...yt, firstComment: t } } })} />
               </div>
             )}
-          </section>
+          </div>
         );
-      })}
+}
+
+/** Every chosen channel's fields, open (kept for callers outside the composer). */
+export function PlatformOverrides({
+  channels,
+  sharedCaption,
+  value,
+  onChange,
+}: {
+  channels: OverrideChannel[];
+  sharedCaption: string;
+  value: Record<string, Override>;
+  onChange: (id: string, next: Override) => void;
+}) {
+  if (channels.length === 0) return <p className="m-0 text-[14px] text-muted-foreground">เลือกช่องก่อน แล้วปรับแต่งแต่ละแพลตฟอร์มได้ที่นี่</p>;
+  return (
+    <div className="grid gap-4">
+      {channels.map((c) => (
+        <section key={c.id} aria-label={`${c.displayName} · ${NAME[c.platform] ?? c.platform}`} className="grid gap-3 rounded-xl border border-input p-4">
+          <h3 className="m-0 flex items-center gap-2 text-[16px] font-semibold">
+            {(["youtube", "instagram", "tiktok"] as string[]).includes(c.platform) && <PlatformLogo platform={c.platform as Platform} size={20} decorative />}
+            {c.displayName} <span className="font-normal text-muted-foreground">· {NAME[c.platform] ?? c.platform}</span>
+          </h3>
+          <PlatformOverrideFields channel={c} sharedCaption={sharedCaption} value={value[c.id]} onChange={onChange} />
+        </section>
+      ))}
     </div>
   );
 }

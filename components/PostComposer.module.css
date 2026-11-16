@@ -1,0 +1,259 @@
+/* Composer: form on the left, live phone preview on the right (sticky). */
+.layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 340px;
+  gap: 28px;
+  align-items: start;
+}
+/* Each numbered step is a card; the legend sits inside it as a heading
+   (fieldset legends otherwise cut through the border). */
+.step {
+  display: grid;
+  gap: 12px;
+  min-width: 0;
+  margin: 0;
+  padding: 22px;
+  border: 1px solid var(--input);
+  border-radius: 22px;
+  background: color-mix(in srgb, var(--card) 92%, transparent);
+}
+.legend {
+  float: left;
+  width: 100%;
+  margin: 0 0 4px;
+  padding: 0;
+  font-size: 18px;
+  font-weight: 600;
+}
+.legend + * {
+  clear: both;
+}
+/* Enabled: the Social gradient (white text ≥ 5.4:1). Disabled keeps the
+   Button's own muted look. */
+.submit[data-ready]:not(:disabled) {
+  background: linear-gradient(100deg, #c8215a 0%, #7c3aed 52%, #0f766e 100%);
+  color: #fff;
+}
+.submit[data-ready]:not(:disabled):hover {
+  background: linear-gradient(100deg, #cf2460 0%, #8040ef 52%, #0f7d74 100%);
+}
+.preview {
+  position: sticky;
+  top: 96px;
+  display: grid;
+  gap: 14px;
+}
+.previewHead {
+  display: grid;
+  gap: 2px;
+}
+.previewTitle {
+  font-size: 16px;
+  font-weight: 600;
+}
+.previewNote {
+  color: var(--muted-foreground);
+  font-size: 13px;
+  line-height: 1.6;
+}
+.phone {
+  position: relative;
+  width: 100%;
+  max-width: 300px;
+  aspect-ratio: 9 / 18.5;
+  margin: 0 auto;
+  padding: 10px;
+  border-radius: 40px;
+  background: #0c0b10;
+  box-shadow:
+    0 0 0 1px rgb(255 255 255 / 0.08),
+    0 30px 70px -30px color-mix(in srgb, #7c3aed 70%, transparent),
+    0 20px 50px -30px color-mix(in srgb, #c8215a 60%, transparent);
+}
+.notch {
+  position: absolute;
+  top: 18px;
+  left: 50%;
+  z-index: 2;
+  width: 84px;
+  height: 22px;
+  border-radius: 999px;
+  background: #000;
+  translate: -50% 0;
+}
+.screen {
+  position: relative;
+  overflow: hidden;
+  height: 100%;
+  border-radius: 31px;
+  background: linear-gradient(160deg, #2a1650 0%, #120e1a 55%, #0b2a2a 100%);
+  color: #fff;
+}
+.cover {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.coverEmpty {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  align-content: center;
+  justify-items: center;
+  gap: 10px;
+  padding: 24px;
+  color: rgb(255 255 255 / 0.85);
+  font-size: 14px;
+  text-align: center;
+}
+.coverEmpty svg {
+  width: 32px;
+  height: 32px;
+}
+.rail {
+  position: absolute;
+  right: 12px;
+  bottom: 120px;
+  display: grid;
+  gap: 18px;
+  color: #fff;
+  filter: drop-shadow(0 1px 3px rgb(0 0 0 / 0.6));
+}
+.rail svg {
+  width: 24px;
+  height: 24px;
+}
+/* Caption sits on a dark scrim so white text stays readable on any cover. */
+.overlay {
+  position: absolute;
+  inset: auto 0 0;
+  display: grid;
+  gap: 4px;
+  padding: 48px 56px 22px 16px;
+  background: linear-gradient(180deg, transparent 0%, rgb(0 0 0 / 0.78) 45%, rgb(0 0 0 / 0.9) 100%);
+}
+.who {
+  font-size: 14px;
+  font-weight: 600;
+}
+.ytTitle {
+  font-size: 13px;
+  font-weight: 600;
+}
+.caption {
+  display: -webkit-box;
+  overflow: hidden;
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.5;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 4;
+}
+.placeholder {
+  color: rgb(255 255 255 / 0.75);
+}
+.targets {
+  display: grid;
+  gap: 8px;
+  padding: 14px;
+  border: 1px solid var(--input);
+  border-radius: 16px;
+  background: color-mix(in srgb, var(--card) 90%, transparent);
+}
+.targetsLabel {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 14px;
+  font-weight: 600;
+}
+.targetsLabel svg {
+  width: 16px;
+  height: 16px;
+  color: var(--link);
+}
+.targetList {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.targetList li {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 30px;
+  padding: 0 10px;
+  border: 1px solid var(--input);
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 500;
+}
+
+@media (max-width: 1023px) {
+  .layout {
+    grid-template-columns: 1fr;
+  }
+  /* Phones: the preview follows the form, smaller. */
+  .preview {
+    position: static;
+  }
+  .phone {
+    max-width: 240px;
+  }
+}
+
+/* Submit area: error summary (UX audit P1-5) and, on phones, a sticky bar
+   so the send button is always reachable (P1-4). */
+.submitBar {
+  display: grid;
+  gap: 10px;
+}
+.problems {
+  padding: 14px 16px;
+  border: 1px solid color-mix(in srgb, #f59e0b 60%, transparent);
+  border-radius: 14px;
+  background: color-mix(in srgb, #f59e0b 12%, var(--card));
+  color: var(--foreground);
+  font-size: 15px;
+}
+.problems ul {
+  display: grid;
+  gap: 4px;
+  margin: 8px 0 0;
+  padding-left: 20px;
+}
+.problems a {
+  color: var(--link);
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+/* Not ready yet: looks secondary but stays focusable and clickable so the
+   summary can explain what is missing. */
+.submit:not([data-ready]) {
+  background: var(--muted);
+  color: var(--foreground);
+}
+@media (max-width: 767px) {
+  .submitBar {
+    position: sticky;
+    bottom: 0;
+    z-index: 5;
+    margin: 0 -5vw;
+    padding: 12px 5vw calc(12px + env(safe-area-inset-bottom));
+    border-top: 1px solid var(--input);
+    background: color-mix(in srgb, var(--background) 92%, transparent);
+    backdrop-filter: blur(10px);
+  }
+  /* Keep most of the form visible above the bar. */
+  .problems {
+    max-height: 30vh;
+    overflow-y: auto;
+  }
+}

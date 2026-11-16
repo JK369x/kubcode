@@ -2,7 +2,7 @@
 import { useEffect, useState, type ReactNode } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Instagram, Youtube } from "lucide-react";
+import { PlatformLogo } from "@/components/PlatformLogo";
 import { send } from "@/lib/interactions/client";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -28,19 +28,11 @@ export const NOTICES: Record<string, { ok: boolean; text: string }> = {
   connect_unavailable: { ok: false, text: "ระบบเชื่อมช่องยังไม่พร้อม" },
 };
 
-/** TikTok's note glyph (lucide has no TikTok icon). */
-function TikTokIcon() {
-  return (
-    <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor" aria-hidden="true">
-      <path d="M16.6 3c.4 2.2 1.9 3.8 4.1 4v3.1a7.6 7.6 0 0 1-4.1-1.3v6.4a5.8 5.8 0 1 1-5.8-5.8c.3 0 .7 0 1 .1v3.2a2.7 2.7 0 1 0 1.8 2.5V3h3Z" />
-    </svg>
-  );
-}
-
+// Official marks (PlatformLogo, simple-icons CC0, unmodified) in brand colour.
 const PLATFORM: Record<Connectable, { label: string; icon: ReactNode }> = {
-  youtube: { label: "YouTube", icon: <Youtube size={18} aria-hidden="true" /> },
-  instagram: { label: "Instagram", icon: <Instagram size={18} aria-hidden="true" /> },
-  tiktok: { label: "TikTok", icon: <TikTokIcon /> },
+  youtube: { label: "YouTube", icon: <PlatformLogo platform="youtube" size={18} decorative /> },
+  instagram: { label: "Instagram", icon: <PlatformLogo platform="instagram" size={18} decorative /> },
+  tiktok: { label: "TikTok", icon: <PlatformLogo platform="tiktok" size={18} decorative /> },
 };
 const platformOf = (p: string) => PLATFORM[p as Connectable] ?? { label: p, icon: null };
 
@@ -112,7 +104,25 @@ export function ChannelsPanel({ channels, notice, automations = false }: Props) 
       <section className={styles.section} aria-labelledby="channels-list">
         <h2 id="channels-list">ช่องของคุณ</h2>
         {live.length === 0 ? (
-          <p className={styles.meta}>ยังไม่มีช่องที่เชื่อมไว้ เริ่มจากปุ่มด้านล่าง</p>
+          // Empty state (UX audit P1-7): logos, what happens next, the connect actions.
+          <div className={own.empty}>
+            <span className={own.emptyLogos} aria-hidden="true">
+              {CONNECTABLE.map((id) => (
+                <span key={id}>{PLATFORM[id].icon}</span>
+              ))}
+            </span>
+            <p className={own.emptyText}>
+              ยังไม่มีช่องที่เชื่อมไว้ กดเชื่อมแล้วระบบจะพาไปหน้าขอสิทธิ์ของแพลตฟอร์ม อนุญาตเสร็จจะกลับมาที่หน้านี้
+            </p>
+            <div id="channels-add" className={own.connect}>
+          {CONNECTABLE.map((id) => (
+            <Button key={id} type="button" variant="outline" size="lg" className="rounded-full" disabled={busy} onClick={() => onConnect(id)}>
+              {PLATFORM[id].icon}
+              เชื่อม {PLATFORM[id].label}
+            </Button>
+          ))}
+            </div>
+          </div>
         ) : (
           <ul className={own.list}>
             {live.map((c) => {
@@ -158,17 +168,19 @@ export function ChannelsPanel({ channels, notice, automations = false }: Props) 
         ) : null}
       </section>
 
+      {live.length > 0 && (
       <section className={styles.section} aria-labelledby="channels-add">
         <h2 id="channels-add">เชื่อมช่องใหม่</h2>
         <div className={own.connect}>
           {CONNECTABLE.map((id) => (
-            <Button key={id} type="button" disabled={busy} onClick={() => onConnect(id)}>
+            <Button key={id} type="button" variant="outline" size="lg" className="rounded-full" disabled={busy} onClick={() => onConnect(id)}>
               {PLATFORM[id].icon}
               เชื่อม {PLATFORM[id].label}
             </Button>
           ))}
         </div>
       </section>
+      )}
     </div>
   );
 }

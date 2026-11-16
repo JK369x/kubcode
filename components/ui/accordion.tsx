@@ -71,7 +71,9 @@ function AccordionContent({
   return (
     <AccordionPrimitive.Content
       data-slot="accordion-content"
-      className="overflow-hidden"
+      // Force-mounted content (kept in the DOM for search, no-JS and form
+      // state) is hidden while closed.
+      className="overflow-hidden data-[state=closed]:hidden"
       {...props}
     >
       <div
