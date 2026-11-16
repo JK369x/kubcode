@@ -2,7 +2,10 @@ import Link from "next/link";
 import { cookies, headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { AccountForm } from "@/components/AccountForm";
+import { AccountShortcuts } from "@/components/AccountShortcuts";
 import { BillingBanner } from "@/components/BillingBanner";
+import { capabilitiesFromCookies } from "@/lib/account-nav/capabilities";
+import { SESSION_COOKIE_NAME } from "@/lib/auth-policy";
 import { getBillingPage } from "@/lib/billing/view";
 import { getAccountView } from "@/lib/auth";
 import { authErrorMessage, canonicalHostRedirect, readAuthConfig } from "@/lib/auth-policy";
@@ -20,6 +23,8 @@ export default async function Account({ searchParams }: Props) {
   const view = await getAccountView();
   // In-site renewal reminder (ADR 0008); nothing when billing is off.
   const billing = view.state === "signed-in" ? await getBillingPage(process.env, () => cookies()) : null;
+  // Doors to the paid product (channels, posting, comment rules, billing).
+  const caps = view.state === "signed-in" ? await capabilitiesFromCookies(process.env, (await cookies()).get(SESSION_COOKIE_NAME)?.value) : null;
   const { error, account_notice: accountNotice } = await searchParams;
   // Central accounts are ON with a usable configuration (DB truth is checked per request).
   const settingsAvailable = accountsEnabled();
@@ -56,6 +61,7 @@ export default async function Account({ searchParams }: Props) {
           ดาวน์โหลดยังปิดอยู่สำหรับทุกคน
         </p>
         {billing?.state === "ready" && <BillingBanner view={billing.view} />}
+        {caps && <AccountShortcuts caps={caps} />}
         <AccountForm {...formProps} />
         {billing?.state === "ready" && (
           <p>

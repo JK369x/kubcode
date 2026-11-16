@@ -269,3 +269,45 @@ test("TikTok: rules need a public reply, keep no DM text, and the count is publi
   for (const st of ["sent", "none", "failed", "skipped"]) await reply(st);
   assert.deepEqual(await store.usage(a.s, tt, now), { ok: true, count: 2 }, "sent or in flight");
 });
+
+// ------------------------------------------------------------ paid access (ADR 0008)
+
+async function paid(workspace: string, slots: number, paidUntil: Date | null) {
+  await pool.query(
+    `INSERT INTO ${S}.billing_entitlements (workspace_id, slots, period_start, paid_until) VALUES ($1, $2, now() - interval '20 days', $3)`,
+    [workspace, slots, paidUntil],
+  );
+}
+
+test("paid members use channels and automations: active and grace yes; expired, never-paid and 0 slots no", async () => {
+  const { createPgChannelStore } = await import("../../lib/channels/store");
+  const channels = createPgChannelStore(db.appPool);
+  const day = 86_400_000;
+  const cases: Array<[string, number | null, number, boolean]> = [
+    ["active pass", 10 * day, 2, true],
+    ["inside the 3-day grace", -1 * day, 2, true],
+    ["past grace (expired)", -4 * day, 2, false],
+    ["0 slots", 10 * day, 0, false],
+    ["never paid", null, 0, false],
+  ];
+  for (const [label, offset, slots, allowed] of cases) {
+    const m = await member({ owner: false });
+    if (offset !== null || slots > 0) await paid(m.workspace, slots, offset === null ? null : new Date(Date.now() + offset));
+    const ig = await channel(m.workspace);
+    const want = allowed ? { ok: true, userId: m.s.uid } : { ok: false, code: "FORBIDDEN" };
+    assert.deepEqual(await store.member(m.s), want, `automations: ${label}`);
+    assert.deepEqual(await channels.member(m.s), want, `channels: ${label}`);
+    const list = await channels.channels(m.s);
+    assert.equal(list.ok, allowed, `channel list: ${label}`);
+    const rule = await store.create(m.s, ig, RULE);
+    assert.equal(rule.ok, allowed, `create rule: ${label}`);
+  }
+  // The owner needs no pass.
+  const o = await member({ owner: true });
+  assert.deepEqual(await channels.member(o.s), { ok: true, userId: o.s.uid });
+  // Another member's pass never opens it for you (RLS: entitlement by own workspace).
+  const payer = await member({ owner: false });
+  await paid(payer.workspace, 3, new Date(Date.now() + 10 * day));
+  const other = await member({ owner: false });
+  assert.deepEqual(await channels.member(other.s), { ok: false, code: "FORBIDDEN" });
+});

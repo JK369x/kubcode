@@ -13,6 +13,8 @@ import {
 } from "@/components/ui/dropdown-menu";
 
 export type MenuUser = { name: string | null; image: string | null };
+/** What the member may open (GET /api/account/capabilities); absent = not loaded yet. */
+export type MenuCapabilities = { publishing: boolean; billing: boolean };
 
 /**
  * Header account control (presentational). `user`: undefined while the
@@ -23,11 +25,13 @@ export type MenuUser = { name: string | null; image: string | null };
  */
 export function AccountMenuView({
   user,
+  caps,
   open,
   onOpenChange,
   onSignOut,
 }: {
   user: MenuUser | null | undefined;
+  caps?: MenuCapabilities;
   open?: boolean;
   onOpenChange?: (open: boolean) => void;
   onSignOut: () => void;
@@ -58,8 +62,22 @@ export function AccountMenuView({
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
         <DropdownMenuItem asChild>
+          <Link href="/account">บัญชี</Link>
+        </DropdownMenuItem>
+        {caps?.publishing && (
+          <DropdownMenuItem asChild>
+            <Link href="/account/channels">ช่องและการโพสต์</Link>
+          </DropdownMenuItem>
+        )}
+        {caps?.billing && (
+          <DropdownMenuItem asChild>
+            <Link href="/account/billing">การชำระเงิน</Link>
+          </DropdownMenuItem>
+        )}
+        <DropdownMenuItem asChild>
           <Link href="/account/settings">ตั้งค่าบัญชี</Link>
         </DropdownMenuItem>
+        <DropdownMenuSeparator />
         <DropdownMenuItem onSelect={onSignOut}>ออกจากระบบ</DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
@@ -93,6 +111,7 @@ type SessionJson = { user?: { name?: string | null; image?: string | null } };
 /** Loads the public session on the client so every page can stay static. */
 export function AccountMenu() {
   const [user, setUser] = useState<MenuUser | null | undefined>(undefined);
+  const [caps, setCaps] = useState<MenuCapabilities | undefined>(undefined);
   const [broken, setBroken] = useState(false);
 
   useEffect(() => {
@@ -108,6 +127,14 @@ export function AccountMenu() {
       .then((s) => {
         if (!live) return;
         setUser(s.user ? { name: s.user.name ?? null, image: s.user.image ?? null } : null);
+        if (!s.user) return;
+        // Booleans only; a failure just hides the extra links.
+        fetch("/api/account/capabilities", { credentials: "same-origin", cache: "no-store" })
+          .then(async (res) => (res.ok ? ((await res.json()) as MenuCapabilities) : null))
+          .catch(() => null)
+          .then((c) => {
+            if (live && c) setCaps({ publishing: c.publishing === true, billing: c.billing === true });
+          });
       });
     return () => {
       live = false;
@@ -118,7 +145,7 @@ export function AccountMenu() {
   const shown = user && broken ? { ...user, image: null } : user;
   return (
     <div className={styles.root} onErrorCapture={() => setBroken(true)}>
-      <AccountMenuView user={shown} onSignOut={() => void signOutToAccount()} />
+      <AccountMenuView user={shown} caps={caps} onSignOut={() => void signOutToAccount()} />
     </div>
   );
 }
