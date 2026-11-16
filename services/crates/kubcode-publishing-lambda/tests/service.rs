@@ -1057,3 +1057,60 @@ async fn comment_stats_count_recent_and_unmatched_comments_per_post() {
     assert!(s.comment_stats(stranger, tt).await.is_err());
     db.drop().await;
 }
+
+#[tokio::test]
+#[ignore = "needs KUBCODE_TEST_DATABASE_URL; run with --ignored"]
+async fn reconcile_settles_deliveries_no_webhook_settled() {
+    let db = db().await;
+    let mut store = db.store().await;
+    let fake = Arc::new(FakeProvider::default());
+    let (reg, cfg) = (registry(&fake), cfg());
+    let mut s = svc(&mut store, &reg, &cfg);
+    let owner = db.user(true).await;
+    let yt = connect(&mut s, &fake, owner, Platform::YouTube).await;
+    let (video, cover) = assets(&mut s, owner, true).await;
+    let req = request(video, cover, &[yt]);
+    let out = s.schedule(owner, req.clone(), digest(&req)).await.unwrap();
+    let id = out.deliveries[0].delivery.unwrap();
+    // Not yet due: nothing to ask.
+    assert_eq!(s.reconcile().await.unwrap(), 0);
+    // Due an hour ago, and the provider has published it without telling us.
+    db.owner
+        .execute("UPDATE kubcode_accounts.deliveries SET publish_at = now() - interval '1 hour' WHERE id = $1", &[&id.0])
+        .await
+        .unwrap();
+    let post_ref = s
+        .store
+        .delivery(id)
+        .await
+        .unwrap()
+        .unwrap()
+        .provider_ref
+        .unwrap();
+    fake.set_post_status(&post_ref, DeliveryStatus::Published);
+    assert_eq!(s.reconcile().await.unwrap(), 1);
+    assert_eq!(
+        s.store.delivery_status(id).await.unwrap(),
+        DeliveryStatus::Published
+    );
+    let r = s.store.receipt(id).await.unwrap().unwrap();
+    assert_eq!(
+        (r.platform_post_id.as_deref(), r.platform_url.as_deref()),
+        (Some("fake-platform-id"), Some("https://fake.example/p"))
+    );
+    // Settled: asked no more, and a later answer never overwrites the receipt.
+    assert_eq!(s.reconcile().await.unwrap(), 0);
+    // A published delivery whose receipt lacks the URL is filled, not replaced.
+    db.owner
+        .execute(
+            "UPDATE kubcode_accounts.receipts SET platform_url = NULL WHERE delivery_id = $1",
+            &[&id.0],
+        )
+        .await
+        .unwrap();
+    assert_eq!(s.reconcile().await.unwrap(), 1);
+    let r = s.store.receipt(id).await.unwrap().unwrap();
+    assert_eq!(r.platform_post_id.as_deref(), Some("fake-platform-id"));
+    assert_eq!(r.platform_url.as_deref(), Some("https://fake.example/p"));
+    db.drop().await;
+}

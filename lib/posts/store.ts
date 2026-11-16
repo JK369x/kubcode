@@ -1,5 +1,6 @@
 // Read side of /account/posts for the web host (kubcode_app, RLS by member):
 // posts with their per-channel deliveries and receipts. No provider ids.
+import { liveUrl } from "./live-url";
 import type { Pool, PoolClient } from "pg";
 import { getPool, withTransaction } from "../accounts/db";
 import { lockMember } from "../accounts/member";
@@ -34,14 +35,14 @@ async function read(c: PoolClient, s: SessionClaims, limit: number): Promise<Pos
   const { rows } = await c.query<{
     post_id: string; description: string; created_at: Date;
     id: string; channel_id: string; display_name: string; platform: string; status: DeliveryView["status"];
-    publish_at: Date; last_error_code: string | null; platform_url: string | null;
+    publish_at: Date; last_error_code: string | null; platform_url: string | null; platform_post_id: string | null; handle: string | null;
     d_caption: string | null; d_options: Record<string, Record<string, unknown>> | null;
   }>(
     `WITH recent AS (
        SELECT p.id, p.description, p.created_at FROM kubcode_accounts.posts p
         WHERE p.status = 'confirmed' ORDER BY p.created_at DESC LIMIT $1)
      SELECT r.id AS post_id, r.description, r.created_at,
-            d.id, d.channel_id, c.display_name, d.platform, d.status, d.publish_at, d.last_error_code, rc.platform_url,
+            d.id, d.channel_id, c.display_name, d.platform, d.status, d.publish_at, d.last_error_code, rc.platform_url, rc.platform_post_id, c.handle,
             d.caption AS d_caption, d.options AS d_options
        FROM recent r
        JOIN kubcode_accounts.deliveries d ON d.post_id = r.id
@@ -61,7 +62,7 @@ async function read(c: PoolClient, s: SessionClaims, limit: number): Promise<Pos
       status: r.status,
       publishAt: r.publish_at.toISOString(),
       error: r.last_error_code,
-      url: r.platform_url && /^https:\/\//.test(r.platform_url) ? r.platform_url : null,
+      url: liveUrl({ platform: r.platform, url: r.platform_url, platformPostId: r.platform_post_id, handle: r.handle }),
       caption: r.d_caption,
       options: r.d_options ? Object.values(r.d_options).flatMap((o) => Object.keys(o ?? {})) : [],
     });

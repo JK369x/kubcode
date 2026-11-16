@@ -118,6 +118,9 @@ fn posts_cache_put(key: PostsKey, now: OffsetDateTime, posts: Vec<OwnPost>) {
     }
 }
 
+/// Deliveries the worker asks the provider about per run (every minute).
+pub const RECONCILE_PER_RUN: i64 = 5;
+
 /// Comment stats are reused this long per channel (warm Lambda only), so
 /// opening the page repeatedly does not repeat ~18 provider reads.
 pub const STATS_CACHE_TTL: Duration = Duration::minutes(5);
@@ -972,6 +975,69 @@ impl Service<'_> {
             .transition(delivery, DeliveryStatus::Cancelled, None)
             .await?;
         Ok(())
+    }
+
+    /// Asks the provider about deliveries a webhook has not settled (TikTok
+    /// publishes asynchronously and resolves its URL late; webhooks can be
+    /// missed). Published → receipt filled (never overwritten); failed →
+    /// failed with the provider's code. At most RECONCILE_PER_RUN per run.
+    /// One log line with counts only.
+    pub async fn reconcile(&mut self) -> Result<u32> {
+        let ids = self.store.to_reconcile(RECONCILE_PER_RUN).await?;
+        let (mut changed, mut errors) = (0u32, 0u32);
+        for id in ids {
+            let Some(d) = self.store.delivery(id).await? else {
+                continue;
+            };
+            let (Some(post_ref), Some(profile)) = (&d.provider_ref, &d.profile) else {
+                continue;
+            };
+            let Ok(set) = self.providers(d.provider) else {
+                continue;
+            };
+            let publisher = Arc::clone(&set.publisher);
+            let conn = ConnectionRef {
+                platform: d.platform,
+                profile: profile.clone(),
+                account: d.account.clone(),
+            };
+            let state = match publisher.status(&conn, post_ref).await {
+                Ok(s) => s,
+                Err(_) => {
+                    errors += 1;
+                    continue;
+                }
+            };
+            let moved = match state.status {
+                DeliveryStatus::Published => {
+                    self.store
+                        .record_published(id, &state.platform_post_id, &state.platform_url)
+                        .await?
+                }
+                DeliveryStatus::Failed => {
+                    let code = state
+                        .error
+                        .map(|e| e.code.as_str().to_owned())
+                        .unwrap_or_else(|| "platform_rejected".into());
+                    self.store
+                        .transition(id, DeliveryStatus::Failed, Some(&code))
+                        .await?
+                }
+                DeliveryStatus::Publishing if d.status == DeliveryStatus::Scheduled => {
+                    self.store
+                        .transition(id, DeliveryStatus::Publishing, None)
+                        .await?
+                }
+                _ => false,
+            };
+            if moved {
+                changed += 1;
+            }
+        }
+        if changed > 0 || errors > 0 {
+            println!("[publishing] reconcile changed={changed} errors={errors}");
+        }
+        Ok(changed)
     }
 
     // ------------------------------------------------------------ webhooks
