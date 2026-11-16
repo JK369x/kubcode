@@ -982,3 +982,78 @@ async fn billing_paused_channels_take_no_posts_and_disconnect_after_14_days() {
     assert_eq!(s.billing_sweep().await.unwrap(), (0, 0));
     db.drop().await;
 }
+
+#[tokio::test]
+#[ignore = "needs KUBCODE_TEST_DATABASE_URL; run with --ignored"]
+async fn comment_stats_count_recent_and_unmatched_comments_per_post() {
+    use kubcode_publishing::events::IncomingComment;
+    let db = db().await;
+    let mut store = db.store().await;
+    let fake = Arc::new(FakeProvider::default());
+    let (reg, cfg) = (registry(&fake), cfg());
+    let mut s = svc(&mut store, &reg, &cfg);
+    let member = db.user(false).await;
+    let tt = connect(&mut s, &fake, member, Platform::TikTok).await;
+    let acct = s.store.connections(tt).await.unwrap()[0]
+        .provider_ref
+        .clone();
+    // A rule for "harness" on all posts, and one for "egm" scoped to a post with no comments.
+    db.owner
+        .execute(
+            "INSERT INTO kubcode_accounts.automation_rules (channel_id, keywords, dm_text, public_reply) VALUES ($1, ARRAY['harness'], '-', 'ลิงก์')",
+            &[&tt.0],
+        )
+        .await
+        .unwrap();
+    db.owner
+        .execute(
+            "INSERT INTO kubcode_accounts.automation_rules (channel_id, keywords, dm_text, public_reply, platform_post_id) VALUES ($1, ARRAY['egm'], '-', 'ลิงก์', '999')",
+            &[&tt.0],
+        )
+        .await
+        .unwrap();
+    let now = OffsetDateTime::now_utc();
+    let c =
+        |id: &str, post: &str, text: &str, own: bool, reply: bool, age_days: i64| IncomingComment {
+            account: acct.clone(),
+            comment_id: id.into(),
+            platform_post_id: post.into(),
+            author_id: format!("a-{id}"),
+            own_account: own,
+            is_reply: reply,
+            created_at: Some(now - Duration::days(age_days)),
+            text: text.into(),
+        };
+    fake.set_post_comments(
+        "111",
+        vec![
+            c("1", "111", "เอาลิงก์", false, false, 1),
+            c("2", "111", "เอาลิงก์", false, false, 2),
+            c("3", "111", "Harness ครับ", false, false, 3),
+            c("4", "111", "ตอบแล้ว", true, false, 0),
+            c("5", "111", "reply", false, true, 0),
+            c("6", "111", "เก่า", false, false, 9),
+        ],
+    );
+    fake.set_post_comments("222", vec![c("7", "222", "harness", false, false, 0)]);
+    let stats = s.comment_stats(member, tt).await.unwrap();
+    let by = |id: &str| {
+        stats
+            .posts
+            .iter()
+            .find(|p| p.platform_post_id == id)
+            .map(|p| (p.comments_7d, p.unmatched_7d))
+    };
+    assert_eq!(
+        by("111"),
+        Some((3, 2)),
+        "own, replies and >7 days are not counted"
+    );
+    assert_eq!(by("222"), Some((1, 0)));
+    assert_eq!(by("999"), Some((0, 0)), "a rule's post is always read");
+    assert!(stats.complete);
+    // Another member's channel is not theirs.
+    let stranger = db.user(false).await;
+    assert!(s.comment_stats(stranger, tt).await.is_err());
+    db.drop().await;
+}

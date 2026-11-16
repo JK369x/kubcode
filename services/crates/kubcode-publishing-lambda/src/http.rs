@@ -291,6 +291,16 @@ pub async fn handle_with(
                 .map(|p| json!({"ok": true, "posts": p.posts, "complete": p.complete}));
             ("/api/channels/posts", r)
         }
+        "/api/channels/comment-stats" => {
+            let Ok(b) = serde_json::from_slice::<DisconnectBody>(body) else {
+                return fail(400, "bad_request");
+            };
+            let r = svc
+                .comment_stats(b.user_id, ChannelId(b.channel_id))
+                .await
+                .map(|s| json!({"ok": true, "posts": s.posts, "complete": s.complete}));
+            ("/api/channels/comment-stats", r)
+        }
         "/api/media/presign" => {
             let Ok(b) = serde_json::from_slice::<MediaBody>(body) else {
                 return fail(400, "bad_request");
