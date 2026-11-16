@@ -28,6 +28,9 @@ pub async fn run(svc: &mut Service<'_>, minute: u8) -> Value {
     } else {
         (0, 0)
     };
+    // Settle deliveries no webhook settled (TikTok's late URL, missed events).
+    // A failure here never blocks the rest of the tick.
+    let _ = svc.reconcile().await;
     match svc.work().await {
         Ok(done) => {
             json!({"ok": true, "kept": kept, "handled": done.len(), "paused_cancelled": cancelled, "paused_disconnected": disconnected})
