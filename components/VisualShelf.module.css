@@ -295,7 +295,7 @@
 }
 .credits a {
   color: inherit;
-  text-underline-offset: 3px;
+  text-underline-offset: var(--link-offset);
 }
 /* The pause control is a shadcn Toggle (outline). */
 .toggle {

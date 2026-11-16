@@ -389,7 +389,7 @@
   min-height: 24px;
   color: var(--link);
   text-decoration: underline;
-  text-underline-offset: 4px;
+  text-underline-offset: var(--link-offset);
 }
 
 @media (max-width: 1099px) {

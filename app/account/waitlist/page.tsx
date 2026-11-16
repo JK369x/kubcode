@@ -58,7 +58,7 @@ export default async function WaitlistPage() {
           อ่านข้อมูลไม่ได้ชั่วคราว ลองใหม่ภายหลัง
         </p>
       )}
-      <p className="m-0 text-[15px] [&_a]:text-link [&_a]:underline [&_a]:underline-offset-4">
+      <p className="m-0 text-[15px] [&_a]:text-link [&_a]:underline [&_a]:underline-offset-(--link-offset)">
         <Link href="/account">กลับไปหน้าพื้นที่สมาชิก</Link>
       </p>
     </AccountShell>

@@ -21,6 +21,7 @@ import { capabilitiesFromCookies } from "@/lib/account-nav/capabilities";
 import { PlatformLogo, type Platform } from "@/components/PlatformLogo";
 import { FamilyChip, IconTile, PageHero } from "@/components/site/PageHero";
 import { Badge } from "@/components/ui/badge";
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { getBillingPage, thaiDateTime } from "@/lib/billing/view";
 import { getChannelsView } from "@/lib/channels/view";
 import { getAccountView } from "@/lib/auth";
@@ -92,39 +93,47 @@ export default async function Account({ searchParams }: Props) {
       <BadgeCheck aria-hidden="true" />
       <span>
         {settingsAvailable
-          ? "บัญชีกลางบันทึกเฉพาะวิธีเข้าสู่ระบบที่เชื่อมไว้ ระบบอนุมัติสมาชิกยังไม่พร้อม"
-          : "ระบบอนุมัติสมาชิกยังไม่พร้อม ยังไม่มีการบันทึกบัญชีสมาชิกในฐานข้อมูล"}
+          ? "เราเก็บแค่วิธีเข้าสู่ระบบที่คุณเชื่อมไว้ ระบบอนุมัติสมาชิกยังไม่เปิด"
+          : "ระบบอนุมัติสมาชิกยังไม่เปิด เราจึงยังไม่เก็บบัญชีสมาชิกไว้ในฐานข้อมูล"}
         <br />
-        ดาวน์โหลดยังปิดอยู่สำหรับทุกคน
+        ตอนนี้ยังไม่มีใครดาวน์โหลดไฟล์ได้
       </span>
     </p>
   );
 
+  // UX audit P1-8: the same facts as before, in plain Thai, as questions.
   const membership = (
     <section className={styles.membership} aria-labelledby="membership-h">
-      <h2 id="membership-h">สถานะที่ต้องแยกกัน</h2>
-      <dl>
-        <div>
-          <dt>ยังไม่เข้าสู่ระบบ</dt>
-          <dd>อ่านคลังและบทความได้ แต่ยังดาวน์โหลดไม่ได้</dd>
-        </div>
-        <div>
-          <dt>เข้าสู่ระบบด้วย Google หรือ LINE แล้ว</dt>
-          <dd>
-            ยืนยันได้แค่ว่าเป็นเจ้าของบัญชีนั้น (Google ยืนยันอีเมล ส่วน LINE ไม่ได้ให้อีเมล)
-            ไม่ใช่สมาชิกที่ได้รับอนุมัติ และยังไม่ถูกเพิ่มเข้าคิวรออนุมัติใด ๆ
+      <h2 id="membership-h">คำถามเรื่องบัญชี</h2>
+      <Accordion type="multiple" className={styles.faq}>
+        <AccordionItem value="no-login">
+          <AccordionTrigger>ไม่เข้าสู่ระบบใช้อะไรได้บ้าง</AccordionTrigger>
+          <AccordionContent forceMount>อ่านคลังคลิปและบทความได้ทั้งหมด แต่ยังดาวน์โหลดไฟล์ไม่ได้</AccordionContent>
+        </AccordionItem>
+        <AccordionItem value="login">
+          <AccordionTrigger>เข้าสู่ระบบแล้วได้อะไร</AccordionTrigger>
+          <AccordionContent forceMount>
+            เรารู้แค่ว่าคุณเป็นเจ้าของบัญชีนั้น (Google ให้อีเมลที่ยืนยันแล้ว ส่วน LINE ไม่ให้อีเมล)
+            ให้ดาวและคอมเมนต์ได้ และซื้อแพ็กเกจโซเชียลได้ แต่ยังไม่ใช่สมาชิกที่ได้รับอนุมัติ และไม่ได้เข้าคิวรออนุมัติ
+          </AccordionContent>
+        </AccordionItem>
+        <AccordionItem value="two-accounts">
+          <AccordionTrigger>ใช้ทั้ง Google และ LINE ได้ไหม</AccordionTrigger>
+          <AccordionContent forceMount>
             {settingsAvailable
-              ? "บัญชี Google และ LINE ไม่ถูกรวมให้อัตโนมัติ เชื่อมได้เองที่หน้าตั้งค่าการเข้าสู่ระบบหลังยืนยันทั้งสองฝั่ง"
-              : "บัญชี Google และ LINE ถือเป็นคนละบัญชี ระบบไม่รวมบัญชีให้"}
-          </dd>
-        </div>
-        <div>
-          <dt>สมาชิกที่ได้รับอนุมัติ</dt>
-          <dd>ยังไม่เปิด — ต้องมีระบบอนุมัติและไฟล์ที่เคลียร์สิทธิ์ก่อน</dd>
-        </div>
-      </dl>
+              ? "ได้ แต่ระบบไม่รวมให้เอง ถ้าอยากให้เป็นบัญชีเดียวกัน เชื่อมได้ที่หน้าตั้งค่าการเข้าสู่ระบบ โดยยืนยันทั้งสองบัญชี"
+              : "ได้ แต่จะถือเป็นคนละบัญชี ระบบไม่รวมบัญชีให้"}
+          </AccordionContent>
+        </AccordionItem>
+        <AccordionItem value="approved">
+          <AccordionTrigger>สมาชิกที่ได้รับอนุมัติคืออะไร</AccordionTrigger>
+          <AccordionContent forceMount>
+            ยังไม่เปิด เราต้องทำระบบอนุมัติและเคลียร์สิทธิ์ไฟล์ให้เสร็จก่อน สิทธิ์ผู้ดูแลแยกจากสมาชิก และไม่มีปุ่มอนุมัติในเบราว์เซอร์
+          </AccordionContent>
+        </AccordionItem>
+      </Accordion>
       <p>
-        สิทธิ์ผู้ดูแลแยกจากสมาชิก ไม่มีสวิตช์อนุมัติในเบราว์เซอร์ · <Link href="/privacy">นโยบายข้อมูล</Link>
+        ดูว่าเราเก็บข้อมูลอะไรบ้างที่ <Link href="/privacy">นโยบายข้อมูล</Link>
       </p>
     </section>
   );
@@ -149,7 +158,7 @@ export default async function Account({ searchParams }: Props) {
               เข้าสู่ระบบ
             </h2>
             <p className={styles.cardLead}>
-              เข้าสู่ระบบเพื่อยืนยันตัวตน ยังไม่ใช่การเป็นสมาชิกหรือสิทธิ์ดาวน์โหลด
+              ใช้ยืนยันว่าเป็นคุณ ให้ดาว คอมเมนต์ และซื้อแพ็กเกจได้
             </p>
             <AccountForm {...formProps} />
             {setupNotice}

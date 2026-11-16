@@ -76,7 +76,7 @@
   align-items: center;
   gap: 3px;
   color: var(--ink);
-  text-underline-offset: 3px;
+  text-underline-offset: var(--link-offset);
 }
 .visual {
   margin: 2px 0 0;
