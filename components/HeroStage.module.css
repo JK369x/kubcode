@@ -724,3 +724,21 @@
     transition: none;
   }
 }
+
+/* UX audit P1-2: short tab labels on small phones; the eyebrow describes the selection. */
+@media (max-width: 480px) {
+  /* Visually hidden, still part of the tab's accessible name. */
+  .tabLong {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+}
+
+/* Selected clip card in light mode: the pink-tinted fill needs darker sub text (5.5:1). */
+:global(:root[data-theme="light"]) .pick[data-state="on"] .pickText small {
+  color: #5d5070;
+}

@@ -1,5 +1,7 @@
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { AccountMenu } from "@/components/AccountMenu";
+import { MobileNav } from "@/components/MobileNav";
+import { MAIN_LINKS } from "@/lib/main-links";
 import { SiteFooter } from "@/components/SiteFooter";
 import { Toaster } from "@/components/ui/toaster";
 import type { Metadata } from "next";
@@ -42,13 +44,18 @@ export default function Layout({ children }: { children: React.ReactNode }) {
             kubcode
           </Link>
           <nav aria-label="หลัก">
-            <ThemeToggle />
-            <Link href="/">คลังทักษะ</Link>
-            <Link href="/articles">บทความ</Link>
-            <Link href="/tools">เครื่องมือ</Link>
-            <Link href="/community">ชุมชน</Link>
-            <Link href="/pricing">ราคา</Link>
+            {/* Desktop: inline links + theme. Phones (≤560px): hidden; the
+                MobileNav sheet carries them (UX audit P1-1). */}
+            <span className="header-links">
+              <ThemeToggle />
+              {MAIN_LINKS.map((l) => (
+                <Link key={l.href} href={l.href}>
+                  {l.label}
+                </Link>
+              ))}
+            </span>
             <AccountMenu />
+            <MobileNav />
           </nav>
         </header>
         {children}

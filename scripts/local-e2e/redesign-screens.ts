@@ -201,7 +201,7 @@ async function main() {
           return res.violations.map((v) => `${v.id}:${v.nodes.length}`);
         });
       }
-      const slug = path.replace(/^\//, "").replace(/[/?=&]+/g, "_") || "home";
+      const slug = path.replace(/^\//, "").replace(/[/?=&#]+/g, "_") || "home";
       const who = signedIn ? (process.env.KUBCODE_SCREENS_OWNER === "1" ? "owner" : process.env.KUBCODE_SCREENS_EMPTY === "1" ? "empty" : "in") : "out";
       const file = `${OUT}/${LABEL}-${who}-${slug}-${w}-${theme}.png`;
       await page.screenshot({ path: file, fullPage: true });
@@ -215,8 +215,9 @@ async function main() {
       await new Promise(() => undefined);
     }
     for (const path of PATHS) {
-      const signedOutOnly = path === "/account?out";
-      const real = signedOutOnly ? "/account" : path;
+      // "/account?out" or any path ending in "#out": signed-out only.
+      const signedOutOnly = path === "/account?out" || path.endsWith("#out");
+      const real = path === "/account?out" ? "/account" : path.replace(/#out$/, "");
       for (const signedIn of signedOutOnly ? [false] : path === "/account" ? [false, true] : [true]) {
         for (const [w, t] of [[1440, "dark"], [1440, "light"], [390, "dark"]] as const) await shoot(signedIn, real, w, t);
       }

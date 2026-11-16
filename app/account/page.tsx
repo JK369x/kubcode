@@ -134,13 +134,31 @@ export default async function Account({ searchParams }: Props) {
     return (
       <main id="main" className={styles.page}>
         <div className={styles.signInGrid}>
-          <div className={styles.pitch}>
+          {/* Phones (UX audit P0-5): headline → sign-in card → details, so the
+              buttons are above the fold. Desktop keeps two columns. */}
+          <div className={styles.pitchHead}>
             <PageHero
               eyebrow="พื้นที่สมาชิก"
               title="เข้าสู่ระบบ kubcode"
               accent="ทำคลิปและดูแลช่องในที่เดียว"
-              lead="เข้าสู่ระบบด้วย Google หรือ LINE เพื่อยืนยันตัวตน การเข้าสู่ระบบไม่เท่ากับการเป็นสมาชิกหรือสิทธิ์ดาวน์โหลด"
+              lead="ใช้บัญชี Google หรือ LINE ที่มีอยู่ ไม่ต้องสร้างรหัสผ่านใหม่"
             />
+          </div>
+          <section className={styles.card} aria-labelledby="signin-h">
+            <h2 id="signin-h" className={styles.cardTitle}>
+              เข้าสู่ระบบ
+            </h2>
+            <p className={styles.cardLead}>
+              เข้าสู่ระบบเพื่อยืนยันตัวตน ยังไม่ใช่การเป็นสมาชิกหรือสิทธิ์ดาวน์โหลด
+            </p>
+            <AccountForm {...formProps} />
+            {setupNotice}
+            <p className={styles.legal}>
+              การเข้าสู่ระบบถือว่ายอมรับ <Link href="/terms">ข้อกำหนดการใช้งาน</Link> และ{" "}
+              <Link href="/privacy">นโยบายข้อมูล</Link>
+            </p>
+          </section>
+          <div className={styles.pitchMore}>
             <ul className={styles.families}>
               <li>
                 <IconTile tone="studio" size={44}>
@@ -180,18 +198,6 @@ export default async function Account({ searchParams }: Props) {
               ))}
             </ul>
           </div>
-          <section className={styles.card} aria-labelledby="signin-h">
-            <h2 id="signin-h" className={styles.cardTitle}>
-              เข้าสู่ระบบ
-            </h2>
-            <p className={styles.cardLead}>เลือกบัญชีที่ใช้ ไม่ต้องสร้างรหัสผ่านใหม่</p>
-            <AccountForm {...formProps} />
-            {setupNotice}
-            <p className={styles.legal}>
-              การเข้าสู่ระบบถือว่ายอมรับ <Link href="/terms">ข้อกำหนดการใช้งาน</Link> และ{" "}
-              <Link href="/privacy">นโยบายข้อมูล</Link>
-            </p>
-          </section>
         </div>
         {membership}
       </main>

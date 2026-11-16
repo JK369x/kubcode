@@ -178,7 +178,7 @@ export function SocialSection({ roadmap = false, pricing = false }: { roadmap?: 
         {/* /pricing ships in #89; the link appears only once that page exists. */}
         {pricing && (
           <Button asChild size="lg" variant="outline" className="rounded-full px-6 text-base">
-            <Link href="/pricing">ดูราคา</Link>
+            <Link href="/pricing?for=social">ดูราคา</Link>
           </Button>
         )}
       </div>

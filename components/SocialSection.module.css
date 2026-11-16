@@ -184,7 +184,7 @@
   color: #111;
 }
 .igDm .bubbleOut {
-  background: #3797f0;
+  background: #1d6fd8; /* Instagram DM blue, darkened for white text ≥ 4.5:1 */
   color: #fff;
 }
 .igSmall {

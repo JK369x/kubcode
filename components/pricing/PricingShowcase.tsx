@@ -59,9 +59,13 @@ function PlanCta({ plan, open }: { plan: Plan; open: boolean }) {
   }
   if (open) {
     return (
-      <Button asChild size="lg" className={cn("w-full rounded-full font-semibold", styles.cta)}>
-        <Link href="/account/billing">สมัคร{plan.nameTh}</Link>
-      </Button>
+      <>
+        <Button asChild size="lg" className={cn("w-full rounded-full font-semibold", styles.cta)}>
+          <Link href="/account/billing">สมัคร{plan.nameTh}</Link>
+        </Button>
+        {/* UX audit P2-2: the reassurance at the point of decision. */}
+        <p className="m-0 text-center text-[13px] leading-[1.6] text-muted-foreground">ยกเลิกได้ทุกเมื่อ · ไม่ตัดเงินอัตโนมัติ</p>
+      </>
     );
   }
   return (
@@ -186,6 +190,16 @@ function PlanCard({ plan, open, filter }: { plan: Plan; open: boolean; filter: F
 
 export function PricingShowcase({ open }: { open: boolean }) {
   const [filter, setFilter] = useState<Filter>("all");
+  // Phones (one column, ≤680px): recommended plan first. Server render keeps
+  // the data order; the client switches after hydration, before most users scroll.
+  const [narrow, setNarrow] = useState(false);
+  useEffect(() => {
+    const mq = window.matchMedia("(max-width: 680px)");
+    const on = () => setNarrow(mq.matches);
+    on();
+    mq.addEventListener("change", on);
+    return () => mq.removeEventListener("change", on);
+  }, []);
   useEffect(() => {
     const f = new URLSearchParams(window.location.search).get("for");
     if (f === "studio" || f === "social") setFilter(f);
@@ -222,13 +236,15 @@ export function PricingShowcase({ open }: { open: boolean }) {
           <ToggleGroupItem value="studio" className={styles.tab} data-family="studio">
             <Clapperboard aria-hidden="true" />
             <span>
-              <b>Studio</b> · ทำคลิป
+              <b>Studio</b>
+              <span className={styles.tabLong}> · ทำคลิป</span>
             </span>
           </ToggleGroupItem>
           <ToggleGroupItem value="social" className={styles.tab} data-family="social">
             <MessagesSquare aria-hidden="true" />
             <span>
-              <b>Social</b> · โพสต์และตอบคอมเมนต์
+              <b>Social</b>
+              <span className={styles.tabLong}> · โพสต์และตอบคอมเมนต์</span>
             </span>
           </ToggleGroupItem>
         </ToggleGroup>
@@ -236,7 +252,9 @@ export function PricingShowcase({ open }: { open: boolean }) {
 
       <WaitlistProvider>
         <ul className={styles.grid} aria-label="แพ็กเกจ" style={{ "--plans": PLANS.length } as CSSProperties}>
-          {PLANS.map((p) => (
+          {/* UX audit P1-3: on phones the recommended plan comes first, in
+              DOM order too (reading order matches what is seen). */}
+          {(narrow ? [...PLANS].sort((a, b) => Number(b.highlighted) - Number(a.highlighted)) : PLANS).map((p) => (
             <PlanCard key={p.id} plan={p} open={open} filter={filter} />
           ))}
         </ul>
