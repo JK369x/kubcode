@@ -72,6 +72,62 @@ struct DisconnectBody {
     channel_id: Uuid,
 }
 
+/// The composer's upload step: one asset, presigned PUT for its key.
+#[derive(Deserialize)]
+#[serde(deny_unknown_fields)]
+struct MediaBody {
+    user_id: Uuid,
+    asset: crate::service::WebAsset,
+}
+
+/// Schedule from the web: the request the member confirmed. The web host
+/// shows exactly this and the digest is computed here, as the CLI does.
+#[derive(Deserialize)]
+#[serde(deny_unknown_fields)]
+struct ScheduleBody {
+    user_id: Uuid,
+    request: crate::summary::ScheduleRequest,
+}
+
+#[derive(Deserialize)]
+#[serde(deny_unknown_fields)]
+struct PostBody {
+    user_id: Uuid,
+    post_id: Uuid,
+}
+
+#[derive(Deserialize)]
+#[serde(deny_unknown_fields)]
+struct CancelBody {
+    user_id: Uuid,
+    delivery_id: Uuid,
+}
+
+/// Presigns a browser PUT for a key this Lambda chose (S3 in production).
+pub trait Uploader: Send + Sync {
+    fn presign_put(
+        &self,
+        key: &str,
+        content_type: &str,
+        sha256: &[u8; 32],
+        now: u64,
+    ) -> Option<crate::upload::PresignedPut>;
+}
+
+/// No uploads (tests and runners that do not exercise them).
+pub struct NoUploads;
+impl Uploader for NoUploads {
+    fn presign_put(
+        &self,
+        _: &str,
+        _: &str,
+        _: &[u8; 32],
+        _: u64,
+    ) -> Option<crate::upload::PresignedPut> {
+        None
+    }
+}
+
 /// Our own query parameter on the callback; never passed to the provider.
 const OWN_PARAMS: &[&str] = &["i"];
 
@@ -106,6 +162,20 @@ pub fn api_log_line(path: &str, code: Option<&str>, param_keys: Option<&[&str]>)
 pub async fn handle(
     svc: &mut Service<'_>,
     hmac_key: &[u8],
+    method: &str,
+    path: &str,
+    headers: &HeaderMap,
+    body: &[u8],
+    now: u64,
+) -> Reply {
+    handle_with(svc, hmac_key, &NoUploads, method, path, headers, body, now).await
+}
+
+#[allow(clippy::too_many_arguments)]
+pub async fn handle_with(
+    svc: &mut Service<'_>,
+    hmac_key: &[u8],
+    uploads: &dyn Uploader,
     method: &str,
     path: &str,
     headers: &HeaderMap,
@@ -220,6 +290,85 @@ pub async fn handle(
                 .await
                 .map(|p| json!({"ok": true, "posts": p.posts, "complete": p.complete}));
             ("/api/channels/posts", r)
+        }
+        "/api/media/presign" => {
+            let Ok(b) = serde_json::from_slice::<MediaBody>(body) else {
+                return fail(400, "bad_request");
+            };
+            let ct = b.asset.content_type.clone();
+            let r = match svc.web_asset(b.user_id, b.asset).await {
+                Ok((id, key, sha)) => match uploads.presign_put(&key, &ct, &sha, now) {
+                    Some(p) => Ok(json!({"ok": true, "asset_id": id.0, "upload": p})),
+                    None => Err(crate::service::Fail::new("uploads_unavailable")),
+                },
+                Err(f) => Err(f),
+            };
+            ("/api/media/presign", r)
+        }
+        "/api/posts/schedule" => {
+            let Ok(b) = serde_json::from_slice::<ScheduleBody>(body) else {
+                return fail(400, "bad_request");
+            };
+            if b.request.targets.is_empty()
+                || b.request.targets.len() > 10
+                || !b.request.clip_ref.starts_with("web-")
+            {
+                return fail(400, "bad_request");
+            }
+            let digest = crate::summary::digest(&b.request);
+            // One post per composer draft: a double submit or a retry after a
+            // lost response returns the first post instead of posting twice.
+            let existing = match svc.store.owner_workspace(b.user_id).await {
+                Ok(ws) => svc
+                    .store
+                    .confirmed_post_for_clip(ws, &b.request.clip_ref)
+                    .await
+                    .ok()
+                    .flatten(),
+                Err(_) => None,
+            };
+            let r = match existing {
+                Some(post) => Ok(
+                    json!({"ok": true, "already": true, "result": {"post": post.0, "deliveries": []}}),
+                ),
+                None => svc
+                    .schedule(b.user_id, b.request, digest)
+                    .await
+                    .map(|r| json!({"ok": true, "result": r})),
+            };
+            ("/api/posts/schedule", r)
+        }
+        "/api/posts/status" => {
+            let Ok(b) = serde_json::from_slice::<PostBody>(body) else {
+                return fail(400, "bad_request");
+            };
+            let r = svc
+                .status(b.user_id, kubcode_publishing::domain::PostId(b.post_id))
+                .await
+                .map(|list| {
+                    json!({"ok": true, "deliveries": list.iter().map(|d| json!({
+                    "delivery": d.id.0,
+                    "channel": d.channel.0,
+                    "platform": d.platform.as_str(),
+                    "status": d.status.as_str(),
+                    "error": d.last_error_code,
+                    "url": d.platform_url,
+                })).collect::<Vec<_>>()})
+                });
+            ("/api/posts/status", r)
+        }
+        "/api/posts/cancel" => {
+            let Ok(b) = serde_json::from_slice::<CancelBody>(body) else {
+                return fail(400, "bad_request");
+            };
+            let r = svc
+                .cancel(
+                    b.user_id,
+                    kubcode_publishing::domain::DeliveryId(b.delivery_id),
+                )
+                .await
+                .map(|()| json!({"ok": true}));
+            ("/api/posts/cancel", r)
         }
         _ => return fail(404, "not_found"),
     };

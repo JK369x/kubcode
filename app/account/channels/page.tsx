@@ -35,6 +35,16 @@ export default async function ChannelsPage({ searchParams }: Props) {
     <main id="main" className={`account-page ${styles.page}`}>
       <div>
         <h1>ช่องที่เชื่อมไว้</h1>
+        {view.state === "ready" && view.channels.some((c) => c.status === "active") && (
+          <p className="flex flex-wrap gap-3">
+            <Link className="inline-flex min-h-11 items-center rounded-md bg-primary px-4 font-medium text-primary-foreground no-underline" href="/account/posts/new">
+              สร้างโพสต์
+            </Link>
+            <Link className="inline-flex min-h-11 items-center" href="/account/posts">
+              โพสต์ของฉัน
+            </Link>
+          </p>
+        )}
         {view.state === "ready" ? (
           <ChannelsPanel
             channels={view.channels}

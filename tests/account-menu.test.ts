@@ -64,7 +64,8 @@ test("menu links follow capabilities: บัญชี always; channels/posts onl
   assert.match(src, /\{caps\?\.publishing && \(\s*<DropdownMenuItem asChild>\s*<Link href="\/account\/channels">ช่องและการโพสต์<\/Link>/);
   assert.match(src, /\{caps\?\.billing && \(\s*<DropdownMenuItem asChild>\s*<Link href="\/account\/billing">การชำระเงิน<\/Link>/);
   // Order: บัญชี, ช่องและการโพสต์, การชำระเงิน, ตั้งค่าบัญชี, ออกจากระบบ.
-  const order = ["บัญชี</Link>", "ช่องและการโพสต์", "การชำระเงิน", "ตั้งค่าบัญชี", "ออกจากระบบ"].map((k) => src.indexOf(k));
+  assert.match(src, /\{caps\?\.publishing && \(\s*<DropdownMenuItem asChild>\s*<Link href="\/account\/posts">โพสต์ของฉัน<\/Link>/);
+  const order = ["บัญชี</Link>", "ช่องและการโพสต์", "โพสต์ของฉัน", "การชำระเงิน", "ตั้งค่าบัญชี", "ออกจากระบบ"].map((k) => src.indexOf(k));
   assert.deepEqual([...order].sort((a, b) => a - b), order);
   assert.ok(order.every((i) => i > 0));
 });

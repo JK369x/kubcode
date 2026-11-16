@@ -15,6 +15,8 @@ export type ChannelView = {
   handle: string | null;
   status: ChannelStatus;
   connectedAt: string | null;
+  /** Paused by billing (ADR 0008): takes no new posts until renewed. */
+  paused?: boolean;
 };
 export type IntentView = { cookieHash: Buffer; bindingHash: Buffer; open: boolean; live: boolean };
 
@@ -52,8 +54,11 @@ export function createPgChannelStore(pool: Pool): ChannelStore {
           handle: string | null;
           statuses: string[] | null;
           connected_at: Date | null;
+          paused: boolean;
         }>(
           `SELECT ch.id, ch.platform, ch.display_name, ch.handle,
+                  EXISTS (SELECT 1 FROM kubcode_accounts.billing_channel_pauses bp
+                           WHERE bp.channel_id = ch.id AND bp.resumed_at IS NULL) AS paused,
                   array_agg(cc.status) FILTER (WHERE cc.id IS NOT NULL) AS statuses,
                   max(cc.connected_at) FILTER (WHERE cc.status <> 'revoked') AS connected_at
              FROM kubcode_accounts.channels ch
@@ -71,6 +76,7 @@ export function createPgChannelStore(pool: Pool): ChannelStore {
             handle: r.handle,
             status: status(r.statuses),
             connectedAt: r.connected_at ? r.connected_at.toISOString() : null,
+            ...(r.paused ? { paused: true } : {}),
           })),
         };
       }),

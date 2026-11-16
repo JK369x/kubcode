@@ -555,6 +555,20 @@ impl Store {
     // ------------------------------------------------------------ posts
 
     /// Idempotent: the same file of the same clip registers once.
+    /// Web composer quota: media assets this workspace registered in the last
+    /// 24 hours (count, bytes). Re-registering the same file is free (dedupe).
+    pub async fn uploads_last_day(&self, ws: WorkspaceId) -> Result<(i64, i64)> {
+        let r = self
+            .c
+            .query_one(
+                "SELECT count(*), coalesce(sum(bytes), 0)::bigint FROM kubcode_accounts.media_assets
+                  WHERE workspace_id = $1 AND created_at > now() - interval '24 hours'",
+                &[&ws.0],
+            )
+            .await?;
+        Ok((r.get(0), r.get(1)))
+    }
+
     pub async fn register_asset(&self, a: &NewAsset) -> Result<MediaAssetId> {
         let seconds = a.meta.seconds.map(|s| format!("{s:.3}"));
         let inserted = self
@@ -596,6 +610,25 @@ impl Store {
             )
             .await?;
         Ok(MediaAssetId(r.get(0)))
+    }
+
+    /// The confirmed post already made from this clip in this workspace (the
+    /// web composer makes one clip ref per draft: a resubmit finds it).
+    pub async fn confirmed_post_for_clip(
+        &self,
+        ws: WorkspaceId,
+        clip_ref: &str,
+    ) -> Result<Option<PostId>> {
+        Ok(self
+            .c
+            .query_opt(
+                "SELECT id FROM kubcode_accounts.posts
+                  WHERE workspace_id = $1 AND clip_ref = $2 AND status = 'confirmed'
+                  ORDER BY created_at LIMIT 1",
+                &[&ws.0, &clip_ref],
+            )
+            .await?
+            .map(|r| PostId(r.get(0))))
     }
 
     pub async fn create_post(&self, p: &NewPost) -> Result<PostId> {

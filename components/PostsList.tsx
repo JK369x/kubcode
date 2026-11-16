@@ -1,0 +1,95 @@
+"use client";
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { ExternalLink } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { toast } from "@/components/ui/toaster";
+import { PlatformLogo, type Platform } from "@/components/PlatformLogo";
+import { send } from "@/lib/interactions/client";
+import type { DeliveryView, PostView } from "@/lib/posts/store";
+
+const STATUS: Record<DeliveryView["status"], { label: string; variant: "ok" | "warn" | "secondary" }> = {
+  pending: { label: "กำลังส่ง", variant: "secondary" },
+  scheduled: { label: "ตั้งเวลาแล้ว", variant: "secondary" },
+  publishing: { label: "กำลังเผยแพร่", variant: "secondary" },
+  published: { label: "เผยแพร่แล้ว", variant: "ok" },
+  failed: { label: "ล้มเหลว", variant: "warn" },
+  rejected: { label: "ไม่ผ่านการตรวจ", variant: "warn" },
+  cancelled: { label: "ยกเลิกแล้ว", variant: "secondary" },
+};
+
+/** Fixed error codes → short Thai reasons (anything else shows the code). */
+const REASON: Record<string, string> = {
+  video_not_9_16: "วิดีโอต้องเป็นแนวตั้ง 9:16",
+  video_too_long: "วิดีโอยาวเกินที่แพลตฟอร์มรับ",
+  video_too_large: "ไฟล์ใหญ่เกินที่แพลตฟอร์มรับ",
+  cover_missing: "ต้องมีภาพปก",
+  title_empty: "ต้องมีชื่อคลิป",
+  title_too_long: "ชื่อคลิปยาวเกิน",
+  description_too_long: "แคปชันยาวเกิน",
+  visibility_unsupported: "แพลตฟอร์มนี้ไม่รองรับการซ่อนโพสต์",
+  hourly_limit: "โพสต์ถี่เกินในชั่วโมงนี้",
+  daily_limit: "ครบจำนวนโพสต์ต่อวันแล้ว",
+  needs_reconnect: "ต้องเชื่อมช่องใหม่",
+  channel_paused: "ช่องถูกพักไว้ (แพ็กเกจ)",
+  platform_rejected: "แพลตฟอร์มปฏิเสธโพสต์",
+};
+
+const bkk = (iso: string) => new Date(iso).toLocaleString("th-TH", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit", timeZone: "Asia/Bangkok" });
+const isPlatform = (p: string): p is Platform => ["youtube", "instagram", "tiktok", "facebook"].includes(p);
+
+export function PostsList({ posts: initial }: { posts: PostView[] }) {
+  const router = useRouter();
+  const [posts, setPosts] = useState(initial);
+  const [busy, setBusy] = useState<string | null>(null);
+  async function cancel(d: DeliveryView) {
+    if (!window.confirm(`ยกเลิกโพสต์ที่ตั้งเวลาไว้ลง ${d.channelName} ใช่ไหม?`)) return;
+    setBusy(d.id);
+    const r = await send("/api/posts/cancel", "POST", { deliveryId: d.id });
+    setBusy(null);
+    if (!r.ok) return toast.error(r.message);
+    toast.success("ยกเลิกแล้ว");
+    setPosts((ps) => ps.map((p) => ({ ...p, deliveries: p.deliveries.map((x) => (x.id === d.id ? { ...x, status: "cancelled" as const } : x)) })));
+    router.refresh();
+  }
+  if (posts.length === 0) return <p className="text-[15px] text-muted-foreground">ยังไม่มีโพสต์</p>;
+  return (
+    <ul className="m-0 grid list-none gap-4 p-0">
+      {posts.map((p) => (
+        <li key={p.id} className="grid gap-3 rounded-2xl border border-input bg-card p-4">
+          <p className="m-0 line-clamp-3 text-[15px] leading-[1.6] whitespace-pre-line">{p.caption || "(ไม่มีแคปชัน)"}</p>
+          <ul className="m-0 grid list-none gap-2 p-0">
+            {p.deliveries.map((d) => {
+              const st = STATUS[d.status] ?? STATUS.pending;
+              const canCancel = d.status === "scheduled" || d.status === "pending";
+              return (
+                <li key={d.id} className="flex flex-wrap items-center gap-x-3 gap-y-1 border-t border-border pt-2 text-[14px]">
+                  {isPlatform(d.platform) ? <PlatformLogo platform={d.platform} size={18} /> : null}
+                  <span className="min-w-0 font-medium">{d.channelName}</span>
+                  <Badge variant={st.variant}>{st.label}</Badge>
+                  <span className="text-muted-foreground">{bkk(d.publishAt)}</span>
+                  {d.error && (d.status === "failed" || d.status === "rejected") && (
+                    <span className="basis-full text-[13px] text-[#92400e] dark:text-[#fcd34d]">เหตุผล: {REASON[d.error] ?? d.error}</span>
+                  )}
+                  <span className="ml-auto flex items-center gap-2">
+                    {d.url && (
+                      <a href={d.url} target="_blank" rel="noopener noreferrer" className="inline-flex min-h-11 items-center gap-1">
+                        ดูโพสต์ <ExternalLink aria-hidden className="size-4" />
+                      </a>
+                    )}
+                    {canCancel && (
+                      <Button type="button" variant="outline" size="sm" disabled={busy === d.id} onClick={() => void cancel(d)}>
+                        ยกเลิก
+                      </Button>
+                    )}
+                  </span>
+                </li>
+              );
+            })}
+          </ul>
+        </li>
+      ))}
+    </ul>
+  );
+}

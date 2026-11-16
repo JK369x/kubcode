@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { CreditCard, MessageCircleReply, Radio } from "lucide-react";
+import { CreditCard, MessageCircleReply, Radio, Send } from "lucide-react";
 import type { Capabilities } from "@/lib/account-nav/capabilities";
 
 /**
@@ -9,7 +9,8 @@ import type { Capabilities } from "@/lib/account-nav/capabilities";
 export function AccountShortcuts({ caps }: { caps: Capabilities }) {
   if (!caps.publishing && !caps.billing) return null;
   const items = [
-    caps.publishing && { href: "/account/channels", icon: Radio, title: "ช่องและการโพสต์", text: "เชื่อมช่อง TikTok, Instagram, YouTube แล้วโพสต์หรือตั้งเวลาคลิปเดียวลงหลายช่อง" },
+    caps.publishing && { href: "/account/posts/new", icon: Send, title: "สร้างโพสต์", text: "อัปโหลดคลิปครั้งเดียว แล้วโพสต์หรือตั้งเวลาลงหลายช่องพร้อมกัน" },
+    caps.publishing && { href: "/account/channels", icon: Radio, title: "ช่องที่เชื่อมไว้", text: "เชื่อมช่อง TikTok, Instagram, YouTube และดูสถานะการเชื่อมต่อ" },
     caps.publishing && { href: "/account/channels", icon: MessageCircleReply, title: "ตอบคอมเมนต์อัตโนมัติ", text: "ตั้งคำที่คนคอมเมนต์ แล้วให้ระบบตอบกลับพร้อมลิงก์ให้ (Instagram, TikTok)" },
     caps.billing && { href: "/account/billing", icon: CreditCard, title: "การชำระเงิน", text: "ดูแพ็กเกจ วันหมดอายุ ต่ออายุ หรือเพิ่มช่อง" },
   ].filter(Boolean) as { href: string; icon: typeof Radio; title: string; text: string }[];

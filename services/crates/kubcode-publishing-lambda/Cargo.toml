@@ -25,6 +25,7 @@ aws-credential-types = "1"
 aws-sigv4 = { version = "1", default-features = false, features = ["sign-http", "http1"] }
 bytes = "1"
 futures = "0.3"
+base64 = "0.22"
 hex = "0.4"
 hmac = "0.12"
 lambda_http = { version = "1", default-features = false, features = ["apigw_http"] }

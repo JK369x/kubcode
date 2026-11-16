@@ -494,7 +494,7 @@ test("publishing: off unless kubcode:publishing is true", async () => {
   assert.equal(byName("aws:lambda/function:Function", NAMES.publishingOpsFunction), undefined);
 });
 
-test("publishing role: kubcode-lambda-* name, boundary, Lambda trust, logs + SSM + clips/* read only", async () => {
+test("publishing role: kubcode-lambda-* name, boundary, Lambda trust, logs + SSM + clips/* read, presigned clips/* uploads", async () => {
   await build({ publishing: true });
   const role = byName("aws:iam/role:Role", NAMES.publishingRole)!;
   assert.equal(role.inputs.permissionsBoundary, BOUNDARY_ARN);
@@ -508,6 +508,12 @@ test("publishing role: kubcode-lambda-* name, boundary, Lambda trust, logs + SSM
   const s3: any = policy.Statement.find((s: any) => s.Sid === "ReadClipMedia");
   assert.deepEqual(s3.Action, "s3:GetObject");
   assert.equal(s3.Resource, `arn:aws:s3:::kubcode-media-${ACCOUNT_ID}/clips/*`, "never packages/ or the whole bucket");
+  // Web composer uploads: PutObject only under clips/ and only with SSE-S3.
+  const put: any = policy.Statement.find((s: any) => s.Sid === "PresignClipUploads");
+  assert.equal(put.Action, "s3:PutObject");
+  assert.equal(put.Resource, `arn:aws:s3:::kubcode-media-${ACCOUNT_ID}/clips/*`);
+  assert.deepEqual(put.Condition, { StringEquals: { "s3:x-amz-server-side-encryption": "AES256" } });
+  assert.ok(!policy.Statement.some((s: any) => s.Sid !== "PresignClipUploads" && /s3:(Put|Delete)/.test(JSON.stringify(s.Action))), "no other S3 writes");
   const ssm: any = policy.Statement.find((s: any) => s.Sid === "ReadOwnParameters");
   assert.ok(ssm.Resource.every((r: string) => r.startsWith(`arn:aws:ssm:ap-southeast-1:${ACCOUNT_ID}:parameter/kubcode/prod/`)));
   assert.ok(!JSON.stringify(policy).includes("kms:"), "KMS only through the key policy");

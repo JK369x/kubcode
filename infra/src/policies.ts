@@ -135,6 +135,17 @@ export function publishingPolicy(opts: { logGroupNames: readonly string[]; bucke
       Resource: Object.values(PUBLISHING_PARAMETERS).map(param),
     },
     { Sid: "ReadClipMedia", Effect: "Allow", Action: "s3:GetObject", Resource: `arn:aws:s3:::${opts.bucket}/clips/*` },
+    // Web composer: the function presigns a browser PUT for ONE key it chose
+    // (clips/<workspace>/web-<uuid>/<sha256>.<ext>), binding type, SHA-256 and
+    // SSE-S3 in the signature. The role itself never writes elsewhere, and
+    // only AES256 (no KMS key use) is accepted.
+    {
+      Sid: "PresignClipUploads",
+      Effect: "Allow",
+      Action: "s3:PutObject",
+      Resource: `arn:aws:s3:::${opts.bucket}/clips/*`,
+      Condition: { StringEquals: { "s3:x-amz-server-side-encryption": "AES256" } },
+    },
   ]);
 }
 
