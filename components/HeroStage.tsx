@@ -276,16 +276,20 @@ export function HeroStage({ clips, headingId, pricing = false }: { clips: readon
             <ToggleGroupItem value="studio" data-product="studio" className={styles.productTab}>
               <Clapperboard aria-hidden="true" />
               <span>
-                <b>Studio</b> · {PRODUCTS.studio.tab}
+                <b>Studio</b>
+                <span className={styles.tabLong}> · {PRODUCTS.studio.tab}</span>
               </span>
             </ToggleGroupItem>
             <ToggleGroupItem value="social" data-product="social" className={styles.productTab}>
               <MessagesSquare aria-hidden="true" />
               <span>
-                <b>Social</b> · {PRODUCTS.social.tab}
+                <b>Social</b>
+                <span className={styles.tabLong}> · {PRODUCTS.social.tab}</span>
               </span>
             </ToggleGroupItem>
           </ToggleGroup>
+          {/* ≤480px (UX audit P1-2): the tabs say only "Studio" / "Social"; the
+              eyebrow below already says what the selected one does. */}
           <p className={styles.productEyebrow}>{copy.eyebrow}</p>
           <h1 id={headingId} className={styles.title} data-product={product}>
             <span className={styles.line1}>{copy.line1}</span>{" "}
@@ -312,7 +316,7 @@ export function HeroStage({ clips, headingId, pricing = false }: { clips: readon
             </Button>
             {pricing ? (
               <Button asChild size="lg" variant="outline" className="rounded-full bg-background/40 px-6 text-base">
-                <a href="/pricing">ดูราคา</a>
+                <a href={product === "social" ? "/pricing?for=social" : "/pricing"}>ดูราคา</a>
               </Button>
             ) : product === "studio" ? (
               <Button asChild size="lg" variant="outline" className="rounded-full bg-background/40 px-6 text-base">

@@ -7,11 +7,22 @@
 .signInGrid {
   display: grid;
   grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr);
-  gap: clamp(28px, 5vw, 72px);
+  grid-template-areas:
+    "head card"
+    "more card";
+  column-gap: clamp(28px, 5vw, 72px);
   align-items: start;
 }
-.pitch {
+.pitchHead {
+  grid-area: head;
   min-width: 0;
+}
+.pitchMore {
+  grid-area: more;
+  min-width: 0;
+}
+.signInGrid > .card {
+  grid-area: card;
 }
 .h3 {
   margin: 30px 0 12px;
@@ -277,6 +288,16 @@
   .signInGrid,
   .dash {
     grid-template-columns: 1fr;
+  }
+  /* DOM order is head, card, more: the sign-in buttons come right after the headline. */
+  .signInGrid {
+    grid-template-areas: none;
+    row-gap: 24px;
+  }
+  .pitchHead,
+  .pitchMore,
+  .signInGrid > .card {
+    grid-area: auto;
   }
   .identityCard {
     grid-column: auto;
