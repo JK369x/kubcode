@@ -1,0 +1,158 @@
+/* Shared page hero, icon tiles and family chips (pricing-A language).
+   Studio: solid purple (#7c3aed / #6d28d9). Social: #c8215a → #7c3aed →
+   #0f766e with white text ≥ 5.4:1 at every point; gradient text ≥ 7.8:1 dark,
+   5.2:1 light. */
+.hero {
+  --studio: #7c3aed;
+  --studio-ink: #c79bff;
+  --social-fill: linear-gradient(100deg, #c8215a 0%, #7c3aed 52%, #0f766e 100%);
+  --social-ink: linear-gradient(90deg, #ff7aa8 0%, #c9a0ff 50%, #67e8f9 100%);
+  --brand-ink: linear-gradient(90deg, #c9a0ff 0%, #ff9ac0 55%, #7ff0e8 100%);
+  position: relative;
+  isolation: isolate;
+  display: grid;
+  justify-items: start;
+  padding: 8px 0 4px;
+}
+:global(:root[data-theme="light"]) .hero {
+  --studio: #6d28d9;
+  --studio-ink: #6d28d9;
+  --social-ink: linear-gradient(90deg, #be185d 0%, #6d28d9 50%, #0f766e 100%);
+  --brand-ink: linear-gradient(90deg, #6d28d9 0%, #be185d 55%, #0f766e 100%);
+}
+.hero[data-align="center"] {
+  justify-items: center;
+  text-align: center;
+}
+.aura {
+  position: absolute;
+  top: -140px;
+  left: calc(50% - 50vw);
+  right: calc(50% - 50vw);
+  height: 560px;
+  z-index: -1;
+  pointer-events: none;
+  background:
+    radial-gradient(38% 60% at 22% 32%, color-mix(in srgb, #7c3aed 34%, transparent), transparent 70%),
+    radial-gradient(32% 55% at 78% 24%, color-mix(in srgb, #ff3d8b 22%, transparent), transparent 70%),
+    radial-gradient(28% 50% at 60% 72%, color-mix(in srgb, #25f4ee 14%, transparent), transparent 70%);
+  filter: blur(30px);
+  opacity: 0.75;
+}
+.hero[data-tone="studio"] .aura {
+  background:
+    radial-gradient(40% 60% at 25% 30%, color-mix(in srgb, #7c3aed 42%, transparent), transparent 70%),
+    radial-gradient(34% 55% at 75% 28%, color-mix(in srgb, #c04ad0 22%, transparent), transparent 70%);
+}
+.aura::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, var(--background) 0%, transparent 28%, transparent 55%, var(--background) 100%);
+}
+:global(:root[data-theme="light"]) .aura {
+  opacity: 0.5;
+}
+.eyebrow {
+  margin: 0 0 10px;
+  color: var(--studio-ink);
+  font: 600 13px/1.5 Archivo, Anuphan, sans-serif;
+  letter-spacing: 0.04em;
+}
+.title {
+  margin: 0;
+  max-width: 22ch;
+  font-size: clamp(32px, 4vw, 52px);
+  font-weight: 600;
+  line-height: 1.2;
+  letter-spacing: -0.02em;
+  text-wrap: balance;
+}
+.hero[data-align="center"] .title {
+  max-width: 24ch;
+}
+.accent {
+  display: block;
+  background: var(--brand-ink);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+.hero[data-tone="studio"] .accent {
+  background: linear-gradient(var(--studio-ink), var(--studio-ink));
+  -webkit-background-clip: text;
+  background-clip: text;
+}
+.hero[data-tone="social"] .accent {
+  background: var(--social-ink);
+  -webkit-background-clip: text;
+  background-clip: text;
+}
+.lead {
+  max-width: 42em;
+  margin: 14px 0 0;
+  color: var(--muted-foreground);
+  font-size: 17px;
+  line-height: 1.75;
+}
+
+/* Icon tile */
+.tile {
+  --studio: #7c3aed;
+  display: grid;
+  flex: none;
+  place-items: center;
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--muted-foreground) 18%, var(--card));
+  color: var(--foreground);
+}
+:global(:root[data-theme="light"]) .tile {
+  --studio: #6d28d9;
+}
+.tile svg {
+  width: 50%;
+  height: 50%;
+}
+.tile[data-tone="studio"] {
+  background: var(--studio);
+  color: #fff;
+}
+.tile[data-tone="social"] {
+  background: linear-gradient(135deg, #c8215a 0%, #7c3aed 52%, #0f766e 100%);
+  color: #fff;
+}
+.tile[data-tone="brand"] {
+  background: linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%);
+  color: #fff;
+}
+
+/* Family chip */
+.family {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  min-height: 24px;
+  padding: 0 10px 0 8px;
+  border: 1px solid var(--input);
+  border-radius: 999px;
+  color: var(--foreground);
+  font: 600 12px/1.5 Archivo, Anuphan, sans-serif;
+  white-space: nowrap;
+}
+.family svg {
+  width: 13px;
+  height: 13px;
+}
+.family[data-family="studio"] {
+  border-color: color-mix(in srgb, #7c3aed 55%, transparent);
+  color: #c79bff;
+}
+:global(:root[data-theme="light"]) .family[data-family="studio"] {
+  color: #6d28d9;
+}
+.family[data-family="social"] svg {
+  color: #ff7aa8;
+}
+:global(:root[data-theme="light"]) .family[data-family="social"] svg {
+  color: #be185d;
+}

@@ -36,6 +36,7 @@ export function publicCacheRules(): Rule[] {
     { source: "/tools/:slug/:file", headers: cache(SHORT) },
     { source: "/tool-icons/:file", headers: cache(SHORT) },
     { source: "/platform-icons/:file", headers: cache(SHORT) },
+    { source: "/signin/:file", headers: cache(SHORT) },
     { source: "/kubcode-icon.png", headers: cache(SHORT) },
   ];
 }

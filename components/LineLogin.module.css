@@ -1,43 +1,15 @@
-/* Text-only LINE sign-in treatment. No LINE logo asset is fetched or embedded
-   and this is not an officially certified LINE button; it only uses a readable
-   green that meets WCAG AA text contrast in both themes. */
+/* LINE Login button. LINE's guidelines
+   (developers.line.biz/en/docs/line-login/login-button) allow "the LINE icon
+   on its own without any button text as the LINE Login button". We use their
+   official icon tile (#06C755 with the white LINE icon), unmodified, inside
+   the same neutral button as Google; the Thai label beside it is ordinary
+   text with full contrast (LINE's white text on #06C755 would be 2.26:1).
+   Isolation zone: 4px of the button's own surface around the tile. */
 .line {
-  width: 100%;
-  min-height: 48px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 10px;
-  border: 2px solid #5fe39a;
-  border-radius: 12px;
-  background: var(--surface);
-  color: #5fe39a; /* ~10.9:1 on the dark surface */
-  font-weight: 600;
-  line-height: 1.35;
-  text-align: center;
+  /* Layout, colours and states come from .providerBtn (GoogleLogin.module.css). */
 }
-.line:hover:not(:disabled) {
-  border-color: #8af0b6;
-  background: #12301f;
-  color: #8af0b6;
-}
-.line[aria-busy="true"] {
-  cursor: progress;
-}
-/* Disabled stays legible (muted text, dashed edge) instead of fading out. */
-.line:disabled {
-  opacity: 1;
-  border-style: dashed;
-  border-color: var(--line);
-  background: transparent;
-  color: var(--muted-foreground);
-}
-:global(:root[data-theme="light"]) .line:not(:disabled) {
-  border-color: #05692f;
-  color: #05692f; /* ~6.8:1 on white */
-}
-:global(:root[data-theme="light"]) .line:hover:not(:disabled) {
-  background: #e3f5e9;
-  border-color: #04531f;
-  color: #04531f;
+.mark {
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
 }
