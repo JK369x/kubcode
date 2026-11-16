@@ -262,29 +262,59 @@ impl Zernio {
                 if let Some(c) = cover_url {
                     media["thumbnail"] = json!(c);
                 }
-                json!({
+                let o = d.options.youtube.clone().unwrap_or_default();
+                let mut psd = json!({
                     "title": d.title,
                     "visibility": d.visibility.as_str(),
-                    "categoryId": "22",
-                    "madeForKids": false,
-                })
+                    "categoryId": o.category_id.as_deref().unwrap_or("22"),
+                    "madeForKids": o.made_for_kids.unwrap_or(false),
+                });
+                if let Some(v) = o.synthetic_media {
+                    psd["containsSyntheticMedia"] = json!(v);
+                }
+                if let Some(v) = o.notify_subscribers {
+                    psd["notifySubscribers"] = json!(v);
+                }
+                if let Some(c) = &o.first_comment {
+                    psd["firstComment"] = json!(c);
+                }
+                psd
             }
-            Platform::Instagram => json!({
-                "instagramThumbnail": cover_url,
-                "shareToFeed": true,
-            }),
+            Platform::Instagram => {
+                let o = d.options.instagram.clone().unwrap_or_default();
+                let mut psd = json!({
+                    "instagramThumbnail": cover_url,
+                    "shareToFeed": o.share_to_feed.unwrap_or(true),
+                });
+                if let Some(v) = o.comments_enabled {
+                    psd["commentsEnabled"] = json!(v);
+                }
+                if let Some(v) = o.ai_generated {
+                    psd["isAiGenerated"] = json!(v);
+                }
+                if let Some(c) = &o.first_comment {
+                    psd["firstComment"] = json!(c);
+                }
+                psd
+            }
             // OpenAPI TikTokPlatformData: a direct post (no Creator Inbox
             // draft). Business connections publish videos public only; the
             // core refuses anything else before this point. Comments stay on
             // for the keyword reply; duet and stitch are off. The owner's
             // confirmation in the CLI is the preview/consent TikTok asks for.
+            //
+            // Web composer options (OpenAPI 1.615.0 TikTokPlatformData):
+            // comments/duet/stitch toggles, and `draft` (Creator Inbox): the
+            // only way to post non-public on a business connection, since the
+            // creator then picks privacy in the TikTok app.
             Platform::TikTok => {
+                let o = d.options.tiktok.clone().unwrap_or_default();
                 let mut psd = json!({
-                    "draft": false,
+                    "draft": o.draft.unwrap_or(false),
                     "privacyLevel": TIKTOK_PUBLIC,
-                    "allowComment": true,
-                    "allowDuet": false,
-                    "allowStitch": false,
+                    "allowComment": o.allow_comment.unwrap_or(true),
+                    "allowDuet": o.allow_duet.unwrap_or(false),
+                    "allowStitch": o.allow_stitch.unwrap_or(false),
                     "commercialContentType": "none",
                     "contentPreviewConfirmed": true,
                     "expressConsentGiven": true,
@@ -307,6 +337,10 @@ impl Zernio {
             "scheduledFor": scheduled,
             "timezone": "UTC",
         });
+        // PlatformTarget.customContent: this platform's own caption.
+        if let Some(c) = &d.caption {
+            body["platforms"][0]["customContent"] = json!(c);
+        }
         if d.platform == Platform::YouTube && !d.tags.is_empty() {
             body["tags"] = json!(d.tags);
         }

@@ -673,6 +673,9 @@ impl Service<'_> {
                     publish_at: t.publish_at,
                     visibility: t.visibility,
                     idempotency_key: key,
+                    caption: t.caption.clone(),
+                    options: (!t.options.is_empty())
+                        .then(|| serde_json::to_value(&t.options).expect("plain data")),
                 })
                 .await?;
             let result = self
@@ -720,6 +723,8 @@ impl Service<'_> {
                 cover: cover.as_ref().map(|c| c.meta.clone()),
                 publish_at: t.publish_at,
                 visibility: t.visibility,
+                caption: t.caption.clone(),
+                options: t.options.clone(),
             },
         };
         let set = match self.providers(kind) {

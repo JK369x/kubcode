@@ -158,6 +158,8 @@ fn run(args: &[String]) -> Result<(), String> {
                         channel: *c,
                         publish_at: at,
                         visibility,
+                        caption: None,
+                        options: Default::default(),
                     })
                     .collect(),
             };

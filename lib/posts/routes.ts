@@ -11,6 +11,7 @@ import { readPublishingConfig } from "../channels/config";
 import { callLambda, writeContext, type ChannelRouteDeps } from "../channels/routes";
 import { jsonNoStore } from "../accounts/http";
 import { CHANNEL_ERRORS, postError, type PostErrorCode } from "./errors";
+import { optionsOk, PLATFORM_CAPTION_MAX, toCore, type TargetOptions } from "./options";
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
 const CLIP_REF = /^web-[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/;
@@ -81,11 +82,11 @@ export function uploadUrlOk(url: string, env: Record<string, string | undefined>
   return env.NODE_ENV !== "production" || env.KUBCODE_LOCAL_MEDIA === "true" ? LOCAL_UPLOAD.test(url) : false;
 }
 
-type Target = { channelId: string; visibility: "public" | "private" | "unlisted" };
+type Target = { channelId: string; visibility: "public" | "private" | "unlisted"; platform?: string; caption?: string; options?: TargetOptions };
 
 export async function handleSchedule(request: Request, deps: ChannelRouteDeps = {}): Promise<Response> {
   const now = (deps.now ?? Date.now)();
-  const ctx = await writeContext(request, deps, 8 * 1024, (b) => {
+  const ctx = await writeContext(request, deps, 64 * 1024, (b) => {
     // clipRef is the draft's idempotency key: one draft → one post (Lambda checks).
     if (!has(b, ["clipRef", "videoAsset", "coverAsset", "caption", "targets", "publishAt"], ["title"])) return false;
     if (typeof b.clipRef !== "string" || !CLIP_REF.test(b.clipRef)) return false;
@@ -98,8 +99,15 @@ export async function handleSchedule(request: Request, deps: ChannelRouteDeps = 
     for (const t of b.targets as unknown[]) {
       if (typeof t !== "object" || t === null) return false;
       const o = t as Record<string, unknown>;
-      if (!has(o, ["channelId", "visibility"]) || typeof o.channelId !== "string" || !UUID.test(o.channelId)) return false;
+      if (!has(o, ["channelId", "visibility"], ["platform", "caption", "options"]) || typeof o.channelId !== "string" || !UUID.test(o.channelId)) return false;
       if (!["public", "private", "unlisted"].includes(String(o.visibility))) return false;
+      // Per-platform caption/options name the platform the browser saw; the
+      // core re-checks them against the channel's real platform.
+      if (o.caption !== undefined || o.options !== undefined) {
+        if (typeof o.platform !== "string" || !(o.platform in PLATFORM_CAPTION_MAX)) return false;
+        if (o.caption !== undefined && (typeof o.caption !== "string" || o.caption.trim() === "" || [...o.caption].length > PLATFORM_CAPTION_MAX[o.platform])) return false;
+        if (!optionsOk(o.platform, o.options)) return false;
+      } else if (o.platform !== undefined && typeof o.platform !== "string") return false;
       if (ids.has(o.channelId)) return false;
       ids.add(o.channelId);
     }
@@ -126,7 +134,13 @@ export async function handleSchedule(request: Request, deps: ChannelRouteDeps = 
         title,
         description: caption,
         tags: [],
-        targets: b.targets.map((t) => ({ channel: t.channelId, publish_at: publishAt, visibility: t.visibility })),
+        targets: b.targets.map((t) => ({
+          channel: t.channelId,
+          publish_at: publishAt,
+          visibility: t.visibility,
+          ...(t.caption !== undefined ? { caption: t.caption.trim() } : {}),
+          ...(t.options !== undefined ? { options: toCore(t.options) } : {}),
+        })),
       },
     },
     deps,

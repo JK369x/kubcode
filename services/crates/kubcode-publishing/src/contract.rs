@@ -48,6 +48,8 @@ pub fn sample_request(platform: Platform, now: OffsetDateTime) -> DeliveryReques
             }),
             publish_at: now + Duration::hours(2),
             visibility: Visibility::Private,
+            caption: None,
+            options: Default::default(),
         },
     }
 }

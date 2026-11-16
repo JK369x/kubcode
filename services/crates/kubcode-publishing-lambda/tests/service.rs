@@ -130,6 +130,8 @@ fn request(video: Uuid, cover: Option<Uuid>, channels: &[ChannelId]) -> Schedule
                 channel: c.0,
                 publish_at: OffsetDateTime::now_utc() + Duration::hours(3),
                 visibility: Visibility::Private,
+                caption: None,
+                options: Default::default(),
             })
             .collect(),
     }

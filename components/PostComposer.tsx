@@ -3,9 +3,9 @@ import { useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { CheckCircle2, ImageUp, Loader2, Upload } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { toast } from "@/components/ui/toaster";
 import { PlatformLogo, type Platform } from "@/components/PlatformLogo";
+import { PlatformOverrides, type Override } from "@/components/PlatformOverrides";
 import { send } from "@/lib/interactions/client";
 import { bangkokLocalToIso, imageFacts, isoToBangkokLocal, putWithProgress, sha256Hex, videoFacts } from "@/lib/posts/media";
 
@@ -46,6 +46,7 @@ export function PostComposer({ channels }: { channels: ComposerChannel[] }) {
   const [title, setTitle] = useState("");
   const [picked, setPicked] = useState<Record<string, boolean>>({});
   const [visibility, setVisibility] = useState<Record<string, "public" | "unlisted" | "private">>({});
+  const [overrides, setOverrides] = useState<Record<string, Override>>({});
   const [when, setWhen] = useState<"now" | "later">("now");
   const [local, setLocal] = useState(() => isoToBangkokLocal(new Date(Date.now() + 60 * 60_000).toISOString()));
   const [busy, setBusy] = useState(false);
@@ -101,7 +102,18 @@ export function PostComposer({ channels }: { channels: ComposerChannel[] }) {
       caption,
       ...(needsTitle && title.trim() ? { title: title.trim() } : {}),
       publishAt,
-      targets: chosen.map((c) => ({ channelId: c.id, visibility: visibility[c.id] ?? "public" })),
+      targets: chosen.map((c) => {
+        const o = overrides[c.id];
+        const caption = o?.captionOn && o.caption.trim() ? o.caption : undefined;
+        const opts = o && Object.keys(o.options).length ? o.options : undefined;
+        return {
+          channelId: c.id,
+          visibility: visibility[c.id] ?? "public",
+          ...(caption || opts ? { platform: c.platform } : {}),
+          ...(caption ? { caption } : {}),
+          ...(opts ? { options: opts } : {}),
+        };
+      }),
     });
     setBusy(false);
     if (!r.ok) return toast.error(r.message);
@@ -226,7 +238,7 @@ export function PostComposer({ channels }: { channels: ComposerChannel[] }) {
       <fieldset className="grid gap-3 rounded-2xl border border-input bg-card p-5">
         <legend className="px-1 text-[18px] font-semibold">3. แคปชัน</legend>
         <p className="m-0 text-[14px] text-muted-foreground">
-          <Badge variant="secondary">แคปชันเดียวใช้ทุกแพลตฟอร์ม</Badge> (แยกต่อแพลตฟอร์มเร็ว ๆ นี้)
+          แคปชันนี้ใช้กับทุกช่อง แยกแคปชันหรือปรับตัวเลือกของแต่ละแพลตฟอร์มได้ในขั้นที่ 4
         </p>
         {needsTitle && (
           <label className="grid gap-1 text-[15px]">
@@ -252,7 +264,17 @@ export function PostComposer({ channels }: { channels: ComposerChannel[] }) {
       </fieldset>
 
       <fieldset className="grid gap-3 rounded-2xl border border-input bg-card p-5">
-        <legend className="px-1 text-[18px] font-semibold">4. เวลาโพสต์</legend>
+        <legend className="px-1 text-[18px] font-semibold">4. ปรับแต่งต่อแพลตฟอร์ม (ไม่บังคับ)</legend>
+        <PlatformOverrides
+          channels={chosen.map((c) => ({ id: c.id, platform: c.platform, displayName: c.displayName }))}
+          sharedCaption={caption}
+          value={overrides}
+          onChange={(id, next) => setOverrides((o) => ({ ...o, [id]: next }))}
+        />
+      </fieldset>
+
+      <fieldset className="grid gap-3 rounded-2xl border border-input bg-card p-5">
+        <legend className="px-1 text-[18px] font-semibold">5. เวลาโพสต์</legend>
         <div className="flex flex-wrap gap-4 text-[15px]">
           <label className="flex min-h-11 items-center gap-2">
             <input type="radio" name="when" checked={when === "now"} onChange={() => setWhen("now")} className="size-5" />

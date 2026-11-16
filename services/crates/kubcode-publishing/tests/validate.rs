@@ -39,6 +39,8 @@ fn draft(platform: Platform) -> DeliveryDraft {
         cover: Some(cover()),
         publish_at: NOW + Duration::hours(2),
         visibility: Visibility::Public,
+        caption: None,
+        options: Default::default(),
     }
 }
 
@@ -251,4 +253,62 @@ fn tiktok_daily_cap_is_15() {
     };
     assert!(at(14).is_empty());
     assert_eq!(at(15), vec!["daily_limit"]);
+}
+
+#[test]
+fn per_platform_caption_and_options_are_checked_for_their_platform() {
+    use kubcode_publishing::options::{
+        InstagramOptions, PlatformOptions, TikTokOptions, YouTubeOptions,
+    };
+    // The override's own length counts, not the shared caption's.
+    let mut d = draft(Platform::Instagram);
+    d.caption = Some("x".repeat(2_201));
+    assert!(codes(&d).contains(&"description_too_long"));
+    d.caption = Some("สั้น".into());
+    d.description = "y".repeat(4_000);
+    assert!(
+        !codes(&d).contains(&"description_too_long"),
+        "IG checks its own caption"
+    );
+    // Options for another platform are refused.
+    let mut d = draft(Platform::Instagram);
+    d.options = PlatformOptions {
+        tiktok: Some(TikTokOptions::default()),
+        ..Default::default()
+    };
+    assert!(codes(&d).contains(&"options_platform"));
+    // First comments: not blank, within the platform's limit.
+    let mut d = draft(Platform::Instagram);
+    d.options = PlatformOptions {
+        instagram: Some(InstagramOptions {
+            first_comment: Some("  ".into()),
+            ..Default::default()
+        }),
+        ..Default::default()
+    };
+    assert!(codes(&d).contains(&"first_comment_invalid"));
+    let mut d = draft(Platform::YouTube);
+    d.options = PlatformOptions {
+        youtube: Some(YouTubeOptions {
+            category_id: Some("99".into()),
+            ..Default::default()
+        }),
+        ..Default::default()
+    };
+    assert!(codes(&d).contains(&"category_invalid"));
+    d.options = PlatformOptions {
+        youtube: Some(YouTubeOptions {
+            category_id: Some("27".into()),
+            first_comment: Some("ขอบคุณที่ดู".into()),
+            ..Default::default()
+        }),
+        ..Default::default()
+    };
+    assert!(codes(&d).is_empty(), "{:?}", codes(&d));
+}
+
+#[test]
+fn an_options_free_draft_serializes_as_before() {
+    let v = serde_json::to_value(draft(Platform::TikTok)).unwrap();
+    assert!(v.get("caption").is_none() && v.get("options").is_none());
 }

@@ -7,6 +7,7 @@ pub mod config;
 pub mod domain;
 pub mod errors;
 pub mod events;
+pub mod options;
 pub mod ports;
 pub mod routing;
 pub mod validate;

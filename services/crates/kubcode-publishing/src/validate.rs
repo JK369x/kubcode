@@ -7,6 +7,7 @@ use time::{Duration, OffsetDateTime};
 
 use crate::config::PublishingConfig;
 use crate::domain::{MediaMeta, Platform, Visibility};
+use crate::options::{PlatformOptions, YOUTUBE_CATEGORIES};
 
 /// What the creator wants one channel to publish.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -21,6 +22,18 @@ pub struct DeliveryDraft {
     #[serde(with = "time::serde::rfc3339")]
     pub publish_at: OffsetDateTime,
     pub visibility: Visibility,
+    /// This platform's own caption instead of `description` (web composer).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub caption: Option<String>,
+    #[serde(default, skip_serializing_if = "PlatformOptions::is_empty")]
+    pub options: PlatformOptions,
+}
+
+impl DeliveryDraft {
+    /// The caption this platform gets: its override, else the shared one.
+    pub fn text(&self) -> &str {
+        self.caption.as_deref().unwrap_or(&self.description)
+    }
 }
 
 /// Deliveries already scheduled for the same channel in the same hour/day.
@@ -139,9 +152,42 @@ pub fn validate_core(
     if l.title_max.is_some_and(|max| title_len > max) {
         fail("title_too_long");
     }
-    if d.description.chars().count() > l.description_max {
+    if d.text().chars().count() > l.description_max {
         fail("description_too_long");
     }
+    // Options must belong to this delivery's platform and stay in range.
+    let o = &d.options;
+    let foreign = match d.platform {
+        Platform::TikTok => o.instagram.is_some() || o.youtube.is_some(),
+        Platform::Instagram => o.tiktok.is_some() || o.youtube.is_some(),
+        Platform::YouTube => o.tiktok.is_some() || o.instagram.is_some(),
+        _ => !o.is_empty(),
+    };
+    if foreign {
+        fail("options_platform");
+    }
+    let comment_ok = |c: &Option<String>, max: usize| {
+        c.as_ref()
+            .map_or(true, |c| !c.trim().is_empty() && c.chars().count() <= max)
+    };
+    if let Some(ig) = &o.instagram {
+        if !comment_ok(&ig.first_comment, 2_200) {
+            fail("first_comment_invalid");
+        }
+    }
+    if let Some(yt) = &o.youtube {
+        if !comment_ok(&yt.first_comment, 10_000) {
+            fail("first_comment_invalid");
+        }
+        if yt
+            .category_id
+            .as_deref()
+            .is_some_and(|c| !YOUTUBE_CATEGORIES.contains(&c))
+        {
+            fail("category_invalid");
+        }
+    }
+
     // YouTube counts the separators between tags toward its 500.
     let tags_total: usize =
         d.tags.iter().map(|t| t.chars().count()).sum::<usize>() + d.tags.len().saturating_sub(1);
