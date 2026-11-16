@@ -58,12 +58,52 @@ async function main() {
       const id = (
         await db.pool.query("INSERT INTO kubcode_accounts.channels (workspace_id, platform, display_name, handle) VALUES ($1, $2, $3, $4) RETURNING id", [ws, platform, name, handle])
       ).rows[0].id as string;
-      await db.pool.query("INSERT INTO kubcode_accounts.channel_connections (channel_id, provider, provider_ref, status) VALUES ($1, 'zernio', $2, $3)", [id, `acct-${randomBytes(6).toString("hex")}`, status]);
-      return id;
+      const conn = (
+        await db.pool.query("INSERT INTO kubcode_accounts.channel_connections (channel_id, provider, provider_ref, status) VALUES ($1, 'zernio', $2, $3) RETURNING id", [id, `acct-${randomBytes(6).toString("hex")}`, status])
+      ).rows[0].id as string;
+      return { id, conn };
     };
-    await ch("instagram", "Ploy Makes", "ploy.makes", "active");
-    await ch("tiktok", "Ploy Makes", "ploymakes", "active");
+    // KUBCODE_SCREENS_EMPTY=1: a paid member with no channels and no posts yet (empty states).
+    const EMPTY = process.env.KUBCODE_SCREENS_EMPTY === "1";
+    if (EMPTY) {
+      /* channels and posts stay empty */
+    } else {
+    const ig = await ch("instagram", "Ploy Makes", "ploy.makes", "active");
+    const tt = await ch("tiktok", "Ploy Makes", "ploymakes", "active");
     await ch("youtube", "Ploy Makes", "ploymakes", "needs_reconnect");
+    // Two confirmed posts: one scheduled to IG + TikTok, one published on IG and rejected on TikTok.
+    const asset = async (clip: string, kind: "video" | "cover") =>
+      (
+        await db.pool.query(
+          `INSERT INTO kubcode_accounts.media_assets (workspace_id, clip_ref, kind, s3_key, sha256, bytes, content_type, width, height, seconds)
+           VALUES ($1, $2, $3, $4, $5, 1000, $6, 1080, 1920, $7) RETURNING id`,
+          [ws, clip, kind, `clips/${ws}/${clip}/${randomBytes(32).toString("hex")}.${kind === "video" ? "mp4" : "jpg"}`, randomBytes(32), kind === "video" ? "video/mp4" : "image/jpeg", kind === "video" ? 30 : null],
+        )
+      ).rows[0].id as string;
+    const post = async (clip: string, text: string, deliveries: { c: { id: string; conn: string }; platform: string; status: string; at: string; error?: string }[]) => {
+      const pid = (
+        await db.pool.query(
+          `INSERT INTO kubcode_accounts.posts (workspace_id, clip_ref, video_asset_id, cover_asset_id, title, description, status, confirm_digest, confirmed_at)
+           VALUES ($1, $2, $3, $4, '', $5, 'confirmed', $6, now()) RETURNING id`,
+          [ws, clip, await asset(clip, "video"), await asset(clip, "cover"), text, randomBytes(32)],
+        )
+      ).rows[0].id as string;
+      for (const d of deliveries)
+        await db.pool.query(
+          `INSERT INTO kubcode_accounts.deliveries (post_id, channel_id, connection_id, provider, platform, publish_at, visibility, status, idempotency_key, last_error_code)
+           VALUES ($1, $2, $3, 'zernio', $4, now() + $5::interval, 'public', $6, gen_random_uuid(), $7)`,
+          [pid, d.c.id, d.c.conn, d.platform, d.at, d.status, d.error ?? null],
+        );
+    };
+    await post("web-fixture-1", "ลองทำคลิปแนว What If ด้วย AI ใน 3 นาที\nคอมเมนต์คำว่า ลิงก์ รับไฟล์ skill", [
+      { c: ig, platform: "instagram", status: "published", at: "-2 days" },
+      { c: tt, platform: "tiktok", status: "rejected", at: "-2 days", error: "cover_missing" },
+    ]);
+    await post("web-fixture-2", "เบื้องหลังการทำ Podcast Shorts ตอนใหม่", [
+      { c: ig, platform: "instagram", status: "scheduled", at: "1 day" },
+      { c: tt, platform: "tiktok", status: "scheduled", at: "1 day" },
+    ]);
+    }
     await db.pool.query(
       `INSERT INTO kubcode_accounts.billing_purchases (workspace_id, kind, slots, amount_satang, period_start, period_end, status, paid_at)
        VALUES ($1, 'new', 2, 57800, now() - interval '10 days', now() + interval '20 days', 'paid', now() - interval '10 days')`,
@@ -122,12 +162,35 @@ async function main() {
           /* page closed */
         }
       });
+      // Composer screenshots only: answer the upload presign and the S3 PUT
+      // locally, so the live preview can show a picked cover and caption.
+      if (path === "/account/posts/new") {
+        await context.route("https://kubcode.dev/api/posts/upload", (route) =>
+          route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ assetId: crypto.randomUUID(), upload: { url: "https://upload.fixture.invalid/put", headers: {} } }) }),
+        );
+        await context.route("https://upload.fixture.invalid/**", (route) => route.fulfill({ status: 200, body: "" }));
+      }
       const page = await context.newPage();
       const errors: string[] = [];
       page.on("pageerror", (e) => errors.push(e.message));
       const r = await page.goto(`https://kubcode.dev${path}`, { waitUntil: "load" });
       await page.evaluate(() => document.fonts.ready);
       await page.waitForTimeout(900);
+      if (path === "/account/posts/new" && process.env.KUBCODE_SCREENS_PROBLEMS === "1") {
+        // Send with nothing filled in: the error summary shows and focus moves to the first field.
+        await page.getByRole("button", { name: /เลือกช่องก่อนโพสต์|โพสต์ลง/ }).click();
+        await page.waitForTimeout(800);
+      } else if (path === "/account/posts/new" && process.env.KUBCODE_SCREENS_COVER) {
+        await page.locator('input[type="file"][accept^="image"]').setInputFiles(process.env.KUBCODE_SCREENS_COVER);
+        await page.getByLabel("แคปชัน", { exact: true }).fill("ลองทำคลิปแนว What If ด้วย AI ใน 3 นาที 🎬\nคอมเมนต์คำว่า ลิงก์ รับไฟล์ skill ทาง DM");
+        for (const box of await page.locator('#channels input[type="checkbox"]:not([disabled])').all()) await box.check();
+        // Step 4: open TikTok and send it as a draft, so one row shows a changed summary.
+        if (process.env.KUBCODE_SCREENS_OPEN_STEP4 === "1") {
+          await page.locator("#platform-options").getByRole("button", { name: /@ploymakes/ }).click();
+          await page.getByLabel(/ส่งเป็นร่างไปที่แอป TikTok/).check();
+        }
+        await page.waitForTimeout(1500);
+      }
       const overflow = await page.evaluate(() => document.documentElement.scrollWidth - innerWidth);
       let axe: string[] = [];
       if (AXE) {
@@ -139,7 +202,7 @@ async function main() {
         });
       }
       const slug = path.replace(/^\//, "").replace(/[/?=&]+/g, "_") || "home";
-      const who = signedIn ? (process.env.KUBCODE_SCREENS_OWNER === "1" ? "owner" : "in") : "out";
+      const who = signedIn ? (process.env.KUBCODE_SCREENS_OWNER === "1" ? "owner" : process.env.KUBCODE_SCREENS_EMPTY === "1" ? "empty" : "in") : "out";
       const file = `${OUT}/${LABEL}-${who}-${slug}-${w}-${theme}.png`;
       await page.screenshot({ path: file, fullPage: true });
       console.log(JSON.stringify({ file, status: r?.status(), overflow, axe, errors: errors.slice(0, 2) }));

@@ -1,6 +1,8 @@
 "use client";
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { CheckCircle2, Loader2, MessageSquareReply, Plug, Send } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { send } from "@/lib/interactions/client";
 
 type State = "checking" | "granted" | "waiting" | "closed" | "error";
@@ -32,14 +34,46 @@ export function BillingSuccess({ sessionId }: { sessionId: string }) {
       live = false;
     };
   }, [sessionId]);
+  const granted = state === "granted";
   return (
-    <>
-      <p className="lead" role="status" aria-live="polite">
-        {TEXT[state]}
+    <div className="grid gap-5">
+      <p className="lead m-0 flex items-start gap-2" role="status" aria-live="polite">
+        {granted ? (
+          <CheckCircle2 aria-hidden className="mt-1 size-5 shrink-0 text-[#0f766e] dark:text-[#5eead4]" />
+        ) : state === "checking" || state === "waiting" ? (
+          <Loader2 aria-hidden className="mt-1 size-5 shrink-0 animate-spin motion-reduce:animate-none" />
+        ) : null}
+        <span>{TEXT[state]}</span>
       </p>
-      <p>
-        <Link href="/account/billing">ดูแพ็กเกจของคุณ</Link> · <Link href="/account/channels">ไปที่ช่องที่เชื่อมไว้</Link>
-      </p>
-    </>
+      {/* Next step right after paying (UX audit P0-2): one primary action. */}
+      {state !== "closed" && (
+        <section aria-labelledby="next-h" className="grid gap-3">
+          <h2 id="next-h" className="m-0 text-[18px] font-semibold">
+            ขั้นต่อไป
+          </h2>
+          <ol className="m-0 grid list-none gap-2 p-0 text-[15px]">
+            <li className="flex items-center gap-3">
+              <Plug aria-hidden className="size-5 shrink-0 text-link" /> เชื่อมช่อง YouTube, Instagram หรือ TikTok
+            </li>
+            <li className="flex items-center gap-3 text-muted-foreground">
+              <MessageSquareReply aria-hidden className="size-5 shrink-0" /> ตั้งคำตอบคอมเมนต์อัตโนมัติ
+            </li>
+            <li className="flex items-center gap-3 text-muted-foreground">
+              <Send aria-hidden className="size-5 shrink-0" /> สร้างโพสต์แรก
+            </li>
+          </ol>
+        </section>
+      )}
+      <div className="flex flex-wrap gap-3">
+        {state !== "closed" && (
+          <Button asChild size="lg" className="rounded-full font-semibold">
+            <Link href="/account/channels#channels-add">เชื่อมช่องแรก</Link>
+          </Button>
+        )}
+        <Button asChild size="lg" variant="outline" className="rounded-full">
+          <Link href="/account/billing">ดูแพ็กเกจ</Link>
+        </Button>
+      </div>
+    </div>
   );
 }

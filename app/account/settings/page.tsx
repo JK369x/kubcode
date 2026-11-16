@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { AccountShell, accountCaps } from "@/components/site/AccountShell";
 import { cookies, headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { AccountSettings } from "@/components/AccountSettings";
@@ -26,23 +27,18 @@ export default async function AccountSettingsPage({ searchParams }: Props) {
   if (view.state === "signed-out") redirect("/account");
   const notice = settingsNotice(await searchParams);
 
+  const caps = view.state === "ready" ? await accountCaps() : undefined;
   return (
-    <main id="main" className="account-page">
-      <div>
-        <h1>ตั้งค่าการเข้าสู่ระบบ</h1>
-        {view.state === "ready" ? (
-          <AccountSettings view={view} notice={notice} />
-        ) : (
-          <p className="setup-notice" role="status">
-            {view.state === "disabled"
-              ? "บัญชีกลางและการเชื่อมวิธีเข้าสู่ระบบยังไม่เปิดใช้งานบนเซิร์ฟเวอร์นี้"
-              : "ระบบบัญชีใช้งานไม่ได้ชั่วคราว ลองใหม่ภายหลัง"}
-          </p>
-        )}
-        <p>
-          <Link href="/account">กลับไปหน้าพื้นที่สมาชิก</Link>
+    <AccountShell caps={caps} section="settings" title="ตั้งค่าการเข้าสู่ระบบ" lead="เชื่อมหรือยกเลิกการเชื่อม Google และ LINE ของบัญชีเดียวกัน">
+      {view.state === "ready" ? (
+        <AccountSettings view={view} notice={notice} />
+      ) : (
+        <p className="setup-notice" role="status">
+          {view.state === "disabled"
+            ? "บัญชีกลางและการเชื่อมวิธีเข้าสู่ระบบยังไม่เปิดใช้งานบนเซิร์ฟเวอร์นี้"
+            : "ระบบบัญชีใช้งานไม่ได้ชั่วคราว ลองใหม่ภายหลัง"}
         </p>
-      </div>
+      )}
       {view.state === "ready" && interactionsEnabled(env) && <PublicNameForm />}
       <section className="membership">
         <h2>การเชื่อมทำงานอย่างไร</h2>
@@ -63,6 +59,9 @@ export default async function AccountSettingsPage({ searchParams }: Props) {
           ระบบอนุมัติสมาชิกและการดาวน์โหลดยังไม่เปิด · <Link href="/privacy">นโยบายข้อมูล</Link>
         </p>
       </section>
-    </main>
+      <p className="m-0 text-[15px] [&_a]:text-link [&_a]:underline [&_a]:underline-offset-4">
+        <Link href="/account">กลับไปหน้าพื้นที่สมาชิก</Link>
+      </p>
+    </AccountShell>
   );
 }

@@ -4,6 +4,7 @@ import { cookies, headers } from "next/headers";
 import { notFound, redirect } from "next/navigation";
 import { Plus } from "lucide-react";
 import { PostsList } from "@/components/PostsList";
+import { AccountShell, accountCaps } from "@/components/site/AccountShell";
 import { Button } from "@/components/ui/button";
 import { canonicalHostRedirect, readAuthConfig, signInPath } from "@/lib/auth-policy";
 import { getPostsView } from "@/lib/posts/view";
@@ -22,29 +23,32 @@ export default async function PostsPage() {
   });
   if (view.state === "signed-out") redirect(signInPath("/account/posts"));
   if (view.state === "disabled" || view.state === "forbidden") notFound();
+  const caps = await accountCaps();
   return (
-    <main id="main" className="account-page">
-      <div>
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <h1 className="m-0">โพสต์ของฉัน</h1>
-          <Button asChild>
-            <Link href="/account/posts/new">
-              <Plus aria-hidden className="size-4" /> สร้างโพสต์
-            </Link>
-          </Button>
-        </div>
-        <p className="lead">โพสต์ที่ตั้งเวลาไว้และที่เผยแพร่แล้ว แยกตามช่อง (เวลาไทย)</p>
-        {view.state === "ready" ? (
-          <PostsList posts={view.posts} />
-        ) : (
-          <p className="setup-notice" role="status">
-            ระบบโพสต์ใช้งานไม่ได้ชั่วคราว ลองใหม่ภายหลัง
-          </p>
-        )}
-        <p className="mt-6">
-          <Link href="/account/channels">ช่องที่เชื่อมไว้</Link> · <Link href="/account">กลับไปหน้าพื้นที่สมาชิก</Link>
+    <AccountShell caps={caps}
+      section="posts"
+      tone="social"
+      eyebrow="kubcode Social"
+      title="โพสต์ของฉัน"
+      lead="โพสต์ที่ตั้งเวลาไว้และที่เผยแพร่แล้ว แยกตามช่อง (เวลาไทย)"
+      actions={
+        <Button asChild size="lg" className="rounded-full">
+          <Link href="/account/posts/new">
+            <Plus aria-hidden className="size-4" /> สร้างโพสต์
+          </Link>
+        </Button>
+      }
+    >
+      {view.state === "ready" ? (
+        <PostsList posts={view.posts} />
+      ) : (
+        <p className="setup-notice" role="status">
+          ระบบโพสต์ใช้งานไม่ได้ชั่วคราว ลองใหม่ภายหลัง
         </p>
-      </div>
-    </main>
+      )}
+      <p className="m-0 text-[15px] [&_a]:text-link [&_a]:underline [&_a]:underline-offset-4">
+        <Link href="/account/channels">ช่องที่เชื่อมไว้</Link> · <Link href="/account">กลับไปหน้าพื้นที่สมาชิก</Link>
+      </p>
+    </AccountShell>
   );
 }
