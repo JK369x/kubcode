@@ -24,6 +24,8 @@ type Props = {
   rules: RuleView[];
   usage: { count: number; cap: number };
   recent: RecentOutcome[];
+  /** Open the form prefilled with the link template (?template=link). */
+  template?: boolean;
 };
 
 type Draft = {
@@ -42,6 +44,14 @@ const FIELD_ID: Record<ErrField, string> = { keywords: "rule-keywords", scope: "
 
 const EMPTY: Draft = { keywords: "", mode: "contains", scope: "all", postId: "", publicReply: "", dmText: "", afterDm: true };
 const DM_PLACEHOLDER = "ขอบคุณที่สนใจนะ นี่ลิงก์ที่ขอไว้ https://kubcode.dev/go/<slug>";
+
+/** Starter rule (UX audit §3): comment "ลิงก์" → get the link. The creator replaces the URL. */
+export function templateDraft(tiktok: boolean): Draft {
+  const reply = "ลิงก์อยู่ที่ https://kubcode.dev/go/<slug> ครับ";
+  return tiktok
+    ? { ...EMPTY, keywords: "ลิงก์, link", publicReply: reply }
+    : { ...EMPTY, keywords: "ลิงก์, link", publicReply: "ส่งลิงก์ให้ใน DM แล้วนะครับ", dmText: reply };
+}
 
 const MODE_LABEL: Record<MatchMode, string> = {
   contains: "มีคำนี้อยู่ในคอมเมนต์",
@@ -130,11 +140,11 @@ function PostSummary({ post, id, tiktok }: { post: PickerPost | undefined; id: s
   );
 }
 
-export function AutomationsPanel({ channel, rules, usage, recent }: Props) {
+export function AutomationsPanel({ channel, rules, usage, recent, template = false }: Props) {
   const router = useRouter();
   const base = `/api/channels/${channel.id}/automations`;
   const [busy, setBusy] = useState(false);
-  const [draft, setDraft] = useState<Draft>(EMPTY);
+  const [draft, setDraft] = useState<Draft>(() => (template ? templateDraft(channel.platform === "tiktok") : EMPTY));
   const [editing, setEditing] = useState<string | null>(null);
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
   // The field the server rejected: its message shows under it (audit #10).
@@ -312,6 +322,14 @@ export function AutomationsPanel({ channel, rules, usage, recent }: Props) {
 
       <section className={keys.section} aria-labelledby="automations-form" ref={formRef}>
         <h2 id="automations-form">{editing ? "แก้ไขกฎ" : "เพิ่มกฎ"}</h2>
+        {!editing && (
+          <p className="m-0 flex flex-wrap items-center gap-2 text-[14px]">
+            <Button type="button" variant="outline" size="sm" onClick={() => { setDraft(templateDraft(tiktok)); setError(null); firstField.current?.focus(); }}>
+              ใช้เทมเพลต
+            </Button>
+            <span className="text-muted-foreground">คนคอมเมนต์ “ลิงก์” → ระบบตอบพร้อมลิงก์ (แก้ลิงก์ให้เป็นของคุณก่อนบันทึก)</span>
+          </p>
+        )}
         <form className={`${keys.form} ${styles.form}`} onSubmit={onSubmit}>
           <Field data-invalid={error?.field === "keywords" || undefined}>
             <FieldLabel htmlFor="rule-keywords">คีย์เวิร์ด</FieldLabel>

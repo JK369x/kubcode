@@ -17,6 +17,7 @@ import {
 import { AccountForm } from "@/components/AccountForm";
 import { AccountShortcuts } from "@/components/AccountShortcuts";
 import { BillingBanner } from "@/components/BillingBanner";
+import { Onboarding } from "@/components/Onboarding";
 import { capabilitiesFromCookies } from "@/lib/account-nav/capabilities";
 import { PlatformLogo, type Platform } from "@/components/PlatformLogo";
 import { FamilyChip, IconTile, PageHero } from "@/components/site/PageHero";
@@ -222,6 +223,7 @@ export default async function Account({ searchParams }: Props) {
     <main id="main" className={styles.page}>
       <PageHero eyebrow="พื้นที่สมาชิก" title="บัญชีของคุณ" accent="ภาพรวมทั้งหมดในหน้าเดียว" />
       {ready && <BillingBanner view={ready} />}
+      {caps && <Onboarding />}
       {caps && <AccountShortcuts caps={caps} />}
       <div className={styles.dash}>
         <section className={`${styles.card} ${styles.identityCard}`} aria-label="บัญชีที่เข้าสู่ระบบ">

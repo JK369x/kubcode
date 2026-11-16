@@ -4,6 +4,7 @@ import { cookies, headers } from "next/headers";
 import { notFound, redirect } from "next/navigation";
 import { Plus } from "lucide-react";
 import { PostsList } from "@/components/PostsList";
+import { Onboarding } from "@/components/Onboarding";
 import { AccountShell, accountCaps } from "@/components/site/AccountShell";
 import { Button } from "@/components/ui/button";
 import { canonicalHostRedirect, readAuthConfig, signInPath } from "@/lib/auth-policy";
@@ -39,6 +40,7 @@ export default async function PostsPage() {
         </Button>
       }
     >
+      <Onboarding compact />
       {view.state === "ready" ? (
         <PostsList posts={view.posts} />
       ) : (

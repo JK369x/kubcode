@@ -5,6 +5,7 @@ import { notFound, redirect } from "next/navigation";
 import { AccountShell, accountCaps } from "@/components/site/AccountShell";
 import { Button } from "@/components/ui/button";
 import { ChannelsPanel } from "@/components/ChannelsPanel";
+import { Onboarding } from "@/components/Onboarding";
 import styles from "@/components/KeysSettings.module.css";
 import { canonicalHostRedirect, readAuthConfig, signInPath } from "@/lib/auth-policy";
 import { automationsEnabled } from "@/lib/automations/config";
@@ -54,6 +55,7 @@ export default async function ChannelsPage({ searchParams }: Props) {
         ) : undefined
       }
     >
+      <Onboarding compact />
       {view.state === "ready" ? (
         <ChannelsPanel channels={view.channels} notice={typeof notice === "string" ? notice : null} automations={automationsEnabled(env)} />
       ) : (

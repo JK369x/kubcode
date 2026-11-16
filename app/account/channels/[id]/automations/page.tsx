@@ -15,9 +15,9 @@ export const metadata: Metadata = {
   robots: { index: false, follow: false },
 };
 
-type Props = { params: Promise<{ id: string }> };
+type Props = { params: Promise<{ id: string }>; searchParams: Promise<Record<string, string | string[] | undefined>> };
 
-export default async function AutomationsPage({ params }: Props) {
+export default async function AutomationsPage({ params, searchParams }: Props) {
   const env = process.env;
   const { id } = await params;
   const view = await getAutomationsView(
@@ -46,7 +46,7 @@ export default async function AutomationsPage({ params }: Props) {
       lead="Instagram ตอบเป็น DM · TikTok ตอบเป็นคอมเมนต์สาธารณะ"
     >
       {view.state === "ready" ? (
-        <AutomationsPanel channel={view.channel} rules={view.rules} usage={view.usage} recent={view.recent} />
+        <AutomationsPanel channel={view.channel} rules={view.rules} usage={view.usage} recent={view.recent} template={(await searchParams).template === "link"} />
       ) : (
         <p className="setup-notice" role="status">
           ระบบตอบคอมเมนต์อัตโนมัติใช้งานไม่ได้ชั่วคราว ลองใหม่ภายหลัง
