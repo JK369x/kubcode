@@ -179,6 +179,8 @@ fn the_summary_shows_everything_that_is_confirmed() {
             channel: ch,
             publish_at: datetime!(2026-11-11 19:00 +07:00),
             visibility: Visibility::Private,
+            caption: None,
+            options: Default::default(),
         }],
     };
     let text = render_summary(
@@ -238,6 +240,8 @@ fn tiktok_is_summarised_and_must_be_public() {
             channel: tt,
             publish_at: datetime!(2026-11-11 19:00 +07:00),
             visibility: Visibility::Public,
+            caption: None,
+            options: Default::default(),
         }],
     };
     let text = render_summary(&req, &channels, "thumbnail.png");

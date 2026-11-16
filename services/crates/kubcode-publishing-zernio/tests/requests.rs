@@ -11,7 +11,7 @@ use kubcode_publishing::ports::{
 };
 use kubcode_publishing::validate::Velocity;
 use kubcode_publishing_zernio::transport::Method;
-use serde_json::Value;
+use serde_json::{json, Value};
 use support::{Harness, API_KEY};
 use uuid::Uuid;
 
@@ -362,4 +362,120 @@ async fn connecting_tiktok_asks_zernio_for_the_tiktok_flow() {
     let q: std::collections::HashMap<_, _> = req.url.query_pairs().into_owned().collect();
     assert_eq!(q.get("headless").map(String::as_str), Some("true"));
     assert!(!q.contains_key("scopes"), "every area, comments included");
+}
+
+/// The created post's body for one request (fake Zernio).
+async fn sent_body(
+    platform: Platform,
+    edit: impl FnOnce(&mut DeliveryRequest),
+) -> serde_json::Value {
+    let h = Harness::default();
+    let conn = h.connection(platform).await;
+    let mut req = sample_request(platform, h.now());
+    req.draft.visibility = Visibility::Public;
+    edit(&mut req);
+    h.zernio
+        .schedule(&conn, &checked(&h, req), &FakeMedia)
+        .await
+        .unwrap();
+    let log = h.fake.log();
+    let post = log
+        .iter()
+        .find(|r| r.method == Method::Post && r.url.path() == "/api/v1/posts")
+        .unwrap();
+    post.json.clone().unwrap()
+}
+
+/// Web composer overrides, mapped to OpenAPI 1.615.0 field names
+/// (PlatformTarget.customContent, TikTok/Instagram/YouTube PlatformData).
+#[tokio::test]
+async fn per_platform_caption_and_options_map_to_zernio_fields() {
+    use kubcode_publishing::options::{
+        InstagramOptions, PlatformOptions, TikTokOptions, YouTubeOptions,
+    };
+    let b = sent_body(Platform::TikTok, |r| {
+        r.draft.caption = Some("แคปชันสำหรับ TikTok".into());
+        r.draft.options = PlatformOptions {
+            tiktok: Some(TikTokOptions {
+                allow_comment: Some(false),
+                allow_duet: Some(true),
+                allow_stitch: Some(true),
+                draft: Some(true),
+            }),
+            ..Default::default()
+        };
+    })
+    .await;
+    let p = &b["platforms"][0];
+    assert_eq!(p["customContent"], "แคปชันสำหรับ TikTok");
+    assert_eq!(
+        b["content"], "คำอธิบายคลิป",
+        "the shared caption stays for other platforms"
+    );
+    let psd = &p["platformSpecificData"];
+    assert_eq!(
+        (
+            psd["allowComment"].clone(),
+            psd["allowDuet"].clone(),
+            psd["allowStitch"].clone(),
+            psd["draft"].clone()
+        ),
+        (json!(false), json!(true), json!(true), json!(true))
+    );
+    assert_eq!(psd["privacyLevel"], "PUBLIC_TO_EVERYONE");
+
+    let b = sent_body(Platform::Instagram, |r| {
+        r.draft.options = PlatformOptions {
+            instagram: Some(InstagramOptions {
+                share_to_feed: Some(false),
+                comments_enabled: Some(false),
+                ai_generated: Some(true),
+                first_comment: Some("ลิงก์ในไบโอ".into()),
+            }),
+            ..Default::default()
+        };
+    })
+    .await;
+    let psd = &b["platforms"][0]["platformSpecificData"];
+    assert_eq!(psd["shareToFeed"], false);
+    assert_eq!(psd["commentsEnabled"], false);
+    assert_eq!(psd["isAiGenerated"], true);
+    assert_eq!(psd["firstComment"], "ลิงก์ในไบโอ");
+    assert!(b["platforms"][0].get("customContent").is_none());
+
+    let b = sent_body(Platform::YouTube, |r| {
+        r.draft.options = PlatformOptions {
+            youtube: Some(YouTubeOptions {
+                made_for_kids: Some(true),
+                synthetic_media: Some(true),
+                category_id: Some("27".into()),
+                notify_subscribers: Some(false),
+                first_comment: None,
+            }),
+            ..Default::default()
+        };
+    })
+    .await;
+    let psd = &b["platforms"][0]["platformSpecificData"];
+    assert_eq!(
+        (
+            psd["madeForKids"].clone(),
+            psd["containsSyntheticMedia"].clone(),
+            psd["categoryId"].clone(),
+            psd["notifySubscribers"].clone()
+        ),
+        (json!(true), json!(true), json!("27"), json!(false))
+    );
+    assert!(psd.get("firstComment").is_none());
+}
+
+#[tokio::test]
+async fn without_options_the_body_is_exactly_as_before() {
+    let b = sent_body(Platform::Instagram, |_| {}).await;
+    let psd = &b["platforms"][0]["platformSpecificData"];
+    assert_eq!(psd["shareToFeed"], true);
+    for k in ["commentsEnabled", "isAiGenerated", "firstComment"] {
+        assert!(psd.get(k).is_none(), "{k}");
+    }
+    assert!(b["platforms"][0].get("customContent").is_none());
 }

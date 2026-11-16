@@ -89,6 +89,9 @@ pub struct NewDelivery {
     pub publish_at: OffsetDateTime,
     pub visibility: Visibility,
     pub idempotency_key: Uuid,
+    /// Per-platform caption and options (migration 0015), kept as sent.
+    pub caption: Option<String>,
+    pub options: Option<serde_json::Value>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -672,8 +675,9 @@ impl Store {
             .c
             .query_one(
                 "INSERT INTO kubcode_accounts.deliveries
-                   (post_id, channel_id, connection_id, provider, platform, publish_at, visibility, idempotency_key)
-                 VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING id",
+                   (post_id, channel_id, connection_id, provider, platform, publish_at, visibility, idempotency_key,
+                    caption, options)
+                 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) RETURNING id",
                 &[
                     &d.post.0,
                     &d.channel.0,
@@ -683,6 +687,8 @@ impl Store {
                     &d.publish_at,
                     &d.visibility.as_str(),
                     &d.idempotency_key,
+                    &d.caption,
+                    &d.options,
                 ],
             )
             .await?;

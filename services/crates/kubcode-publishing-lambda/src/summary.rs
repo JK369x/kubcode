@@ -4,6 +4,7 @@
 //! what was shown is refused.
 
 use kubcode_publishing::domain::Visibility;
+use kubcode_publishing::options::PlatformOptions;
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 use time::OffsetDateTime;
@@ -15,6 +16,12 @@ pub struct Target {
     #[serde(with = "time::serde::rfc3339")]
     pub publish_at: OffsetDateTime,
     pub visibility: Visibility,
+    /// Per-platform caption (web composer); absent = the shared description.
+    /// Absent fields are not serialized, so CLI digests are unchanged.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub caption: Option<String>,
+    #[serde(default, skip_serializing_if = "PlatformOptions::is_empty")]
+    pub options: PlatformOptions,
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -54,6 +61,8 @@ mod tests {
                 channel: Uuid::nil(),
                 publish_at: datetime!(2026-11-11 19:00 +07:00),
                 visibility: Visibility::Private,
+                caption: None,
+                options: Default::default(),
             }],
         }
     }

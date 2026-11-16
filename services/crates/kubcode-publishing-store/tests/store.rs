@@ -375,6 +375,8 @@ async fn delivery_fixture(
             publish_at: OffsetDateTime::now_utc() + Duration::hours(2),
             visibility: Visibility::Private,
             idempotency_key: Uuid::new_v4(),
+            caption: None,
+            options: None,
         })
         .await
         .unwrap();

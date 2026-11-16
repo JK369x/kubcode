@@ -34,6 +34,24 @@ const REASON: Record<string, string> = {
   needs_reconnect: "ต้องเชื่อมช่องใหม่",
   channel_paused: "ช่องถูกพักไว้ (แพ็กเกจ)",
   platform_rejected: "แพลตฟอร์มปฏิเสธโพสต์",
+  options_platform: "ตัวเลือกไม่ตรงกับแพลตฟอร์ม",
+  first_comment_invalid: "คอมเมนต์แรกไม่ถูกต้อง",
+  category_invalid: "หมวดหมู่ YouTube ไม่ถูกต้อง",
+};
+
+const OPTION_LABEL: Record<string, string> = {
+  allow_comment: "คอมเมนต์",
+  allow_duet: "Duet",
+  allow_stitch: "Stitch",
+  draft: "ส่งเป็นร่าง",
+  share_to_feed: "แสดงบนโปรไฟล์",
+  comments_enabled: "คอมเมนต์",
+  ai_generated: "ป้าย AI",
+  first_comment: "คอมเมนต์แรก",
+  made_for_kids: "สำหรับเด็ก",
+  synthetic_media: "เนื้อหา AI",
+  category_id: "หมวดหมู่",
+  notify_subscribers: "แจ้งผู้ติดตาม",
 };
 
 const bkk = (iso: string) => new Date(iso).toLocaleString("th-TH", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit", timeZone: "Asia/Bangkok" });
@@ -69,6 +87,13 @@ export function PostsList({ posts: initial }: { posts: PostView[] }) {
                   <span className="min-w-0 font-medium">{d.channelName}</span>
                   <Badge variant={st.variant}>{st.label}</Badge>
                   <span className="text-muted-foreground">{bkk(d.publishAt)}</span>
+                  {(d.caption || d.options.length > 0) && (
+                    <span className="basis-full text-[13px] text-muted-foreground">
+                      {d.caption ? "แคปชันแยก" : ""}
+                      {d.caption && d.options.length ? " · " : ""}
+                      {d.options.length ? `ปรับตัวเลือก ${d.options.map((k) => OPTION_LABEL[k] ?? k).join(", ")}` : ""}
+                    </span>
+                  )}
                   {d.error && (d.status === "failed" || d.status === "rejected") && (
                     <span className="basis-full text-[13px] text-[#92400e] dark:text-[#fcd34d]">เหตุผล: {REASON[d.error] ?? d.error}</span>
                   )}

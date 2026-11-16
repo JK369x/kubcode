@@ -172,3 +172,47 @@ test("upload URL allow-list: our bucket always; loopback only for a local previe
   assert.equal(uploadUrlOk("https://kubcode-media-955758449820.s3.ap-southeast-1.amazonaws.com/packages/x", { NODE_ENV: "production" }), false);
   assert.equal(uploadUrlOk("https://evil.example/clips/x", {}), false);
 });
+
+test("schedule: per-platform caption and options pass through in the core's shape", async () => {
+  const l = lambda({ ok: true, result: { post: "p1", deliveries: [] } });
+  const body = {
+    ...SCHEDULE,
+    targets: [
+      { channelId: CH1, visibility: "public", platform: "tiktok", caption: "  แคปชัน TikTok  ", options: { tiktok: { allowDuet: true, allowStitch: true, allowComment: false, draft: true } } },
+      { channelId: CH2, visibility: "unlisted", platform: "youtube", options: { youtube: { categoryId: "27", madeForKids: false, firstComment: "ขอบคุณที่ดู" } } },
+    ],
+  };
+  const r = await handleSchedule(await post("/api/posts", body), deps(member, { fetch: l.fetch }));
+  assert.equal(r.status, 200);
+  const [tt, yt] = l.calls[0].body.request.targets;
+  assert.equal(tt.caption, "แคปชัน TikTok");
+  assert.deepEqual(tt.options, { tiktok: { allow_comment: false, allow_duet: true, allow_stitch: true, draft: true } });
+  assert.equal(yt.caption, undefined);
+  assert.deepEqual(yt.options, { youtube: { made_for_kids: false, category_id: "27", first_comment: "ขอบคุณที่ดู" } });
+  assert.equal(l.calls[0].body.request.description, "บรรทัดแรก\nรายละเอียด", "the shared caption stays");
+  // A plain target carries neither field (CLI-identical shape).
+  const plain = lambda({ ok: true, result: { post: "p2", deliveries: [] } });
+  await handleSchedule(await post("/api/posts", SCHEDULE), deps(member, { fetch: plain.fetch }));
+  assert.deepEqual(Object.keys(plain.calls[0].body.request.targets[0]).sort(), ["channel", "publish_at", "visibility"]);
+});
+
+test("schedule: options for another platform, unknown keys, bad types or a bad category are 400", async () => {
+  const t = (extra: Record<string, unknown>) => ({ ...SCHEDULE, targets: [{ channelId: CH1, visibility: "public", ...extra }] });
+  for (const bad of [
+    t({ platform: "tiktok", options: { instagram: { shareToFeed: false } } }),
+    t({ platform: "tiktok", options: { tiktok: { privacyLevel: "SELF_ONLY" } } }),
+    t({ platform: "tiktok", options: { tiktok: { allowDuet: "yes" } } }),
+    t({ platform: "youtube", options: { youtube: { categoryId: "99" } } }),
+    t({ platform: "instagram", options: { instagram: { firstComment: "   " } } }),
+    t({ platform: "instagram", caption: "x".repeat(2201) }),
+    t({ platform: "facebook", caption: "x" }),
+    t({ caption: "no platform named" }),
+    t({ platform: "tiktok", options: { tiktok: {}, youtube: {} } }),
+  ]) {
+    assert.equal((await handleSchedule(await post("/api/posts", bad), deps(member))).status, 400, JSON.stringify(bad.targets));
+  }
+  // YouTube captions may run to 5000.
+  const ok = lambda({ ok: true, result: { post: "p3", deliveries: [] } });
+  const long = t({ platform: "youtube", caption: "ย".repeat(4000) });
+  assert.equal((await handleSchedule(await post("/api/posts", long), deps(member, { fetch: ok.fetch }))).status, 200);
+});

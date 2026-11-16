@@ -15,6 +15,10 @@ export type DeliveryView = {
   publishAt: string;
   error: string | null;
   url: string | null;
+  /** This channel's own caption, when the creator set one. */
+  caption: string | null;
+  /** Names of the platform options the creator changed (e.g. "allow_duet"). */
+  options: string[];
 };
 export type PostView = { id: string; caption: string; createdAt: string; deliveries: DeliveryView[] };
 export type PostsResult = { ok: true; posts: PostView[] } | { ok: false; code: "NOT_SIGNED_IN" | "FORBIDDEN" };
@@ -31,12 +35,14 @@ async function read(c: PoolClient, s: SessionClaims, limit: number): Promise<Pos
     post_id: string; description: string; created_at: Date;
     id: string; channel_id: string; display_name: string; platform: string; status: DeliveryView["status"];
     publish_at: Date; last_error_code: string | null; platform_url: string | null;
+    d_caption: string | null; d_options: Record<string, Record<string, unknown>> | null;
   }>(
     `WITH recent AS (
        SELECT p.id, p.description, p.created_at FROM kubcode_accounts.posts p
         WHERE p.status = 'confirmed' ORDER BY p.created_at DESC LIMIT $1)
      SELECT r.id AS post_id, r.description, r.created_at,
-            d.id, d.channel_id, c.display_name, d.platform, d.status, d.publish_at, d.last_error_code, rc.platform_url
+            d.id, d.channel_id, c.display_name, d.platform, d.status, d.publish_at, d.last_error_code, rc.platform_url,
+            d.caption AS d_caption, d.options AS d_options
        FROM recent r
        JOIN kubcode_accounts.deliveries d ON d.post_id = r.id
        JOIN kubcode_accounts.channels c ON c.id = d.channel_id
@@ -56,6 +62,8 @@ async function read(c: PoolClient, s: SessionClaims, limit: number): Promise<Pos
       publishAt: r.publish_at.toISOString(),
       error: r.last_error_code,
       url: r.platform_url && /^https:\/\//.test(r.platform_url) ? r.platform_url : null,
+      caption: r.d_caption,
+      options: r.d_options ? Object.values(r.d_options).flatMap((o) => Object.keys(o ?? {})) : [],
     });
     byPost.set(r.post_id, p);
   }
