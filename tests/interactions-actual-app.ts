@@ -566,10 +566,17 @@ async function main() {
         await page.keyboard.press("Enter");
         assert.equal(await btn.getAttribute("aria-expanded"), "true", `${label}: keyboard opens`);
         // Radix moves focus into the menu (first item); arrows move between items.
-        await page.waitForFunction(() => document.activeElement?.textContent === "ตั้งค่าบัญชี");
+        // Since #102 the menu starts with บัญชี; this fixture member has no paid
+        // doors, so it reads บัญชี → ตั้งค่าบัญชี → ออกจากระบบ.
+        const items = await page.getByRole("menuitem").allInnerTexts();
+        assert.deepEqual(items.map((t) => t.trim()), ["บัญชี", "ตั้งค่าบัญชี", "ออกจากระบบ"], `${label}: menu items`);
+        await page.waitForFunction(() => document.activeElement?.textContent === "บัญชี");
+        await page.keyboard.press("ArrowDown");
+        await page.waitForFunction(() => document.activeElement?.textContent === "ตั้งค่าบัญชี", null, { timeout: 3000 }).catch(() => undefined);
+        assert.equal(await page.evaluate(() => document.activeElement?.textContent), "ตั้งค่าบัญชี", `${label}: arrows move in the menu`);
         await page.keyboard.press("ArrowDown");
         await page.waitForFunction(() => document.activeElement?.textContent === "ออกจากระบบ", null, { timeout: 3000 }).catch(() => undefined);
-        assert.equal(await page.evaluate(() => document.activeElement?.textContent), "ออกจากระบบ", `${label}: arrows move in the menu`);
+        assert.equal(await page.evaluate(() => document.activeElement?.textContent), "ออกจากระบบ", `${label}: arrows reach the last item`);
         const ring = await page.evaluate(() => getComputedStyle(document.activeElement!).outlineStyle);
         assert.equal(ring, "solid", `${label}: visible focus on the menu item`);
         await page.mouse.click(run.width / 2, 600);
