@@ -619,7 +619,7 @@ test("unconfigured UI shows both providers disabled with no fake flow", () => {
   assert.doesNotMatch(html, /ออกจากระบบ|เข้าสู่ระบบแล้ว/);
 });
 
-test("LINE button uses its own scoped treatment, no fetched logo and no form fields", () => {
+test("LINE button uses its own scoped treatment, the official self-hosted marks and no form fields", () => {
   for (const props of [
     { state: "unconfigured" },
     { state: "signed-out", providers: { google: true, line: true } },
@@ -628,7 +628,12 @@ test("LINE button uses its own scoped treatment, no fetched logo and no form fie
     const html = renderForm(props);
     assert.match(lineButton(html), /class="[^"]*\bline\b/);
     assert.doesNotMatch(lineButton(html), /\bprimary\b/);
-    assert.doesNotMatch(html, /<input\b|<textarea\b|<img\b|<svg\b|line\.svg|https?:\/\//, JSON.stringify(props));
+    assert.doesNotMatch(html, /<input\b|<textarea\b|https?:\/\//, JSON.stringify(props));
+    // Only the two official marks vendored in public/signin (PROVENANCE.json),
+    // decorative (the label names the provider), never fetched from a third party.
+    const imgs = html.match(/<img\b[^>]*>/g) ?? [];
+    assert.deepEqual(imgs.map((i) => i.match(/src="([^"]+)"/)?.[1]).sort(), ["/signin/google-g.png", "/signin/line-icon-tile-88.png"]);
+    for (const i of imgs) assert.match(i, /alt=""/);
     // The explanatory "no password requested" sentence is allowed; any OTP or
     // secret prompt is not (password fields are already excluded above).
     assert.doesNotMatch(html, /OTP|secret|type="password"/i);
@@ -717,4 +722,18 @@ test("neither login grants membership, roles or MCP rights; downloads are decide
     "2026-11-04T00:00:00.000Z",
   );
   assert.doesNotMatch(JSON.stringify(session), /approved|download|mcp|role|admin/i);
+});
+
+test("sign-in marks are the vendored official files, unmodified", () => {
+  const fs = require("node:fs") as typeof import("node:fs");
+  const crypto = require("node:crypto") as typeof import("node:crypto");
+  const prov = JSON.parse(fs.readFileSync("public/signin/PROVENANCE.json", "utf8")) as { file: string; sha256: string; modifications: string; guidelines: string }[];
+  assert.deepEqual(prov.map((p) => p.file).sort(), ["google-g.png", "line-icon-tile-88.png"]);
+  for (const p of prov) {
+    assert.equal(p.modifications, "none");
+    assert.match(p.guidelines, /^https:\/\/developers\.(google\.com\/identity\/branding-guidelines|line\.biz\/en\/docs\/line-login\/login-button)/);
+    assert.equal(crypto.createHash("sha256").update(fs.readFileSync(`public/signin/${p.file}`)).digest("hex"), p.sha256, p.file);
+  }
+  // Google: the colour "G" sits on a white field in every theme.
+  assert.match(fs.readFileSync("components/GoogleLogin.module.css", "utf8"), /\.markSlot\[data-provider="google"\] \{[^}]*background: #ffffff;/);
 });

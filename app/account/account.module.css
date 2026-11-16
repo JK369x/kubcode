@@ -1,0 +1,293 @@
+/* /account: sign-in screen and the signed-in overview (pricing-A language). */
+.page {
+  width: min(1180px, 90%);
+  margin: 0 auto;
+  padding: 48px 0 96px;
+}
+.signInGrid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr);
+  gap: clamp(28px, 5vw, 72px);
+  align-items: start;
+}
+.pitch {
+  min-width: 0;
+}
+.h3 {
+  margin: 30px 0 12px;
+  font-size: 18px;
+  font-weight: 600;
+}
+.families {
+  display: grid;
+  gap: 14px;
+  margin: 28px 0 0;
+  padding: 0;
+  list-style: none;
+}
+.families li {
+  display: grid;
+  grid-template-columns: 44px minmax(0, 1fr);
+  gap: 14px;
+  align-items: center;
+}
+.families p {
+  margin: 6px 0 0;
+  color: var(--muted-foreground);
+  font-size: 15px;
+  line-height: 1.6;
+}
+.platformLine {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 8px;
+}
+.after {
+  display: grid;
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: 15px;
+  line-height: 1.6;
+}
+.after li {
+  display: grid;
+  grid-template-columns: 22px minmax(0, 1fr);
+  gap: 10px;
+}
+.after svg {
+  width: 18px;
+  height: 18px;
+  margin-top: 3px;
+  color: var(--link);
+}
+
+/* Card shared by the sign-in box and the overview tiles. */
+.card {
+  display: grid;
+  align-content: start;
+  gap: 12px;
+  min-width: 0;
+  padding: 24px;
+  border: 1px solid var(--input);
+  border-radius: 22px;
+  background: color-mix(in srgb, var(--card) 92%, transparent);
+  backdrop-filter: blur(6px);
+}
+.signInGrid > .card {
+  position: relative;
+  border: 2px solid transparent;
+  background:
+    linear-gradient(var(--card), var(--card)) padding-box,
+    linear-gradient(100deg, #c8215a 0%, #7c3aed 52%, #0f766e 100%) border-box;
+  box-shadow: 0 24px 60px -30px color-mix(in srgb, #7c3aed 80%, transparent);
+}
+.cardHead {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.cardTitle {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 600;
+  line-height: 1.4;
+}
+.cardLead {
+  margin: -4px 0 4px;
+  color: var(--muted-foreground);
+  font-size: 15px;
+}
+.notice {
+  display: grid;
+  grid-template-columns: 20px minmax(0, 1fr);
+  gap: 10px;
+  margin: 4px 0 0;
+  color: var(--muted-foreground);
+  font-size: 13px;
+  line-height: 1.65;
+}
+.notice svg {
+  width: 16px;
+  height: 16px;
+  margin-top: 3px;
+}
+.legal {
+  margin: 0;
+  padding-top: 12px;
+  border-top: 1px solid var(--border);
+  color: var(--muted-foreground);
+  font-size: 13px;
+  line-height: 1.65;
+}
+.legal a,
+.membership a {
+  color: var(--link);
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+
+/* ---------- signed-in overview ---------- */
+.dash {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 18px;
+  margin-top: 28px;
+}
+.identityCard {
+  grid-column: span 2;
+}
+.row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
+  margin: 0;
+  font-size: 15px;
+}
+.muted {
+  margin: 0;
+  color: var(--muted-foreground);
+  font-size: 15px;
+  line-height: 1.6;
+}
+.more {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  width: fit-content;
+  min-height: 32px;
+  color: var(--link);
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+.more svg {
+  width: 16px;
+  height: 16px;
+}
+.links {
+  display: grid;
+  gap: 4px;
+}
+.hint {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--muted-foreground);
+  font-size: 13px;
+}
+.hint svg {
+  width: 15px;
+  height: 15px;
+}
+.channels {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.channels li {
+  display: grid;
+  grid-template-columns: 20px minmax(0, 1fr) auto;
+  gap: 10px;
+  align-items: center;
+  padding: 8px 10px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--background);
+}
+.channelName {
+  overflow: hidden;
+  font-size: 14px;
+  font-weight: 500;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.quick ul {
+  display: grid;
+  gap: 4px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.quick a {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 44px;
+  padding: 0 10px;
+  border-radius: 12px;
+  color: var(--foreground);
+  font-size: 15px;
+  font-weight: 500;
+  text-decoration: none;
+}
+.quick a:hover {
+  background: color-mix(in srgb, var(--muted) 70%, transparent);
+}
+.quick a:focus-visible {
+  outline: 3px solid var(--ring);
+  outline-offset: 2px;
+}
+.quick svg {
+  width: 18px;
+  height: 18px;
+  color: var(--link);
+}
+
+/* ---------- membership notes ---------- */
+.membership {
+  margin-top: clamp(48px, 6vw, 80px);
+  padding: 24px;
+  border: 1px solid var(--border);
+  border-radius: 22px;
+}
+.membership h2 {
+  margin: 0 0 14px;
+  font-size: 20px;
+  font-weight: 600;
+}
+.membership dl {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 18px;
+  margin: 0;
+}
+.membership dt {
+  font-weight: 600;
+  line-height: 1.5;
+}
+.membership dd {
+  margin: 6px 0 0;
+  color: var(--muted-foreground);
+  font-size: 14px;
+  line-height: 1.7;
+}
+.membership > p {
+  margin: 16px 0 0;
+  color: var(--muted-foreground);
+  font-size: 13px;
+}
+
+@media (max-width: 960px) {
+  .signInGrid,
+  .dash {
+    grid-template-columns: 1fr;
+  }
+  .identityCard {
+    grid-column: auto;
+  }
+  .membership dl {
+    grid-template-columns: 1fr;
+  }
+}
+@media (max-width: 560px) {
+  .card,
+  .membership {
+    padding: 18px;
+  }
+}

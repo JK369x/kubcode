@@ -1,27 +1,147 @@
+/* Sign-in buttons and the signed-in identity card (/account).
+   Google: custom Sign in with Google button per
+   developers.google.com/identity/branding-guidelines: light theme fill
+   #FFFFFF, 1px #747775 stroke, text #1F1F1F; dark theme fill #131314, 1px
+   #8E918F stroke, text #E3E3E3; the standard-colour "G" unchanged on a white
+   field. LINE (LineLogin.module.css): the same neutral button with LINE's
+   official icon tile. Both 52px tall, same weight (Google: "at least as
+   prominently as other third party sign-in options"). */
+.signIn,
+.signedIn {
+  display: grid;
+  gap: 12px;
+  min-width: 0;
+}
+.signIn > *,
+.signedIn > * {
+  min-width: 0;
+}
+.providerBtn,
+.google {
+  position: relative;
+  display: grid;
+  grid-template-columns: 44px minmax(0, 1fr) 44px;
+  align-items: center;
+  width: 100%;
+  min-height: 52px;
+  padding: 0 12px;
+  border: 1px solid #8e918f;
+  border-radius: 999px;
+  background: #131314;
+  color: #e3e3e3;
+  font-size: 16px;
+  font-weight: 600;
+  line-height: 1.4;
+  text-align: center;
+  cursor: pointer;
+  transition:
+    background 0.18s ease,
+    border-color 0.18s ease;
+}
+:global(:root[data-theme="light"]) .providerBtn,
+:global(:root[data-theme="light"]) .google {
+  border-color: #747775;
+  background: #ffffff;
+  color: #1f1f1f;
+}
+.providerBtn:hover:not(:disabled),
+.google:hover:not(:disabled) {
+  background: #1e1e20;
+}
+:global(:root[data-theme="light"]) .providerBtn:hover:not(:disabled),
+:global(:root[data-theme="light"]) .google:hover:not(:disabled) {
+  background: #f2f2f2;
+}
+.providerBtn:focus-visible,
+.google:focus-visible {
+  outline: 3px solid var(--ring);
+  outline-offset: 3px;
+}
+.providerBtn[aria-busy="true"],
+.google[aria-busy="true"] {
+  cursor: progress;
+}
+/* Disabled stays legible (muted text, dashed edge) instead of fading out. */
+.providerBtn:disabled,
+.google:disabled {
+  border-style: dashed;
+  border-color: var(--input);
+  background: transparent;
+  color: var(--muted-foreground);
+  cursor: not-allowed;
+}
+.markSlot {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+}
+/* Google requires the standard-colour "G" on a white background in every theme. */
+.markSlot[data-provider="google"] {
+  border-radius: 999px;
+  background: #ffffff;
+}
+.gMark {
+  width: 20px;
+  height: 20px;
+  object-fit: contain;
+}
+.label {
+  grid-column: 2;
+  white-space: normal;
+}
+.notice {
+  margin: -4px 0 4px;
+  color: var(--muted-foreground);
+  font-size: 13px;
+  line-height: 1.6;
+}
+.small {
+  margin: 4px 0 0;
+  color: var(--muted-foreground);
+  font-size: 13px;
+  line-height: 1.65;
+}
+.small a {
+  color: var(--link);
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+.status:empty {
+  display: none;
+}
+.status {
+  margin: 0;
+  color: var(--foreground);
+  font-size: 14px;
+}
+
+/* ---------- signed in ---------- */
 .identity {
   display: flex;
   align-items: center;
   gap: 14px;
-  padding: 16px;
-  border: 1px solid var(--line);
-  border-radius: 12px;
-  background: var(--surface);
 }
 .avatar {
   flex: none;
-  width: 44px;
-  height: 44px;
+  width: 56px;
+  height: 56px;
   display: grid;
   place-items: center;
   border-radius: 50%;
-  background: var(--surface-soft);
-  color: var(--purple);
+  background: linear-gradient(135deg, #7c3aed, #c8215a);
+  color: #fff;
   font-weight: 600;
-  font-size: 18px;
+  font-size: 22px;
+}
+.who {
+  min-width: 0;
 }
 .name {
   display: block;
-  font-weight: 500;
+  font-size: 20px;
+  font-weight: 600;
+  line-height: 1.4;
 }
 .email {
   display: block;
@@ -29,14 +149,39 @@
   font-size: 14px;
   overflow-wrap: anywhere;
 }
-.provider {
+.who .providerLine {
   display: block;
   margin-top: 2px;
   color: var(--muted-foreground);
   font-size: 13px;
 }
-/* Doubled class outranks the global `.account-form p` rule. */
-.note.note {
-  color: var(--purple);
+.note {
+  display: grid;
+  grid-template-columns: 20px minmax(0, 1fr);
+  gap: 10px;
+  margin: 4px 0 0;
+  padding: 12px 14px;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--muted) 60%, transparent);
+  color: var(--foreground);
   font-size: 14px;
+  line-height: 1.65;
+}
+.note svg {
+  width: 18px;
+  height: 18px;
+  margin-top: 3px;
+  color: var(--link);
+}
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 10px;
+}
+@media (prefers-reduced-motion: reduce) {
+  .providerBtn,
+  .google {
+    transition: none;
+  }
 }

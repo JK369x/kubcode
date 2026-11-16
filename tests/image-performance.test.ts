@@ -59,6 +59,7 @@ test("cache policy per public path: immutable only where the URL never changes c
     ["/tools/opencode/logo.svg", SHORT],
     ["/tool-icons/react.svg", SHORT],
     ["/platform-icons/youtube.svg", SHORT],
+    ["/signin/google-g.png", SHORT],
     ["/kubcode-icon.png", SHORT],
     // Pages and APIs keep Next's own policy.
     ["/", undefined],

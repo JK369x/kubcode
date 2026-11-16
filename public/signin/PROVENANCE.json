@@ -1,0 +1,20 @@
+[
+  {
+    "file": "google-g.png",
+    "source": "https://developers.google.com/static/identity/images/g-logo.png",
+    "owner": "Google",
+    "guidelines": "https://developers.google.com/identity/branding-guidelines",
+    "use": "Standard colour Google \"G\" on a white tile in the Sign in with Google button; unmodified, aspect ratio kept",
+    "sha256": "d1ce9c2af0b10a7333abc99bc706f9a6a199e5b65bf3e3009624f076b8638e6a",
+    "modifications": "none"
+  },
+  {
+    "file": "line-icon-tile-88.png",
+    "source": "https://vos.line-scdn.net/line-developers/docs/media/line-login/login-button/LINE_Login_Button_Image.zip (images/DeskTop/2x/44dp/btn_base.png)",
+    "owner": "LY Corporation",
+    "guidelines": "https://developers.line.biz/en/docs/line-login/login-button/",
+    "use": "Official LINE icon (#06C755 tile, white icon) used on its own as the LINE Login button, as the guidelines allow (\"You can also use the LINE icon on its own without any button text as the LINE Login button\"); the Thai label sits beside it in normal text colour on a neutral button, so text meets WCAG (white on #06C755 is 2.26:1). Unmodified, aspect ratio kept, isolation zone kept.",
+    "sha256": "04a40a1caf84a7bd0a9dd78ff3bd84ffecb5d855625ae7540995e67c87b3d1ba",
+    "modifications": "none"
+  }
+]
