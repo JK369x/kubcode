@@ -4,7 +4,7 @@ import { cookies, headers } from "next/headers";
 import { notFound, redirect } from "next/navigation";
 import { ChannelsPanel } from "@/components/ChannelsPanel";
 import styles from "@/components/KeysSettings.module.css";
-import { canonicalHostRedirect, readAuthConfig } from "@/lib/auth-policy";
+import { canonicalHostRedirect, readAuthConfig, signInPath } from "@/lib/auth-policy";
 import { automationsEnabled } from "@/lib/automations/config";
 import { getChannelsView } from "@/lib/channels/view";
 
@@ -26,7 +26,7 @@ export default async function ChannelsPage({ searchParams }: Props) {
     }
     return cookies();
   });
-  if (view.state === "signed-out") redirect("/account");
+  if (view.state === "signed-out") redirect(signInPath("/account/channels"));
   // Off, or not allowed: the page does not exist for this visitor.
   if (view.state === "disabled" || view.state === "forbidden") notFound();
   const notice = (await searchParams).notice;

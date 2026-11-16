@@ -288,10 +288,36 @@ export function signInEventMarker(account: unknown): string | null {
 
 // --------------------------------------------------------------- redirects
 
-// The only post-auth landing is the canonical account page. The requested
-// URL is intentionally ignored, so no input can produce an open redirect.
-export function accountRedirect(_requested: string, origin: typeof CANONICAL_ORIGIN): string {
-  return `${origin}/account`;
+// Where sign-in may return to (keep the visitor's intent, UX audit P0-1):
+// same-origin paths under /account or /pricing only. Anything else, including
+// protocol-relative (//), backslashes, schemes, control characters, encoded
+// slashes/dots/backslashes and path traversal, falls back to /account.
+const NEXT_PATH = /^\/(?:account(?:\/[A-Za-z0-9_\-/]*)?|pricing)(?:\?[A-Za-z0-9_\-=&%.]*)?$/;
+export function safeNext(raw: unknown): string | null {
+  if (typeof raw !== "string" || raw.length === 0 || raw.length > 300) return null;
+  if (!NEXT_PATH.test(raw)) return null;
+  const [path, query = ""] = raw.split("?", 2);
+  if (path.includes("//") || /(^|\/)\.{1,2}(\/|$)/.test(path)) return null;
+  // Encoded tricks: no %2f, %5c, %2e, %00-%1f or a second encoding layer.
+  if (/%(?:2f|5c|2e|25|0[0-9a-f]|1[0-9a-f])/i.test(query)) return null;
+  return query ? `${path}?${query}` : path;
+}
+
+/** `/account?next=<path>`: where a signed-out page sends the visitor. */
+export function signInPath(next: string): string {
+  const safe = safeNext(next);
+  return safe && safe !== "/account" ? `/account?next=${encodeURIComponent(safe)}` : "/account";
+}
+
+// Post-auth landing: an allow-listed same-origin path (as an absolute URL on
+// the canonical origin, or a bare path), else the canonical account page.
+// Nothing else can produce a redirect, so no input is an open redirect.
+export function accountRedirect(requested: string, origin: typeof CANONICAL_ORIGIN): string {
+  let path: string | null = null;
+  if (requested.startsWith(`${origin}/`)) path = requested.slice(origin.length);
+  else if (requested.startsWith("/") && !requested.startsWith("//")) path = requested;
+  const safe = path === null ? null : safeNext(path);
+  return `${origin}${safe ?? "/account"}`;
 }
 
 // Returns the canonical account URL when the request did not arrive on the
