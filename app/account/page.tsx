@@ -5,6 +5,7 @@ import {
   ArrowRight,
   BadgeCheck,
   CalendarClock,
+  ChevronRight,
   Clapperboard,
   CreditCard,
   Download,
@@ -12,6 +13,7 @@ import {
   MessageSquareReply,
   MessagesSquare,
   Plug,
+  Plus,
   Star,
 } from "lucide-react";
 import { AccountForm } from "@/components/AccountForm";
@@ -25,6 +27,9 @@ import { Badge } from "@/components/ui/badge";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { getBillingPage, thaiDateTime } from "@/lib/billing/view";
 import { getChannelsView } from "@/lib/channels/view";
+import { getPostsView } from "@/lib/posts/view";
+import { avatarInitial } from "@/lib/avatar";
+import { Button } from "@/components/ui/button";
 import { getAccountView } from "@/lib/auth";
 import { SESSION_COOKIE_NAME, authErrorMessage, canonicalHostRedirect, safeNext, readAuthConfig } from "@/lib/auth-policy";
 import { accountsEnabled } from "@/lib/accounts/view";
@@ -35,11 +40,11 @@ export const dynamic = "force-dynamic";
 type Props = { searchParams: Promise<Record<string, string | string[] | undefined>> };
 
 // Same wording as /account/billing.
-const STANDING: Record<string, { label: string; variant: "ok" | "warn" | "secondary" }> = {
+const STANDING: Record<string, { label: string; variant: "ok" | "warn" | "neutral" }> = {
   active: { label: "ใช้งานอยู่", variant: "ok" },
   grace: { label: "หมดอายุ · ช่วงผ่อนผัน 3 วัน", variant: "warn" },
   lapsed: { label: "หมดอายุ · ช่องถูกพัก", variant: "warn" },
-  none: { label: "ยังไม่มีแพ็กเกจ", variant: "secondary" },
+  none: { label: "ยังไม่มีแพ็กเกจ", variant: "neutral" },
   exempt: { label: "บัญชีเจ้าของเว็บ (ไม่ต้องชำระ)", variant: "ok" },
 };
 // Same wording as /account/channels.
@@ -48,6 +53,24 @@ const CHANNEL_STATUS: Record<string, string> = {
   needs_reconnect: "ต้องเชื่อมใหม่",
   disconnected: "ยกเลิกการเชื่อมแล้ว",
 };
+/** A post's deliveries as at most two status pills (same labels as /account/posts). */
+const POST_STATUS: Record<string, { label: string; variant: "ok" | "warn" | "info" | "neutral" }> = {
+  published: { label: "เผยแพร่แล้ว", variant: "ok" },
+  scheduled: { label: "ตั้งเวลาแล้ว", variant: "info" },
+  pending: { label: "กำลังส่ง", variant: "info" },
+  publishing: { label: "กำลังเผยแพร่", variant: "info" },
+  failed: { label: "ล้มเหลว", variant: "warn" },
+  rejected: { label: "ไม่ผ่านการตรวจ", variant: "warn" },
+  cancelled: { label: "ยกเลิกแล้ว", variant: "neutral" },
+};
+function summarize(statuses: string[]) {
+  const counts = new Map<string, number>();
+  for (const st of statuses) counts.set(st, (counts.get(st) ?? 0) + 1);
+  return [...counts.entries()].slice(0, 2).map(([st, n]) => {
+    const s = POST_STATUS[st] ?? POST_STATUS.pending;
+    return { label: n > 1 ? `${s.label} ${n}` : s.label, variant: s.variant };
+  });
+}
 const isPlatform = (p: string): p is Platform => p === "youtube" || p === "instagram" || p === "tiktok" || p === "facebook";
 
 /** What signing in gives today; each line restates the membership notes below. */
@@ -214,120 +237,204 @@ export default async function Account({ searchParams }: Props) {
     );
   }
 
-  // ---------- signed-in overview ----------
+  // ---------- signed-in dashboard (owner, 2026-11-16) ----------
+  // Reads as an account page at first glance: who you are and your plan at
+  // the top, then your channels and latest posts, with the next actions.
   const ready = billing?.state === "ready" ? billing.view : null;
   const standing = ready ? STANDING[ready.standing] : null;
   const list = channels?.state === "ready" ? channels.channels.filter((c) => c.status !== "disconnected") : null;
+  const posts = caps?.publishing ? await getPostsView(process.env, () => cookies()) : null;
+  const recent = posts?.state === "ready" ? posts.posts.slice(0, 3) : null;
+  const user = view.user;
+  const display = user.name?.trim() || (user.email ? user.email.split("@")[0] : "สมาชิก");
   const showTikTok = Boolean(process.env.TIKTOK_SANDBOX_BRIDGE && process.env.TIKTOK_SANDBOX_ORIGIN);
+  const activeChannels = list?.filter((c) => c.status === "active").length ?? 0;
+  const reconnect = list?.filter((c) => c.status === "needs_reconnect").length ?? 0;
   return (
     <main id="main" className={styles.page}>
-      <PageHero eyebrow="พื้นที่สมาชิก" title="บัญชีของคุณ" accent="ภาพรวมทั้งหมดในหน้าเดียว" />
+      <header className={styles.dashHead}>
+        <span className={styles.bigAvatar} aria-hidden="true">
+          {avatarInitial(user.name ?? user.email)}
+        </span>
+        <div className={styles.dashWho}>
+          <p className={styles.dashEyebrow}>บัญชีของคุณ</p>
+          <h1 className={styles.dashTitle}>สวัสดี {display}</h1>
+          <p className={styles.dashMeta}>
+            {standing && <Badge variant={standing.variant}>{standing.label}</Badge>}
+            {ready?.paidUntil && ready.standing !== "exempt" && <span>ต่ออายุก่อน {thaiDateTime(ready.paidUntil)}</span>}
+            <span>เข้าสู่ระบบด้วย {user.provider === "line" ? "LINE" : "Google"}</span>
+          </p>
+        </div>
+        {caps?.publishing && (
+          <div className={styles.dashActions}>
+            <Button asChild size="lg" className={`rounded-full font-semibold ${styles.primary}`}>
+              <Link href="/account/posts/new">
+                <Plus aria-hidden="true" /> สร้างโพสต์
+              </Link>
+            </Button>
+            <Button asChild size="lg" variant="outline" className="rounded-full">
+              <Link href="/account/channels">เชื่อมช่อง</Link>
+            </Button>
+          </div>
+        )}
+      </header>
       {ready && <BillingBanner view={ready} />}
       {caps && <Onboarding />}
-      {caps && <AccountShortcuts caps={caps} />}
-      <div className={styles.dash}>
-        <section className={`${styles.card} ${styles.identityCard}`} aria-label="บัญชีที่เข้าสู่ระบบ">
-          <AccountForm {...formProps} />
-          {setupNotice}
-        </section>
 
-        <section className={styles.card} aria-labelledby="plan-h">
-          <div className={styles.cardHead}>
-            <IconTile tone="social" size={40}>
-              <CreditCard />
-            </IconTile>
-            <h2 id="plan-h" className={styles.cardTitle}>
-              แพ็กเกจและการชำระเงิน
-            </h2>
-          </div>
-          {ready && standing ? (
-            <>
-              <p className={styles.row}>
-                <Badge variant={standing.variant}>{standing.label}</Badge>
-                {ready.standing !== "exempt" && ready.slots > 0 && <span>{ready.slots} ช่อง</span>}
-              </p>
-              {ready.paidUntil && ready.standing !== "exempt" && (
-                <p className={styles.muted}>ใช้ได้ถึง {thaiDateTime(ready.paidUntil)}</p>
-              )}
-              <Link className={styles.more} href="/account/billing">
-                การชำระเงินและแพ็กเกจ <ArrowRight aria-hidden="true" />
-              </Link>
-            </>
-          ) : (
-            <>
-              <p className={styles.muted}>ดูแพ็กเกจและราคาได้ที่หน้าราคา</p>
-              <Link className={styles.more} href="/pricing">
-                ดูราคา <ArrowRight aria-hidden="true" />
-              </Link>
-            </>
+      {caps?.publishing && list && (
+        <ul className={styles.stats} aria-label="ภาพรวม">
+          <li>
+            <span className={styles.statNum}>{activeChannels}</span>
+            <span className={styles.statLabel}>ช่องที่ใช้งานได้</span>
+          </li>
+          <li>
+            <span className={styles.statNum}>{recent?.reduce((n, p) => n + p.deliveries.filter((d) => d.status === "scheduled").length, 0) ?? 0}</span>
+            <span className={styles.statLabel}>โพสต์ที่ตั้งเวลาไว้</span>
+          </li>
+          <li>
+            <span className={styles.statNum}>{recent?.reduce((n, p) => n + p.deliveries.filter((d) => d.status === "published").length, 0) ?? 0}</span>
+            <span className={styles.statLabel}>เผยแพร่แล้ว (ล่าสุด)</span>
+          </li>
+          {ready && ready.standing !== "exempt" && (
+            <li>
+              <span className={styles.statNum}>{ready.slots}</span>
+              <span className={styles.statLabel}>ช่องที่จ่ายแล้ว</span>
+            </li>
           )}
-        </section>
+        </ul>
+      )}
 
-        {list && (
-          <section className={styles.card} aria-labelledby="channels-h">
+      <div className={styles.dashGrid}>
+        <div className={styles.dashMain}>
+          {list && (
+            <section className={styles.card} aria-labelledby="channels-h">
+              <div className={styles.cardHead}>
+                <h2 id="channels-h" className={styles.cardTitle}>
+                  ช่องของคุณ
+                </h2>
+                {reconnect > 0 && <Badge variant="warn">ต้องเชื่อมใหม่ {reconnect}</Badge>}
+                <Link className={styles.headLink} href="/account/channels">
+                  จัดการ <ChevronRight aria-hidden="true" />
+                </Link>
+              </div>
+              {list.length === 0 ? (
+                <p className={styles.muted}>ยังไม่ได้เชื่อมช่อง</p>
+              ) : (
+                <ul className={styles.channels}>
+                  {list.map((c) => (
+                    <li key={c.id}>
+                      {isPlatform(c.platform) ? <PlatformLogo platform={c.platform} size={20} /> : null}
+                      <span className={styles.channelName}>{c.handle ? `@${c.handle}` : c.displayName}</span>
+                      <Badge variant={c.status === "active" ? "ok" : "warn"}>{CHANNEL_STATUS[c.status] ?? c.status}</Badge>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </section>
+          )}
+          {recent && (
+            <section className={styles.card} aria-labelledby="recent-h">
+              <div className={styles.cardHead}>
+                <h2 id="recent-h" className={styles.cardTitle}>
+                  โพสต์ล่าสุด
+                </h2>
+                <Link className={styles.headLink} href="/account/posts">
+                  ดูทั้งหมด <ChevronRight aria-hidden="true" />
+                </Link>
+              </div>
+              {recent.length === 0 ? (
+                <p className={styles.muted}>ยังไม่มีโพสต์</p>
+              ) : (
+                <ul className={styles.recent}>
+                  {recent.map((p) => (
+                    <li key={p.id}>
+                      <span className={styles.recentLogos} aria-hidden="true">
+                        {Array.from(new Set(p.deliveries.map((d) => d.platform)))
+                          .filter(isPlatform)
+                          .map((pl) => (
+                            <PlatformLogo key={pl} platform={pl} size={16} decorative />
+                          ))}
+                      </span>
+                      <span className={styles.recentText}>{p.caption.split("\n")[0] || "(ไม่มีแคปชัน)"}</span>
+                      <span className={styles.recentStatus}>
+                        {summarize(p.deliveries.map((d) => d.status)).map((x) => (
+                          <Badge key={x.label} variant={x.variant}>
+                            {x.label}
+                          </Badge>
+                        ))}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </section>
+          )}
+          {caps && <AccountShortcuts caps={caps} />}
+        </div>
+
+        <aside className={styles.dashSide} aria-label="บัญชีและแพ็กเกจ">
+          <section className={styles.card} aria-labelledby="plan-h">
             <div className={styles.cardHead}>
-              <IconTile tone="social" size={40}>
-                <CalendarClock />
-              </IconTile>
-              <h2 id="channels-h" className={styles.cardTitle}>
-                ช่องที่เชื่อม
+              <h2 id="plan-h" className={styles.cardTitle}>
+                แพ็กเกจ
               </h2>
             </div>
-            {list.length === 0 ? (
-              <p className={styles.muted}>ยังไม่ได้เชื่อมช่อง</p>
+            {ready && standing ? (
+              <>
+                <p className={styles.row}>
+                  <Badge variant={standing.variant}>{standing.label}</Badge>
+                  {ready.standing !== "exempt" && ready.slots > 0 && <span>{ready.slots} ช่อง</span>}
+                </p>
+                {ready.paidUntil && ready.standing !== "exempt" && <p className={styles.muted}>ใช้ได้ถึง {thaiDateTime(ready.paidUntil)}</p>}
+                <Link className={styles.more} href="/account/billing">
+                  การชำระเงินและแพ็กเกจ <ArrowRight aria-hidden="true" />
+                </Link>
+              </>
             ) : (
-              <ul className={styles.channels}>
-                {list.map((c) => (
-                  <li key={c.id}>
-                    {isPlatform(c.platform) ? <PlatformLogo platform={c.platform} size={20} /> : null}
-                    <span className={styles.channelName}>{c.handle ? `@${c.handle}` : c.displayName}</span>
-                    <Badge variant={c.status === "active" ? "ok" : "warn"}>{CHANNEL_STATUS[c.status] ?? c.status}</Badge>
-                  </li>
-                ))}
-              </ul>
+              <>
+                <p className={styles.muted}>ดูแพ็กเกจและราคาได้ที่หน้าราคา</p>
+                <Link className={styles.more} href="/pricing">
+                  ดูราคา <ArrowRight aria-hidden="true" />
+                </Link>
+              </>
             )}
-            <div className={styles.links}>
-              <Link className={styles.more} href="/account/channels">
-                จัดการช่อง <ArrowRight aria-hidden="true" />
-              </Link>
-              <span className={styles.hint}>
-                <MessageSquareReply aria-hidden="true" /> ตั้งการตอบคอมเมนต์อัตโนมัติได้ที่แต่ละช่อง
-              </span>
-            </div>
           </section>
-        )}
-
-        <nav className={`${styles.card} ${styles.quick}`} aria-labelledby="quick-h">
-          <h2 id="quick-h" className={styles.cardTitle}>
-            ไปที่
-          </h2>
-          <ul>
-            {settingsAvailable && (
+          <section className={`${styles.card} ${styles.identityCard}`} aria-label="บัญชีที่เข้าสู่ระบบ">
+            <AccountForm {...formProps} />
+            {setupNotice}
+          </section>
+          <nav className={`${styles.card} ${styles.quick}`} aria-labelledby="quick-h">
+            <h2 id="quick-h" className={styles.cardTitle}>
+              ไปที่
+            </h2>
+            <ul>
+              {settingsAvailable && (
+                <li>
+                  <Link href="/account/settings">
+                    <KeyRound aria-hidden="true" /> ตั้งค่าการเข้าสู่ระบบ
+                  </Link>
+                </li>
+              )}
+              {showTikTok && (
+                <li>
+                  <Link href="/account/tiktok">
+                    <PlatformLogo platform="tiktok" size={16} decorative /> โพสต์คลิปบน TikTok
+                  </Link>
+                </li>
+              )}
               <li>
-                <Link href="/account/settings">
-                  <KeyRound aria-hidden="true" /> ตั้งค่าการเข้าสู่ระบบ
+                <Link href="/pricing">
+                  <CreditCard aria-hidden="true" /> ราคา
                 </Link>
               </li>
-            )}
-            {showTikTok && (
               <li>
-                <Link href="/account/tiktok">
-                  <PlatformLogo platform="tiktok" size={16} decorative /> โพสต์คลิปบน TikTok
+                <Link href="/">
+                  <Clapperboard aria-hidden="true" /> คลังคลิปและ skill
                 </Link>
               </li>
-            )}
-            <li>
-              <Link href="/pricing">
-                <CreditCard aria-hidden="true" /> ราคา
-              </Link>
-            </li>
-            <li>
-              <Link href="/">
-                <Clapperboard aria-hidden="true" /> คลังคลิปและ skill
-              </Link>
-            </li>
-          </ul>
-        </nav>
+            </ul>
+          </nav>
+        </aside>
       </div>
       {membership}
     </main>

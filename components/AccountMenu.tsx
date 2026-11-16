@@ -1,6 +1,9 @@
 "use client";
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { usePathname } from "next/navigation";
+import { CreditCard, LayoutDashboard, LogOut, Plus, Settings2 } from "lucide-react";
+import { WORK_LINKS, isCurrent } from "@/lib/main-links";
 import { avatarInitial, safeAvatarUrl } from "@/lib/avatar";
 import styles from "./AccountMenu.module.css";
 import {
@@ -22,6 +25,11 @@ export type MenuCapabilities = { publishing: boolean; billing: boolean };
  * (Radix): opens on click / Enter / Space / ArrowDown with focus on the first
  * item, arrows move, Esc closes and returns focus to the avatar, outside
  * click and Tab close it (MASTER.md §Modals).
+ *
+ * Owner 2026-11-16: the main actions are not hidden in the avatar menu. A
+ * member who may publish sees them in the header (WorkActions: แดชบอร์ด ·
+ * โพสต์ของฉัน · ช่อง + "สร้างโพสต์"); the avatar menu keeps only the account:
+ * บัญชี, การชำระเงิน, ตั้งค่าบัญชี, then sign-out, set apart.
  */
 export function AccountMenuView({
   user,
@@ -62,30 +70,50 @@ export function AccountMenuView({
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
         <DropdownMenuItem asChild>
-          <Link href="/account">บัญชี</Link>
+          <Link href="/account">
+            <LayoutDashboard aria-hidden="true" /> บัญชี
+          </Link>
         </DropdownMenuItem>
-        {caps?.publishing && (
-          <DropdownMenuItem asChild>
-            <Link href="/account/channels">ช่องและการโพสต์</Link>
-          </DropdownMenuItem>
-        )}
-        {caps?.publishing && (
-          <DropdownMenuItem asChild>
-            <Link href="/account/posts">โพสต์ของฉัน</Link>
-          </DropdownMenuItem>
-        )}
         {caps?.billing && (
           <DropdownMenuItem asChild>
-            <Link href="/account/billing">การชำระเงิน</Link>
+            <Link href="/account/billing">
+              <CreditCard aria-hidden="true" /> การชำระเงิน
+            </Link>
           </DropdownMenuItem>
         )}
         <DropdownMenuItem asChild>
-          <Link href="/account/settings">ตั้งค่าบัญชี</Link>
+          <Link href="/account/settings">
+            <Settings2 aria-hidden="true" /> ตั้งค่าบัญชี
+          </Link>
         </DropdownMenuItem>
         <DropdownMenuSeparator />
-        <DropdownMenuItem onSelect={onSignOut}>ออกจากระบบ</DropdownMenuItem>
+        <DropdownMenuItem onSelect={onSignOut}>
+          <LogOut aria-hidden="true" /> ออกจากระบบ
+        </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
+  );
+}
+
+/**
+ * The member's work in the header (owner 2026-11-16), for members who may
+ * publish: แดชบอร์ด · โพสต์ของฉัน · ช่อง as links, and "สร้างโพสต์" as the
+ * primary button. Hidden on phones (the sheet carries them).
+ */
+export function WorkActions({ caps }: { caps?: MenuCapabilities }) {
+  const path = usePathname();
+  if (!caps?.publishing) return null;
+  return (
+    <span className={styles.work}>
+      {WORK_LINKS.map((l) => (
+        <Link key={l.href} href={l.href} className={styles.workLink} aria-current={isCurrent(l.href, path) ? "page" : undefined}>
+          {l.label}
+        </Link>
+      ))}
+      <Link href="/account/posts/new" className={styles.create} aria-current={path === "/account/posts/new" ? "page" : undefined}>
+        <Plus aria-hidden="true" /> สร้างโพสต์
+      </Link>
+    </span>
   );
 }
 
@@ -150,6 +178,7 @@ export function AccountMenu() {
   const shown = user && broken ? { ...user, image: null } : user;
   return (
     <div className={styles.root} onErrorCapture={() => setBroken(true)}>
+      {user ? <WorkActions caps={caps} /> : null}
       <AccountMenuView user={shown} caps={caps} onSignOut={() => void signOutToAccount()} />
     </div>
   );

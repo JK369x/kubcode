@@ -16,10 +16,11 @@ import styles from "./AccountShell.module.css";
  */
 export type AccountSection = "overview" | "channels" | "posts" | "billing" | "settings";
 
+// Same names as the header (WORK_LINKS) and the avatar menu (owner 2026-11-16).
 const DOORS: readonly { id: AccountSection; href: string; label: string; icon: typeof Radio }[] = [
-  { id: "overview", href: "/account", label: "บัญชี", icon: LayoutDashboard },
-  { id: "channels", href: "/account/channels", label: "ช่องและการโพสต์", icon: Radio },
+  { id: "overview", href: "/account", label: "แดชบอร์ด", icon: LayoutDashboard },
   { id: "posts", href: "/account/posts", label: "โพสต์ของฉัน", icon: Send },
+  { id: "channels", href: "/account/channels", label: "ช่อง", icon: Radio },
   { id: "billing", href: "/account/billing", label: "การชำระเงิน", icon: CreditCard },
   { id: "settings", href: "/account/settings", label: "ตั้งค่าบัญชี", icon: Settings2 },
 ];

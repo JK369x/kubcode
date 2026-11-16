@@ -1,7 +1,7 @@
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { AccountMenu } from "@/components/AccountMenu";
 import { MobileNav } from "@/components/MobileNav";
-import { MAIN_LINKS } from "@/lib/main-links";
+import { HeaderNav } from "@/components/site/HeaderNav";
 import { SiteFooter } from "@/components/SiteFooter";
 import { Toaster } from "@/components/ui/toaster";
 import type { Metadata } from "next";
@@ -43,19 +43,21 @@ export default function Layout({ children }: { children: React.ReactNode }) {
           <Link className="brand" href="/">
             kubcode
           </Link>
-          <nav aria-label="หลัก">
-            {/* Desktop: inline links + theme. Phones (≤560px): hidden; the
-                MobileNav sheet carries them (UX audit P1-1). */}
+          {/* Owner 2026-11-16: content links grouped under "เรียนรู้" + ราคา;
+              the member's work actions sit in the header (AccountMenu),
+              the theme switch is a small icon at the far right. Phones
+              (≤560px): logo, account, menu; the sheet mirrors this. */}
+          <nav aria-label="หลัก" className="header-nav">
             <span className="header-links">
-              <ThemeToggle />
-              {MAIN_LINKS.map((l) => (
-                <Link key={l.href} href={l.href}>
-                  {l.label}
-                </Link>
-              ))}
+              <HeaderNav />
             </span>
-            <AccountMenu />
-            <MobileNav />
+            <span className="header-end">
+              <AccountMenu />
+              <span className="header-theme">
+                <ThemeToggle />
+              </span>
+              <MobileNav />
+            </span>
           </nav>
         </header>
         {children}

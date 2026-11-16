@@ -10,17 +10,14 @@ import { PlatformLogo, type Platform } from "@/components/PlatformLogo";
 import { send } from "@/lib/interactions/client";
 import type { DeliveryView, PostView } from "@/lib/posts/store";
 
-// In-progress states get the brand tint, not the grey "secondary" that reads
-// as disabled; only cancelled stays grey.
-const IN_PROGRESS = "bg-primary/15 text-foreground";
-const STATUS: Record<DeliveryView["status"], { label: string; variant: "ok" | "warn" | "secondary"; className?: string }> = {
-  pending: { label: "กำลังส่ง", variant: "secondary", className: IN_PROGRESS },
-  scheduled: { label: "ตั้งเวลาแล้ว", variant: "secondary", className: IN_PROGRESS },
-  publishing: { label: "กำลังเผยแพร่", variant: "secondary", className: IN_PROGRESS },
+const STATUS: Record<DeliveryView["status"], { label: string; variant: "ok" | "warn" | "info" | "neutral" }> = {
+  pending: { label: "กำลังส่ง", variant: "info" },
+  scheduled: { label: "ตั้งเวลาแล้ว", variant: "info" },
+  publishing: { label: "กำลังเผยแพร่", variant: "info" },
   published: { label: "เผยแพร่แล้ว", variant: "ok" },
   failed: { label: "ล้มเหลว", variant: "warn" },
   rejected: { label: "ไม่ผ่านการตรวจ", variant: "warn" },
-  cancelled: { label: "ยกเลิกแล้ว", variant: "secondary" },
+  cancelled: { label: "ยกเลิกแล้ว", variant: "neutral" },
 };
 
 /** Fixed error codes → short Thai reasons (anything else shows the code). */
@@ -120,7 +117,7 @@ export function PostsList({ posts: initial }: { posts: PostView[] }) {
                 <li key={d.id} className="flex flex-wrap items-center gap-x-3 gap-y-1 border-t border-border pt-2 text-[14px]">
                   {isPlatform(d.platform) ? <PlatformLogo platform={d.platform} size={18} /> : null}
                   <span className="min-w-0 font-medium">{d.channelName}</span>
-                  <Badge variant={st.variant} className={st.className}>{st.label}</Badge>
+                  <Badge variant={st.variant}>{st.label}</Badge>
                   <span className="text-muted-foreground">{bkk(d.publishAt)}</span>
                   {(d.caption || d.options.length > 0) && (
                     <span className="basis-full text-[13px] text-muted-foreground">

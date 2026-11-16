@@ -6,17 +6,19 @@ import { MAIN_LINKS } from "../lib/main-links";
 
 const read = (f: string) => readFileSync(f, "utf8");
 
-test("P1-1: phones get one header row; the sheet holds the same five links and the theme switch", () => {
+test("P1-1 + nav rework: one header row on phones; the sheet mirrors the grouped header", () => {
   assert.deepEqual(MAIN_LINKS.map((l) => l.href), ["/", "/articles", "/tools", "/community", "/pricing"]);
   const layout = read("app/layout.tsx");
-  assert.match(layout, /MAIN_LINKS\.map/);
+  assert.match(layout, /<HeaderNav \/>/);
   assert.match(layout, /<MobileNav \/>/);
   const nav = read("components/MobileNav.tsx");
-  assert.match(nav, /MAIN_LINKS\.map/);
-  assert.match(nav, /<ThemeToggle \/>/);
+  assert.match(nav, /LEARN_LINKS\.map/);
+  assert.match(nav, /PRICING_LINK\.href/);
+  assert.match(nav, /WORK_LINKS\.map/);
+  assert.match(nav, /<ThemeToggle variant="row" \/>/);
   assert.match(nav, /aria-label="เมนู"/);
   assert.match(nav, /min-\[561px\]:hidden/);
-  assert.match(read("app/globals.css"), /@media \(max-width: 560px\) \{[\s\S]{0,400}\.header \.header-links \{\s*display: none;/);
+  assert.match(read("app/globals.css"), /@media \(max-width: 560px\) \{[\s\S]{0,400}\.header \.header-links,\s*\.header \.header-theme \{\s*display: none;/);
 });
 
 test("P1-2: short Studio / Social tab labels on small phones keep the full accessible name", () => {

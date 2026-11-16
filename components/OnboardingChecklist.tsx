@@ -44,8 +44,34 @@ export function OnboardingChecklist({ data, compact = false }: { data: Onboardin
     }
   }, []);
   if (!data) return null;
-  if (data.complete && (dismissed ?? true)) return null;
   if (compact && data.complete) return null;
+  // Owner 2026-11-16: once everything is done it is one slim line, not a
+  // card (and the member can hide even that, in this browser).
+  if (data.complete) {
+    if (dismissed ?? true) return null;
+    return (
+      <p className="my-4 flex min-h-11 items-center gap-2 rounded-full border border-input bg-card px-4 text-[14px] text-foreground" role="status">
+        <span className="inline-grid size-5 place-items-center rounded-full bg-[#dcfce7] text-[#166534]" aria-hidden>
+          <Check className="size-3.5" />
+        </span>
+        ตั้งค่าครบแล้ว
+        <span className="text-muted-foreground">· ช่อง คำตอบคอมเมนต์ และโพสต์แรกพร้อมแล้ว</span>
+        <button
+          type="button"
+          className="ml-auto inline-flex size-9 items-center justify-center rounded-full border-0 bg-transparent hover:bg-muted"
+          aria-label="ซ่อนข้อความนี้"
+          onClick={() => {
+            try {
+              localStorage.setItem(DISMISS_KEY, "1");
+            } catch {}
+            setDismissed(true);
+          }}
+        >
+          <X aria-hidden className="size-4" />
+        </button>
+      </p>
+    );
+  }
   const done = data.steps.filter((s) => s.done).length;
   const next = data.steps.find((s) => !s.done);
   // Until the pass is paid, the later steps are shown but locked (their pages are paid-only).
@@ -70,7 +96,7 @@ export function OnboardingChecklist({ data, compact = false }: { data: Onboardin
     <section aria-labelledby="onboarding-h" className="my-6 grid gap-4 rounded-2xl border border-input bg-card p-5">
       <div className="flex flex-wrap items-center gap-3">
         <h2 id="onboarding-h" className="m-0 text-[20px]">
-          {data.complete ? "ตั้งค่าครบแล้ว" : "เริ่มใช้ kubcode Social"}
+          เริ่มใช้ kubcode Social
         </h2>
         <span className="text-[14px] text-muted-foreground" aria-label={`ทำแล้ว ${done} จาก ${data.steps.length} ขั้น`}>
           {done}/{data.steps.length}
@@ -80,21 +106,6 @@ export function OnboardingChecklist({ data, compact = false }: { data: Onboardin
             <span key={s.id} className={`size-2 rounded-full ${s.done ? "bg-primary" : "bg-muted-foreground/30"}`} />
           ))}
         </span>
-        {data.complete && (
-          <button
-            type="button"
-            className="ml-auto inline-flex size-11 items-center justify-center rounded-full hover:bg-muted"
-            aria-label="ซ่อนรายการเริ่มต้น"
-            onClick={() => {
-              try {
-                localStorage.setItem(DISMISS_KEY, "1");
-              } catch {}
-              setDismissed(true);
-            }}
-          >
-            <X aria-hidden className="size-5" />
-          </button>
-        )}
       </div>
       <ol className="m-0 grid list-none gap-2 p-0">
         {data.steps.map((s) => {

@@ -5,8 +5,9 @@ import { Slot } from "radix-ui"
 
 /**
  * kubcode Badge (MASTER.md §Chips / Badges): pill, 12–13px, never colour
- * alone (always a word). `ok` / `warn` are the channel status chips: pale fill
- * + dark text, the same in both themes (6.5 / 6.4:1).
+ * alone (always a word). Status pills `ok` / `warn` / `info` / `neutral`:
+ * pale fill + dark text, the same in both themes, every one ≥ 6.4:1.
+ * `secondary` is for counts and labels, not statuses.
  */
 const badgeVariants = cva(
   "group/badge inline-flex w-fit shrink-0 items-center justify-center gap-1 rounded-full border border-transparent px-2.5 py-0.5 text-[13px] leading-[1.5] font-medium whitespace-nowrap outline-none focus-visible:outline-3 focus-visible:outline-solid focus-visible:outline-offset-2 focus-visible:outline-ring [&>svg]:pointer-events-none [&>svg]:size-3.5",
@@ -19,6 +20,11 @@ const badgeVariants = cva(
         destructive: "border-input text-destructive",
         ok: "bg-[#dcfce7] text-[#166534]",
         warn: "bg-[#fef3c7] text-[#92400e]",
+        // Status pills (owner 2026-11-16: grey pills read as disabled). Pale
+        // fill + dark ink like ok/warn, the same in both themes:
+        // neutral (finished / not applicable, still readable) 9.6:1; info 8.1:1.
+        info: "bg-[#e0e7ff] text-[#3730a3]",
+        neutral: "bg-[#ede9f3] text-[#3f3550]",
         media: "bg-black/70 text-white shadow-[0_2px_8px_rgb(0_0_0/0.35)]",
       },
     },

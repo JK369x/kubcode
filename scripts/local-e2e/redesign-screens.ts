@@ -95,6 +95,8 @@ async function main() {
           [pid, d.c.id, d.c.conn, d.platform, d.at, d.status, d.error ?? null],
         );
     };
+    // One comment rule on Instagram, so the owner's first-run checklist is complete.
+    await db.pool.query("INSERT INTO kubcode_accounts.automation_rules (channel_id, keywords, dm_text) VALUES ($1, ARRAY['ลิงก์'], 'นี่ลิงก์ที่ขอไว้ครับ')", [ig.id]);
     await post("web-fixture-1", "ลองทำคลิปแนว What If ด้วย AI ใน 3 นาที\nคอมเมนต์คำว่า ลิงก์ รับไฟล์ skill", [
       { c: ig, platform: "instagram", status: "published", at: "-2 days" },
       { c: tt, platform: "tiktok", status: "rejected", at: "-2 days", error: "cover_missing" },
