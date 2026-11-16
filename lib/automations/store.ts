@@ -6,7 +6,7 @@ import type { Pool, PoolClient } from "pg";
 import type { SessionClaims } from "../accounts/session";
 import { getPool, withTransaction } from "../accounts/db";
 import { lockMember } from "../accounts/member";
-import { canUsePublishing } from "../channels/access";
+import { canUsePublishing, publishingStanding } from "../channels/access";
 import { TIKTOK_NO_DM, checkFor, type AutomationPlatform, type MatchMode, type ReplyPolicy, type RuleFailure, type RuleInput, type RulePatch } from "./rules";
 
 export type AutomationFailure = {
@@ -79,8 +79,7 @@ const COLUMN: Record<keyof RulePatch, string> = {
 async function enter(c: PoolClient, s: SessionClaims, channelId?: string): Promise<AutomationChannel | string | AutomationFailure> {
   const member = await lockMember(c, s);
   if (!member) return { ok: false, code: "NOT_SIGNED_IN" };
-  if (!canUsePublishing(member)) return { ok: false, code: "FORBIDDEN" };
-  await c.query("SELECT set_config('kubcode.user_id', $1, true)", [member.id]);
+  if (!canUsePublishing(await publishingStanding(c, member))) return { ok: false, code: "FORBIDDEN" };
   if (channelId === undefined) return member.id;
   const { rows } = await c.query<{ id: string; display_name: string; handle: string | null; platform: AutomationPlatform }>(
     `SELECT id, display_name, handle, platform FROM kubcode_accounts.channels WHERE id = $1 AND platform IN ('instagram', 'tiktok')`,

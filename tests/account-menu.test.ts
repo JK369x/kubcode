@@ -57,3 +57,14 @@ test("menu items: display name, settings link and sign-out (source; Radix render
   assert.match(src, /<DropdownMenuItem asChild>\s*<Link href="\/account\/settings">ตั้งค่าบัญชี<\/Link>/);
   assert.match(src, /<DropdownMenuItem onSelect=\{onSignOut\}>ออกจากระบบ<\/DropdownMenuItem>/);
 });
+
+test("menu links follow capabilities: บัญชี always; channels/posts only with publishing; billing only when billing is on", () => {
+  const src = require("node:fs").readFileSync("components/AccountMenu.tsx", "utf8") as string;
+  assert.match(src, /<Link href="\/account">บัญชี<\/Link>/);
+  assert.match(src, /\{caps\?\.publishing && \(\s*<DropdownMenuItem asChild>\s*<Link href="\/account\/channels">ช่องและการโพสต์<\/Link>/);
+  assert.match(src, /\{caps\?\.billing && \(\s*<DropdownMenuItem asChild>\s*<Link href="\/account\/billing">การชำระเงิน<\/Link>/);
+  // Order: บัญชี, ช่องและการโพสต์, การชำระเงิน, ตั้งค่าบัญชี, ออกจากระบบ.
+  const order = ["บัญชี</Link>", "ช่องและการโพสต์", "การชำระเงิน", "ตั้งค่าบัญชี", "ออกจากระบบ"].map((k) => src.indexOf(k));
+  assert.deepEqual([...order].sort((a, b) => a - b), order);
+  assert.ok(order.every((i) => i > 0));
+});

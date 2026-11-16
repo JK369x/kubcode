@@ -4,7 +4,7 @@ import type { Pool, PoolClient } from "pg";
 import type { SessionClaims } from "../accounts/session";
 import { getPool, withTransaction } from "../accounts/db";
 import { lockMember } from "../accounts/member";
-import { canUsePublishing } from "./access";
+import { canUsePublishing, publishingStanding } from "./access";
 
 export type Failure = { ok: false; code: "NOT_SIGNED_IN" | "FORBIDDEN" };
 export type ChannelStatus = "active" | "needs_reconnect" | "disconnected";
@@ -19,7 +19,7 @@ export type ChannelView = {
 export type IntentView = { cookieHash: Buffer; bindingHash: Buffer; open: boolean; live: boolean };
 
 export interface ChannelStore {
-  /** The member allowed to use publishing (owner-only in phase 1). */
+  /** The member allowed to use publishing (the owner, or a member with paid slots). */
   member(session: SessionClaims): Promise<{ ok: true; userId: string } | Failure>;
   channels(session: SessionClaims): Promise<{ ok: true; channels: ChannelView[] } | Failure>;
   /** The member's own connect intent by state hash, or null. */
@@ -29,8 +29,7 @@ export interface ChannelStore {
 async function enter(c: PoolClient, s: SessionClaims): Promise<string | Failure> {
   const member = await lockMember(c, s);
   if (!member) return { ok: false, code: "NOT_SIGNED_IN" };
-  if (!canUsePublishing(member)) return { ok: false, code: "FORBIDDEN" };
-  await c.query("SELECT set_config('kubcode.user_id', $1, true)", [member.id]);
+  if (!canUsePublishing(await publishingStanding(c, member))) return { ok: false, code: "FORBIDDEN" };
   return member.id;
 }
 
