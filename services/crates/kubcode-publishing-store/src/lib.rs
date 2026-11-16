@@ -925,6 +925,57 @@ impl Store {
         .transpose()
     }
 
+    /// Deliveries whose outcome or receipt the provider has not told us by
+    /// webhook (TikTok publishes asynchronously and resolves its URL late):
+    /// scheduled/publishing past their time, or published within 14 days with
+    /// no platform id or URL yet. Oldest first, at most `limit`.
+    pub async fn to_reconcile(&self, limit: i64) -> Result<Vec<DeliveryId>> {
+        let rows = self
+            .c
+            .query(
+                "SELECT d.id FROM kubcode_accounts.deliveries d
+                   LEFT JOIN kubcode_accounts.receipts r ON r.delivery_id = d.id
+                  WHERE d.provider_ref IS NOT NULL
+                    AND ((d.status IN ('scheduled', 'publishing')
+                          AND d.publish_at < now() - interval '2 minutes'
+                          AND d.publish_at > now() - interval '14 days')
+                      OR (d.status = 'published'
+                          AND d.publish_at > now() - interval '14 days'
+                          AND (r.delivery_id IS NULL OR r.platform_post_id IS NULL OR r.platform_url IS NULL)))
+                  ORDER BY d.publish_at LIMIT $1",
+                &[&limit],
+            )
+            .await?;
+        Ok(rows.iter().map(|r| DeliveryId(r.get(0))).collect())
+    }
+
+    /// The provider says this delivery is published: move it (if it was in
+    /// flight) and fill the receipt's missing fields, never overwriting, as
+    /// the webhook does. Returns whether anything changed.
+    pub async fn record_published(
+        &self,
+        d: DeliveryId,
+        platform_post_id: &Option<String>,
+        url: &Option<String>,
+    ) -> Result<bool> {
+        let moved = self.transition(d, DeliveryStatus::Published, None).await?;
+        let n = self
+            .c
+            .execute(
+                "INSERT INTO kubcode_accounts.receipts (delivery_id, platform_post_id, platform_url, published_at)
+                 SELECT $1, $2, $3, now() FROM kubcode_accounts.deliveries WHERE id = $1 AND status = 'published'
+                 ON CONFLICT (delivery_id) DO UPDATE
+                   SET platform_post_id = COALESCE(kubcode_accounts.receipts.platform_post_id, EXCLUDED.platform_post_id),
+                       platform_url = COALESCE(kubcode_accounts.receipts.platform_url, EXCLUDED.platform_url),
+                       updated_at = now()
+                 WHERE kubcode_accounts.receipts.platform_post_id IS NULL
+                    OR kubcode_accounts.receipts.platform_url IS NULL",
+                &[&d.0, &short(platform_post_id), &https_url(url)],
+            )
+            .await?;
+        Ok(moved || n > 0)
+    }
+
     pub async fn post_workspace(&self, post: PostId) -> Result<Option<WorkspaceId>> {
         let row = self
             .c

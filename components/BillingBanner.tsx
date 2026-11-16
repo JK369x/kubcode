@@ -17,7 +17,7 @@ export function BillingBanner({ view }: { view: BillingView }) {
     >
       <Icon aria-hidden className="size-5 shrink-0" />
       <p className="m-0 min-w-0 flex-1">{r.text(thaiDateTime(view.paidUntil))}</p>
-      <Link href="/account/billing" className="inline-flex min-h-11 items-center font-medium underline underline-offset-4">
+      <Link href="/account/billing" className="inline-flex min-h-11 items-center font-medium underline underline-offset-(--link-offset)">
         ต่ออายุ
       </Link>
     </div>

@@ -389,7 +389,7 @@
   min-height: 24px;
   color: var(--link);
   text-decoration: underline;
-  text-underline-offset: 4px;
+  text-underline-offset: var(--link-offset);
 }
 
 @media (max-width: 1099px) {
@@ -401,12 +401,26 @@
   .grid {
     grid-template-columns: 1fr;
   }
+
+  /* UX audit P1-2: three equal segments with short labels; no truncation. */
   .switch.switch {
-    justify-content: flex-start;
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    width: 100%;
+    max-width: 420px;
   }
   .tab.tab {
-    padding: 0 12px;
-    font-size: 13px;
+    justify-content: center;
+    padding: 0 10px;
+    font-size: 14px;
+  }
+  .tabLong {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
   }
   .amount {
     font-size: 40px;

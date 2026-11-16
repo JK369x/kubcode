@@ -724,3 +724,37 @@
     transition: none;
   }
 }
+
+/* UX audit P1-2: short tab labels on small phones; the eyebrow describes the selection. */
+@media (max-width: 480px) {
+  /* Visually hidden, still part of the tab's accessible name. */
+  .tabLong {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+}
+
+/* Selected clip card in light mode: the pink-tinted fill needs darker sub text (5.5:1). */
+:global(:root[data-theme="light"]) .pick[data-state="on"] .pickText small {
+  color: #5d5070;
+}
+
+/* UX audit P2-3: on phones the copy sits right on the glow (one column).
+   Calm the glow behind the text and give the lead full-strength ink, so the
+   text keeps ≥ 4.5:1 on every pixel behind it (measured on rendered frames). */
+@media (max-width: 760px) {
+  .aura {
+    opacity: 0.7;
+  }
+  :global(:root[data-theme="light"]) .aura {
+    opacity: 0.35;
+  }
+  .lead,
+  .social {
+    color: var(--foreground);
+  }
+}

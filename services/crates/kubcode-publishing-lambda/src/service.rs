@@ -119,6 +119,38 @@ fn posts_cache_put(key: PostsKey, now: OffsetDateTime, posts: Vec<OwnPost>) {
     }
 }
 
+/// Deliveries the worker asks the provider about per run (every minute).
+pub const RECONCILE_PER_RUN: i64 = 5;
+
+/// Comment stats are reused this long per channel (warm Lambda only), so
+/// opening the page repeatedly does not repeat ~18 provider reads.
+pub const STATS_CACHE_TTL: Duration = Duration::minutes(5);
+type StatsCache = std::collections::HashMap<ChannelId, (OffsetDateTime, CommentStats)>;
+static STATS_CACHE: std::sync::Mutex<Option<StatsCache>> = std::sync::Mutex::new(None);
+
+/// Posts read for comment stats: the most recently commented, plus rule posts.
+pub const STATS_POSTS: usize = 10;
+const STATS_LISTED: u32 = 25;
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+pub struct PostCommentStats {
+    #[serde(rename = "platformPostId")]
+    pub platform_post_id: String,
+    /// Top-level comments from others in the last 7 days.
+    #[serde(rename = "comments7d")]
+    pub comments_7d: u32,
+    /// Of those, the ones no active rule matches.
+    #[serde(rename = "unmatched7d")]
+    pub unmatched_7d: u32,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+pub struct CommentStats {
+    pub posts: Vec<PostCommentStats>,
+    /// False when some post's comments could not be read.
+    pub complete: bool,
+}
+
 /// One post in the picker.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
 pub struct PickerPost {
@@ -429,6 +461,94 @@ impl Service<'_> {
             &ours,
             listed.is_ok(),
         ))
+    }
+
+    /// Automations clarity (UX audit P0-4): for the channel's recent posts and
+    /// every post a rule targets, how many top-level comments (not ours, not
+    /// replies) arrived in the last 7 days and how many matched no active
+    /// rule. A live read through the provider: counts only, nothing stored,
+    /// no comment text or author leaves this function.
+    pub async fn comment_stats(&mut self, user: Uuid, channel: ChannelId) -> Result<CommentStats> {
+        let ws = self.store.owner_workspace(user).await?;
+        let ch = self.own_channel(ws, channel).await?;
+        if !matches!(ch.platform, Platform::Instagram | Platform::TikTok) {
+            return Err(Fail::new("channel_not_found"));
+        }
+        let conn = self
+            .store
+            .connections(channel)
+            .await?
+            .into_iter()
+            .find(|k| k.status != kubcode_publishing::domain::ConnectionStatus::Revoked)
+            .ok_or_else(|| Fail::new("no_connection"))?;
+        let inbox = self
+            .providers(conn.provider)?
+            .inbox
+            .clone()
+            .ok_or_else(|| Fail::new("no_inbox"))?;
+        let rows = self.store.rules_of(channel).await?;
+        let rules: Vec<_> = rows
+            .iter()
+            .map(|r| r.rule.clone())
+            .filter(|r| r.active)
+            .collect();
+        let rule_posts: Vec<String> = rules
+            .iter()
+            .filter_map(|r| match &r.scope {
+                kubcode_publishing::automation::Scope::Post(p) => Some(p.clone()),
+                _ => None,
+            })
+            .collect();
+        let mut ids: Vec<String> = inbox
+            .recent_posts(&conn.provider_ref, STATS_LISTED)
+            .await?
+            .into_iter()
+            .take(STATS_POSTS)
+            .collect();
+        for p in rule_posts {
+            if !ids.contains(&p) {
+                ids.push(p);
+            }
+        }
+        if let Ok(mut slot) = STATS_CACHE.lock() {
+            let cache = slot.get_or_insert_with(Default::default);
+            let now = self.now;
+            cache.retain(|_, (at, _)| now - *at < STATS_CACHE_TTL && *at <= now);
+            if let Some((_, hit)) = cache.get(&channel) {
+                return Ok(hit.clone());
+            }
+        }
+        let since = self.now - PRIVATE_REPLY_WINDOW;
+        let mut posts = Vec::new();
+        let mut complete = true;
+        for id in ids.into_iter().take(STATS_POSTS + 8) {
+            let Ok(comments) = inbox.post_comments(&conn.provider_ref, &id).await else {
+                complete = false;
+                continue;
+            };
+            let mut recent = 0u32;
+            let mut unmatched = 0u32;
+            for c in comments.iter().filter(|c| !c.own_account && !c.is_reply) {
+                if c.created_at.is_some_and(|t| t < since) {
+                    continue;
+                }
+                recent += 1;
+                if choose(&rules, &c.platform_post_id, &c.text).is_none() {
+                    unmatched += 1;
+                }
+            }
+            posts.push(PostCommentStats {
+                platform_post_id: id,
+                comments_7d: recent,
+                unmatched_7d: unmatched,
+            });
+        }
+        let out = CommentStats { posts, complete };
+        if let Ok(mut slot) = STATS_CACHE.lock() {
+            slot.get_or_insert_with(Default::default)
+                .insert(channel, (self.now, out.clone()));
+        }
+        Ok(out)
     }
 
     async fn listed_posts(&mut self, channel: ChannelId) -> Result<Vec<OwnPost>> {
@@ -856,6 +976,69 @@ impl Service<'_> {
             .transition(delivery, DeliveryStatus::Cancelled, None)
             .await?;
         Ok(())
+    }
+
+    /// Asks the provider about deliveries a webhook has not settled (TikTok
+    /// publishes asynchronously and resolves its URL late; webhooks can be
+    /// missed). Published → receipt filled (never overwritten); failed →
+    /// failed with the provider's code. At most RECONCILE_PER_RUN per run.
+    /// One log line with counts only.
+    pub async fn reconcile(&mut self) -> Result<u32> {
+        let ids = self.store.to_reconcile(RECONCILE_PER_RUN).await?;
+        let (mut changed, mut errors) = (0u32, 0u32);
+        for id in ids {
+            let Some(d) = self.store.delivery(id).await? else {
+                continue;
+            };
+            let (Some(post_ref), Some(profile)) = (&d.provider_ref, &d.profile) else {
+                continue;
+            };
+            let Ok(set) = self.providers(d.provider) else {
+                continue;
+            };
+            let publisher = Arc::clone(&set.publisher);
+            let conn = ConnectionRef {
+                platform: d.platform,
+                profile: profile.clone(),
+                account: d.account.clone(),
+            };
+            let state = match publisher.status(&conn, post_ref).await {
+                Ok(s) => s,
+                Err(_) => {
+                    errors += 1;
+                    continue;
+                }
+            };
+            let moved = match state.status {
+                DeliveryStatus::Published => {
+                    self.store
+                        .record_published(id, &state.platform_post_id, &state.platform_url)
+                        .await?
+                }
+                DeliveryStatus::Failed => {
+                    let code = state
+                        .error
+                        .map(|e| e.code.as_str().to_owned())
+                        .unwrap_or_else(|| "platform_rejected".into());
+                    self.store
+                        .transition(id, DeliveryStatus::Failed, Some(&code))
+                        .await?
+                }
+                DeliveryStatus::Publishing if d.status == DeliveryStatus::Scheduled => {
+                    self.store
+                        .transition(id, DeliveryStatus::Publishing, None)
+                        .await?
+                }
+                _ => false,
+            };
+            if moved {
+                changed += 1;
+            }
+        }
+        if changed > 0 || errors > 0 {
+            println!("[publishing] reconcile changed={changed} errors={errors}");
+        }
+        Ok(changed)
     }
 
     // ------------------------------------------------------------ webhooks

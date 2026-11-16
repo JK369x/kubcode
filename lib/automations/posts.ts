@@ -97,3 +97,48 @@ export async function handleChannelPosts(request: Request, channelId: string, de
   const posts = answer.posts.map(pickerPost).filter((p): p is PickerPost => p !== null).slice(0, MAX_PICKER_POSTS);
   return Response.json({ ok: true, posts, complete: answer.complete === true }, { headers: { "Cache-Control": CACHE } });
 }
+
+// ------------------------------------------------------------ comment stats
+//   GET /api/channels/{id}/comment-stats -> {ok, posts: PostStats[], complete}
+// Counts only (UX audit P0-4): top-level comments from others in the last 7
+// days per post and how many matched no active rule. No text, no authors.
+
+export type PostStats = { platformPostId: string; comments7d: number; unmatched7d: number };
+const count = (v: unknown) => (Number.isInteger(v) && (v as number) >= 0 && (v as number) <= 100_000 ? (v as number) : null);
+
+export function postStats(v: unknown): PostStats | null {
+  if (typeof v !== "object" || v === null) return null;
+  const o = v as Record<string, unknown>;
+  const c = count(o.comments7d);
+  const u = count(o.unmatched7d);
+  if (typeof o.platformPostId !== "string" || !POST_ID.test(o.platformPostId) || c === null || u === null || u > c) return null;
+  return { platformPostId: o.platformPostId, comments7d: c, unmatched7d: u };
+}
+
+export async function handleCommentStats(request: Request, channelId: string, deps: ChannelRouteDeps = {}): Promise<Response> {
+  if (!UUID.test(channelId)) return accountErrorResponse("BAD_REQUEST");
+  const env: AuthEnv = deps.env ?? process.env;
+  const automations = readAutomationsConfig(env);
+  if (automations.mode === "off") return errorResponse("NOT_FOUND_FEATURE");
+  const publishing = readPublishingConfig(env);
+  const accounts = readAccountsConfig(env);
+  if (automations.mode !== "on" || publishing.mode !== "on" || accounts.mode !== "on") return errorResponse("UNAVAILABLE");
+  if (!sameSite(request)) return accountErrorResponse("BAD_ORIGIN");
+  const session = await sessionOf(request, env);
+  if (!session) return errorResponse("NOT_SIGNED_IN");
+  const store = deps.storeFor?.(accounts.databaseUrl) ?? getChannelStore(accounts.databaseUrl);
+  let userId: string;
+  try {
+    const m = await store.member(session);
+    if (!m.ok) return errorResponse(m.code);
+    userId = m.userId;
+  } catch (error) {
+    logDbFailure("COMMENT_STATS", error);
+    return errorResponse("UNAVAILABLE");
+  }
+  const answer = await callLambda(publishing, "/api/channels/comment-stats", { user_id: userId, channel_id: channelId }, deps);
+  if (answer?.code === "channel_not_found") return errorResponse("CHANNEL_NOT_FOUND");
+  if (answer?.ok !== true || !Array.isArray(answer.posts)) return errorResponse("UNAVAILABLE");
+  const posts = answer.posts.map(postStats).filter((p): p is PostStats => p !== null).slice(0, 40);
+  return Response.json({ ok: true, posts, complete: answer.complete === true }, { headers: { "Cache-Control": "private, max-age=60" } });
+}

@@ -72,3 +72,37 @@
     width: 100%;
   }
 }
+
+/* Empty state (UX audit P1-7). */
+.empty {
+  display: grid;
+  justify-items: center;
+  gap: 14px;
+  padding: 28px 16px;
+  border: 1px dashed var(--input);
+  border-radius: 18px;
+  text-align: center;
+}
+.emptyLogos {
+  display: flex;
+  gap: 10px;
+}
+.emptyLogos > span {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border: 1px solid var(--input);
+  border-radius: 14px;
+  background: var(--background);
+}
+.emptyText {
+  max-width: 34em;
+  margin: 0;
+  color: var(--muted-foreground);
+  font-size: 15px;
+  line-height: 1.65;
+}
+.empty .connect {
+  width: min(100%, 560px);
+}

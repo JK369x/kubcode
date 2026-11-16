@@ -8,6 +8,7 @@ import type { AutomationChannel, RuleView } from "@/lib/automations/store";
 import type { RecentOutcome } from "@/lib/automations/view";
 import type { PickerPost } from "@/lib/automations/posts";
 import { SkeletonImg } from "./SkeletonImage";
+import { QuietPostWarning, UnmatchedPanel, countLabel, useCommentStats } from "./CommentStats";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
@@ -24,6 +25,8 @@ type Props = {
   rules: RuleView[];
   usage: { count: number; cap: number };
   recent: RecentOutcome[];
+  /** Open the form prefilled with the link template (?template=link). */
+  template?: boolean;
 };
 
 type Draft = {
@@ -42,6 +45,14 @@ const FIELD_ID: Record<ErrField, string> = { keywords: "rule-keywords", scope: "
 
 const EMPTY: Draft = { keywords: "", mode: "contains", scope: "all", postId: "", publicReply: "", dmText: "", afterDm: true };
 const DM_PLACEHOLDER = "ขอบคุณที่สนใจนะ นี่ลิงก์ที่ขอไว้ https://kubcode.dev/go/<slug>";
+
+/** Starter rule (UX audit §3): comment "ลิงก์" → get the link. The creator replaces the URL. */
+export function templateDraft(tiktok: boolean): Draft {
+  const reply = "ลิงก์อยู่ที่ https://kubcode.dev/go/<slug> ครับ";
+  return tiktok
+    ? { ...EMPTY, keywords: "ลิงก์, link", publicReply: reply }
+    : { ...EMPTY, keywords: "ลิงก์, link", publicReply: "ส่งลิงก์ให้ใน DM แล้วนะครับ", dmText: reply };
+}
 
 const MODE_LABEL: Record<MatchMode, string> = {
   contains: "มีคำนี้อยู่ในคอมเมนต์",
@@ -130,11 +141,11 @@ function PostSummary({ post, id, tiktok }: { post: PickerPost | undefined; id: s
   );
 }
 
-export function AutomationsPanel({ channel, rules, usage, recent }: Props) {
+export function AutomationsPanel({ channel, rules, usage, recent, template = false }: Props) {
   const router = useRouter();
   const base = `/api/channels/${channel.id}/automations`;
   const [busy, setBusy] = useState(false);
-  const [draft, setDraft] = useState<Draft>(EMPTY);
+  const [draft, setDraft] = useState<Draft>(() => (template ? templateDraft(channel.platform === "tiktok") : EMPTY));
   const [editing, setEditing] = useState<string | null>(null);
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
   // The field the server rejected: its message shows under it (audit #10).
@@ -154,7 +165,9 @@ export function AutomationsPanel({ channel, rules, usage, recent }: Props) {
   const who = channel.handle ? `@${channel.handle}` : channel.displayName;
   const full = usage.count >= usage.cap;
   const [manual, setManual] = useState(false);
-  const needPosts = draft.scope === "post" || rules.some((r) => r.platformPostId);
+  const stats = useCommentStats(channel.id);
+  // The unmatched panel names posts by caption, so the list loads with the page.
+  const needPosts = true;
   const { posts, retry } = useChannelPosts(channel.id, needPosts);
   const listed = posts.state === "ready" ? posts.posts : [];
   const postById = (id: string) => listed.find((p) => p.platformPostId === id);
@@ -260,6 +273,21 @@ export function AutomationsPanel({ channel, rules, usage, recent }: Props) {
 
       <section className={keys.section} aria-labelledby="automations-rules">
         <h2 id="automations-rules">กฎของช่องนี้</h2>
+        <section aria-label="คอมเมนต์ที่ไม่ตรงกฎใน 7 วัน" className="mb-4 min-w-0">
+          <UnmatchedPanel
+            stats={stats}
+            posts={listed}
+            noun={noun}
+            onCreate={(postId) => {
+              setEditing(null);
+              setManual(false);
+              setDraft({ ...EMPTY, scope: "post", postId });
+              setError(null);
+              formRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+              requestAnimationFrame(() => firstField.current?.focus());
+            }}
+          />
+        </section>
         {rules.length === 0 ? (
           <p className={keys.meta}>ยังไม่มีกฎ เพิ่มกฎแรกได้ด้านล่าง</p>
         ) : (
@@ -275,7 +303,10 @@ export function AutomationsPanel({ channel, rules, usage, recent }: Props) {
                   <dt>จับคำแบบ</dt>
                   <dd>{MODE_LABEL[r.matchMode]}</dd>
                   <dt>โพสต์</dt>
-                  <dd>{r.platformPostId ? <PostSummary post={postById(r.platformPostId)} id={r.platformPostId} tiktok={tiktok} /> : `ทุก${noun}`}</dd>
+                  <dd>
+                    {r.platformPostId ? <PostSummary post={postById(r.platformPostId)} id={r.platformPostId} tiktok={tiktok} /> : `ทุก${noun}`}
+                    {r.platformPostId && r.active && <QuietPostWarning stats={stats} postId={r.platformPostId} noun={noun} />}
+                  </dd>
                   <dt>ตอบใต้คอมเมนต์</dt>
                   <dd>
                     {tiktok
@@ -312,6 +343,14 @@ export function AutomationsPanel({ channel, rules, usage, recent }: Props) {
 
       <section className={keys.section} aria-labelledby="automations-form" ref={formRef}>
         <h2 id="automations-form">{editing ? "แก้ไขกฎ" : "เพิ่มกฎ"}</h2>
+        {!editing && (
+          <p className="m-0 flex flex-wrap items-center gap-2 text-[14px]">
+            <Button type="button" variant="outline" size="sm" onClick={() => { setDraft(templateDraft(tiktok)); setError(null); firstField.current?.focus(); }}>
+              ใช้เทมเพลต
+            </Button>
+            <span className="text-muted-foreground">คนคอมเมนต์ “ลิงก์” → ระบบตอบพร้อมลิงก์ (แก้ลิงก์ให้เป็นของคุณก่อนบันทึก)</span>
+          </p>
+        )}
         <form className={`${keys.form} ${styles.form}`} onSubmit={onSubmit}>
           <Field data-invalid={error?.field === "keywords" || undefined}>
             <FieldLabel htmlFor="rule-keywords">คีย์เวิร์ด</FieldLabel>
@@ -416,6 +455,7 @@ export function AutomationsPanel({ channel, rules, usage, recent }: Props) {
                             <span className={styles.postMeta}>
                               {p.createdAt ? day(p.createdAt) : `ID ${p.platformPostId}`}
                               {p.kubcode ? " · โพสต์จาก kubcode" : ""}
+                              {countLabel(stats, p.platformPostId) ? ` · ${countLabel(stats, p.platformPostId)}` : ""}
                             </span>
                           </label>
                           {p.permalink && (
@@ -429,6 +469,7 @@ export function AutomationsPanel({ channel, rules, usage, recent }: Props) {
                     })}
                   </div>
                 )}
+                {draft.postId !== "" && <QuietPostWarning stats={stats} postId={draft.postId} noun={noun} />}
                 {posts.state === "ready" && !posts.complete && (
                   <p className={keys.meta}>แสดงเฉพาะ{noun}ที่โพสต์ผ่าน kubcode เพราะโหลดรายการจาก{tiktok ? " TikTok" : " Instagram"} ไม่ได้ตอนนี้</p>
                 )}

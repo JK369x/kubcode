@@ -71,6 +71,7 @@ export async function callLambda(
     | "/api/connect/complete"
     | "/api/channels/disconnect"
     | "/api/channels/posts"
+    | "/api/channels/comment-stats"
     | "/api/media/presign"
     | "/api/posts/schedule"
     | "/api/posts/cancel",

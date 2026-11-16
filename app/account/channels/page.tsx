@@ -2,7 +2,10 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { cookies, headers } from "next/headers";
 import { notFound, redirect } from "next/navigation";
+import { AccountShell, accountCaps } from "@/components/site/AccountShell";
+import { Button } from "@/components/ui/button";
 import { ChannelsPanel } from "@/components/ChannelsPanel";
+import { Onboarding } from "@/components/Onboarding";
 import styles from "@/components/KeysSettings.module.css";
 import { canonicalHostRedirect, readAuthConfig, signInPath } from "@/lib/auth-policy";
 import { automationsEnabled } from "@/lib/automations/config";
@@ -31,35 +34,38 @@ export default async function ChannelsPage({ searchParams }: Props) {
   if (view.state === "disabled" || view.state === "forbidden") notFound();
   const notice = (await searchParams).notice;
 
+  const caps = await accountCaps();
   return (
-    <main id="main" className={`account-page ${styles.page}`}>
-      <div>
-        <h1>ช่องที่เชื่อมไว้</h1>
-        {view.state === "ready" && view.channels.some((c) => c.status === "active") && (
-          <p className="flex flex-wrap gap-3">
-            <Link className="inline-flex min-h-11 items-center rounded-md bg-primary px-4 font-medium text-primary-foreground no-underline" href="/account/posts/new">
-              สร้างโพสต์
-            </Link>
-            <Link className="inline-flex min-h-11 items-center" href="/account/posts">
-              โพสต์ของฉัน
-            </Link>
-          </p>
-        )}
-        {view.state === "ready" ? (
-          <ChannelsPanel
-            channels={view.channels}
-            notice={typeof notice === "string" ? notice : null}
-            automations={automationsEnabled(env)}
-          />
-        ) : (
-          <p className="setup-notice" role="status">
-            ระบบเชื่อมช่องใช้งานไม่ได้ชั่วคราว ลองใหม่ภายหลัง
-          </p>
-        )}
-        <p className={styles.back}>
-          <Link href="/account">กลับไปหน้าพื้นที่สมาชิก</Link>
+    <AccountShell caps={caps}
+      section="channels"
+      tone="social"
+      eyebrow="kubcode Social"
+      title="ช่องที่เชื่อมไว้"
+      accent="YouTube · Instagram · TikTok"
+      actions={
+        view.state === "ready" && view.channels.some((c) => c.status === "active") ? (
+          <>
+            <Button asChild size="lg" className="rounded-full">
+              <Link href="/account/posts/new">สร้างโพสต์</Link>
+            </Button>
+            <Button asChild size="lg" variant="outline" className="rounded-full">
+              <Link href="/account/posts">โพสต์ของฉัน</Link>
+            </Button>
+          </>
+        ) : undefined
+      }
+    >
+      <Onboarding compact />
+      {view.state === "ready" ? (
+        <ChannelsPanel channels={view.channels} notice={typeof notice === "string" ? notice : null} automations={automationsEnabled(env)} />
+      ) : (
+        <p className="setup-notice" role="status">
+          ระบบเชื่อมช่องใช้งานไม่ได้ชั่วคราว ลองใหม่ภายหลัง
         </p>
-      </div>
-    </main>
+      )}
+      <p className={styles.back}>
+        <Link href="/account">กลับไปหน้าพื้นที่สมาชิก</Link>
+      </p>
+    </AccountShell>
   );
 }

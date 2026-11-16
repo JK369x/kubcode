@@ -4,6 +4,9 @@ import { cookies, headers } from "next/headers";
 import { notFound, redirect } from "next/navigation";
 import { BillingBanner } from "@/components/BillingBanner";
 import { BillingCheckout } from "@/components/BillingCheckout";
+import { BadgeCheck, CalendarPlus, MessageSquareReply, Plug, Plus, Receipt, Send } from "lucide-react";
+import { AccountShell, accountCaps } from "@/components/site/AccountShell";
+import { IconTile } from "@/components/site/PageHero";
 import { Badge } from "@/components/ui/badge";
 import { canonicalHostRedirect, readAuthConfig, signInPath } from "@/lib/auth-policy";
 import { MAX_SLOTS, PRICE_PER_CHANNEL_SATANG } from "@/lib/billing/config";
@@ -31,11 +34,15 @@ export default async function BillingPage() {
   });
   if (page.state === "off") notFound();
   if (page.state === "signed-out") redirect(signInPath("/account/billing"));
+  const caps = await accountCaps();
   return (
-    <main id="main" className="account-page">
-      <div>
-        <h1>การชำระเงิน</h1>
-        <p className="lead">แพ็กเกจโซเชียล 289 ฿ ต่อช่อง ต่อเดือน จ่ายทีละเดือน ไม่ตัดเงินอัตโนมัติ</p>
+    <AccountShell caps={caps}
+      section="billing"
+      tone="social"
+      eyebrow="kubcode Social"
+      title="การชำระเงิน"
+      lead="แพ็กเกจโซเชียล 289 ฿ ต่อช่อง ต่อเดือน จ่ายทีละเดือน ไม่ตัดเงินอัตโนมัติ"
+    >
         {page.state === "unavailable" ? (
           <p className="setup-notice" role="status">
             ระบบชำระเงินใช้งานไม่ได้ชั่วคราว ลองใหม่ภายหลัง
@@ -43,10 +50,15 @@ export default async function BillingPage() {
         ) : (
           <>
             <BillingBanner view={page.view} />
-            <section aria-labelledby="pass-h" className="mt-6 grid gap-3 rounded-2xl border border-input bg-card p-5">
-              <h2 id="pass-h" className="m-0 text-[22px]">
-                แพ็กเกจของคุณ
-              </h2>
+            <section aria-labelledby="pass-h" className="grid gap-3 rounded-[22px] border-2 border-transparent p-6 [background:linear-gradient(var(--card),var(--card))_padding-box,linear-gradient(100deg,#c8215a,#7c3aed_52%,#0f766e)_border-box]">
+              <div className="flex items-center gap-3">
+                <IconTile tone="social" size={40}>
+                  <BadgeCheck />
+                </IconTile>
+                <h2 id="pass-h" className="m-0 text-[22px]">
+                  แพ็กเกจของคุณ
+                </h2>
+              </div>
               <p className="m-0">
                 <Badge variant={STANDING[page.view.standing].variant}>{STANDING[page.view.standing].label}</Badge>
               </p>
@@ -65,15 +77,39 @@ export default async function BillingPage() {
             </section>
             {page.view.standing !== "exempt" && (
               <>
-                <section aria-labelledby="buy-h" className="mt-6 grid gap-3 rounded-2xl border border-input bg-card p-5">
-                  <h2 id="buy-h" className="m-0 text-[22px]">
-                    {page.view.standing === "none" ? "ซื้อแพ็กเกจรายเดือน" : "ต่ออายุ 1 เดือน"}
-                  </h2>
+                <section aria-labelledby="buy-h" className="grid gap-3 rounded-[22px] border border-input bg-card/90 p-6">
+                  <div className="flex items-center gap-3">
+                    <IconTile tone="brand" size={40}>
+                      <CalendarPlus />
+                    </IconTile>
+                    <h2 id="buy-h" className="m-0 text-[22px]">
+                      {page.view.standing === "none" ? "ซื้อแพ็กเกจรายเดือน" : "ต่ออายุ 1 เดือน"}
+                    </h2>
+                  </div>
                   {page.view.standing === "active" && (
                     <p className="m-0 text-[15px] text-muted-foreground">ต่ออายุก่อนหมดได้ เดือนใหม่เริ่มต่อจากวันหมดอายุเดิม วันที่เหลือไม่หาย</p>
                   )}
+                  {page.view.standing === "none" && (
+                    // UX audit P1-6: say what happens after paying.
+                    <p className="m-0 flex flex-wrap items-center gap-x-2 gap-y-1 text-[15px] text-muted-foreground">
+                      จ่ายแล้วทำอะไรต่อ:
+                      <span className="inline-flex items-center gap-1.5 text-foreground">
+                        <Plug aria-hidden className="size-4 text-link" /> เชื่อมช่อง
+                      </span>
+                      →
+                      <span className="inline-flex items-center gap-1.5 text-foreground">
+                        <MessageSquareReply aria-hidden className="size-4 text-link" /> ตั้งคำตอบคอมเมนต์
+                      </span>
+                      →
+                      <span className="inline-flex items-center gap-1.5 text-foreground">
+                        <Send aria-hidden className="size-4 text-link" /> โพสต์
+                      </span>
+                    </p>
+                  )}
                   <BillingCheckout
                     kind="new"
+                    // Smart default (UX audit P1-6): the channels connected now, at least 1;
+                    // a renewal also keeps the slots already paid for.
                     initial={Math.max(page.view.slots, page.view.activeChannels, 1)}
                     max={MAX_SLOTS}
                     pricePerChannel={PRICE_PER_CHANNEL_SATANG}
@@ -81,20 +117,30 @@ export default async function BillingPage() {
                   />
                 </section>
                 {page.view.standing === "active" && (
-                  <section aria-labelledby="add-h" className="mt-6 grid gap-3 rounded-2xl border border-input bg-card p-5">
-                    <h2 id="add-h" className="m-0 text-[22px]">
-                      เพิ่มช่องในเดือนนี้
-                    </h2>
+                  <section aria-labelledby="add-h" className="grid gap-3 rounded-[22px] border border-input bg-card/90 p-6">
+                    <div className="flex items-center gap-3">
+                      <IconTile tone="brand" size={40}>
+                        <Plus />
+                      </IconTile>
+                      <h2 id="add-h" className="m-0 text-[22px]">
+                        เพิ่มช่องในเดือนนี้
+                      </h2>
+                    </div>
                     <BillingCheckout kind="add" initial={1} max={Math.max(1, MAX_SLOTS - page.view.slots)} pricePerChannel={PRICE_PER_CHANNEL_SATANG} label="ซื้อช่องเพิ่ม" />
                   </section>
                 )}
               </>
             )}
             {page.view.purchases.length > 0 && (
-              <section aria-labelledby="hist-h" className="mt-6">
-                <h2 id="hist-h" className="text-[22px]">
-                  ประวัติการชำระ
-                </h2>
+              <section aria-labelledby="hist-h" className="grid gap-2 rounded-[22px] border border-input bg-card/90 p-6">
+                <div className="flex items-center gap-3">
+                  <IconTile tone="muted" size={40}>
+                    <Receipt />
+                  </IconTile>
+                  <h2 id="hist-h" className="m-0 text-[22px]">
+                    ประวัติการชำระ
+                  </h2>
+                </div>
                 <ul className="m-0 grid list-none gap-2 p-0 text-[15px]">
                   {page.view.purchases.map((p, i) => {
                     const note = purchaseNote(p);
@@ -116,10 +162,9 @@ export default async function BillingPage() {
             )}
           </>
         )}
-        <p className="mt-6">
+        <p className="m-0 text-[15px] [&_a]:text-link [&_a]:underline [&_a]:underline-offset-(--link-offset)">
           <Link href="/refund">นโยบายการคืนเงินและการยกเลิก</Link> · <Link href="/account">กลับไปหน้าพื้นที่สมาชิก</Link>
         </p>
-      </div>
-    </main>
+    </AccountShell>
   );
 }

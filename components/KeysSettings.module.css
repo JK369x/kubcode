@@ -3,7 +3,13 @@
   justify-content: center;
 }
 .back {
-  margin-top: 28px;
+  margin: 0;
+  font-size: 15px;
+}
+.back a {
+  color: var(--link);
+  text-decoration: underline;
+  text-underline-offset: var(--link-offset);
 }
 .keys {
   display: grid;
@@ -14,17 +20,19 @@
   color: var(--muted-foreground);
   font-size: 15px;
 }
+/* Account panels (redesign 2026-11: same card as AccountShell). */
 .section {
   display: grid;
   gap: 16px;
   min-width: 0;
   padding: 24px;
-  background: var(--surface);
-  border: 1px solid var(--line);
-  border-radius: var(--radius-surface);
+  background: color-mix(in srgb, var(--card) 92%, transparent);
+  border: 1px solid var(--input);
+  border-radius: 22px;
 }
 .section h2 {
-  font-size: 24px;
+  font-size: 22px;
+  font-weight: 600;
 }
 .section h3 {
   font-size: 16px;

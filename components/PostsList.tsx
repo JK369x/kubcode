@@ -1,7 +1,8 @@
 "use client";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { ExternalLink } from "lucide-react";
+import Link from "next/link";
+import { ExternalLink, Send } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { toast } from "@/components/ui/toaster";
@@ -9,10 +10,13 @@ import { PlatformLogo, type Platform } from "@/components/PlatformLogo";
 import { send } from "@/lib/interactions/client";
 import type { DeliveryView, PostView } from "@/lib/posts/store";
 
-const STATUS: Record<DeliveryView["status"], { label: string; variant: "ok" | "warn" | "secondary" }> = {
-  pending: { label: "กำลังส่ง", variant: "secondary" },
-  scheduled: { label: "ตั้งเวลาแล้ว", variant: "secondary" },
-  publishing: { label: "กำลังเผยแพร่", variant: "secondary" },
+// In-progress states get the brand tint, not the grey "secondary" that reads
+// as disabled; only cancelled stays grey.
+const IN_PROGRESS = "bg-primary/15 text-foreground";
+const STATUS: Record<DeliveryView["status"], { label: string; variant: "ok" | "warn" | "secondary"; className?: string }> = {
+  pending: { label: "กำลังส่ง", variant: "secondary", className: IN_PROGRESS },
+  scheduled: { label: "ตั้งเวลาแล้ว", variant: "secondary", className: IN_PROGRESS },
+  publishing: { label: "กำลังเผยแพร่", variant: "secondary", className: IN_PROGRESS },
   published: { label: "เผยแพร่แล้ว", variant: "ok" },
   failed: { label: "ล้มเหลว", variant: "warn" },
   rejected: { label: "ไม่ผ่านการตรวจ", variant: "warn" },
@@ -71,12 +75,43 @@ export function PostsList({ posts: initial }: { posts: PostView[] }) {
     setPosts((ps) => ps.map((p) => ({ ...p, deliveries: p.deliveries.map((x) => (x.id === d.id ? { ...x, status: "cancelled" as const } : x)) })));
     router.refresh();
   }
-  if (posts.length === 0) return <p className="text-[15px] text-muted-foreground">ยังไม่มีโพสต์</p>;
+  if (posts.length === 0)
+    // Empty state (UX audit P1-7): logos, what happens, one primary action.
+    return (
+      <div className="grid justify-items-center gap-4 rounded-[22px] border border-dashed border-input px-6 py-12 text-center">
+        <span className="flex gap-2.5" aria-hidden="true">
+          {(["youtube", "instagram", "tiktok"] as const).map((pl) => (
+            <span key={pl} className="grid size-11 place-items-center rounded-[14px] border border-input bg-background">
+              <PlatformLogo platform={pl} size={20} decorative />
+            </span>
+          ))}
+        </span>
+        <p className="m-0 max-w-[34em] text-[15px] leading-[1.65] text-muted-foreground">
+          ยังไม่มีโพสต์ อัปโหลดคลิปครั้งเดียว แล้วเลือกโพสต์ทันทีหรือตั้งเวลาลงหลายช่องพร้อมกัน
+        </p>
+        <Button asChild size="lg" className="rounded-full font-semibold">
+          <Link href="/account/posts/new">
+            <Send aria-hidden className="size-4" /> สร้างโพสต์แรก
+          </Link>
+        </Button>
+      </div>
+    );
   return (
     <ul className="m-0 grid list-none gap-4 p-0">
       {posts.map((p) => (
-        <li key={p.id} className="grid gap-3 rounded-2xl border border-input bg-card p-4">
-          <p className="m-0 line-clamp-3 text-[15px] leading-[1.6] whitespace-pre-line">{p.caption || "(ไม่มีแคปชัน)"}</p>
+        <li key={p.id} className="grid gap-3 rounded-[22px] border border-input bg-card/90 p-5">
+          <div className="flex items-start gap-3">
+            <span className="flex shrink-0 -space-x-1.5 pt-0.5" aria-hidden="true">
+              {Array.from(new Set(p.deliveries.map((d) => d.platform)))
+                .filter(isPlatform)
+                .map((pl) => (
+                  <span key={pl} className="grid size-8 place-items-center rounded-full border border-input bg-background">
+                    <PlatformLogo platform={pl} size={16} decorative />
+                  </span>
+                ))}
+            </span>
+            <p className="m-0 line-clamp-3 min-w-0 text-[15px] leading-[1.6] whitespace-pre-line">{p.caption || "(ไม่มีแคปชัน)"}</p>
+          </div>
           <ul className="m-0 grid list-none gap-2 p-0">
             {p.deliveries.map((d) => {
               const st = STATUS[d.status] ?? STATUS.pending;
@@ -85,7 +120,7 @@ export function PostsList({ posts: initial }: { posts: PostView[] }) {
                 <li key={d.id} className="flex flex-wrap items-center gap-x-3 gap-y-1 border-t border-border pt-2 text-[14px]">
                   {isPlatform(d.platform) ? <PlatformLogo platform={d.platform} size={18} /> : null}
                   <span className="min-w-0 font-medium">{d.channelName}</span>
-                  <Badge variant={st.variant}>{st.label}</Badge>
+                  <Badge variant={st.variant} className={st.className}>{st.label}</Badge>
                   <span className="text-muted-foreground">{bkk(d.publishAt)}</span>
                   {(d.caption || d.options.length > 0) && (
                     <span className="basis-full text-[13px] text-muted-foreground">

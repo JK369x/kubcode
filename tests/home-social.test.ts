@@ -68,8 +68,9 @@ test("social demo: the visitor's channel, local only, input cleaned and capped",
   assert.match(html, new RegExp(`maxLength="${KEYWORD_MAX}"`, "i"));
   assert.match(html, /เร็ว ๆ นี้/);
   assert.match(html, /กำลังทำ/);
-  assert.doesNotMatch(html, /href="\/pricing"/, "no pricing link before the page exists");
-  assert.match(renderToStaticMarkup(createElement(SocialSection, { pricing: true })), /href="\/pricing"/);
+  assert.doesNotMatch(html, /href="\/pricing/, "no pricing link before the page exists");
+  // From the Social section, pricing opens filtered to Social (UX audit P1-3).
+  assert.match(renderToStaticMarkup(createElement(SocialSection, { pricing: true })), /href="\/pricing\?for=social"/);
   assert.equal(cleanKeyword("  ลด ราคา<b>  "), "ลดราคาb");
   assert.equal(cleanKeyword("x".repeat(50)).length, KEYWORD_MAX);
   assert.equal(cleanLink("https://myshop.co/<script>sale 1"), "myshop.co/scriptsale1");

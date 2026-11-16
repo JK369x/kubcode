@@ -214,7 +214,7 @@
   justify-self: end;
   flex-direction: row;
   border-bottom-right-radius: 4px;
-  background: #3797f0;
+  background: #1d6fd8; /* Instagram DM blue, darkened for white text ≥ 4.5:1 */
   color: #fff;
   animation: rise 0.45s cubic-bezier(0.16, 1, 0.3, 1) 1.2s both;
 }
@@ -224,7 +224,7 @@
 }
 .link {
   text-decoration: underline;
-  text-underline-offset: 3px;
+  text-underline-offset: var(--link-offset);
   overflow-wrap: anywhere;
 }
 .sent {

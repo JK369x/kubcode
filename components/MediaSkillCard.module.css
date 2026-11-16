@@ -412,7 +412,7 @@
 .titleLink:hover {
   text-decoration: underline;
   text-decoration-color: rgb(255 255 255 / 0.5);
-  text-underline-offset: 5px;
+  text-underline-offset: var(--link-offset);
 }
 
 .titleLink:hover > svg {
