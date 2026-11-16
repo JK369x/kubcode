@@ -128,9 +128,11 @@ async fn serve_url(env: &Env, req: Request) -> Response<Body> {
         media: &env.opener,
         now: time::OffsetDateTime::now_utc(),
     };
-    let r = http::handle(
+    let uploads = media_uploader(env);
+    let r = http::handle_with(
         &mut svc,
         &s.hmac_key,
+        &uploads,
         parts.method.as_str(),
         parts.uri.path(),
         &parts.headers,
@@ -226,5 +228,12 @@ async fn main() -> Result<(), lambda_runtime::Error> {
             }))
             .await
         }
+    }
+}
+
+fn media_uploader(env: &Env) -> publishing_lambda::runtime::S3Uploader {
+    publishing_lambda::runtime::S3Uploader {
+        bucket: env.opener.bucket.clone(),
+        region: env.opener.region.clone(),
     }
 }

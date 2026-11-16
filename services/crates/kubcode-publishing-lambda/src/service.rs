@@ -72,7 +72,7 @@ pub struct Fail {
 }
 
 impl Fail {
-    fn new(code: &str) -> Self {
+    pub(crate) fn new(code: &str) -> Self {
         Self { code: code.into() }
     }
 }
@@ -243,6 +243,33 @@ fn clip_ref_ok(c: &str) -> bool {
     (1..=120).contains(&c.len())
         && c.bytes()
             .all(|b| b.is_ascii_alphanumeric() || b"._-".contains(&b))
+}
+
+/// A file the web composer is about to upload (what the browser measured).
+#[derive(Debug, Clone, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct WebAsset {
+    /// `web-<uuid v4>`, made by the web host per composer draft.
+    pub clip_ref: String,
+    pub kind: MediaKind,
+    pub sha256: String,
+    pub content_type: String,
+    pub bytes: u64,
+    pub width: u32,
+    pub height: u32,
+    pub seconds: Option<f64>,
+}
+
+/// Web uploads: per file and per workspace per 24 hours (owner decision
+/// 2026-11-16: bounded, the CLI keeps the larger platform limits).
+pub const WEB_VIDEO_MAX_BYTES: u64 = 500 * 1024 * 1024;
+pub const WEB_UPLOADS_PER_DAY: i64 = 40;
+pub const WEB_BYTES_PER_DAY: i64 = 5 * 1024 * 1024 * 1024;
+
+fn web_ref_ok(c: &str) -> bool {
+    c.strip_prefix("web-").is_some_and(|r| {
+        uuid::Uuid::parse_str(r).is_ok_and(|u| u.get_version_num() == 4 && r.len() == 36)
+    })
 }
 
 pub struct Service<'a> {
@@ -474,6 +501,70 @@ impl Service<'_> {
                 other => other.into(),
             })?;
         Ok((id, key))
+    }
+
+    /// The web composer's upload step: validates the file the browser
+    /// describes, applies the member's daily quota, registers the asset and
+    /// returns the S3 key this Lambda chose (the caller presigns exactly it).
+    /// The clip ref is ours (`web-<uuid>`), so a member cannot pick a key.
+    pub async fn web_asset(
+        &mut self,
+        user: Uuid,
+        a: WebAsset,
+    ) -> Result<(MediaAssetId, String, [u8; 32])> {
+        let (ext, kind) = match (a.kind, a.content_type.as_str()) {
+            (MediaKind::Video, "video/mp4") => ("mp4", MediaKind::Video),
+            (MediaKind::Video, "video/quicktime") => ("mov", MediaKind::Video),
+            (MediaKind::Cover, "image/png") => ("png", MediaKind::Cover),
+            (MediaKind::Cover, "image/jpeg") => ("jpg", MediaKind::Cover),
+            _ => return Err(Fail::new("upload_type")),
+        };
+        let max = match kind {
+            MediaKind::Video => WEB_VIDEO_MAX_BYTES,
+            MediaKind::Cover => self.cfg.cover_max_bytes,
+        };
+        if a.bytes == 0 || a.bytes > max {
+            return Err(Fail::new("upload_too_large"));
+        }
+        let dims_ok = (1..=8192).contains(&a.width) && (1..=8192).contains(&a.height);
+        let secs_ok = match (kind, a.seconds) {
+            (MediaKind::Video, Some(s)) => s.is_finite() && s > 0.0 && s <= 3600.0,
+            (MediaKind::Video, None) => false,
+            (MediaKind::Cover, None) => true,
+            (MediaKind::Cover, Some(_)) => false,
+        };
+        if !dims_ok || !secs_ok || !web_ref_ok(&a.clip_ref) {
+            return Err(Fail::new("bad_asset"));
+        }
+        let ws = self.store.owner_workspace(user).await?;
+        let (count, bytes) = self.store.uploads_last_day(ws).await?;
+        if count >= WEB_UPLOADS_PER_DAY || bytes.saturating_add(a.bytes as i64) > WEB_BYTES_PER_DAY
+        {
+            return Err(Fail::new("upload_quota"));
+        }
+        let (id, key) = self
+            .register_asset(
+                user,
+                AssetRequest {
+                    clip_ref: a.clip_ref,
+                    kind,
+                    sha256: a.sha256.clone(),
+                    ext: ext.into(),
+                    meta: MediaMeta {
+                        content_type: a.content_type,
+                        bytes: a.bytes,
+                        width: a.width,
+                        height: a.height,
+                        seconds: a.seconds,
+                    },
+                },
+            )
+            .await?;
+        let sha: [u8; 32] = hex::decode(&a.sha256)
+            .ok()
+            .and_then(|v| v.try_into().ok())
+            .ok_or_else(|| Fail::new("bad_sha256"))?;
+        Ok((id, key, sha))
     }
 
     // ------------------------------------------------------------ publish

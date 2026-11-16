@@ -69,6 +69,11 @@ export function AccountMenuView({
             <Link href="/account/channels">ช่องและการโพสต์</Link>
           </DropdownMenuItem>
         )}
+        {caps?.publishing && (
+          <DropdownMenuItem asChild>
+            <Link href="/account/posts">โพสต์ของฉัน</Link>
+          </DropdownMenuItem>
+        )}
         {caps?.billing && (
           <DropdownMenuItem asChild>
             <Link href="/account/billing">การชำระเงิน</Link>

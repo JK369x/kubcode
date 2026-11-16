@@ -7,4 +7,5 @@ pub mod ops;
 pub mod runtime;
 pub mod service;
 pub mod summary;
+pub mod upload;
 pub mod worker;

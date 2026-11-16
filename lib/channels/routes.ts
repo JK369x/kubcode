@@ -66,7 +66,14 @@ export const sessionBinding = (s: SessionClaims) =>
 /** Calls the Lambda; null on any failure (network, timeout, non-200, bad JSON). */
 export async function callLambda(
   config: Extract<PublishingConfig, { mode: "on" }>,
-  path: "/api/connect/start" | "/api/connect/complete" | "/api/channels/disconnect" | "/api/channels/posts",
+  path:
+    | "/api/connect/start"
+    | "/api/connect/complete"
+    | "/api/channels/disconnect"
+    | "/api/channels/posts"
+    | "/api/media/presign"
+    | "/api/posts/schedule"
+    | "/api/posts/cancel",
   payload: unknown,
   deps: ChannelRouteDeps,
 ): Promise<Record<string, unknown> | null> {
@@ -91,7 +98,7 @@ export async function callLambda(
 }
 
 /** Flag, accounts, Origin/CSRF/body, session, then the member gate. */
-async function writeContext(
+export async function writeContext(
   request: Request,
   deps: ChannelRouteDeps,
   maxBytes: number,

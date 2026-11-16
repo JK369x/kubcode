@@ -240,6 +240,46 @@ impl Limiter for PgLimiter {
     }
 }
 
+/// Presigns browser PUTs into the media bucket with the function's own
+/// credentials (the role may PutObject only under `clips/`; the signature
+/// binds the exact key, type, checksum and SSE).
+pub struct S3Uploader {
+    pub bucket: String,
+    pub region: String,
+}
+
+impl crate::http::Uploader for S3Uploader {
+    fn presign_put(
+        &self,
+        key: &str,
+        content_type: &str,
+        sha256: &[u8; 32],
+        now: u64,
+    ) -> Option<crate::upload::PresignedPut> {
+        if !key_ok(key) {
+            return None;
+        }
+        let c = credentials()?;
+        let creds = crate::upload::Creds {
+            access_key_id: c.access_key_id(),
+            secret_access_key: c.secret_access_key(),
+            session_token: c.session_token(),
+        };
+        let host = crate::upload::regional_host(&self.bucket, &self.region);
+        Some(crate::upload::presign_put(
+            &creds,
+            &crate::upload::PutSpec {
+                host: &host,
+                region: &self.region,
+                key,
+                content_type,
+                sha256,
+                now,
+            },
+        ))
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
