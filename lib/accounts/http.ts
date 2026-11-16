@@ -1,6 +1,6 @@
 // Request guards and cookies for account write routes.
 import { CANONICAL_ORIGIN, SESSION_COOKIE_NAME, canonicalHostRedirect } from "../auth-policy";
-import { csrfMatches, isOpaqueToken } from "./crypto";
+import { isOpaqueToken } from "./crypto";
 import type { AccountErrorCode } from "./errors";
 import { INTENT_TTL_SECONDS } from "./rules";
 
@@ -42,34 +42,6 @@ export function checkSameOrigin(request: Request): AccountErrorCode | null {
   const site = request.headers.get("sec-fetch-site");
   if (site !== null && site !== "same-origin") return "BAD_ORIGIN";
   return null;
-}
-
-export type GuardedBody = { ok: true; body: Record<string, unknown> } | { ok: false; code: AccountErrorCode };
-
-export async function readGuardedJson(request: Request): Promise<GuardedBody> {
-  const origin = checkSameOrigin(request);
-  if (origin) return { ok: false, code: origin };
-  const type = (request.headers.get("content-type") ?? "").split(";")[0].trim().toLowerCase();
-  if (type !== "application/json") return { ok: false, code: "UNSUPPORTED_MEDIA_TYPE" };
-  const declared = Number(request.headers.get("content-length") ?? "0");
-  if (Number.isFinite(declared) && declared > MAX_BODY_BYTES) return { ok: false, code: "PAYLOAD_TOO_LARGE" };
-  let text: string;
-  try {
-    text = await request.text();
-  } catch {
-    return { ok: false, code: "BAD_REQUEST" };
-  }
-  if (Buffer.byteLength(text, "utf8") > MAX_BODY_BYTES) return { ok: false, code: "PAYLOAD_TOO_LARGE" };
-  let body: unknown;
-  try {
-    body = JSON.parse(text);
-  } catch {
-    return { ok: false, code: "BAD_REQUEST" };
-  }
-  if (typeof body !== "object" || body === null || Array.isArray(body)) return { ok: false, code: "BAD_REQUEST" };
-  if (!csrfMatches(readCookie(request, CSRF_COOKIE), request.headers.get(CSRF_HEADER)))
-    return { ok: false, code: "CSRF_INVALID" };
-  return { ok: true, body: body as Record<string, unknown> };
 }
 
 const strict = (name: string, value: string, maxAge: number) =>

@@ -26,6 +26,7 @@ export const NOTICES: Record<string, { ok: boolean; text: string }> = {
   connect_denied: { ok: false, text: "คุณยกเลิกการให้สิทธิ์ จึงยังไม่ได้เชื่อมช่อง" },
   connect_expired: { ok: false, text: "คำขอเชื่อมช่องหมดเวลา ลองใหม่อีกครั้ง" },
   connect_unavailable: { ok: false, text: "ระบบเชื่อมช่องยังไม่พร้อม" },
+  slots_full: { ok: false, text: "ช่องที่จ่ายไว้เต็มแล้ว ซื้อช่องเพิ่มที่หน้าการชำระเงินก่อนเชื่อมช่องใหม่" },
 };
 
 // Official marks (PlatformLogo, simple-icons CC0, unmodified) in brand colour.

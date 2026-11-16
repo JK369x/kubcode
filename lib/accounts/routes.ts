@@ -1,25 +1,15 @@
 // Handlers for /api/account/* link/unlink routes. Route files are thin
 // wrappers; dependencies are injectable so guards are testable offline.
 import type { AuthProviderId, AuthReadiness, AuthEnv } from "../auth-policy";
-import { SESSION_COOKIE_NAME, canonicalHostRedirect, providerReadiness, readAuthConfig } from "../auth-policy";
+import { canonicalHostRedirect, providerReadiness, readAuthConfig } from "../auth-policy";
 import { readAccountsConfig } from "./config";
 import { hashOpaqueToken, newOpaqueToken } from "./crypto";
 import { logDbFailure } from "./db";
 import { accountErrorResponse, type AccountErrorCode } from "./errors";
-import {
-  CSRF_COOKIE,
-  LINK_COOKIE,
-  clearLinkCookie,
-  clearSessionCookie,
-  csrfCookie,
-  jsonNoStore,
-  linkCookie,
-  readCookie,
-  readGuardedJson,
-  readOpaqueCookie,
-} from "./http";
-import { decodeAccountSession } from "./runtime";
-import { sessionClaims, type SessionClaims } from "./session";
+import { CSRF_COOKIE, LINK_COOKIE, clearLinkCookie, clearSessionCookie, csrfCookie, MAX_BODY_BYTES, jsonNoStore, linkCookie, readOpaqueCookie } from "./http";
+import { guardWrite } from "../interactions/http";
+import { sessionOf } from "./runtime";
+import { type SessionClaims } from "./session";
 import { getAccountStore, type AccountStore } from "./store";
 
 export type RouteDeps = {
@@ -51,11 +41,10 @@ async function prepare(request: Request, deps: RouteDeps): Promise<Ready | Retur
   const env = deps.env ?? process.env;
   const avail = availability(env);
   if (!avail.ok) return avail;
-  const guarded = await readGuardedJson(request);
+  const guarded = await guardWrite(request, MAX_BODY_BYTES);
   if (!guarded.ok) return fail(guarded.code);
   const ready = providerReadiness(avail.auth);
-  const token = await decodeAccountSession(readCookie(request, SESSION_COOKIE_NAME), avail.auth.config.secret);
-  const session = token && ready[token.provider] ? sessionClaims(token) : null;
+  const session = await sessionOf(request, env);
   const store = (deps.storeFor ?? getAccountStore)(avail.accounts.databaseUrl);
   return { ok: true, body: guarded.body, session, store, ready };
 }

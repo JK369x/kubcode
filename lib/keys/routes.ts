@@ -6,13 +6,13 @@
 // type, size, streamed body) → body shape → signed session → store (owner
 // rule, validation, sealing).
 import type { AuthEnv } from "../auth-policy";
-import { SESSION_COOKIE_NAME, providerReadiness, readAuthConfig } from "../auth-policy";
+import { readAuthConfig } from "../auth-policy";
 import { readAccountsConfig } from "../accounts/config";
 import { logDbFailure } from "../accounts/db";
 import { ACCOUNT_ERRORS, accountErrorResponse, type AccountErrorCode } from "../accounts/errors";
-import { jsonNoStore, readCookie } from "../accounts/http";
-import { decodeAccountSession } from "../accounts/runtime";
-import { sessionClaims, type SessionClaims } from "../accounts/session";
+import { jsonNoStore } from "../accounts/http";
+import { sessionOf } from "../accounts/runtime";
+import { type SessionClaims } from "../accounts/session";
 import { guardWrite } from "../interactions/http";
 import { keysEnabled } from "./access";
 import { getKeyStore, type KeyStore, type KeyStoreErrorCode } from "./store";
@@ -59,10 +59,8 @@ async function write(request: Request, deps: KeyRouteDeps, op: string, act: Act)
   if (!keysEnabled(env)) return errorResponse("KEYS_DISABLED");
   const guarded = await guardWrite(request, MAX_KEYS_WRITE_BYTES);
   if (!guarded.ok) return accountErrorResponse(guarded.code as AccountErrorCode);
-  const auth = readAuthConfig(env);
-  if (!auth.ok) return accountErrorResponse("ACCOUNTS_UNAVAILABLE");
-  const token = await decodeAccountSession(readCookie(request, SESSION_COOKIE_NAME), auth.config.secret);
-  const session = token && providerReadiness(auth)[token.provider] ? sessionClaims(token) : null;
+  if (!readAuthConfig(env).ok) return accountErrorResponse("ACCOUNTS_UNAVAILABLE");
+  const session = await sessionOf(request, env);
   try {
     // Body shape is checked before the session so a malformed request never
     // reveals whether the caller is signed in; the store is reached last.

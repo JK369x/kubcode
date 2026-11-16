@@ -114,6 +114,7 @@ async fn upload_schedule_status_and_cancel_from_the_web() {
     };
     // A paying member (not the owner): the web host already checked access.
     let member = db.user(false).await;
+    db.pay(member, 2).await;
     let tt = connect(&mut s, &fake, member, Platform::TikTok).await;
     let yt = connect(&mut s, &fake, member, Platform::YouTube).await;
     let clip = format!("web-{}", Uuid::new_v4());

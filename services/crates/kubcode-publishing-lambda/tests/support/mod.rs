@@ -98,6 +98,26 @@ impl Db {
             .get(0)
     }
 
+    /// Gives a member's workspace a 30-day pass with `slots` channels (what the
+    /// billing Lambda writes), so connect_complete has a free slot.
+    #[allow(dead_code)]
+    pub async fn pay(&self, user: Uuid, slots: i32) {
+        self.owner
+            .execute(
+                "WITH ws AS (
+                   INSERT INTO kubcode_accounts.workspaces (name) VALUES ('Workspace') RETURNING id
+                 ), m AS (
+                   INSERT INTO kubcode_accounts.workspace_members (workspace_id, user_id, role)
+                   SELECT id, $1, 'owner' FROM ws
+                 )
+                 INSERT INTO kubcode_accounts.billing_entitlements (workspace_id, slots, paid_until)
+                 SELECT id, $2, now() + interval '30 days' FROM ws",
+                &[&user, &slots],
+            )
+            .await
+            .unwrap();
+    }
+
     pub async fn drop(self) {
         drop(self.owner);
         self.admin

@@ -224,7 +224,12 @@ test("callback: forwards the provider's parameters (not ours) and maps the Lambd
   assert.deepEqual(ok.calls[0].body.params, [["connected", "youtube"], ["accountId", "a1"], ["username", "lokeekbaeb"]]);
 
   const denied = lambda({ ok: false, code: "connect_denied" });
-  assert.equal(notice(await handleChannelCallback(await callback(`i=${STATE}&error=oauth_denied`), deps(openIntent(), { fetch: denied.fetch }))), "connect_denied");
+  assert.equal(
+    notice(await handleChannelCallback(await callback(`i=${STATE}&error=oauth_denied`), deps(openIntent(), { fetch: denied.fetch }))),
+    "connect_denied",
+  );
+  const full = lambda({ ok: false, code: "slots_full" });
+  assert.equal(notice(await handleChannelCallback(await callback(`i=${STATE}&accountId=a1`), deps(openIntent(), { fetch: full.fetch }))), "slots_full");
   const down = lambda({}, 503);
   assert.equal(notice(await handleChannelCallback(await callback(`i=${STATE}&accountId=a1`), deps(openIntent(), { fetch: down.fetch }))), "connect_failed");
 });

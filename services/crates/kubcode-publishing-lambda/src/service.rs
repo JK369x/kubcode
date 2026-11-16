@@ -82,6 +82,7 @@ impl From<StoreError> for Fail {
         match e {
             StoreError::IntentInvalid => Fail::new("intent_invalid"),
             StoreError::Conflict => Fail::new("channel_conflict"),
+            StoreError::SlotsFull => Fail::new("slots_full"),
             StoreError::Db(_) | StoreError::Corrupt => Fail::new("store_unavailable"),
         }
     }

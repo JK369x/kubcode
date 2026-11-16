@@ -5,21 +5,21 @@
 // The web host never sees a client secret or a token: the code exchange and
 // the Google revoke run in the kubcode-oauth-connect Lambda, called with an
 // HMAC-signed request. Redirects only ever go to fixed kubcode.dev paths.
-import { createHash, randomBytes } from "node:crypto";
+import { createHash } from "node:crypto";
 import type { AuthEnv } from "../auth-policy";
-import { CANONICAL_ORIGIN, SESSION_COOKIE_NAME, canonicalHostRedirect, providerReadiness, readAuthConfig } from "../auth-policy";
+import { CANONICAL_ORIGIN, canonicalHostRedirect } from "../auth-policy";
 import { readAccountsConfig } from "../accounts/config";
 import { newOpaqueToken } from "../accounts/crypto";
 import { logDbFailure } from "../accounts/db";
 import { ACCOUNT_ERRORS, accountErrorResponse, type AccountErrorCode } from "../accounts/errors";
 import { jsonNoStore, readCookie, readOpaqueCookie } from "../accounts/http";
-import { decodeAccountSession } from "../accounts/runtime";
-import { sessionClaims, type SessionClaims } from "../accounts/session";
+import { sessionOf } from "../accounts/runtime";
+import { type SessionClaims } from "../accounts/session";
 import { guardWrite } from "../interactions/http";
 import { validReviewCode, REVIEW_COOKIE } from "./reviewer";
 import { getKeyStore, reviewerChannels } from "./store";
 import { keysEnabled } from "./access";
-import { connectHeaders, readConnectConfig, type ConnectConfig } from "./connect-config";
+import { postSigned, readConnectConfig, type ConnectConfig } from "./connect-config";
 import { INTENT_TTL_SECONDS, getConnectStore, isProvider, type ConnectErrorCode, type ConnectStore, type Provider } from "./connect-store";
 
 export type ConnectRouteDeps = {
@@ -60,13 +60,6 @@ function errorResponse(code: RouteErrorCode): Response {
 
 const oauthCookie = (value: string, maxAge: number) => `${OAUTH_COOKIE}=${value}; Path=/; Max-Age=${maxAge}; HttpOnly; Secure; SameSite=Lax`;
 
-export async function sessionOf(request: Request, env: AuthEnv): Promise<SessionClaims | null> {
-  const auth = readAuthConfig(env);
-  if (!auth.ok) return null;
-  const token = await decodeAccountSession(readCookie(request, SESSION_COOKIE_NAME), auth.config.secret);
-  return token && providerReadiness(auth)[token.provider] ? sessionClaims(token) : null;
-}
-
 /** Calls the Lambda; null on any failure (network, timeout, non-200, bad JSON). */
 async function callLambda(
   config: Extract<ConnectConfig, { mode: "on" }>,
@@ -75,24 +68,7 @@ async function callLambda(
   deps: ConnectRouteDeps,
   timeoutMs: number,
 ): Promise<Record<string, unknown> | null> {
-  const body = JSON.stringify(payload);
-  const timestamp = Math.floor((deps.now ?? Date.now)() / 1000);
-  const nonce = randomBytes(16).toString("hex");
-  try {
-    const res = await (deps.fetch ?? fetch)(new URL(path.slice(1), config.url).href, {
-      method: "POST",
-      headers: connectHeaders(config.key, path, body, timestamp, nonce),
-      body,
-      redirect: "error",
-      cache: "no-store",
-      signal: AbortSignal.timeout(timeoutMs),
-    });
-    if (res.status !== 200) return null;
-    const json = (await res.json()) as unknown;
-    return typeof json === "object" && json !== null ? (json as Record<string, unknown>) : null;
-  } catch {
-    return null;
-  }
+  return postSigned(config, path, payload, deps, timeoutMs);
 }
 
 function authorizeUrl(provider: Provider, clientId: string, state: string, verifier: string | null, review = false): string {

@@ -10,7 +10,7 @@ import { ACCOUNT_ERRORS, accountErrorResponse, type AccountErrorCode } from "../
 import { jsonNoStore } from "../accounts/http";
 import type { SessionClaims } from "../accounts/session";
 import { guardWrite } from "../interactions/http";
-import { sessionOf } from "../keys/connect-routes";
+import { sessionOf } from "../accounts/runtime";
 import { readAutomationsConfig } from "./config";
 import { parseRuleInput, parseRulePatch, ruleErrorMessage, type Parsed, type RuleFailure } from "./rules";
 import { getAutomationStore, MAX_RULES_PER_CHANNEL, type AutomationFailure, type AutomationStore } from "./store";

@@ -1,6 +1,6 @@
 import { cookies, headers } from "next/headers";
 import { redirect } from "next/navigation";
-import { sessionOf } from "@/lib/keys/connect-routes";
+import { sessionOf } from "@/lib/accounts/runtime";
 import { reviewerChannels } from "@/lib/keys/store";
 import { validReviewCode, REVIEW_COOKIE, expiresAt } from "@/lib/keys/reviewer";
 import { readAccountsConfig } from "@/lib/accounts/config";

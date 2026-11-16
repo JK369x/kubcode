@@ -26,6 +26,9 @@ pub enum StoreError {
     /// or the channel already has a different live account on this provider.
     #[error("connection conflict")]
     Conflict,
+    /// Billing (ADR 0008): the workspace has no free paid slot for this channel.
+    #[error("no free channel slot")]
+    SlotsFull,
     /// A stored value no longer parses (a row written by a newer version).
     #[error("unexpected stored value")]
     Corrupt,
@@ -431,6 +434,13 @@ impl Store {
         acct: &ConnectedAccount,
     ) -> Result<ChannelId> {
         let tx = self.c.transaction().await?;
+        // Same lock as the billing Lambda's fulfil/sweep, so two connects
+        // finishing at once (or a sweep) see each other's channels.
+        tx.execute(
+            "SELECT pg_advisory_xact_lock(hashtextextended('kubcode-billing:' || $1::text, 0))",
+            &[&i.workspace.0.to_string()],
+        )
+        .await?;
         let provider = i.provider.as_str();
         let existing = tx
             .query_opt(
@@ -507,6 +517,28 @@ impl Store {
             &[&channel, &acct.display_name, &acct.handle],
         )
         .await?;
+        // The web checks for a free slot when the connect starts; check again
+        // here, after the attach, so parallel connects cannot pass N slots.
+        // Owner never pays; others get their paid slots until 3 days past
+        // paid_until (lib/billing/store.ts standingAt). Rolled back if over.
+        let fits: bool = tx
+            .query_one(
+                "SELECT EXISTS (SELECT 1 FROM kubcode_accounts.workspace_members m
+                                  JOIN kubcode_accounts.users u ON u.id = m.user_id
+                                 WHERE m.workspace_id = $1 AND u.is_owner)
+                     OR (SELECT count(*) FROM kubcode_accounts.channels ch
+                          WHERE ch.workspace_id = $1
+                            AND EXISTS (SELECT 1 FROM kubcode_accounts.channel_connections cc
+                                         WHERE cc.channel_id = ch.id AND cc.status <> 'revoked'))
+                        <= COALESCE((SELECT e.slots FROM kubcode_accounts.billing_entitlements e
+                                      WHERE e.workspace_id = $1 AND e.paid_until + interval '3 days' > now()), 0)",
+                &[&i.workspace.0],
+            )
+            .await?
+            .get(0);
+        if !fits {
+            return Err(StoreError::SlotsFull);
+        }
         tx.execute(
             "UPDATE kubcode_accounts.channel_connect_intents SET result_channel_id = $2 WHERE id = $1",
             &[&i.id, &channel],

@@ -5,13 +5,11 @@
 // shape → target is a coming-soon plan or an unopened roadmap item → session
 // → store.
 import type { AuthEnv } from "../auth-policy";
-import { SESSION_COOKIE_NAME, providerReadiness, readAuthConfig } from "../auth-policy";
 import { readAccountsConfig } from "../accounts/config";
 import { logDbFailure } from "../accounts/db";
 import { accountErrorResponse } from "../accounts/errors";
-import { jsonNoStore, readCookie } from "../accounts/http";
-import { decodeAccountSession } from "../accounts/runtime";
-import { sessionClaims, type SessionClaims } from "../accounts/session";
+import { jsonNoStore } from "../accounts/http";
+import { sessionOf } from "../accounts/runtime";
 import { guardWrite } from "../interactions/http";
 import { getWaitlistStore, type WaitlistStore } from "./store";
 import { isWaitlistKind, waitlistTargetOpen } from "./targets";
@@ -26,13 +24,6 @@ const rateLimited = () =>
     { code: "RATE_LIMITED", message: "ทำรายการถี่เกินไป ลองใหม่ภายหลัง" },
     { status: 429, headers: { "Cache-Control": "no-store" } },
   );
-
-async function sessionOf(request: Request, env: AuthEnv): Promise<SessionClaims | null> {
-  const auth = readAuthConfig(env);
-  if (!auth.ok) return null;
-  const token = await decodeAccountSession(readCookie(request, SESSION_COOKIE_NAME), auth.config.secret);
-  return token && providerReadiness(auth)[token.provider] ? sessionClaims(token) : null;
-}
 
 /**
  * Public counts: open targets only, and only at WAITLIST_COUNT_MIN or more,
