@@ -224,7 +224,7 @@
 }
 .link {
   text-decoration: underline;
-  text-underline-offset: 3px;
+  text-underline-offset: var(--link-offset);
   overflow-wrap: anywhere;
 }
 .sent {

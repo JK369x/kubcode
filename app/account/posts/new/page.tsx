@@ -39,7 +39,7 @@ export default async function NewPostPage() {
           ระบบโพสต์ใช้งานไม่ได้ชั่วคราว ลองใหม่ภายหลัง
         </p>
       )}
-      <p className="m-0 text-[15px] [&_a]:text-link [&_a]:underline [&_a]:underline-offset-4">
+      <p className="m-0 text-[15px] [&_a]:text-link [&_a]:underline [&_a]:underline-offset-(--link-offset)">
         <Link href="/account/posts">โพสต์ทั้งหมด</Link> · <Link href="/account/channels">ช่องที่เชื่อมไว้</Link>
       </p>
     </AccountShell>

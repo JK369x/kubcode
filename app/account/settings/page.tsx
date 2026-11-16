@@ -59,7 +59,7 @@ export default async function AccountSettingsPage({ searchParams }: Props) {
           ระบบอนุมัติสมาชิกและการดาวน์โหลดยังไม่เปิด · <Link href="/privacy">นโยบายข้อมูล</Link>
         </p>
       </section>
-      <p className="m-0 text-[15px] [&_a]:text-link [&_a]:underline [&_a]:underline-offset-4">
+      <p className="m-0 text-[15px] [&_a]:text-link [&_a]:underline [&_a]:underline-offset-(--link-offset)">
         <Link href="/account">กลับไปหน้าพื้นที่สมาชิก</Link>
       </p>
     </AccountShell>

@@ -214,9 +214,15 @@ body {
   background: var(--selected);
   color: var(--selected-ink);
 }
+/* One link style site-wide (UX audit P2-1): every underlined link uses these. */
+:root {
+  --link-offset: 4px;
+  --link-thickness: 1px;
+}
 a {
   color: inherit;
-  text-underline-offset: 5px;
+  text-underline-offset: var(--link-offset);
+  text-decoration-thickness: var(--link-thickness);
 }
 button,
 input {
@@ -2338,7 +2344,7 @@ img.tool-mark {
 .prose a:not(.anchor) {
   color: var(--purple);
   text-decoration: underline;
-  text-underline-offset: 3px;
+  text-underline-offset: var(--link-offset);
 }
 .prose strong {
   font-weight: 600;
@@ -2559,7 +2565,7 @@ html[data-theme="light"] .shiki span {
 .agent-install-notes a {
   color: var(--purple);
   text-decoration: underline;
-  text-underline-offset: 3px;
+  text-underline-offset: var(--link-offset);
 }
 @media (max-width: 760px) {
   .agent-install {

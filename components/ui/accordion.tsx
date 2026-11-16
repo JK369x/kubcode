@@ -78,7 +78,7 @@ function AccordionContent({
     >
       <div
         className={cn(
-          "pb-4 text-[15px] leading-[1.75] text-muted-foreground [&_a]:text-link [&_a]:underline [&_a]:underline-offset-4",
+          "pb-4 text-[15px] leading-[1.75] text-muted-foreground [&_a]:text-link [&_a]:underline [&_a]:underline-offset-(--link-offset)",
           className
         )}
       >

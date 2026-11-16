@@ -29,7 +29,7 @@ const buttonVariants = cva(
           "bg-transparent text-foreground hover:enabled:bg-accent hover:enabled:text-accent-foreground [a]:hover:bg-accent aria-expanded:bg-accent",
         destructive:
           "border-input bg-transparent text-destructive hover:enabled:border-destructive light:border-destructive light:bg-destructive light:text-destructive-foreground light:hover:enabled:opacity-90",
-        link: "h-auto! min-h-6 px-0! text-link underline-offset-4 hover:underline",
+        link: "h-auto! min-h-6 px-0! text-link underline-offset-(--link-offset) hover:underline",
       },
       size: {
         default: "h-11 px-[18px] md:h-10",

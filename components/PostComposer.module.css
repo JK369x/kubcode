@@ -232,7 +232,7 @@
 .problems a {
   color: var(--link);
   text-decoration: underline;
-  text-underline-offset: 4px;
+  text-underline-offset: var(--link-offset);
 }
 /* Not ready yet: looks secondary but stays focusable and clickable so the
    summary can explain what is missing. */

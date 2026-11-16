@@ -177,7 +177,7 @@
     sans-serif;
   text-decoration: underline;
   text-decoration-color: color-mix(in srgb, var(--hero-ink) 40%, transparent);
-  text-underline-offset: 5px;
+  text-underline-offset: var(--link-offset);
 }
 .cue:hover strong {
   text-decoration-color: currentColor;

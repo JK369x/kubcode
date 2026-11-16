@@ -48,7 +48,7 @@
   min-height: 32px;
   color: var(--ink);
   font-size: 13px;
-  text-underline-offset: 3px;
+  text-underline-offset: var(--link-offset);
 }
 
 .section {
@@ -83,7 +83,7 @@
 }
 .credits a {
   color: inherit;
-  text-underline-offset: 3px;
+  text-underline-offset: var(--link-offset);
 }
 
 /* Phones: a smaller cover so the description and steps are not pushed far down. */

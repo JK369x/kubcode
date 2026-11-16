@@ -162,7 +162,7 @@ export default async function BillingPage() {
             )}
           </>
         )}
-        <p className="m-0 text-[15px] [&_a]:text-link [&_a]:underline [&_a]:underline-offset-4">
+        <p className="m-0 text-[15px] [&_a]:text-link [&_a]:underline [&_a]:underline-offset-(--link-offset)">
           <Link href="/refund">นโยบายการคืนเงินและการยกเลิก</Link> · <Link href="/account">กลับไปหน้าพื้นที่สมาชิก</Link>
         </p>
     </AccountShell>
