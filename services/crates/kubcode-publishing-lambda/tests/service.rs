@@ -995,6 +995,7 @@ async fn comment_stats_count_recent_and_unmatched_comments_per_post() {
     let (reg, cfg) = (registry(&fake), cfg());
     let mut s = svc(&mut store, &reg, &cfg);
     let member = db.user(false).await;
+    db.pay(member, 1).await;
     let tt = connect(&mut s, &fake, member, Platform::TikTok).await;
     let acct = s.store.connections(tt).await.unwrap()[0]
         .provider_ref
