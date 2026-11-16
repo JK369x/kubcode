@@ -182,6 +182,8 @@ async function main() {
         // and this fixture owner's cookies (Secure cookies need https).
         await page.route("http://kubcode-ui.test/**", async (route) => {
           const { pathname, search } = new URL(route.request().url());
+          // A request still in flight when the test closes the page (prefetches,
+          // the session poll) loses its context: that is not a failure.
           const response = await route.fetch({
             url: `http://127.0.0.1:${port}${pathname}${search}`,
             headers: {
@@ -192,8 +194,11 @@ async function main() {
               cookie: `${CSRF_COOKIE}=${csrfFixture}; ${owner.cookie}`,
             },
             maxRedirects: 0,
+          }).catch((e: Error) => {
+            if (page.isClosed() || /disposed|closed/i.test(e.message)) return null;
+            throw e;
           });
-          await route.fulfill({ response });
+          if (response) await route.fulfill({ response }).catch(() => undefined);
         });
         await page.goto("http://kubcode-ui.test/account/keys");
         await page.getByRole("heading", { name: "ตั้งค่าคีย์และบัญชีโพสต์" }).waitFor();
