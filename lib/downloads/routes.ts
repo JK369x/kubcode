@@ -2,23 +2,25 @@
 // wrappers; deps are injectable so every guard is testable offline.
 //
 // POST order: accounts on → downloads on → guardWrite (Origin, CSRF) →
-// approved package → signed session → limit + log (DB-checked session) →
-// presigned URL from the signer Lambda → (private packages) object exists.
+// approved package → signed session → limit (DB-checked session) →
+// presigned URL from the signer Lambda → (private packages) object exists →
+// log. A link that could not be issued is not counted.
 // Nothing past a failed step runs.
 import type { AuthEnv } from "../auth-policy";
-import { SESSION_COOKIE_NAME, providerReadiness, readAuthConfig } from "../auth-policy";
+import { readAuthConfig } from "../auth-policy";
 import { readAccountsConfig } from "../accounts/config";
 import { logDbFailure } from "../accounts/db";
 import { accountErrorResponse, ACCOUNT_ERRORS, type AccountErrorCode } from "../accounts/errors";
-import { jsonNoStore, readCookie } from "../accounts/http";
-import { decodeAccountSession } from "../accounts/runtime";
-import { sessionClaims } from "../accounts/session";
+import { jsonNoStore } from "../accounts/http";
+import { sessionOf } from "../accounts/runtime";
 import { guardWrite } from "../interactions/http";
 import { approvedPackageFor } from "../packages";
 import { readDownloadsConfig } from "./config";
 import { DOWNLOAD_LIMIT, DOWNLOAD_WINDOW_HOURS } from "./limits";
 import { requestSignedUrl } from "./signer";
-import { getDownloadStore, type DownloadStore } from "./store";
+import { getDownloadStore, type DownloadRefusal, type DownloadStore } from "./store";
+
+type Issued = { ok: true; url: string } | { ok: false; code: "DOWNLOAD_UNAVAILABLE" | "PACKAGE_NOT_FOUND" };
 
 export type DownloadDeps = {
   env?: AuthEnv;
@@ -98,39 +100,39 @@ export async function handleDownload(request: Request, slug: string, deps: Downl
   const pkg = approvedPackageFor(slug);
   if (!pkg) return errorResponse("PACKAGE_NOT_FOUND");
 
-  const auth = readAuthConfig(env);
-  if (!auth.ok) return accountErrorResponse("ACCOUNTS_UNAVAILABLE");
-  const token = await decodeAccountSession(readCookie(request, SESSION_COOKIE_NAME), auth.config.secret);
-  if (!token || !providerReadiness(auth)[token.provider]) return errorResponse("NOT_SIGNED_IN");
-  const session = sessionClaims(token);
+  if (!readAuthConfig(env).ok) return accountErrorResponse("ACCOUNTS_UNAVAILABLE");
+  const session = await sessionOf(request, env);
+  if (!session) return errorResponse("NOT_SIGNED_IN");
 
-  try {
-    const recorded = await (deps.storeFor ?? getDownloadStore)(accounts.databaseUrl).recordDownload(session, {
-      slug: pkg.slug,
-      version: pkg.version,
+  // Signed and probed inside the store's transaction: only an issued link is counted.
+  const issue = async (): Promise<Issued> => {
+    const signed = await (deps.sign ?? requestSignedUrl)(downloads.signer, {
+      key: pkg.key,
+      filename: pkg.filename,
+      user: session.uid,
     });
-    if (!recorded.ok) return errorResponse(recorded.code, recorded.code === "DOWNLOAD_LIMIT" ? { retryAt: recorded.retryAt } : {});
+    if (!signed.ok) {
+      console.error("[kubcode-downloads] SIGNER_FAILED");
+      return { ok: false, code: "DOWNLOAD_UNAVAILABLE" };
+    }
+    if (pkg.kind === "private") {
+      const state = await (deps.probe ?? probeObject)(signed.url);
+      if (state === "missing") {
+        console.error(`[kubcode-downloads] PRIVATE_OBJECT_MISSING ${pkg.key}`);
+        return { ok: false, code: "PACKAGE_NOT_FOUND" };
+      }
+      if (state === "error") return { ok: false, code: "DOWNLOAD_UNAVAILABLE" };
+    }
+    return { ok: true, url: signed.url };
+  };
+
+  let result: Issued | DownloadRefusal;
+  try {
+    result = await (deps.storeFor ?? getDownloadStore)(accounts.databaseUrl).recordDownload(session, { slug: pkg.slug, version: pkg.version }, issue);
   } catch (error) {
     logDbFailure("DOWNLOAD_RECORD", error);
     return accountErrorResponse("ACCOUNTS_UNAVAILABLE");
   }
-
-  const signed = await (deps.sign ?? requestSignedUrl)(downloads.signer, {
-    key: pkg.key,
-    filename: pkg.filename,
-    user: session.uid,
-  });
-  if (!signed.ok) {
-    console.error("[kubcode-downloads] SIGNER_FAILED");
-    return errorResponse("DOWNLOAD_UNAVAILABLE");
-  }
-  if (pkg.kind === "private") {
-    const state = await (deps.probe ?? probeObject)(signed.url);
-    if (state === "missing") {
-      console.error(`[kubcode-downloads] PRIVATE_OBJECT_MISSING ${pkg.key}`);
-      return errorResponse("PACKAGE_NOT_FOUND");
-    }
-    if (state === "error") return errorResponse("DOWNLOAD_UNAVAILABLE");
-  }
-  return jsonNoStore({ ok: true, url: signed.url, filename: pkg.filename });
+  if (!result.ok) return errorResponse(result.code, result.code === "DOWNLOAD_LIMIT" ? { retryAt: result.retryAt } : {});
+  return jsonNoStore({ ok: true, url: result.url, filename: pkg.filename });
 }

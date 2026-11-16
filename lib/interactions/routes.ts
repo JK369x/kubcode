@@ -4,13 +4,13 @@
 // Write order: feature availability → guardWrite (Origin, CSRF, media type,
 // size, streamed body) → body shape → page exists → signed session → store.
 import type { AuthEnv } from "../auth-policy";
-import { SESSION_COOKIE_NAME, providerReadiness, readAuthConfig } from "../auth-policy";
+import { readAuthConfig } from "../auth-policy";
 import { readAccountsConfig } from "../accounts/config";
 import { logDbFailure } from "../accounts/db";
 import { accountErrorResponse, ACCOUNT_ERRORS, type AccountErrorCode } from "../accounts/errors";
-import { jsonNoStore, readCookie } from "../accounts/http";
-import { decodeAccountSession } from "../accounts/runtime";
-import { sessionClaims, type SessionClaims } from "../accounts/session";
+import { jsonNoStore } from "../accounts/http";
+import { sessionOf } from "../accounts/runtime";
+import { type SessionClaims } from "../accounts/session";
 import { rawSkills } from "../catalog";
 import { getContent, slugProblem } from "../content";
 import { hrefOf } from "../content-links";
@@ -92,13 +92,10 @@ async function context(request: Request, deps: InteractionDeps): Promise<Ctx | R
   if (accounts.mode === "off") return accountErrorResponse("ACCOUNTS_DISABLED");
   if (accounts.mode === "broken") return accountErrorResponse("ACCOUNTS_UNAVAILABLE");
   if (!interactionsEnabled(env)) return errorResponse("INTERACTIONS_DISABLED");
-  const auth = readAuthConfig(env);
-  if (!auth.ok) return accountErrorResponse("ACCOUNTS_UNAVAILABLE");
-  const ready = providerReadiness(auth);
-  const token = await decodeAccountSession(readCookie(request, SESSION_COOKIE_NAME), auth.config.secret);
+  if (!readAuthConfig(env).ok) return accountErrorResponse("ACCOUNTS_UNAVAILABLE");
   return {
     store: (deps.storeFor ?? getInteractionStore)(accounts.databaseUrl),
-    session: token && ready[token.provider] ? sessionClaims(token) : null,
+    session: await sessionOf(request, env),
     pageExists: deps.pageExists ?? defaultPageExists,
   };
 }

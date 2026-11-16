@@ -109,6 +109,30 @@ impl Db {
             .get(0)
     }
 
+    /// A paid pass for the workspace (billing Lambda's write, done as the owner role).
+    async fn pass(&self, ws: WorkspaceId, slots: i32) {
+        self.owner
+            .execute(
+                "INSERT INTO kubcode_accounts.billing_entitlements (workspace_id, slots, paid_until)
+                 VALUES ($1, $2, now() + interval '30 days')
+                 ON CONFLICT (workspace_id) DO UPDATE SET slots = EXCLUDED.slots, paid_until = EXCLUDED.paid_until",
+                &[&ws.0, &slots],
+            )
+            .await
+            .unwrap();
+    }
+
+    async fn channel_count(&self, ws: WorkspaceId) -> i64 {
+        self.owner
+            .query_one(
+                "SELECT count(*) FROM kubcode_accounts.channels WHERE workspace_id = $1",
+                &[&ws.0],
+            )
+            .await
+            .unwrap()
+            .get(0)
+    }
+
     async fn drop(self) {
         drop(self.owner);
         self.admin
@@ -226,6 +250,7 @@ async fn attaching_connections() {
     let mut s = db.worker().await;
     let u = db.user().await;
     let ws = s.owner_workspace(u).await.unwrap();
+    db.pass(ws, 10).await;
     s.open_intent(&intent(ws, u, "x")).await.unwrap();
     let i = s.take_intent(&hash("x")).await.unwrap();
 
@@ -277,6 +302,7 @@ async fn the_web_role_sees_only_its_workspace_and_never_provider_refs() {
     let (mine, theirs) = (db.user().await, db.user().await);
     for u in [mine, theirs] {
         let ws = s.owner_workspace(u).await.unwrap();
+        db.pass(ws, 10).await;
         let state = u.to_string();
         s.open_intent(&intent(ws, u, &state)).await.unwrap();
         let i = s.take_intent(&hash(&state)).await.unwrap();
@@ -315,6 +341,7 @@ async fn delivery_fixture(
 ) -> (uuid::Uuid, kubcode_publishing::domain::DeliveryId) {
     let u = db.user().await;
     let ws = s.owner_workspace(u).await.unwrap();
+    db.pass(ws, 10).await;
     s.open_intent(&intent(ws, u, "p")).await.unwrap();
     let i = s.take_intent(&hash("p")).await.unwrap();
     let ch = s.attach_connection(&i, &account("acct-p")).await.unwrap();
@@ -574,6 +601,7 @@ async fn comment_to_dm_bookkeeping() {
     let mut s = db.worker().await;
     let u = db.user().await;
     let ws = s.owner_workspace(u).await.unwrap();
+    db.pass(ws, 10).await;
     s.open_intent(&intent(ws, u, "c")).await.unwrap();
     let i = s.take_intent(&hash("c")).await.unwrap();
     let ch = s.attach_connection(&i, &account("acct-1")).await.unwrap();
@@ -808,5 +836,45 @@ async fn one_worker_tick_at_a_time() {
         }
         tokio::time::sleep(std::time::Duration::from_millis(20)).await;
     }
+    db.drop().await;
+}
+
+#[tokio::test]
+#[ignore = "needs KUBCODE_TEST_DATABASE_URL; run with --ignored"]
+async fn a_finished_connect_cannot_pass_the_paid_slots() {
+    let db = db().await;
+    let mut s = db.worker().await;
+    let u = db.user().await;
+    let ws = s.owner_workspace(u).await.unwrap();
+    // Each callback takes its intent before the provider answers, so two
+    // tabs can both hold a taken intent while waiting on the provider.
+    let mut taken = Vec::new();
+    for st in ["a", "b", "c"] {
+        s.open_intent(&intent(ws, u, st)).await.unwrap();
+        taken.push(s.take_intent(&hash(st)).await.unwrap());
+    }
+    let (a, b, c) = (&taken[0], &taken[1], &taken[2]);
+
+    // No pass: nothing attaches, and nothing is left behind.
+    assert!(matches!(
+        s.attach_connection(a, &account("acct-a")).await,
+        Err(StoreError::SlotsFull)
+    ));
+    assert_eq!(
+        db.channel_count(ws).await,
+        0,
+        "a refused attach is rolled back"
+    );
+
+    // One slot: two connects started in parallel, only the first finishes.
+    db.pass(ws, 1).await;
+    s.attach_connection(a, &account("acct-a")).await.unwrap();
+    assert!(matches!(
+        s.attach_connection(b, &account("acct-b")).await,
+        Err(StoreError::SlotsFull)
+    ));
+    // Reconnecting the account that already holds the slot still works.
+    s.attach_connection(c, &account("acct-a")).await.unwrap();
+    assert_eq!(db.channel_count(ws).await, 1);
     db.drop().await;
 }

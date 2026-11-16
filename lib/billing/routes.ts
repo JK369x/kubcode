@@ -3,15 +3,14 @@
 //   POST /api/billing/fulfil   {session_id}              -> {ok, result, entitlement}
 // The web host only signs requests to the billing Lambda; Stripe ids and the
 // Stripe key stay there. Every write passes Origin/CSRF/body guards first.
-import { randomBytes } from "node:crypto";
 import type { AuthEnv } from "../auth-policy";
 import { readAccountsConfig } from "../accounts/config";
 import { logDbFailure } from "../accounts/db";
 import { ACCOUNT_ERRORS, accountErrorResponse, type AccountErrorCode } from "../accounts/errors";
 import { jsonNoStore } from "../accounts/http";
 import { guardWrite } from "../interactions/http";
-import { connectHeaders } from "../keys/connect-config";
-import { sessionOf } from "../keys/connect-routes";
+import { postSigned } from "../keys/connect-config";
+import { sessionOf } from "../accounts/runtime";
 import { MAX_SLOTS, readBillingConfig, type BillingConfig } from "./config";
 import { getBillingStore, type BillingStore } from "./store";
 
@@ -62,24 +61,7 @@ export async function callBilling(
   payload: unknown,
   deps: BillingRouteDeps,
 ): Promise<Record<string, unknown> | null> {
-  const body = JSON.stringify(payload);
-  const timestamp = Math.floor((deps.now ?? Date.now)() / 1000);
-  const nonce = randomBytes(16).toString("hex");
-  try {
-    const res = await (deps.fetch ?? fetch)(new URL(path.slice(1), config.url).href, {
-      method: "POST",
-      headers: connectHeaders(config.key, path, body, timestamp, nonce),
-      body,
-      redirect: "error",
-      cache: "no-store",
-      signal: AbortSignal.timeout(25_000),
-    });
-    if (res.status !== 200) return null;
-    const json = (await res.json()) as unknown;
-    return typeof json === "object" && json !== null ? (json as Record<string, unknown>) : null;
-  } catch {
-    return null;
-  }
+  return postSigned(config, path, payload, deps, 25_000);
 }
 
 async function context(request: Request, deps: BillingRouteDeps, maxBytes: number, bodyOk: (b: Record<string, unknown>) => boolean) {

@@ -2,7 +2,7 @@
 // §2, §5): its Function URL, the shared HMAC key, and kubcode's shared YouTube
 // client id (§2a). All live in web.env on the box; the secrets the Lambda needs
 // live in SSM and never reach the web host.
-import { createHash, createHmac } from "node:crypto";
+import { createHash, createHmac, randomBytes } from "node:crypto";
 import type { AuthEnv } from "../auth-policy";
 
 export const MIN_CONNECT_KEY_BYTES = 32;
@@ -50,4 +50,32 @@ export function connectHeaders(key: string, path: string, body: string, timestam
     "x-kubcode-nonce": nonce,
     "x-kubcode-signature": createHmac("sha256", key).update(toSign, "utf8").digest("hex"),
   };
+}
+
+/** Signed POST to a kubcode Lambda; null on any failure (network, timeout, non-200, non-object JSON). */
+export async function postSigned(
+  config: { url: string; key: string },
+  path: string,
+  payload: unknown,
+  deps: { fetch?: typeof fetch; now?: () => number },
+  timeoutMs: number,
+): Promise<Record<string, unknown> | null> {
+  const body = JSON.stringify(payload);
+  const timestamp = Math.floor((deps.now ?? Date.now)() / 1000);
+  const nonce = randomBytes(16).toString("hex");
+  try {
+    const res = await (deps.fetch ?? fetch)(new URL(path.slice(1), config.url).href, {
+      method: "POST",
+      headers: connectHeaders(config.key, path, body, timestamp, nonce),
+      body,
+      redirect: "error",
+      cache: "no-store",
+      signal: AbortSignal.timeout(timeoutMs),
+    });
+    if (res.status !== 200) return null;
+    const json = (await res.json()) as unknown;
+    return typeof json === "object" && json !== null ? (json as Record<string, unknown>) : null;
+  } catch {
+    return null;
+  }
 }

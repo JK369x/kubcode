@@ -2,7 +2,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { encode } from "next-auth/jwt";
 import { accountToken } from "../lib/accounts/session";
-import type { DownloadStore } from "../lib/downloads/store";
+import type { DownloadRefusal, DownloadStore } from "../lib/downloads/store";
 import { handleDownload, handleDownloadStatus, type DownloadDeps } from "../lib/downloads/routes";
 
 const AUTH_ENV = Object.freeze({
@@ -48,6 +48,20 @@ async function post(slug: string, opts: { origin?: string; signedIn?: boolean; c
   });
 }
 const get = (slug: string) => new Request(`https://kubcode.dev/api/download/${slug}`, { headers: { host: "kubcode.dev" } });
+
+/** Under the limit: runs `issue` and logs only an issued link, like the real store. */
+function fakeStore(log: unknown[] = []): DownloadStore {
+  return {
+    recordDownload: async (viewer, pkg, issue) => {
+      const issued = await issue();
+      if (issued.ok) log.push({ uid: viewer.uid, ...pkg });
+      return issued;
+    },
+  };
+}
+const refusing = (r: DownloadRefusal): DownloadStore => ({
+  recordDownload: async () => r,
+});
 
 const deps = (over: Partial<DownloadDeps> = {}): DownloadDeps => ({
   env: ON_ENV,
@@ -95,12 +109,7 @@ test("download: a member gets a short-lived URL for the approved package", async
     await post("freshstack-what-if"),
     "freshstack-what-if",
     deps({
-      storeFor: () => ({
-        recordDownload: async (viewer, pkg) => {
-          recorded.push({ uid: viewer.uid, ...pkg });
-          return { ok: true };
-        },
-      }),
+      storeFor: () => fakeStore(recorded),
       sign: async (_config, req) => {
         signed.push(req);
         return { ok: true, url: S3_URL };
@@ -119,7 +128,9 @@ test("download: over the limit answers 429 with when to retry, and never signs",
   const res = await handleDownload(
     await post("freshstack-what-if"),
     "freshstack-what-if",
-    deps({ storeFor: () => ({ recordDownload: async () => ({ ok: false, code: "DOWNLOAD_LIMIT", retryAt }) }) }),
+    deps({
+      storeFor: () => refusing({ ok: false, code: "DOWNLOAD_LIMIT", retryAt }),
+    }),
   );
   const retryAfter = Number(res.headers.get("retry-after"));
   const body = await expectError(res, 429, "DOWNLOAD_LIMIT");
@@ -131,22 +142,32 @@ test("download: a session the database rejects is not signed in", async () => {
   const res = await handleDownload(
     await post("freshstack-what-if"),
     "freshstack-what-if",
-    deps({ storeFor: () => ({ recordDownload: async () => ({ ok: false, code: "NOT_SIGNED_IN" }) }) }),
+    deps({ storeFor: () => refusing({ ok: false, code: "NOT_SIGNED_IN" }) }),
   );
   await expectError(res, 401, "NOT_SIGNED_IN");
 });
 
-test("download: signer and database failures fail closed", async () => {
-  const ok = () => ({ recordDownload: async () => ({ ok: true }) as const });
-  await expectError(
-    await handleDownload(await post("freshstack-what-if"), "freshstack-what-if", deps({ storeFor: ok, sign: async () => ({ ok: false }) })),
-    502,
-    "DOWNLOAD_UNAVAILABLE",
-  );
+test("download: signer and database failures fail closed, and a failed link is not counted", async () => {
   const original = console.error;
   console.error = () => undefined;
   try {
-    const throwing = () => ({ recordDownload: async () => Promise.reject(new Error("db down")) });
+    const recorded: unknown[] = [];
+    await expectError(
+      await handleDownload(
+        await post("freshstack-what-if"),
+        "freshstack-what-if",
+        deps({
+          storeFor: () => fakeStore(recorded),
+          sign: async () => ({ ok: false }),
+        }),
+      ),
+      502,
+      "DOWNLOAD_UNAVAILABLE",
+    );
+    assert.deepEqual(recorded, [], "signer failure must not use up the limit");
+    const throwing = () => ({
+      recordDownload: async () => Promise.reject(new Error("db down")),
+    });
     await expectError(await handleDownload(await post("freshstack-what-if"), "freshstack-what-if", deps({ storeFor: throwing })), 503, "ACCOUNTS_UNAVAILABLE");
   } finally {
     console.error = original;
@@ -168,7 +189,8 @@ test("status: available only for an approved package while downloads are on", as
 });
 
 test("download: a members-only package whose object is missing answers 404, not a dead link", async () => {
-  const okStore = () => ({ recordDownload: async () => ({ ok: true as const }) });
+  const recorded: unknown[] = [];
+  const okStore = () => fakeStore(recorded);
   const url = "https://kubcode-media-955758449820.s3.ap-southeast-1.amazonaws.com/packages/deep-sea-docs/0.1.0.zip?X-Amz-Signature=x";
   const sign = async () => ({ ok: true as const, url });
   const probed: string[] = [];
@@ -181,6 +203,7 @@ test("download: a members-only package whose object is missing answers 404, not 
   assert.deepEqual(probed, [url]);
   const broken = await handleDownload(await post("deep-sea-docs"), "deep-sea-docs", deps({ storeFor: okStore, sign, probe: async () => "error" }));
   await expectError(broken, 502, "DOWNLOAD_UNAVAILABLE");
+  assert.deepEqual(recorded, [], "missing or unreachable object is not counted");
   const present = await handleDownload(await post("deep-sea-docs"), "deep-sea-docs", deps({ storeFor: okStore, sign, probe: async () => "present" }));
   assert.equal(present.status, 200);
   assert.deepEqual(await present.json(), { ok: true, url, filename: "deep-sea-docs-0.1.0.zip" });

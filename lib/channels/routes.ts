@@ -16,8 +16,8 @@ import { ACCOUNT_ERRORS, accountErrorResponse, type AccountErrorCode } from "../
 import { jsonNoStore, readOpaqueCookie } from "../accounts/http";
 import type { SessionClaims } from "../accounts/session";
 import { guardWrite } from "../interactions/http";
-import { connectHeaders } from "../keys/connect-config";
-import { sessionOf } from "../keys/connect-routes";
+import { postSigned } from "../keys/connect-config";
+import { sessionOf } from "../accounts/runtime";
 import { isConnectable, readPublishingConfig, type PublishingConfig } from "./config";
 import { getChannelStore, type ChannelStore } from "./store";
 import { readBillingConfig } from "../billing/config";
@@ -77,24 +77,7 @@ export async function callLambda(
   payload: unknown,
   deps: ChannelRouteDeps,
 ): Promise<Record<string, unknown> | null> {
-  const body = JSON.stringify(payload);
-  const timestamp = Math.floor((deps.now ?? Date.now)() / 1000);
-  const nonce = randomBytes(16).toString("hex");
-  try {
-    const res = await (deps.fetch ?? fetch)(new URL(path.slice(1), config.url).href, {
-      method: "POST",
-      headers: connectHeaders(config.key, path, body, timestamp, nonce),
-      body,
-      redirect: "error",
-      cache: "no-store",
-      signal: AbortSignal.timeout(CALL_TIMEOUT_MS),
-    });
-    if (res.status !== 200) return null;
-    const json = (await res.json()) as unknown;
-    return typeof json === "object" && json !== null ? (json as Record<string, unknown>) : null;
-  } catch {
-    return null;
-  }
+  return postSigned(config, path, payload, deps, CALL_TIMEOUT_MS);
 }
 
 /** Flag, accounts, Origin/CSRF/body, session, then the member gate. */
@@ -173,7 +156,7 @@ export async function handleChannelConnect(request: Request, deps: ChannelRouteD
   return jsonNoStore({ ok: true, authorizeUrl: url }, [intentCookie(cookieToken, INTENT_TTL_SECONDS)]);
 }
 
-type Notice = "connected" | "connect_failed" | "connect_denied" | "connect_expired" | "connect_unavailable";
+type Notice = "connected" | "connect_failed" | "connect_denied" | "connect_expired" | "connect_unavailable" | "slots_full";
 
 function backToChannels(notice: Notice): Response {
   const headers = new Headers({
@@ -216,7 +199,8 @@ export async function handleChannelCallback(request: Request, deps: ChannelRoute
     const forwarded = [...params.entries()].filter(([k, v]) => !OWN_PARAMS.has(k) && k.length <= 64 && v.length <= 2048).slice(0, 32);
     const answer = await callLambda(config, "/api/connect/complete", { state, params: forwarded }, deps);
     if (answer?.ok === true) return backToChannels("connected");
-    return backToChannels(answer?.code === "connect_denied" ? "connect_denied" : "connect_failed");
+    if (answer?.code === "connect_denied" || answer?.code === "slots_full") return backToChannels(answer.code);
+    return backToChannels("connect_failed");
   } catch (error) {
     logDbFailure("CHANNEL_CALLBACK", error);
     return backToChannels("connect_failed");

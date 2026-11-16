@@ -13,7 +13,7 @@ import { canonicalHostRedirect } from "../auth-policy";
 import { callLambda, type ChannelRouteDeps } from "../channels/routes";
 import { readPublishingConfig } from "../channels/config";
 import { getChannelStore } from "../channels/store";
-import { sessionOf } from "../keys/connect-routes";
+import { sessionOf } from "../accounts/runtime";
 import { readAutomationsConfig } from "./config";
 
 export type PickerPost = {

@@ -1,10 +1,10 @@
 // Per-request accounts context for next-auth callbacks. A fresh object is
 // built for every request; nothing user-specific is kept at module scope.
 import { decode } from "next-auth/jwt";
-import type { AuthReadiness } from "../auth-policy";
-import { SESSION_COOKIE_NAME } from "../auth-policy";
+import type { AuthEnv, AuthReadiness } from "../auth-policy";
+import { SESSION_COOKIE_NAME, providerReadiness, readAuthConfig } from "../auth-policy";
 import { hashOpaqueToken, isOpaqueToken } from "./crypto";
-import { LINK_COOKIE } from "./http";
+import { LINK_COOKIE, readCookie } from "./http";
 import { parseAccountToken, sessionClaims, type AccountToken, type SessionClaims } from "./session";
 import type { AccountStore, LoginProfile } from "./store";
 
@@ -43,6 +43,14 @@ export async function decodeAccountSession(raw: string | null | undefined, secre
   } catch {
     return null;
   }
+}
+
+/** Signed-in claims from the request cookie, or null (bad config, no/invalid cookie, provider now off). Not DB-checked. */
+export async function sessionOf(request: Request, env: AuthEnv): Promise<SessionClaims | null> {
+  const auth = readAuthConfig(env);
+  if (!auth.ok) return null;
+  const token = await decodeAccountSession(readCookie(request, SESSION_COOKIE_NAME), auth.config.secret);
+  return token && providerReadiness(auth)[token.provider] ? sessionClaims(token) : null;
 }
 
 export async function requestContextFrom(

@@ -363,9 +363,18 @@ function writeRequest(over: { headers?: Record<string, string>; body?: string; u
 }
 
 test("accounts: write guard accepts only canonical same-origin JSON with matching double-submit CSRF", async () => {
-  const { readGuardedJson } = http();
-  assert.deepEqual(await readGuardedJson(writeRequest()), { ok: true, body: { provider: "line" } });
-  const charset = await readGuardedJson(writeRequest({ headers: { "content-type": "application/json; charset=utf-8" } }));
+  const { guardWrite } = await import("../lib/interactions/http");
+  const { MAX_BODY_BYTES } = http();
+  const readGuardedJson = (r: Request) => guardWrite(r, MAX_BODY_BYTES);
+  assert.deepEqual(await readGuardedJson(writeRequest()), {
+    ok: true,
+    body: { provider: "line" },
+  });
+  const charset = await readGuardedJson(
+    writeRequest({
+      headers: { "content-type": "application/json; charset=utf-8" },
+    }),
+  );
   assert.equal(charset.ok, true);
   const cases: Array<[string, Parameters<typeof writeRequest>[0], string]> = [
     ["alias host", { headers: { host: "kubcode-preview.vercel.app" } }, "BAD_ORIGIN"],
@@ -390,6 +399,21 @@ test("accounts: write guard accepts only canonical same-origin JSON with matchin
     ["malformed csrf", { headers: { cookie: "__Host-kubcode-csrf=x", "x-kubcode-csrf": "x" } }, "CSRF_INVALID"],
   ];
   for (const [name, over, code] of cases) assert.deepEqual(await readGuardedJson(writeRequest(over)), { ok: false, code }, name);
+  // A body with no Content-Length (chunked) is cut at the cap, not buffered whole.
+  const big = new TextEncoder().encode(JSON.stringify({ provider: "x".repeat(5000) }));
+  const chunked = new Request(writeRequest().url, {
+    method: "POST",
+    headers: writeRequest().headers,
+    body: new ReadableStream({
+      start(c) {
+        c.enqueue(big);
+        c.close();
+      },
+    }),
+    duplex: "half",
+  } as RequestInit);
+  assert.equal(chunked.headers.get("content-length"), null);
+  assert.deepEqual(await readGuardedJson(chunked), { ok: false, code: "PAYLOAD_TOO_LARGE" }, "chunked huge body");
 });
 
 test("accounts: link cookie is Lax for OAuth return and csrf cookie remains Strict", () => {

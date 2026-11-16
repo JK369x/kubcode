@@ -257,6 +257,7 @@ async fn other_workspaces_are_out_of_reach() {
     let (reg, cfg) = (registry(&fake), cfg());
     let mut s = svc(&mut store, &reg, &cfg);
     let (owner, other) = (db.user(true).await, db.user(false).await);
+    db.pay(other, 1).await;
     let theirs = connect(&mut s, &fake, other, Platform::YouTube).await;
     let (video, cover) = assets(&mut s, owner, true).await;
     let req = request(video, cover, &[theirs]);
@@ -842,6 +843,7 @@ async fn the_post_picker_lists_the_channels_posts_and_ours_first() {
     let (owner, other) = (db.user(true).await, db.user(false).await);
     let ig = connect(&mut s, &fake, owner, Platform::Instagram).await;
     let yt = connect(&mut s, &fake, owner, Platform::YouTube).await;
+    db.pay(other, 1).await;
     let theirs = connect(&mut s, &fake, other, Platform::Instagram).await;
     fake.set_own_posts(vec![OwnPost {
         platform_post_id: "17900000000000001".into(),
