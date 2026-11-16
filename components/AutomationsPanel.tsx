@@ -8,6 +8,7 @@ import type { AutomationChannel, RuleView } from "@/lib/automations/store";
 import type { RecentOutcome } from "@/lib/automations/view";
 import type { PickerPost } from "@/lib/automations/posts";
 import { SkeletonImg } from "./SkeletonImage";
+import { QuietPostWarning, UnmatchedPanel, countLabel, useCommentStats } from "./CommentStats";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
@@ -164,7 +165,9 @@ export function AutomationsPanel({ channel, rules, usage, recent, template = fal
   const who = channel.handle ? `@${channel.handle}` : channel.displayName;
   const full = usage.count >= usage.cap;
   const [manual, setManual] = useState(false);
-  const needPosts = draft.scope === "post" || rules.some((r) => r.platformPostId);
+  const stats = useCommentStats(channel.id);
+  // The unmatched panel names posts by caption, so the list loads with the page.
+  const needPosts = true;
   const { posts, retry } = useChannelPosts(channel.id, needPosts);
   const listed = posts.state === "ready" ? posts.posts : [];
   const postById = (id: string) => listed.find((p) => p.platformPostId === id);
@@ -270,6 +273,21 @@ export function AutomationsPanel({ channel, rules, usage, recent, template = fal
 
       <section className={keys.section} aria-labelledby="automations-rules">
         <h2 id="automations-rules">กฎของช่องนี้</h2>
+        <section aria-label="คอมเมนต์ที่ไม่ตรงกฎใน 7 วัน" className="mb-4 min-w-0">
+          <UnmatchedPanel
+            stats={stats}
+            posts={listed}
+            noun={noun}
+            onCreate={(postId) => {
+              setEditing(null);
+              setManual(false);
+              setDraft({ ...EMPTY, scope: "post", postId });
+              setError(null);
+              formRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+              requestAnimationFrame(() => firstField.current?.focus());
+            }}
+          />
+        </section>
         {rules.length === 0 ? (
           <p className={keys.meta}>ยังไม่มีกฎ เพิ่มกฎแรกได้ด้านล่าง</p>
         ) : (
@@ -285,7 +303,10 @@ export function AutomationsPanel({ channel, rules, usage, recent, template = fal
                   <dt>จับคำแบบ</dt>
                   <dd>{MODE_LABEL[r.matchMode]}</dd>
                   <dt>โพสต์</dt>
-                  <dd>{r.platformPostId ? <PostSummary post={postById(r.platformPostId)} id={r.platformPostId} tiktok={tiktok} /> : `ทุก${noun}`}</dd>
+                  <dd>
+                    {r.platformPostId ? <PostSummary post={postById(r.platformPostId)} id={r.platformPostId} tiktok={tiktok} /> : `ทุก${noun}`}
+                    {r.platformPostId && r.active && <QuietPostWarning stats={stats} postId={r.platformPostId} noun={noun} />}
+                  </dd>
                   <dt>ตอบใต้คอมเมนต์</dt>
                   <dd>
                     {tiktok
@@ -434,6 +455,7 @@ export function AutomationsPanel({ channel, rules, usage, recent, template = fal
                             <span className={styles.postMeta}>
                               {p.createdAt ? day(p.createdAt) : `ID ${p.platformPostId}`}
                               {p.kubcode ? " · โพสต์จาก kubcode" : ""}
+                              {countLabel(stats, p.platformPostId) ? ` · ${countLabel(stats, p.platformPostId)}` : ""}
                             </span>
                           </label>
                           {p.permalink && (
@@ -447,6 +469,7 @@ export function AutomationsPanel({ channel, rules, usage, recent, template = fal
                     })}
                   </div>
                 )}
+                {draft.postId !== "" && <QuietPostWarning stats={stats} postId={draft.postId} noun={noun} />}
                 {posts.state === "ready" && !posts.complete && (
                   <p className={keys.meta}>แสดงเฉพาะ{noun}ที่โพสต์ผ่าน kubcode เพราะโหลดรายการจาก{tiktok ? " TikTok" : " Instagram"} ไม่ได้ตอนนี้</p>
                 )}

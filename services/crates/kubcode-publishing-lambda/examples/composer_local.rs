@@ -182,6 +182,46 @@ async fn api(
             json!({"ok": ch.is_ok(), "channel": ch.ok().map(|c| c.0)}).to_string(),
         );
     }
+    if parts.uri.path() == "/seed-comments" {
+        // Preview setup only: own posts and their comments on the fake provider.
+        let v: serde_json::Value = serde_json::from_slice(&body).unwrap_or_default();
+        let account =
+            kubcode_publishing::domain::ProviderRef(v["account"].as_str().unwrap_or("").to_owned());
+        let now = time::OffsetDateTime::now_utc();
+        let mut own = Vec::new();
+        for p in v["posts"].as_array().cloned().unwrap_or_default() {
+            let id = p["id"].as_str().unwrap_or("0").to_owned();
+            own.push(kubcode_publishing::ports::OwnPost {
+                platform_post_id: id.clone(),
+                permalink: None,
+                thumbnail_url: None,
+                caption: p["caption"].as_str().unwrap_or("").to_owned(),
+                created_at: Some(now - time::Duration::days(p["days_ago"].as_i64().unwrap_or(0))),
+            });
+            let comments = p["comments"]
+                .as_array()
+                .cloned()
+                .unwrap_or_default()
+                .iter()
+                .enumerate()
+                .map(|(i, c)| kubcode_publishing::events::IncomingComment {
+                    account: account.clone(),
+                    comment_id: format!("{id}-{i}"),
+                    platform_post_id: id.clone(),
+                    author_id: format!("viewer-{i}"),
+                    own_account: c["own"].as_bool().unwrap_or(false),
+                    is_reply: c["reply"].as_bool().unwrap_or(false),
+                    created_at: Some(
+                        now - time::Duration::days(c["days_ago"].as_i64().unwrap_or(0)),
+                    ),
+                    text: c["text"].as_str().unwrap_or("").to_owned(),
+                })
+                .collect();
+            local.fake.set_post_comments(&id, comments);
+        }
+        local.fake.set_own_posts(own);
+        return json_reply(200, json!({"ok": true}).to_string());
+    }
     let now = SystemTime::now()
         .duration_since(UNIX_EPOCH)
         .unwrap()

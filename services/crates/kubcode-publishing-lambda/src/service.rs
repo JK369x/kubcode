@@ -118,6 +118,35 @@ fn posts_cache_put(key: PostsKey, now: OffsetDateTime, posts: Vec<OwnPost>) {
     }
 }
 
+/// Comment stats are reused this long per channel (warm Lambda only), so
+/// opening the page repeatedly does not repeat ~18 provider reads.
+pub const STATS_CACHE_TTL: Duration = Duration::minutes(5);
+type StatsCache = std::collections::HashMap<ChannelId, (OffsetDateTime, CommentStats)>;
+static STATS_CACHE: std::sync::Mutex<Option<StatsCache>> = std::sync::Mutex::new(None);
+
+/// Posts read for comment stats: the most recently commented, plus rule posts.
+pub const STATS_POSTS: usize = 10;
+const STATS_LISTED: u32 = 25;
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+pub struct PostCommentStats {
+    #[serde(rename = "platformPostId")]
+    pub platform_post_id: String,
+    /// Top-level comments from others in the last 7 days.
+    #[serde(rename = "comments7d")]
+    pub comments_7d: u32,
+    /// Of those, the ones no active rule matches.
+    #[serde(rename = "unmatched7d")]
+    pub unmatched_7d: u32,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+pub struct CommentStats {
+    pub posts: Vec<PostCommentStats>,
+    /// False when some post's comments could not be read.
+    pub complete: bool,
+}
+
 /// One post in the picker.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
 pub struct PickerPost {
@@ -428,6 +457,94 @@ impl Service<'_> {
             &ours,
             listed.is_ok(),
         ))
+    }
+
+    /// Automations clarity (UX audit P0-4): for the channel's recent posts and
+    /// every post a rule targets, how many top-level comments (not ours, not
+    /// replies) arrived in the last 7 days and how many matched no active
+    /// rule. A live read through the provider: counts only, nothing stored,
+    /// no comment text or author leaves this function.
+    pub async fn comment_stats(&mut self, user: Uuid, channel: ChannelId) -> Result<CommentStats> {
+        let ws = self.store.owner_workspace(user).await?;
+        let ch = self.own_channel(ws, channel).await?;
+        if !matches!(ch.platform, Platform::Instagram | Platform::TikTok) {
+            return Err(Fail::new("channel_not_found"));
+        }
+        let conn = self
+            .store
+            .connections(channel)
+            .await?
+            .into_iter()
+            .find(|k| k.status != kubcode_publishing::domain::ConnectionStatus::Revoked)
+            .ok_or_else(|| Fail::new("no_connection"))?;
+        let inbox = self
+            .providers(conn.provider)?
+            .inbox
+            .clone()
+            .ok_or_else(|| Fail::new("no_inbox"))?;
+        let rows = self.store.rules_of(channel).await?;
+        let rules: Vec<_> = rows
+            .iter()
+            .map(|r| r.rule.clone())
+            .filter(|r| r.active)
+            .collect();
+        let rule_posts: Vec<String> = rules
+            .iter()
+            .filter_map(|r| match &r.scope {
+                kubcode_publishing::automation::Scope::Post(p) => Some(p.clone()),
+                _ => None,
+            })
+            .collect();
+        let mut ids: Vec<String> = inbox
+            .recent_posts(&conn.provider_ref, STATS_LISTED)
+            .await?
+            .into_iter()
+            .take(STATS_POSTS)
+            .collect();
+        for p in rule_posts {
+            if !ids.contains(&p) {
+                ids.push(p);
+            }
+        }
+        if let Ok(mut slot) = STATS_CACHE.lock() {
+            let cache = slot.get_or_insert_with(Default::default);
+            let now = self.now;
+            cache.retain(|_, (at, _)| now - *at < STATS_CACHE_TTL && *at <= now);
+            if let Some((_, hit)) = cache.get(&channel) {
+                return Ok(hit.clone());
+            }
+        }
+        let since = self.now - PRIVATE_REPLY_WINDOW;
+        let mut posts = Vec::new();
+        let mut complete = true;
+        for id in ids.into_iter().take(STATS_POSTS + 8) {
+            let Ok(comments) = inbox.post_comments(&conn.provider_ref, &id).await else {
+                complete = false;
+                continue;
+            };
+            let mut recent = 0u32;
+            let mut unmatched = 0u32;
+            for c in comments.iter().filter(|c| !c.own_account && !c.is_reply) {
+                if c.created_at.is_some_and(|t| t < since) {
+                    continue;
+                }
+                recent += 1;
+                if choose(&rules, &c.platform_post_id, &c.text).is_none() {
+                    unmatched += 1;
+                }
+            }
+            posts.push(PostCommentStats {
+                platform_post_id: id,
+                comments_7d: recent,
+                unmatched_7d: unmatched,
+            });
+        }
+        let out = CommentStats { posts, complete };
+        if let Ok(mut slot) = STATS_CACHE.lock() {
+            slot.get_or_insert_with(Default::default)
+                .insert(channel, (self.now, out.clone()));
+        }
+        Ok(out)
     }
 
     async fn listed_posts(&mut self, channel: ChannelId) -> Result<Vec<OwnPost>> {

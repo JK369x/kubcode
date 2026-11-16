@@ -7,7 +7,7 @@ import assert from "node:assert/strict";
 import { createHash, createHmac } from "node:crypto";
 import { encode } from "next-auth/jwt";
 import { accountToken } from "../lib/accounts/session";
-import { handleChannelPosts, pickerPost } from "../lib/automations/posts";
+import { handleChannelPosts, handleCommentStats, pickerPost, postStats } from "../lib/automations/posts";
 import type { ChannelRouteDeps } from "../lib/channels/routes";
 import type { ChannelStore } from "../lib/channels/store";
 
@@ -127,4 +127,32 @@ test("pickerPost: captions are capped at 120 characters and stripped of control 
   assert.equal([...p!.caption].length, 120);
   assert.equal(pickerPost({ ...IG_POST, thumbnailUrl: 'https://x/"onerror=' })!.thumbnailUrl, null);
   assert.equal(pickerPost(null), null);
+});
+
+
+// ------------------------------------------------------------ comment stats (UX audit P0-4)
+
+test("comment stats: counts only, checked; signed, member-scoped Lambda call; gates as the post list", async () => {
+  const l = lambda({
+    ok: true,
+    complete: true,
+    posts: [
+      { platformPostId: "111", comments7d: 3, unmatched7d: 2 },
+      { platformPostId: "222", comments7d: 1, unmatched7d: 0 },
+      { platformPostId: "x", comments7d: 1, unmatched7d: 0 },
+      { platformPostId: "333", comments7d: 1, unmatched7d: 5 },
+      { platformPostId: "444", comments7d: -1, unmatched7d: 0, text: "never" },
+    ],
+  });
+  const r = await handleCommentStats(await get(), CHANNEL, deps(owner, { fetch: l.fetch }));
+  assert.equal(r.status, 200);
+  const body = await r.json();
+  assert.deepEqual(body, { ok: true, complete: true, posts: [{ platformPostId: "111", comments7d: 3, unmatched7d: 2 }, { platformPostId: "222", comments7d: 1, unmatched7d: 0 }] });
+  assert.equal(l.calls[0].path, "/api/channels/comment-stats");
+  assert.deepEqual(JSON.parse(l.calls[0].body), { user_id: UID, channel_id: CHANNEL });
+  assert.equal((await handleCommentStats(await get(), "nope", deps(untouchable))).status, 400);
+  assert.equal((await handleCommentStats(await get(), CHANNEL, deps(untouchable, { env: { ...ON_ENV, KUBCODE_AUTOMATIONS_ENABLED: "false" } }))).status, 404);
+  const gone = lambda({ ok: false, code: "channel_not_found" });
+  assert.equal((await handleCommentStats(await get(), CHANNEL, deps(owner, { fetch: gone.fetch }))).status, 404);
+  assert.equal(postStats({ platformPostId: "1", comments7d: 2, unmatched7d: 3 }), null, "unmatched never exceeds the total");
 });
