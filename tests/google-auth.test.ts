@@ -256,7 +256,7 @@ test("server-side profile extraction ignores anything but provider, name and ema
 
 // ------------------------------------------------------------- redirects
 
-test("every redirect resolves to the canonical account page", () => {
+test("redirects land on an allow-listed same-origin path, else the account page", () => {
   const { accountRedirect } = policy();
   const origin = "https://kubcode.dev";
   for (const url of [
@@ -274,9 +274,35 @@ test("every redirect resolves to the canonical account page", () => {
     "https://kubcode.dev.evil.example/account",
     "https://kubcode.dev@evil.example/account",
     "/account?next=https://evil.example",
+    "/account/../admin",
+    "/account//evil.example",
+    "/account/billing?x=%2f%2fevil.example",
+    "/account/billing?x=%252f",
+    "/accountx",
+    "/articles",
+    "/account/billing#frag",
     "",
   ])
     assert.equal(accountRedirect(url, origin), "https://kubcode.dev/account", url);
+  for (const [url, want] of [
+    ["/account/billing", "/account/billing"],
+    ["https://kubcode.dev/account/billing?slots=1", "/account/billing?slots=1"],
+    ["/account/channels/0b0e8a1e-0000-4000-8000-0000000000a1/automations", "/account/channels/0b0e8a1e-0000-4000-8000-0000000000a1/automations"],
+    ["/account/posts/new", "/account/posts/new"],
+    ["/pricing", "/pricing"],
+  ])
+    assert.equal(accountRedirect(url, origin), `https://kubcode.dev${want}`, url);
+});
+
+test("safeNext and signInPath: only allow-listed paths survive; signed-out pages keep their path", () => {
+  const { safeNext, signInPath } = policy();
+  assert.equal(safeNext("/account/billing?slots=1"), "/account/billing?slots=1");
+  for (const bad of ["//evil.example", "https://kubcode.dev/account", "/account/%2e%2e/x", "/account?x=%5c", "/account/..", " /account", "/account\n", 42, null, "/x".repeat(200)])
+    assert.equal(safeNext(bad), null, String(bad));
+  assert.equal(signInPath("/account/billing"), "/account?next=%2Faccount%2Fbilling");
+  assert.equal(signInPath("/account/channels/abc/automations"), "/account?next=%2Faccount%2Fchannels%2Fabc%2Fautomations");
+  assert.equal(signInPath("/account"), "/account");
+  assert.equal(signInPath("https://evil.example"), "/account");
 });
 
 test("Vercel canonical proxy headers are accepted without a redirect loop", () => {
@@ -391,9 +417,11 @@ test("client actions use the library CSRF-protected flows with account landing",
   const { startGoogleSignIn, startSignOut } = form();
   clientCalls.length = 0;
   await startGoogleSignIn();
+  await startGoogleSignIn("/account/billing");
   await startSignOut();
   assert.deepEqual(clientCalls, [
     ["signIn", "google", { callbackUrl: "/account" }],
+    ["signIn", "google", { callbackUrl: "/account/billing" }],
     ["signOut", { callbackUrl: "/account" }],
   ]);
 });

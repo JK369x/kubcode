@@ -5,7 +5,7 @@ import { notFound, redirect } from "next/navigation";
 import { BillingBanner } from "@/components/BillingBanner";
 import { BillingCheckout } from "@/components/BillingCheckout";
 import { Badge } from "@/components/ui/badge";
-import { canonicalHostRedirect, readAuthConfig } from "@/lib/auth-policy";
+import { canonicalHostRedirect, readAuthConfig, signInPath } from "@/lib/auth-policy";
 import { MAX_SLOTS, PRICE_PER_CHANNEL_SATANG } from "@/lib/billing/config";
 import { getBillingPage, purchaseNote, thaiDateTime } from "@/lib/billing/view";
 
@@ -30,7 +30,7 @@ export default async function BillingPage() {
     return cookies();
   });
   if (page.state === "off") notFound();
-  if (page.state === "signed-out") redirect("/account");
+  if (page.state === "signed-out") redirect(signInPath("/account/billing"));
   return (
     <main id="main" className="account-page">
       <div>

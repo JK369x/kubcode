@@ -10,7 +10,7 @@ import { Button } from "@/components/ui/button";
 
 export type AccountFormProps =
   | { state: "unconfigured" }
-  | { state: "signed-out"; providers: AuthReadiness; errorMessage?: string | null }
+  | { state: "signed-out"; providers: AuthReadiness; errorMessage?: string | null; next?: string | null }
   | { state: "signed-in"; user: PublicUser; settingsAvailable?: boolean };
 
 type Action = AuthProviderId | "signout";
@@ -20,11 +20,13 @@ const NONE_READY: AuthReadiness = { google: false, line: false };
 
 // All helpers use next-auth's own CSRF-protected POST flows; the server
 // redirect callback pins the landing page regardless of callbackUrl.
-export function startGoogleSignIn() {
-  return signIn("google", { callbackUrl: "/account" });
+// `next` is an allow-listed same-origin path (lib/auth-policy safeNext); the
+// NextAuth redirect callback checks it again, so the landing stays on-site.
+export function startGoogleSignIn(next?: string | null) {
+  return signIn("google", { callbackUrl: next ?? "/account" });
 }
-export function startLineSignIn() {
-  return signIn("line", { callbackUrl: "/account" });
+export function startLineSignIn(next?: string | null) {
+  return signIn("line", { callbackUrl: next ?? "/account" });
 }
 export function startSignOut() {
   return signOut({ callbackUrl: "/account" });
@@ -128,6 +130,7 @@ export function AccountForm(props: AccountFormProps) {
   }
 
   const unconfigured = props.state === "unconfigured";
+  const next = props.state === "signed-out" ? (props.next ?? null) : null;
   const ready = props.state === "signed-out" ? props.providers : NONE_READY;
   const errorMessage = props.state === "signed-out" ? props.errorMessage : null;
   const noticeFor = (provider: AuthProviderId) =>
@@ -169,9 +172,9 @@ export function AccountForm(props: AccountFormProps) {
 
   return (
     <div className={styles.signIn}>
-      {button("google", `${styles.providerBtn} ${styles.google}`, startGoogleSignIn)}
+      {button("google", `${styles.providerBtn} ${styles.google}`, () => startGoogleSignIn(next))}
       {notice("google")}
-      {button("line", `${styles.providerBtn} ${lineStyles.line}`, startLineSignIn)}
+      {button("line", `${styles.providerBtn} ${lineStyles.line}`, () => startLineSignIn(next))}
       {notice("line")}
       {unconfigured ? (
         <p id={`${noticeId}-all`} className={styles.notice}>

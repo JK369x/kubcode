@@ -5,7 +5,7 @@ import { notFound, redirect } from "next/navigation";
 import { Plus } from "lucide-react";
 import { PostsList } from "@/components/PostsList";
 import { Button } from "@/components/ui/button";
-import { canonicalHostRedirect, readAuthConfig } from "@/lib/auth-policy";
+import { canonicalHostRedirect, readAuthConfig, signInPath } from "@/lib/auth-policy";
 import { getPostsView } from "@/lib/posts/view";
 
 export const dynamic = "force-dynamic";
@@ -20,7 +20,7 @@ export default async function PostsPage() {
     }
     return cookies();
   });
-  if (view.state === "signed-out") redirect("/account");
+  if (view.state === "signed-out") redirect(signInPath("/account/posts"));
   if (view.state === "disabled" || view.state === "forbidden") notFound();
   return (
     <main id="main" className="account-page">

@@ -4,7 +4,7 @@ import { cookies, headers } from "next/headers";
 import { notFound, redirect } from "next/navigation";
 import { AutomationsPanel } from "@/components/AutomationsPanel";
 import styles from "@/components/KeysSettings.module.css";
-import { canonicalHostRedirect, readAuthConfig } from "@/lib/auth-policy";
+import { canonicalHostRedirect, readAuthConfig, signInPath } from "@/lib/auth-policy";
 import { getAutomationsView } from "@/lib/automations/view";
 
 export const dynamic = "force-dynamic";
@@ -31,7 +31,7 @@ export default async function AutomationsPage({ params }: Props) {
     id,
     new Date(),
   );
-  if (view.state === "signed-out") redirect("/account");
+  if (view.state === "signed-out") redirect(signInPath(`/account/channels/${id}/automations`));
   // Off, not allowed, or not this member's Instagram or TikTok channel: no such page.
   if (view.state === "disabled" || view.state === "forbidden" || view.state === "not-found") notFound();
 

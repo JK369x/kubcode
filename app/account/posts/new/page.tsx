@@ -3,7 +3,7 @@ import Link from "next/link";
 import { cookies, headers } from "next/headers";
 import { notFound, redirect } from "next/navigation";
 import { PostComposer } from "@/components/PostComposer";
-import { canonicalHostRedirect, readAuthConfig } from "@/lib/auth-policy";
+import { canonicalHostRedirect, readAuthConfig, signInPath } from "@/lib/auth-policy";
 import { getComposerView } from "@/lib/posts/view";
 
 export const dynamic = "force-dynamic";
@@ -18,7 +18,7 @@ export default async function NewPostPage() {
     }
     return cookies();
   });
-  if (view.state === "signed-out") redirect("/account");
+  if (view.state === "signed-out") redirect(signInPath("/account/posts/new"));
   if (view.state === "disabled" || view.state === "forbidden") notFound();
   return (
     <main id="main" className="account-page">

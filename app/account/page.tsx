@@ -24,7 +24,7 @@ import { Badge } from "@/components/ui/badge";
 import { getBillingPage, thaiDateTime } from "@/lib/billing/view";
 import { getChannelsView } from "@/lib/channels/view";
 import { getAccountView } from "@/lib/auth";
-import { SESSION_COOKIE_NAME, authErrorMessage, canonicalHostRedirect, readAuthConfig } from "@/lib/auth-policy";
+import { SESSION_COOKIE_NAME, authErrorMessage, canonicalHostRedirect, safeNext, readAuthConfig } from "@/lib/auth-policy";
 import { accountsEnabled } from "@/lib/accounts/view";
 import styles from "./account.module.css";
 
@@ -67,13 +67,14 @@ export default async function Account({ searchParams }: Props) {
   const caps = view.state === "signed-in" ? await capabilitiesFromCookies(process.env, (await cookies()).get(SESSION_COOKIE_NAME)?.value) : null;
   // Connected channels for the overview; only for members who may use publishing.
   const channels = caps?.publishing ? await getChannelsView(process.env, () => cookies()) : null;
-  const { error, account_notice: accountNotice } = await searchParams;
+  const { error, account_notice: accountNotice, next } = await searchParams;
   // Central accounts are ON with a usable configuration (DB truth is checked per request).
   const settingsAvailable = accountsEnabled();
   const formProps =
     view.state === "signed-out"
       ? {
           ...view,
+          next: safeNext(next),
           errorMessage:
             authErrorMessage(error) ??
             (accountNotice === "linked"
