@@ -26,6 +26,8 @@ Single-context: `CONTEXT.md` + `docs/adr/` at the repo root (created lazily). Se
 
 Articles and tool pages: `docs/content.md`. Any post with a repo or a skill bundle needs an `agentInstall` prompt (copy-paste install for the reader's own AI agent).
 
+Covers: `docs/covers.md`. Default is the dark "ลองจริง" real-result card built from `docs/covers/real/<slug>/cover.html` (our own run, `own-screenshot`/`own-clip`), matching the existing covers. Not the mascot cartoon unless the owner asks.
+
 ### Design system
 
 Before any UI change read `design-system/kubcode/MASTER.md` (brand tokens mapped to shadcn/ui + Tailwind v4 variables, type scale, touch/contrast/focus rules) and a `design-system/kubcode/pages/<page>.md` override if one exists. Brand source: `DESIGN.md` + `tokens.json`. Latest audit: `docs/design/uiux-audit-2026-11-11.md`.
