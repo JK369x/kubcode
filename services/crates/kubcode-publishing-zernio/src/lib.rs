@@ -136,6 +136,17 @@ impl Zernio {
         idempotency_key: Option<&str>,
     ) -> Result<Reply> {
         self.limiter.acquire().await?;
+        self.send_now(method, url, body, idempotency_key).await
+    }
+
+    /// `send` for a caller that already holds a limiter slot (`Inbox::ready`).
+    async fn send_now(
+        &self,
+        method: Method,
+        url: String,
+        body: Option<&Value>,
+        idempotency_key: Option<&str>,
+    ) -> Result<Reply> {
         let mut headers = vec![("authorization".to_owned(), format!("Bearer {}", *self.key))];
         if let Some(k) = idempotency_key {
             headers.push(("idempotency-key".into(), k.to_owned()));
@@ -597,6 +608,10 @@ fn segment(v: &str) -> Option<&str> {
 
 #[async_trait]
 impl Inbox for Zernio {
+    async fn ready(&self) -> Result<()> {
+        self.limiter.acquire().await
+    }
+
     async fn private_reply(
         &self,
         account: &ProviderRef,
@@ -618,9 +633,10 @@ impl Inbox for Zernio {
             &format!("/v1/inbox/comments/{post}/{comment}/private-reply"),
             &[],
         );
-        let r = match self.send(Method::Post, url, Some(&body), None).await {
+        // The slot was taken by `ready`; from here an error is the network's,
+        // so the DM may have reached Zernio (and Instagram).
+        let r = match self.send_now(Method::Post, url, Some(&body), None).await {
             Ok(r) => r,
-            // It may have reached Zernio (and Instagram) before the failure.
             Err(_) => return PrivateReply::Unknown,
         };
         let consumed = r.body.pointer("/details/privateReplyConsumed") == Some(&Value::Bool(true));

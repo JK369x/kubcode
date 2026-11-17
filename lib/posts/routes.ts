@@ -147,12 +147,11 @@ export async function handleSchedule(request: Request, deps: ChannelRouteDeps = 
   );
   if (!answer) return postError("UNAVAILABLE");
   if (answer.ok !== true) return postError(LAMBDA_CODES[String(answer.code)] ?? "SCHEDULE_FAILED");
-  if (answer.already === true) return jsonNoStore({ ok: true, post: (answer.result as { post?: string }).post, already: true, deliveries: [] });
   const result = answer.result as { post?: string; deliveries?: { channel: string; delivery: string | null; status: string; codes: string[] }[] };
   return jsonNoStore({
     ok: true,
     post: result.post,
-    publishAt,
+    ...(answer.already === true ? { already: true } : { publishAt }),
     deliveries: (result.deliveries ?? []).map((d) => ({ channelId: d.channel, deliveryId: d.delivery, status: d.status, codes: d.codes.slice(0, 5) })),
   });
 }

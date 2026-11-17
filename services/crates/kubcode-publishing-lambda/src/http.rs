@@ -110,6 +110,7 @@ pub trait Uploader: Send + Sync {
         key: &str,
         content_type: &str,
         sha256: &[u8; 32],
+        bytes: u64,
         now: u64,
     ) -> Option<crate::upload::PresignedPut>;
 }
@@ -122,6 +123,7 @@ impl Uploader for NoUploads {
         _: &str,
         _: &str,
         _: &[u8; 32],
+        _: u64,
         _: u64,
     ) -> Option<crate::upload::PresignedPut> {
         None
@@ -305,9 +307,9 @@ pub async fn handle_with(
             let Ok(b) = serde_json::from_slice::<MediaBody>(body) else {
                 return fail(400, "bad_request");
             };
-            let ct = b.asset.content_type.clone();
+            let (ct, bytes) = (b.asset.content_type.clone(), b.asset.bytes);
             let r = match svc.web_asset(b.user_id, b.asset).await {
-                Ok((id, key, sha)) => match uploads.presign_put(&key, &ct, &sha, now) {
+                Ok((id, key, sha)) => match uploads.presign_put(&key, &ct, &sha, bytes, now) {
                     Some(p) => Ok(json!({"ok": true, "asset_id": id.0, "upload": p})),
                     None => Err(crate::service::Fail::new("uploads_unavailable")),
                 },
@@ -338,9 +340,21 @@ pub async fn handle_with(
                 Err(_) => None,
             };
             let r = match existing {
-                Some(post) => Ok(
-                    json!({"ok": true, "already": true, "result": {"post": post.0, "deliveries": []}}),
-                ),
+                // The real deliveries: an earlier call may have stopped part way
+                // (the web gave up waiting, or the Lambda timed out mid-loop),
+                // so the composer must not count channels that have no row.
+                Some(post) => svc.status(b.user_id, post).await.map(|list| {
+                    let deliveries: Vec<_> = list
+                        .iter()
+                        .map(|d| json!({
+                            "channel": d.channel.0,
+                            "delivery": d.id.0,
+                            "status": d.status.as_str(),
+                            "codes": d.last_error_code.iter().collect::<Vec<_>>(),
+                        }))
+                        .collect();
+                    json!({"ok": true, "already": true, "result": {"post": post.0, "deliveries": deliveries}})
+                }),
                 None => svc
                     .schedule(b.user_id, b.request, digest)
                     .await

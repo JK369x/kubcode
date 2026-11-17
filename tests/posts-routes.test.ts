@@ -142,9 +142,10 @@ test("schedule: duplicate channels, too many targets, missing cover or extra fie
 });
 
 test("schedule: a resubmitted draft returns the first post (Lambda 'already')", async () => {
-  const l = lambda({ ok: true, already: true, result: { post: "p1", deliveries: [] } });
+  const l = lambda({ ok: true, already: true, result: { post: "p1", deliveries: [{ channel: "c1", delivery: "d1", status: "scheduled", codes: [] }] } });
   const r = await handleSchedule(await post("/api/posts", SCHEDULE), deps(member, { fetch: l.fetch }));
-  assert.deepEqual(await r.json(), { ok: true, post: "p1", already: true, deliveries: [] });
+  // The real deliveries come back, so the composer counts only channels that have one.
+  assert.deepEqual(await r.json(), { ok: true, post: "p1", already: true, deliveries: [{ channelId: "c1", deliveryId: "d1", status: "scheduled", codes: [] }] });
 });
 
 test("cancel: member's own delivery via the Lambda; codes map to Thai", async () => {

@@ -184,6 +184,8 @@ test("media bucket: private, SSE-KMS, no versioning, multipart cleanup, kubcode.
   const lifecycle = one("aws:s3/bucketLifecycleConfiguration:BucketLifecycleConfiguration").inputs;
   assert.equal(lifecycle.rules[0].abortIncompleteMultipartUpload.daysAfterInitiation, 7);
   assert.equal(lifecycle.rules[0].status, "Enabled");
+  const clips = lifecycle.rules.find((r: { id: string }) => r.id === "expire-clip-media");
+  assert.deepEqual([clips.filter.prefix, clips.expiration.days, clips.status], ["clips/", 30, "Enabled"], "uploaded clip media is bounded");
 
   const cors = one("aws:s3/bucketCorsConfiguration:BucketCorsConfiguration").inputs.corsRules[0];
   assert.deepEqual(cors.allowedOrigins, ["https://kubcode.dev"]);
