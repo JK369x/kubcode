@@ -296,13 +296,6 @@
 .platforms li {
   display: inline-flex;
 }
-.fbSoon {
-  align-items: center;
-  gap: 5px;
-  white-space: nowrap;
-  color: var(--muted-foreground);
-  font-size: 12px;
-}
 .calc {
   display: flex;
   flex-wrap: wrap;

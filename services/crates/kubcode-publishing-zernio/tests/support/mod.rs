@@ -204,7 +204,9 @@ impl FakeZernio {
                         json!({"error": "Profile not found", "code": "profile_not_found"}),
                     );
                 }
-                assert_eq!(q.get("headless").map(String::as_str), Some("true"));
+                // Facebook uses Zernio's hosted Page picker (standard mode).
+                let want = (*platform != "facebook").then_some("true");
+                assert_eq!(q.get("headless").map(String::as_str), want);
                 assert!(q
                     .get("redirect_url")
                     .unwrap()

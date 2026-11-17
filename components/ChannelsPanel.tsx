@@ -34,6 +34,7 @@ const PLATFORM: Record<Connectable, { label: string; icon: ReactNode }> = {
   youtube: { label: "YouTube", icon: <PlatformLogo platform="youtube" size={18} decorative /> },
   instagram: { label: "Instagram", icon: <PlatformLogo platform="instagram" size={18} decorative /> },
   tiktok: { label: "TikTok", icon: <PlatformLogo platform="tiktok" size={18} decorative /> },
+  facebook: { label: "Facebook Page", icon: <PlatformLogo platform="facebook" size={18} decorative /> },
 };
 const platformOf = (p: string) => PLATFORM[p as Connectable] ?? { label: p, icon: null };
 
@@ -98,8 +99,8 @@ export function ChannelsPanel({ channels, notice, automations = false }: Props) 
   return (
     <div className={styles.keys}>
       <p className={styles.lead}>
-        เชื่อมช่อง YouTube บัญชี Instagram และ TikTok เพื่อตั้งเวลาโพสต์คลิปจาก kubcode หน้าขอสิทธิ์จะขึ้นชื่อแอปของ Zernio
-        ซึ่งเป็นผู้ให้บริการเชื่อมต่อที่ kubcode ใช้อยู่ตอนนี้
+        เชื่อมช่อง YouTube บัญชี Instagram TikTok และเพจ Facebook เพื่อตั้งเวลาโพสต์คลิปจาก kubcode หน้าขอสิทธิ์จะขึ้นชื่อแอปของ Zernio
+        ซึ่งเป็นผู้ให้บริการเชื่อมต่อที่ kubcode ใช้อยู่ตอนนี้ Facebook ต้องเป็นเพจที่คุณเป็นแอดมินหรือผู้แก้ไข (โปรไฟล์ส่วนตัวโพสต์ผ่านระบบไม่ได้) แล้วเลือกเพจในหน้าถัดไป
       </p>
 
       <section className={styles.section} aria-labelledby="channels-list">

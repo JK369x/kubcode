@@ -5,7 +5,7 @@ import { PLATFORM_CAPTION_MAX, YOUTUBE_CATEGORIES, type TargetOptions } from "@/
 export type Override = { captionOn: boolean; caption: string; options: TargetOptions };
 export type OverrideChannel = { id: string; platform: string; displayName: string };
 
-const NAME: Record<string, string> = { tiktok: "TikTok", instagram: "Instagram", youtube: "YouTube" };
+const NAME: Record<string, string> = { tiktok: "TikTok", instagram: "Instagram", youtube: "YouTube", facebook: "Facebook" };
 
 /** A switch-like checkbox row (native input, 44px target). */
 function Toggle({ id, label, hint, checked, onChange }: { id: string; label: string; hint?: string; checked: boolean; onChange: (v: boolean) => void }) {
@@ -167,7 +167,7 @@ export function PlatformOverrides({
       {channels.map((c) => (
         <section key={c.id} aria-label={`${c.displayName} · ${NAME[c.platform] ?? c.platform}`} className="grid gap-3 rounded-xl border border-input p-4">
           <h3 className="m-0 flex items-center gap-2 text-[16px] font-semibold">
-            {(["youtube", "instagram", "tiktok"] as string[]).includes(c.platform) && <PlatformLogo platform={c.platform as Platform} size={20} decorative />}
+            {(["youtube", "instagram", "tiktok", "facebook"] as string[]).includes(c.platform) && <PlatformLogo platform={c.platform as Platform} size={20} decorative />}
             {c.displayName} <span className="font-normal text-muted-foreground">· {NAME[c.platform] ?? c.platform}</span>
           </h3>
           <PlatformOverrideFields channel={c} sharedCaption={sharedCaption} value={value[c.id]} onChange={onChange} />

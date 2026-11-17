@@ -23,7 +23,7 @@ test("roadmap data: owner's items and statuses, unique ids, user-facing value li
     ROADMAP.map((i) => [i.id, i.status]),
     [
       ["connect-channels", "now"], ["scheduled-posts", "now"], ["comment-auto-reply", "now"], ["free-skills", "now"], ["deep-sea-docs", "now"],
-      ["online-payment", "next"], ["social-mcp", "next"], ["facebook", "next"], ["more-member-skills", "next"],
+      ["online-payment", "next"], ["social-mcp", "next"], ["facebook", "now"], ["more-member-skills", "next"],
       ["clip-orders-mcp", "later"], ["annual-plan", "later"],
     ],
   );
@@ -61,13 +61,14 @@ test("roadmap: every next/later item says ยังไม่เปิด and has
 
 test("waitlist counts: only open targets and only at the minimum or more", () => {
   const m = publicCountMap([
-    { kind: "roadmap", id: "facebook", members: WAITLIST_COUNT_MIN },
+    { kind: "roadmap", id: "social-mcp", members: WAITLIST_COUNT_MIN },
+    { kind: "roadmap", id: "facebook", members: 99 },
     { kind: "roadmap", id: "annual-plan", members: WAITLIST_COUNT_MIN - 1 },
     { kind: "roadmap", id: "scheduled-posts", members: 99 },
     { kind: "plan", id: "skill-pack", members: 42 },
     { kind: "plan", id: "social", members: 42 },
   ]);
-  assert.deepEqual(m, { "roadmap:facebook": WAITLIST_COUNT_MIN, "plan:skill-pack": 42 });
+  assert.deepEqual(m, { "roadmap:social-mcp": WAITLIST_COUNT_MIN, "plan:skill-pack": 42 });
 });
 
 test("changelog: newest first, ~10 real merged PRs on main with Thai copy", () => {

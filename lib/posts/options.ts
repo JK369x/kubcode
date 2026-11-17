@@ -21,7 +21,7 @@ export const YOUTUBE_CATEGORIES: { id: string; label: string }[] = [
   { id: "15", label: "สัตว์เลี้ยง" },
   { id: "25", label: "ข่าวและการเมือง" },
 ];
-export const PLATFORM_CAPTION_MAX: Record<string, number> = { tiktok: 2200, instagram: 2200, youtube: 5000 };
+export const PLATFORM_CAPTION_MAX: Record<string, number> = { tiktok: 2200, instagram: 2200, youtube: 5000, facebook: 5000 };
 
 const bool = (v: unknown) => v === undefined || typeof v === "boolean";
 const keysOk = (o: Record<string, unknown>, allowed: string[]) => Object.keys(o).every((k) => allowed.includes(k));

@@ -150,14 +150,14 @@ test("connect: signs the request, sends only hashes plus the state, sets the coo
   assert.equal(call.body.cookie_hash, sha(cookieValue).toString("hex"), "the cookie value itself never leaves the web host");
 });
 
-test("connect: TikTok is connectable like YouTube and Instagram; other platforms are not", async () => {
-  assert.deepEqual([...CONNECTABLE], ["youtube", "instagram", "tiktok"]);
+test("connect: TikTok and Facebook Pages are connectable like YouTube and Instagram; other platforms are not", async () => {
+  assert.deepEqual([...CONNECTABLE], ["youtube", "instagram", "tiktok", "facebook"]);
   const l = lambda({ ok: true, auth_url: "https://www.tiktok.com/v2/auth/authorize/?client_key=x" });
   const res = await handleChannelConnect(await post("/api/channels/connect", { platform: "tiktok" }), deps(owner, { fetch: l.fetch }));
   assert.equal(res.status, 200);
   assert.equal(l.calls[0].body.platform, "tiktok");
   assert.ok(res.headers.get("set-cookie"));
-  for (const platform of ["facebook", "TikTok", "tiktokads"]) {
+  for (const platform of ["threads", "TikTok", "tiktokads", "Facebook"]) {
     assert.equal((await handleChannelConnect(await post("/api/channels/connect", { platform }), deps(untouchable))).status, 400, platform);
   }
 });

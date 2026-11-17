@@ -205,7 +205,7 @@ test("schedule: options for another platform, unknown keys, bad types or a bad c
     t({ platform: "youtube", options: { youtube: { categoryId: "99" } } }),
     t({ platform: "instagram", options: { instagram: { firstComment: "   " } } }),
     t({ platform: "instagram", caption: "x".repeat(2201) }),
-    t({ platform: "facebook", caption: "x" }),
+    t({ platform: "threads", caption: "x" }),
     t({ caption: "no platform named" }),
     t({ platform: "tiktok", options: { tiktok: {}, youtube: {} } }),
   ]) {

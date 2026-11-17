@@ -121,12 +121,12 @@ export const ROADMAP: readonly RoadmapItem[] = [
   },
   {
     id: "facebook",
-    titleTh: "Facebook",
-    titleEn: "Facebook",
-    status: "next",
+    titleTh: "Facebook Page",
+    titleEn: "Facebook Page",
+    status: "now",
     area: "post",
     icon: "facebook",
-    valueTh: "ตั้งเวลาโพสต์ลงเพจ Facebook จากที่เดียวกับช่องอื่น",
+    valueTh: "ตั้งเวลาโพสต์ Reels ลงเพจ Facebook จากที่เดียวกับช่องอื่น",
   },
   {
     id: "more-member-skills",

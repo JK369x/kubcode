@@ -479,3 +479,49 @@ async fn without_options_the_body_is_exactly_as_before() {
     }
     assert!(b["platforms"][0].get("customContent").is_none());
 }
+
+/// Facebook needs a Page choice after OAuth. Zernio's hosted picker does it
+/// (standard mode), then redirects with `accountId`, so no Meta user token
+/// passes through kubcode (OpenAPI 1.630.3, GET /v1/connect/{platform}).
+#[tokio::test]
+async fn connecting_facebook_uses_zernios_page_picker_not_headless() {
+    let h = Harness::default();
+    h.zernio
+        .start(
+            &WorkspaceCtx {
+                workspace: WorkspaceId(Uuid::new_v4()),
+                profile: None,
+            },
+            Platform::Facebook,
+            "https://kubcode.dev/api/channels/callback?i=ab",
+        )
+        .await
+        .unwrap();
+    let req = h
+        .fake
+        .log()
+        .into_iter()
+        .find(|r| r.method == Method::Get && r.url.path().starts_with("/api/v1/connect/"))
+        .unwrap();
+    assert_eq!(req.url.path(), "/api/v1/connect/facebook");
+    let q: std::collections::HashMap<_, _> = req.url.query_pairs().into_owned().collect();
+    assert!(!q.contains_key("headless"), "hosted Page picker");
+    assert_eq!(
+        q.get("redirect_url").map(String::as_str),
+        Some("https://kubcode.dev/api/channels/callback?i=ab")
+    );
+}
+
+/// A Facebook delivery is a Page Reel with the designed cover as thumbnail
+/// (FacebookPlatformData.contentType = "reel").
+#[tokio::test]
+async fn facebook_delivery_is_a_page_reel_with_the_cover_as_thumbnail() {
+    let b = sent_body(Platform::Facebook, |_| {}).await;
+    let p = &b["platforms"][0];
+    assert_eq!(p["platform"], "facebook");
+    assert_eq!(p["platformSpecificData"]["contentType"], "reel");
+    assert_eq!(b["mediaItems"][0]["type"], "video");
+    assert!(b["mediaItems"][0]["thumbnail"]
+        .as_str()
+        .is_some_and(|u| u.starts_with("https://")));
+}

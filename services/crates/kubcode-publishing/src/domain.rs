@@ -46,7 +46,7 @@ impl Platform {
     pub fn needs_cover(self) -> bool {
         matches!(
             self,
-            Platform::YouTube | Platform::Instagram | Platform::TikTok
+            Platform::YouTube | Platform::Instagram | Platform::TikTok | Platform::Facebook
         )
     }
 

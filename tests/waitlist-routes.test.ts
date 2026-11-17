@@ -83,7 +83,7 @@ test("toggle: signed out → 401, bad CSRF → 403, accounts off → 503, rate l
   assert.equal((await handleWaitlistToggle(await post({ kind: "plan", id: "skill-pack" }, { signedIn: false }), deps(untouchable))).status, 401);
   assert.equal((await handleWaitlistToggle(await post({ kind: "plan", id: "skill-pack" }, { csrf: "D".repeat(43) }), deps(untouchable))).status, 403);
   assert.equal((await handleWaitlistToggle(await post({ kind: "plan", id: "skill-pack" }), deps(untouchable, AUTH_ENV))).status, 503);
-  const limited = await handleWaitlistToggle(await post({ kind: "roadmap", id: "facebook" }), deps({ toggle: async () => ({ ok: false, code: "RATE_LIMITED" }) }));
+  const limited = await handleWaitlistToggle(await post({ kind: "roadmap", id: "social-mcp" }), deps({ toggle: async () => ({ ok: false, code: "RATE_LIMITED" }) }));
   assert.equal(limited.status, 429);
 });
 

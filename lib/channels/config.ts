@@ -18,7 +18,7 @@ export function readPublishingConfig(env: AuthEnv): PublishingConfig {
   return { mode: "on", url, key };
 }
 
-/** Platforms creators can connect (TikTok: docs/design/tiktok-channel.md). */
-export const CONNECTABLE = ["youtube", "instagram", "tiktok"] as const;
+/** Platforms creators can connect (TikTok: docs/design/tiktok-channel.md; Facebook: Pages only, Zernio's hosted Page picker). */
+export const CONNECTABLE = ["youtube", "instagram", "tiktok", "facebook"] as const;
 export type Connectable = (typeof CONNECTABLE)[number];
 export const isConnectable = (v: unknown): v is Connectable => CONNECTABLE.includes(v as Connectable);
