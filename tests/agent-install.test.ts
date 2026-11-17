@@ -23,6 +23,7 @@ test("the pages that point at an installable kit carry an agent prompt", () => {
     "elephant-goldfish-model",
     "free-ai-animation-opencode",
     "make-short-blender",
+    "react-vibe-motion",
     "style-author-renderer",
   ]);
   // Kit tools: skills, plugins and kits installed from a repo. Agents and

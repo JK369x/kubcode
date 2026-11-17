@@ -1,0 +1,105 @@
+---
+slug: react-vibe-motion
+title: "React Vibe: แอนิเมชัน React ฟรี ก๊อปไปใส่เว็บได้เลย"
+description: "React Vibe รวมคอมโพเนนต์แอนิเมชันสำหรับ React แบบก๊อปโค้ดไปวาง ไม่ต้องลงไลบรารีเพิ่ม เราลองดูหมวด Motion ว่าใช้ยังไง เหมาะกับงานแบบไหน และต้องระวังอะไร"
+tags: [animation, free-tier, licensing]
+refs:
+  - tool:claude-code
+  - tool:codex-cli
+category: tools
+featured: false
+cover:
+  src: /covers/react-vibe-motion/cover.jpg
+  og: /covers/react-vibe-motion/og.jpg
+  alt: "ผลจริงจากเครื่องเรา: Branch Flow ของ React Vibe ที่ก๊อปไปใส่โปรเจกต์ Vite + React + Tailwind ใหม่ เป็นกล่องด้านบนแตกเส้นโค้งไปหาไอคอนเจ็ดตัว มีจุดสีส้มวิ่งตามเส้น ใต้ภาพเป็นผล grep ที่ไม่พบ framer-motion และ build ผ่านใน 323ms"
+  source: own-screenshot
+updated: 2026-11-17
+go: [motion]
+sources:
+  - title: "React Vibe (เว็บไซต์)"
+    url: https://reactvibe.com/
+  - title: "React Vibe Docs: Motion Overview"
+    url: https://reactvibe.com/docs/motion/overview
+  - title: "React Vibe Docs: Branch Flow"
+    url: https://reactvibe.com/docs/motion/branch-flow
+  - title: "siddhantmani/reactvibe (README ระบุ MIT License)"
+    url: https://github.com/siddhantmani/reactvibe
+sourceNote: "สรุปจากเว็บ เอกสาร และซอร์สของ React Vibe เมื่อ 17 พ.ย. 2026 ลอง Branch Flow ในโปรเจกต์เปล่าบน Mac แล้ว ยังไม่ได้ใช้ในเว็บจริง"
+agentInstall:
+  agents: [claude-code, codex-cli]
+  source: https://github.com/siddhantmani/reactvibe
+  prompt: |
+    ช่วยเอาคอมโพเนนต์ Branch Flow จาก React Vibe (https://github.com/siddhantmani/reactvibe) มาใส่ในโปรเจกต์ React ของฉัน
+    1. ก่อนเริ่ม อ่าน README ของ repo แล้วอธิบายว่าจะติดตั้งอะไร ไว้ที่ไหน และขออนุญาตฉันก่อนรันทุกคำสั่งหรือสร้างไฟล์
+    2. เช็กว่าโฟลเดอร์นี้เป็นโปรเจกต์ React ที่ใช้ Tailwind CSS ถ้าไม่ใช่หรือเป็นระบบที่ไม่รองรับ ให้หยุดแล้วบอกฉัน
+    3. อ่านโค้ดจาก public/Motion/BranchFlow/BranchFlow.tsx และ Page.tsx ใน repo แล้วสร้างไฟล์ components/BranchFlow.tsx ในโปรเจกต์ฉัน ห้ามแก้ไฟล์อื่นโดยไม่ถาม
+    4. ตัวนี้ใช้ SVG animateMotion ไม่ต้องลง framer-motion ถ้าฉันขอคอมโพเนนต์อื่นที่ import framer-motion ให้บอกก่อนแล้วค่อยรัน npm i framer-motion
+    5. ห้ามขอ API key หรือรหัสผ่านใด ๆ ในแชต งานนี้ไม่ต้องใช้
+    6. เสร็จแล้วบอกฉันว่าจะใส่ <BranchFlow /> ในหน้าไหน ปรับ prop อะไรได้บ้าง แล้วรอฉัน
+---
+## สรุปสั้น ๆ
+
+[React Vibe](https://reactvibe.com/) คือคลังคอมโพเนนต์ React ที่เน้น**แอนิเมชันเป็นหลัก** ไม่ต้องติดตั้ง React Vibe เอง ใช้วิธีเปิดหน้าเอกสาร ก๊อปโค้ดไปวางในโปรเจกต์ แล้วแก้ต่อได้ตามใจ เพราะโค้ดเป็นของเราทั้งหมด
+
+คนที่คอมเมนต์ **motion** ใต้คลิปเราแล้วได้ลิงก์นี้ไป: หมวดที่โชว์ในคลิปคือ [Motion](https://reactvibe.com/docs/motion/overview) เริ่มจากตรงนั้นได้เลย
+
+## มีอะไรให้ใช้บ้าง
+
+หน้าเอกสารบอกว่ามีคอมโพเนนต์ 74 ชิ้นใน 7 หมวด ณ วันที่เราดู (17 พ.ย. 2026):
+
+- **Motion** แผนภาพที่มีจุดแสงวิ่งตามเส้น เช่น Branch Flow, Hub Flow, Converge, Network Pulse, Pipeline เหมาะกับหน้า Hero ของ SaaS ที่อยากโชว์ว่าระบบต่อกับอะไรได้บ้าง หรือข้อมูลไหลผ่านอะไร
+- **Backgrounds** พื้นหลังเคลื่อนไหว เช่น Rising Lines, Spotlight Grid
+- **Blocks** ส่วนหน้าเว็บสำเร็จรูป เช่น Hero, Pricing, FAQ, Footer
+- **Components** ชิ้นเล็ก เช่น ปุ่ม สวิตช์ dropdown badge ที่มีแอนิเมชันในตัว
+- **Text** ตัวหนังสือที่ค่อย ๆ โผล่ (Linear Reveal)
+- **Dashboard** ชิ้นส่วนหน้าแดชบอร์ด ตาราง กราฟ
+- **Templates** เทมเพลตทั้งเว็บ
+
+ข้อควรรู้: หน้า Dashboard Systems บางหน้ามีป้าย **PRO** และหมวด Templates อยู่ใต้หัวข้อ Store แปลว่า**ไม่ใช่ทุกอย่างฟรี** ส่วนที่เราพูดถึงในคลิป (Motion) เปิดดูโค้ดได้ทั้งหมด
+
+## ใช้ยังไง
+
+ทุกหน้าคอมโพเนนต์มีแท็บ **Showcase** (ดูตัวอย่าง) กับ **Source** (ดูโค้ด) ขั้นตอนคือ
+
+1. เลือกคอมโพเนนต์ เปิดแท็บ Source
+2. ก๊อปไฟล์ทั้งหมดที่หน้านั้นแสดง ไปวางในโปรเจกต์ของเรา
+3. ถ้าหน้านั้นบอกให้ลง `framer-motion` ก็ลงครั้งเดียว (`npm i framer-motion`)
+4. ปรับ prop สี ความเร็ว ระยะ ตามที่ตารางในหน้าเอกสารบอก
+
+ทุกชิ้นเขียนด้วย **Tailwind CSS** ถ้าโปรเจกต์ไม่ได้ใช้ Tailwind ต้องแปลง class เอง ซึ่งเสียเวลาพอสมควร และรองรับโหมดมืดผ่าน class `dark` ที่ `<html>` หรือ `<body>`
+
+### ตัวอย่าง Branch Flow
+
+Branch Flow คือกล่องด้านบนหนึ่งกล่อง แตกเส้นโค้งลงไปหาไอคอนหลายตัวด้านล่าง มีจุดแสงวิ่งไปตามเส้น เราเปิดซอร์สดูแล้วพบว่า**ตัวนี้ใช้ SVG `<animateMotion>` ของเบราว์เซอร์ ไม่ได้ import framer-motion** (หน้าเอกสารยังบอกให้ลง framer-motion เพราะเป็นขั้นตอนรวมของทั้งหมวด)
+
+เราลองจริงบน Mac เมื่อ 17 พ.ย. 2026: ก๊อป `BranchFlow.tsx` ไปใส่โปรเจกต์ Vite ใหม่ที่มีแค่ React 19.2 กับ Tailwind 4.3 ไม่ได้ลง framer-motion สั่ง `vite build` ผ่านใน 323ms และเปิดในเบราว์เซอร์แล้วจุดแสงวิ่งตามเส้นครบทุกเส้น ภาพปกบทความนี้คือหน้าจอจริงจากการลองครั้งนั้น
+
+prop ที่ปรับได้ เช่น
+
+| prop | ค่าเริ่มต้น | ใช้ทำอะไร |
+|---|---|---|
+| `curve` | 120 | ความโค้งของเส้น |
+| `particleSpeed` | 2.5 | วินาทีที่จุดแสงวิ่งจนสุดเส้น |
+| `particleColor` | `#f97316` | สีจุดแสง |
+| `curveColor` | ว่าง | สีเส้น (ว่าง = ปรับตามโหมดสว่าง/มืดเอง) |
+
+ไอคอนด้านล่างเป็น SVG ตัวอย่างที่ฝังมาในไฟล์ ก่อนขึ้นเว็บจริง**ควรเปลี่ยนเป็นโลโก้หรือไอคอนของเราเอง** อย่างน้อยหนึ่งตัวเป็นโลโก้ของบริษัทอื่น (ในภาพปกเราเปลี่ยนเป็นจุดสีธรรมดา) ซึ่งเราไม่มีสิทธิ์ใช้
+
+## ใช้ฟรีได้แค่ไหน
+
+README ของ repo บน GitHub เขียนว่า **MIT License** แปลว่าเอาโค้ดไปใช้ แก้ และใช้ในงานเชิงพาณิชย์ได้ โดยต้องเก็บข้อความลิขสิทธิ์ของผู้เขียนไว้
+
+แต่ตอนที่เราดู (17 พ.ย. 2026) **ใน repo ยังไม่มีไฟล์ LICENSE แยก** และ `package.json` ไม่ได้ระบุ license ถ้าจะใช้ในงานลูกค้าหรือขายต่อ แนะนำให้ถามผู้เขียน ([Siddhant Mani](https://github.com/siddhantmani)) ให้ชัดก่อน หรือรอให้มีไฟล์ LICENSE ส่วนที่มีป้าย PRO ไม่อยู่ในข้อนี้
+
+## ให้ AI agent ใส่ให้
+
+ถ้าใช้ [Claude Code](/tools/claude-code) หรือ [Codex](/tools/codex-cli) อยู่แล้ว กล่อง **ติดตั้งด้วย AI agent ของคุณ** ด้านบนให้ agent อ่านซอร์สของ Branch Flow จาก GitHub แล้วสร้างไฟล์คอมโพเนนต์ในโปรเจกต์ให้ agent จะขออนุญาตก่อนรันทุกคำสั่ง และไม่ต้องใช้ API key อะไรเลย
+
+## เหมาะกับใคร
+
+- **เหมาะ:** คนทำเว็บด้วย React + Tailwind (Next.js, Vite) ที่อยากได้ Hero หรือหน้าแนะนำสินค้าที่ดูมีชีวิต โดยไม่ต้องเขียนแอนิเมชันเอง
+- **ไม่ค่อยเหมาะ:** โปรเจกต์ที่ไม่ใช้ Tailwind หรือเว็บที่เน้นความเร็วโหลดสุด ๆ เพราะแอนิเมชันหลายชิ้นในหน้าเดียวกินแรงเครื่องผู้ชม ใส่ทีละชิ้นในจุดที่ต้องการให้คนมองจะดีกว่า
+
+## ที่เรายังไม่ได้ลอง
+
+เราลองแค่ Branch Flow ในโปรเจกต์เปล่า **ยังไม่ได้เอาไปใช้ในเว็บจริง**ของเรา และยังไม่ได้ลองคอมโพเนนต์ตัวอื่น จึงยังบอกไม่ได้ว่าทุกชิ้นใช้กับ React เวอร์ชันไหนได้บ้าง หรือมีชิ้นไหนต้องพึ่งไฟล์อื่นใน repo เพิ่ม ถ้าลองแล้วติด เปิดดูแท็บ Source ให้ครบทุกไฟล์ที่หน้านั้นแสดงก่อน

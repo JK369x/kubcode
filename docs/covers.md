@@ -14,6 +14,16 @@ cover:
 
 We only use images we made: no third-party photos or screenshots (`NEXT_PUBLIC_MEDIA_MODE=licensed-only`).
 
+## Default: the dark "ลองจริง" card (owner, 2026-11-17)
+
+**Every article cover is a real-result card unless there is truly nothing to show.** Look at the existing covers before making one (`docs/covers/real/*/cover.html`); they all share one layout:
+
+- Dark stage from `base.css`; left column: a framed real image (our clip frames, or a screenshot of the thing running on our machine) and/or a terminal box with our real command output.
+- Right column: purple caps tag `ลองจริง… · <TOPIC>`, a two-line Thai/English headline, then cards: what worked (green ✓) and what to know / not tested (yellow !).
+- Every number and line on the card comes from a run we did; record it in `cover.json` (`source: own-screenshot` or `own-clip`).
+
+If the article is about a third-party tool, **run it ourselves first** (e.g. copy the component into a fresh project and screenshot it) and use that. Remove any third-party logo that appears inside the output (replace with a plain shape) and say so in `cover.json`. The mascot cartoon below is a fallback only for pure concept articles with nothing to run, and needs the owner's OK.
+
 ## Prefer a real example (2026-11-10)
 
 When the article is about something we made or ran, the cover shows **the real thing**: frames from our own clip (`source: own-clip`) or real output from our own machine (`source: own-screenshot`), laid out with a short caption. The source is an HTML page under `docs/covers/real/<slug>/cover.html` (shared `base.css`, Anuphan/Archivo fonts, OFL), rendered with headless Chrome at 1600×900:
