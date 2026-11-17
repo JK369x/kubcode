@@ -376,13 +376,62 @@
   color: var(--muted-foreground);
   font-size: 15px;
 }
-.roadmap {
-  display: inline-flex;
+/* Owner 2026-11-17: the roadmap link was too quiet; a card-sized CTA. */
+.roadmapCard {
+  display: flex;
   align-items: center;
-  min-height: 24px;
-  color: var(--link);
-  text-decoration: underline;
-  text-underline-offset: var(--link-offset);
+  gap: 16px;
+  max-width: 560px;
+  margin: 18px auto 0;
+  padding: 16px 20px;
+  border: 1px solid color-mix(in srgb, var(--purple) 45%, var(--border));
+  border-radius: 18px;
+  background: color-mix(in srgb, var(--purple) 10%, var(--card));
+  color: var(--foreground);
+  text-decoration: none;
+  transition: transform 0.18s ease, border-color 0.18s ease, background-color 0.18s ease;
+}
+.roadmapCard:hover {
+  transform: translateY(-2px);
+  border-color: var(--purple);
+  background: color-mix(in srgb, var(--purple) 16%, var(--card));
+}
+.roadmapCard:focus-visible {
+  outline: 3px solid var(--ring);
+  outline-offset: 3px;
+}
+.roadmapIcon {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #7c3aed, #c8215a);
+  color: #fff;
+}
+.roadmapText {
+  display: grid;
+  gap: 2px;
+  text-align: left;
+}
+.roadmapText strong {
+  font-size: 17px;
+}
+.roadmapText span {
+  color: var(--muted-foreground);
+  font-size: 14px;
+}
+.roadmapArrow {
+  margin-left: auto;
+  color: var(--purple);
+}
+@media (prefers-reduced-motion: reduce) {
+  .roadmapCard,
+  .roadmapCard:hover {
+    transition: none;
+    transform: none;
+  }
 }
 
 @media (max-width: 1099px) {

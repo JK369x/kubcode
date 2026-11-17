@@ -254,7 +254,13 @@ export default async function Account({ searchParams }: Props) {
     <main id="main" className={styles.page}>
       <header className={styles.dashHead}>
         <span className={styles.bigAvatar} aria-hidden="true">
-          {avatarInitial(user.name ?? user.email)}
+          {view.picture ? (
+            // Plain <img>: provider host only (safeAvatarUrl), no proxy, no referrer.
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={view.picture} alt="" width={72} height={72} referrerPolicy="no-referrer" decoding="async" />
+          ) : (
+            avatarInitial(user.name ?? user.email)
+          )}
         </span>
         <div className={styles.dashWho}>
           <p className={styles.dashEyebrow}>บัญชีของคุณ</p>

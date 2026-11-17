@@ -98,7 +98,8 @@ test("pricing says Facebook Pages post Reels, comment replies there are still co
   assert.match(t, /Facebook\s*รองรับแล้ว/);
   assert.match(t, /ตั้งเวลา Reels ลงเพจ \(ตอบคอมเมนต์อัตโนมัติเร็ว ๆ นี้\)/);
   for (const p of PLANS) for (const f of p.features) assert.doesNotMatch(f, /Facebook/);
-  assert.match(h, /href="\/roadmap"[^>]*>ดูแผนที่จะมา →</);
+  assert.match(h, /href="\/roadmap"/);
+  assert.match(text(h), /ดูแผนที่จะมา/);
 });
 
 test("pricing sells no roadmap item that is not available yet", () => {

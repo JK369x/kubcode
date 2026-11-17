@@ -11,6 +11,8 @@ import {
   Minus,
   Plus,
   Sparkles,
+  ArrowRight,
+  Map,
 } from "lucide-react";
 import { WaitlistButton, WaitlistProvider } from "@/components/WaitlistButton";
 import { PlatformLogo } from "@/components/PlatformLogo";
@@ -255,12 +257,17 @@ export function PricingShowcase({ open }: { open: boolean }) {
           ))}
         </ul>
       </WaitlistProvider>
-      <p className={styles.terms}>
-        <span>ทุกแพ็กเกจจ่ายทีละเดือน ไม่ตัดเงินอัตโนมัติ · ราคานี้ยังไม่มี VAT</span>
-        <Link href="/roadmap" className={styles.roadmap}>
-          ดูแผนที่จะมา →
-        </Link>
-      </p>
+      <p className={styles.terms}>ทุกแพ็กเกจจ่ายทีละเดือน ไม่ตัดเงินอัตโนมัติ · ราคานี้ยังไม่มี VAT</p>
+      <Link href="/roadmap" className={styles.roadmapCard}>
+        <span className={styles.roadmapIcon} aria-hidden="true">
+          <Map />
+        </span>
+        <span className={styles.roadmapText}>
+          <strong>ดูแผนที่จะมา</strong>
+          <span>ฟีเจอร์ที่กำลังทำ และกดรอรับแจ้งเตือนเมื่อเปิด</span>
+        </span>
+        <ArrowRight className={styles.roadmapArrow} aria-hidden="true" />
+      </Link>
     </div>
   );
 }
