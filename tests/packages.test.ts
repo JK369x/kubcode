@@ -15,7 +15,7 @@ test("packages: the approved releases are What If, Podcast Shorts, make-short, E
     PACKAGES.map((p) => `${p.slug}@${p.version}`),
     [
       "freshstack-what-if@0.2.0", "podcast-tool-short@0.1.0", "make-short@0.1.0", "elephant-goldfish-model@0.1.1",
-      "low-poly-urban@0.1.0", "thai-narrator@0.1.0", "captions-overlay@0.1.0",
+      "low-poly-urban@0.1.0", "thai-narrator@0.1.0", "stickman-canvas@0.1.0", "captions-overlay@0.1.0",
     ],
   );
 });

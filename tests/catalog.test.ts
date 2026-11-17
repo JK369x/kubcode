@@ -8,8 +8,8 @@ test("search uses actual style and renderer metadata with use-case intersection"
     "draft",
   );
   assert.equal(
-    filterSkills(skills, "canvas", "story")[0]?.slug,
-    "growkaz-stickman",
+    filterSkills(skills, "canvas", "story").map((s) => s.slug).sort().join(","),
+    "growkaz-stickman,stickman-canvas",
   );
   assert.equal(
     filterSkills(skills, "เสียง", "voice-captions")[0]?.slug,

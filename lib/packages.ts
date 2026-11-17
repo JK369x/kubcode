@@ -103,6 +103,15 @@ export const PACKAGES: readonly SkillPackage[] = [
     agents: ["claude-code", "opencode"],
   }),
   pkg({
+    slug: "stickman-canvas",
+    version: "0.1.0",
+    licence: "MIT",
+    credit: "kubcode.dev (independent implementation, own cast); Anuphan font (SIL OFL 1.1)",
+    approval: { by: "owner", date: "2026-11-17" },
+    maxKb: 101,
+    agents: ["claude-code", "opencode"],
+  }),
+  pkg({
     slug: "captions-overlay",
     version: "0.1.0",
     licence: "MIT",

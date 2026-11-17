@@ -1,0 +1,4 @@
+interface:
+  display_name: "Stickman Canvas"
+  short_description: "Cinematic stick-figure clips drawn in code"
+  default_prompt: "Use $stickman-canvas to make one 9:16 stick-figure clip about this idea, with two characters and Thai keyword captions."

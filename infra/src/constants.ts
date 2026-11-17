@@ -81,6 +81,7 @@ export const PACKAGES: readonly { slug: string; version: string }[] = [
   { slug: "low-poly-urban", version: "0.1.0" },
   { slug: "thai-narrator", version: "0.1.0" },
   { slug: "captions-overlay", version: "0.1.0" },
+  { slug: "stickman-canvas", version: "0.1.0" },
 ];
 
 /**

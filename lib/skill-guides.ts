@@ -65,6 +65,16 @@ const GUIDES: Readonly<Record<string, readonly GuideStep[]>> = {
     { text: "ตอบคำถามของช้างให้ครบ แล้วเขียนสเปกต่อด้วย /egm:egm-draft", code: "/egm:egm-draft" },
     { text: "ให้ปลาทองรีวิวสเปก เลือกเองว่าข้อไหนจะแก้ แล้วค่อยสั่งให้ลงมือสร้าง", code: "/egm:egm-review design_draft.md" },
   ],
+  "stickman-canvas": [
+    { text: "เข้าสู่ระบบ แล้วกด “ดาวน์โหลด skill” แล้วแตกไฟล์ไว้ในโฟลเดอร์งาน คัดลอก SKILL.md และ agents/ ไปไว้ในโฟลเดอร์ skill", code: "~/.claude/skills/stickman-canvas/" },
+    { text: "ติดตั้ง Node 20+ และ FFmpeg แล้วติดตั้ง Chromium สำหรับเรนเดอร์", code: "npm install && npx playwright install chromium" },
+    { text: "ทดสอบด้วยภาพนิ่งจากคลิปตัวอย่าง (ได้ไฟล์ในโฟลเดอร์ out/)", code: "npm run sheet" },
+    {
+      text: "เปิด Claude Code หรือ OpenCode ในโฟลเดอร์นั้น แล้ววางคำสั่งนี้ เปลี่ยน ... เป็นเรื่องที่อยากทำ",
+      prompt: "ใช้ stickman-canvas ทำคลิป 9:16 ยาว 20 วินาที เรื่อง ... ตัวละคร 2 คน พร้อมซับไทย",
+    },
+    { text: "ดูภาพนิ่งทุกช็อตก่อนสั่งเรนเดอร์เต็ม (เรนเดอร์ราว 20 วินาทีต่อคลิป 1 วินาที)" },
+  ],
   "low-poly-urban": [
     { text: "เข้าสู่ระบบ แล้วกด “ดาวน์โหลด skill” ในกล่องดาวน์โหลด (ไฟล์ .zip)" },
     { text: "คัดลอก SKILL.md, references/ และ agents/ ไปไว้ในโฟลเดอร์ skill และเก็บ example/city ไว้เป็นต้นแบบโปรเจกต์", code: "~/.claude/skills/low-poly-urban/" },
