@@ -94,7 +94,7 @@ test("download: cross-site requests and missing CSRF are refused first", async (
 });
 
 test("download: skills without an approved package are 404 for everyone", async () => {
-  for (const slug of ["growkaz-stickman", "thai-survival", "low-poly-urban", "nope", "..%2F..%2Fetc", "constructor"])
+  for (const slug of ["growkaz-stickman", "thai-survival", "nope", "..%2F..%2Fetc", "constructor"])
     await expectError(await handleDownload(await post(slug), slug, deps()), 404, "PACKAGE_NOT_FOUND");
 });
 
@@ -182,7 +182,7 @@ test("status: available only for an approved package while downloads are on", as
     return res.json();
   };
   assert.deepEqual(await status("freshstack-what-if", ON_ENV), { available: true });
-  assert.deepEqual(await status("low-poly-urban", ON_ENV), { available: false });
+  assert.deepEqual(await status("growkaz-stickman", ON_ENV), { available: false });
   assert.deepEqual(await status("growkaz-stickman", ON_ENV), { available: false });
   assert.deepEqual(await status("freshstack-what-if", AUTH_ENV), { available: false });
   assert.deepEqual(await status("freshstack-what-if", { ...ON_ENV, KUBCODE_PACKAGE_SIGNER_URL: "http://x/" }), { available: false });

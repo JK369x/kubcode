@@ -10,10 +10,13 @@ const root = join(__dirname, "..");
 const KEY = /^packages\/[a-z0-9]+(-[a-z0-9]+)*\/[0-9]+\.[0-9]+\.[0-9]+\.zip$/;
 const FILENAME = /^[a-z0-9]+(-[a-z0-9]+)*-[0-9]+\.[0-9]+\.[0-9]+\.zip$/;
 
-test("packages: the approved releases are What If, Podcast Shorts, make-short and EGM", () => {
+test("packages: the approved releases are What If, Podcast Shorts, make-short, EGM, Low-poly Urban, Thai Narrator and Captions Overlay", () => {
   assert.deepEqual(
     PACKAGES.map((p) => `${p.slug}@${p.version}`),
-    ["freshstack-what-if@0.2.0", "podcast-tool-short@0.1.0", "make-short@0.1.0", "elephant-goldfish-model@0.1.1"],
+    [
+      "freshstack-what-if@0.2.0", "podcast-tool-short@0.1.0", "make-short@0.1.0", "elephant-goldfish-model@0.1.1",
+      "low-poly-urban@0.1.0", "thai-narrator@0.1.0", "captions-overlay@0.1.0",
+    ],
   );
 });
 
@@ -53,7 +56,8 @@ test("packages: each package's files are in the repo with its licence", () => {
 
 test("packages: lookup by slug returns the approved entry or null", () => {
   assert.equal(approvedPackageFor("freshstack-what-if")?.version, "0.2.0");
-  assert.equal(approvedPackageFor("low-poly-urban"), null);
+  assert.equal(approvedPackageFor("low-poly-urban")?.version, "0.1.0");
+  assert.equal(approvedPackageFor("thai-survival"), null);
   assert.equal(approvedPackageFor("../etc"), null);
   assert.equal(approvedPackageFor("constructor"), null);
 });

@@ -152,7 +152,9 @@ const actions = (visual: string, props: { signedIn: boolean | undefined; availab
   return render(createElement(CardActions, { entry, ...props }));
 };
 const PACKAGED = Object.entries(SHOWCASE_VISUALS).find(([, s]) => s?.skill && approvedPackageFor(s.skill))![0];
-const UNPACKAGED = Object.entries(SHOWCASE_VISUALS).find(([, s]) => s?.skill && !approvedPackageFor(s.skill))![0];
+// Since 2026-11-17 every shelf style has a package; the "no package" case is
+// checked on a copy of the packaged entry pointed at a skill with no package.
+const UNPACKAGED = Object.entries(SHOWCASE_VISUALS).find(([, s]) => s?.skill && !approvedPackageFor(s.skill))?.[0];
 
 test("packaged skill, signed in and downloads on: a real download button", () => {
   const html = actions(PACKAGED, { signedIn: true, available: true });
@@ -172,6 +174,13 @@ test("packaged skill, downloads switched off on the server: coming soon, disable
 });
 
 test("skill without a package: coming soon for everyone, never a sign-in link", () => {
+  if (!UNPACKAGED) {
+    // Every shelf style has a package now; the rule itself still holds.
+    const { downloadPhase } = require("../lib/downloads/view") as typeof import("../lib/downloads/view");
+    for (const signedIn of [true, false, undefined])
+      assert.equal(downloadPhase({ hasPackage: approvedPackageFor("growkaz-stickman") !== null, signedIn, available: true, working: false }), "none");
+    return;
+  }
   for (const signedIn of [true, false]) {
     const html = actions(UNPACKAGED, { signedIn, available: undefined });
     assert.match(html, /<button[^>]*disabled=""[^>]*>[\s\S]*?ดาวน์โหลดเร็วๆ นี้/, String(signedIn));

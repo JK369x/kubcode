@@ -194,7 +194,7 @@ test("cards show the badges people care about, not the internal status (2026-11-
   // The catalogue status stays on the skill page.
   assert.doesNotMatch(render(withPoster), />ฉบับทดลอง</);
   assert.match(render(bySlug("freshstack-what-if")), />โหลดฟรี</);
-  assert.match(render(bySlug("low-poly-urban")), />ยังไม่เปิดโหลด</);
+  assert.match(render(bySlug("growkaz-stickman")), />ยังไม่เปิดโหลด</);
   assert.match(render(noMedia), />ไม่ต้องใช้ API key</);
 });
 

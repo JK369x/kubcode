@@ -1,0 +1,14 @@
+{
+  "id": "low-poly-urban",
+  "name": "Low-poly Urban",
+  "status": "selected",
+  "version": "0.3",
+  "approvalScope": "ภาพ/motion ผ่านตัวอย่าง 8s เดิม · ซับไทยไฮไลต์คำสำคัญ + อังกฤษเล็ก ผ่าน 29 ต.ค. 2026 · เสียงและฉากใหม่ตรวจแยก",
+  "direction": "STYLE.md",
+  "preview": "assets/preview.png",
+  "source": "examples/city/scene.js",
+  "example": "examples/city/index.html",
+  "video": "examples/city/demo.mp4",
+  "captions": "captions.json",
+  "components": []
+}

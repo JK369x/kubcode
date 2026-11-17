@@ -1,0 +1,4 @@
+interface:
+  display_name: "Low-poly Urban"
+  short_description: "Vertical low-poly 3D city clips built from code"
+  default_prompt: "Use $low-poly-urban to make one 9:16 low-poly city clip about this idea, with Thai keyword captions."

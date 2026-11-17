@@ -78,6 +78,9 @@ export const PACKAGES: readonly { slug: string; version: string }[] = [
   { slug: "podcast-tool-short", version: "0.1.0" },
   { slug: "make-short", version: "0.1.0" },
   { slug: "elephant-goldfish-model", version: "0.1.1" },
+  { slug: "low-poly-urban", version: "0.1.0" },
+  { slug: "thai-narrator", version: "0.1.0" },
+  { slug: "captions-overlay", version: "0.1.0" },
 ];
 
 /**

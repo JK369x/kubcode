@@ -1,0 +1,4 @@
+interface:
+  display_name: "Thai Calm Narrator"
+  short_description: "Fixed synthetic calm Thai narrator voice, offline"
+  default_prompt: "Use $thai-narrator to voice these Thai lines and report each line duration."
