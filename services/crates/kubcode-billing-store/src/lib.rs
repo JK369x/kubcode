@@ -169,8 +169,12 @@ async fn channel_slots<C: GenericClient>(c: &C, workspace: Uuid) -> Result<Loade
         let paused: Option<OffsetDateTime> = r.get(2);
         let disconnected: Option<OffsetDateTime> = r.get(3);
         let live: bool = r.get(4);
-        // A channel the creator disconnected themselves holds no slot.
-        if !live && paused.is_none() {
+        // No live connection, no slot: the creator disconnected it, or the
+        // publishing Lambda did after 14 days paused (it cannot write the
+        // pause row, so the pause stays open). Counting those would push a
+        // paid, connected channel into a pause. A reconnect makes it live
+        // again, and the open pause is then resumed if it fits.
+        if !live {
             continue;
         }
         out.push((
@@ -208,6 +212,27 @@ impl Store {
             workspace: r.get(0),
             exempt: r.get(1),
         }))
+    }
+
+    /// Like `payer`, but creates the member's workspace on first use (a first
+    /// checkout). Same SQL as the publishing store's `owner_workspace`, so two
+    /// first uses at once still end with one workspace. `None` for a user who
+    /// is not active.
+    pub async fn payer_or_create(&self, user: Uuid) -> Result<Option<Payer>> {
+        const SQL: &str = "
+            WITH u AS (
+              SELECT id FROM kubcode_accounts.users WHERE id = $1 AND status = 'active'),
+            ws AS (
+              INSERT INTO kubcode_accounts.workspaces (name)
+              SELECT 'Workspace' FROM u WHERE NOT EXISTS (
+                SELECT 1 FROM kubcode_accounts.workspace_members WHERE user_id = $1 AND role = 'owner')
+              RETURNING id)
+            INSERT INTO kubcode_accounts.workspace_members (workspace_id, user_id, role)
+            SELECT id, $1, 'owner' FROM ws ON CONFLICT DO NOTHING";
+        // A concurrent first use can make this statement see nothing; the
+        // read below then finds the winner's row.
+        self.c.execute(SQL, &[&user]).await?;
+        self.payer(user).await
     }
 
     /// The workspace's entitlement at `now`, computed from paid purchases.

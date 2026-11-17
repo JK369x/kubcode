@@ -18,7 +18,9 @@ export type BillingView = {
   paidUntil: string | null;
   standing: Standing;
   reminder: Reminder;
-  /** Channels connected now (not disconnected), for the slot check. */
+  /** Channels with a working connection, for the connect check. One that
+   *  needs reconnecting is not counted, so fixing it is never refused as
+   *  "slots full"; the hourly sweep still counts it and pauses any extra. */
   activeChannels: number;
   pausedChannels: number;
   purchases: {
@@ -73,7 +75,7 @@ async function read(c: PoolClient, s: SessionClaims, now: Date): Promise<Billing
   );
   const counts = await c.query<{ active: string; paused: string }>(
     `SELECT count(*) FILTER (WHERE EXISTS (SELECT 1 FROM kubcode_accounts.channel_connections cc
-                                            WHERE cc.channel_id = ch.id AND cc.status <> 'revoked')) AS active,
+                                            WHERE cc.channel_id = ch.id AND cc.status = 'active')) AS active,
             count(*) FILTER (WHERE EXISTS (SELECT 1 FROM kubcode_accounts.billing_channel_pauses p
                                             WHERE p.channel_id = ch.id AND p.resumed_at IS NULL)) AS paused
        FROM kubcode_accounts.channels ch WHERE ch.workspace_id = $1`,

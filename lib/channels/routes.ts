@@ -87,6 +87,8 @@ export async function writeContext(
   deps: ChannelRouteDeps,
   maxBytes: number,
   bodyOk: (body: Record<string, unknown>) => boolean,
+  /** Let a lapsed member through (disconnect only); everything else needs paid access. */
+  read = false,
 ): Promise<
   | Response
   | { config: Extract<PublishingConfig, { mode: "on" }>; userId: string; session: SessionClaims; body: Record<string, unknown> }
@@ -103,7 +105,7 @@ export async function writeContext(
   if (!session) return errorResponse("NOT_SIGNED_IN");
   const store = deps.storeFor?.(accounts.databaseUrl) ?? getChannelStore(accounts.databaseUrl);
   try {
-    const m = await store.member(session);
+    const m = await store.member(session, read);
     if (!m.ok) return errorResponse(m.code);
     return { config, userId: m.userId, session, body: guarded.body };
   } catch (error) {
@@ -210,7 +212,7 @@ export async function handleChannelCallback(request: Request, deps: ChannelRoute
 
 export async function handleChannelDisconnect(request: Request, channelId: string, deps: ChannelRouteDeps = {}): Promise<Response> {
   if (!UUID.test(channelId)) return accountErrorResponse("BAD_REQUEST");
-  const ctx = await writeContext(request, deps, 16, (b) => Object.keys(b).length === 0);
+  const ctx = await writeContext(request, deps, 16, (b) => Object.keys(b).length === 0, true);
   if (ctx instanceof Response) return ctx;
   const answer = await callLambda(ctx.config, "/api/channels/disconnect", { user_id: ctx.userId, channel_id: channelId }, deps);
   if (answer?.ok === true) return jsonNoStore({ ok: true });

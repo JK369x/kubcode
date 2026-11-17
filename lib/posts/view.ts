@@ -27,7 +27,11 @@ export async function getComposerView(env: AuthEnv, getCookies: () => Promise<Co
   const g = await session(env, getCookies);
   if ("gate" in g) return g.gate as Gate;
   try {
-    const r = await getChannelStore(g.url).channels(g.s);
+    const store = getChannelStore(g.url);
+    // Posting needs paid access; the channel list alone is also open to a lapsed member.
+    const m = await store.member(g.s);
+    if (!m.ok) return { state: m.code === "FORBIDDEN" ? "forbidden" : "signed-out" };
+    const r = await store.channels(g.s);
     if (!r.ok) return { state: r.code === "FORBIDDEN" ? "forbidden" : "signed-out" };
     return {
       state: "ready",

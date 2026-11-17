@@ -13,7 +13,7 @@ async function csrf(): Promise<string | null> {
   return csrfToken;
 }
 
-export async function send<T>(path: string, method: "POST" | "PATCH" | "DELETE", body?: unknown): Promise<ApiResult<T>> {
+export async function send<T>(path: string, method: "POST" | "PATCH" | "DELETE", body?: unknown, retried = false): Promise<ApiResult<T>> {
   try {
     const token = await csrf();
     if (!token) return { ok: false, code: "CSRF_INVALID", message: FALLBACK };
@@ -28,7 +28,12 @@ export async function send<T>(path: string, method: "POST" | "PATCH" | "DELETE",
       body: body === undefined ? undefined : JSON.stringify(body),
     });
     const json = (await res.json().catch(() => ({}))) as Record<string, unknown>;
-    if (res.status === 403 && json.code === "CSRF_INVALID") csrfToken = null;
+    if (res.status === 403 && json.code === "CSRF_INVALID") {
+      // The cookie expired (2 h) while the page kept its token. The guard
+      // refused before doing anything, so one retry with a fresh token is safe.
+      csrfToken = null;
+      if (!retried) return send<T>(path, method, body, true);
+    }
     if (!res.ok) {
       return {
         ok: false,

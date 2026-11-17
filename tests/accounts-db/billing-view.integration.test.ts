@@ -4,7 +4,7 @@ import test, { after, before } from "node:test";
 import assert from "node:assert/strict";
 import { accountToken, sessionClaims, type SessionClaims } from "../../lib/accounts/session";
 import { createPgAccountStore } from "../../lib/accounts/store";
-import { createPgBillingStore } from "../../lib/billing/store";
+import { canConnectAnother, createPgBillingStore } from "../../lib/billing/store";
 import { throwawayDb, type ThrowawayDb } from "./harness";
 
 let db: ThrowawayDb;
@@ -61,6 +61,19 @@ test("view: entitlement, active channels and paid history for the member's own w
   const vb = (await store.view(b.s, new Date("2026-12-10T05:00:00Z")))!;
   assert.equal(vb.slots, 9);
   assert.equal(vb.activeChannels, 0);
+});
+
+test("view: a channel that needs reconnecting does not take a new slot, so fixing it is not refused", async () => {
+  const a = await member();
+  await channel(a.ws, true);
+  const broken = await channel(a.ws, true);
+  await db.pool.query("UPDATE kubcode_accounts.channel_connections SET status = 'needs_reconnect' WHERE channel_id = $1", [broken]);
+  const until = new Date("2026-12-13T05:00:00Z");
+  await db.pool.query("INSERT INTO kubcode_accounts.billing_entitlements (workspace_id, slots, paid_until) VALUES ($1, 2, $2)", [a.ws, until]);
+  const now = new Date("2026-12-10T05:00:00Z");
+  const v = (await createPgBillingStore(db.appPool).view(a.s, now))!;
+  assert.equal(v.activeChannels, 1);
+  assert.equal(canConnectAnother(v, now), true, "2 paid slots, 1 working + 1 to repair: the repair connect goes through");
 });
 
 test("view: owner is exempt; a stale session reads nothing", async () => {

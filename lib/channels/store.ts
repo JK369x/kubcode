@@ -4,7 +4,7 @@ import type { Pool, PoolClient } from "pg";
 import type { SessionClaims } from "../accounts/session";
 import { getPool, withTransaction } from "../accounts/db";
 import { lockMember } from "../accounts/member";
-import { canUsePublishing, publishingStanding } from "./access";
+import { canSeeOwnPublishing, canUsePublishing, publishingStanding } from "./access";
 
 export type Failure = { ok: false; code: "NOT_SIGNED_IN" | "FORBIDDEN" };
 export type ChannelStatus = "active" | "needs_reconnect" | "disconnected";
@@ -22,30 +22,33 @@ export type IntentView = { cookieHash: Buffer; bindingHash: Buffer; open: boolea
 
 export interface ChannelStore {
   /** The member allowed to use publishing (the owner, or a member with paid slots). */
-  member(session: SessionClaims): Promise<{ ok: true; userId: string } | Failure>;
+  /** `read`: allow a lapsed member (listing, disconnect); default is the paid gate. */
+  member(session: SessionClaims, read?: boolean): Promise<{ ok: true; userId: string } | Failure>;
   channels(session: SessionClaims): Promise<{ ok: true; channels: ChannelView[] } | Failure>;
   /** The member's own connect intent by state hash, or null. */
   intent(session: SessionClaims, stateHash: Buffer): Promise<IntentView | null>;
 }
 
-async function enter(c: PoolClient, s: SessionClaims): Promise<string | Failure> {
+/** `read`: a lapsed member may still list and disconnect (canSeeOwnPublishing). */
+async function enter(c: PoolClient, s: SessionClaims, read = false): Promise<string | Failure> {
   const member = await lockMember(c, s);
   if (!member) return { ok: false, code: "NOT_SIGNED_IN" };
-  if (!canUsePublishing(await publishingStanding(c, member))) return { ok: false, code: "FORBIDDEN" };
+  const standing = await publishingStanding(c, member);
+  if (!(read ? canSeeOwnPublishing(standing) : canUsePublishing(standing))) return { ok: false, code: "FORBIDDEN" };
   return member.id;
 }
 
 export function createPgChannelStore(pool: Pool): ChannelStore {
   const tx = <T>(work: (c: PoolClient) => Promise<T>) => withTransaction(pool, work);
   return {
-    member: (s) =>
+    member: (s, read) =>
       tx(async (c) => {
-        const id = await enter(c, s);
+        const id = await enter(c, s, read);
         return typeof id === "string" ? { ok: true as const, userId: id } : id;
       }),
     channels: (s) =>
       tx(async (c) => {
-        const id = await enter(c, s);
+        const id = await enter(c, s, true);
         if (typeof id !== "string") return id;
         const { rows } = await c.query<{
           id: string;
