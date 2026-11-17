@@ -465,6 +465,19 @@
   }
 }
 
+/* Wide screens: flex rows of fixed-width cards, so a filtered set (3 cards for
+   Studio or Social) sits centred instead of leaving a hole on the right. */
+@media (min-width: 1100px) {
+  .grid {
+    display: flex;
+    flex-wrap: nowrap;
+    justify-content: center;
+  }
+  .grid > li {
+    flex: 0 1 calc((100% - 3 * 18px) / 4);
+  }
+}
+
 /* ---------- entrance motion (owner 2026-11-17) ----------
    On load the hero rises in, then the cards follow one by one. */
 @keyframes rise {
@@ -483,13 +496,11 @@
 .hero > :nth-child(2) { animation-delay: 0.05s; }
 .hero > :nth-child(3) { animation-delay: 0.1s; }
 .hero > :nth-child(4) { animation-delay: 0.15s; }
+/* Stagger by visible position (--step), so a filtered set still cascades. */
 .grid > li {
   animation: rise 0.6s cubic-bezier(0.16, 1, 0.3, 1) both;
+  animation-delay: calc(0.12s + var(--step, 0) * 0.08s);
 }
-.grid > li:nth-child(1) { animation-delay: 0.18s; }
-.grid > li:nth-child(2) { animation-delay: 0.26s; }
-.grid > li:nth-child(3) { animation-delay: 0.34s; }
-.grid > li:nth-child(4) { animation-delay: 0.42s; }
 @media (prefers-reduced-motion: reduce) {
   .hero > *,
   .grid > li {

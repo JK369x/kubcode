@@ -149,7 +149,7 @@ function ChannelCalculator({ plan }: { plan: Plan }) {
   );
 }
 
-function PlanCard({ plan, open, filter }: { plan: Plan; open: boolean; filter: Filter }) {
+function PlanCard({ plan, open, filter, step }: { plan: Plan; open: boolean; filter: Filter; step: number }) {
   const price = priceLabel(plan);
   const extra = extraChannelLabel(plan);
   const look = lookOf(plan);
@@ -167,6 +167,7 @@ function PlanCard({ plan, open, filter }: { plan: Plan; open: boolean; filter: F
       hidden={!inFamily(plan, filter)}
       edge={soon ? "soft" : "strong"}
       className={cn(styles.card, soon && styles.soon, plan.highlighted && styles.lifted)}
+      style={{ "--step": step } as CSSProperties}
     >
       {plan.highlighted && (
         <span className={styles.ribbon}>
@@ -247,8 +248,15 @@ export function PricingShowcase({ open }: { open: boolean }) {
     const f = new URLSearchParams(window.location.search).get("for");
     if (f === "studio" || f === "social") setFilter(f);
   }, []);
+  const gridRef = useRef<HTMLUListElement>(null);
   const choose = (f: Filter) => {
     setFilter(f);
+    // Owner 2026-11-17: picking a family brings its cards to the middle of the
+    // screen (after the remount) and replays their entrance.
+    requestAnimationFrame(() => {
+      const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+      gridRef.current?.scrollIntoView({ behavior: reduce ? "auto" : "smooth", block: "center" });
+    });
     const url = new URL(window.location.href);
     if (f === "all") url.searchParams.delete("for");
     else url.searchParams.set("for", f);
@@ -296,12 +304,16 @@ export function PricingShowcase({ open }: { open: boolean }) {
       </header>
 
       <WaitlistProvider>
-        <ul className={styles.grid} aria-label="แพ็กเกจ" style={{ "--plans": PLANS.length } as CSSProperties}>
+        <ul key={filter} ref={gridRef} className={styles.grid} aria-label="แพ็กเกจ" style={{ "--plans": PLANS.length } as CSSProperties}>
           {/* UX audit P1-3: on phones the recommended plan comes first, in
               DOM order too (reading order matches what is seen). */}
-          {(narrow ? [...PLANS].sort((a, b) => Number(b.highlighted) - Number(a.highlighted)) : PLANS).map((p) => (
-            <PlanCard key={p.id} plan={p} open={open} filter={filter} />
-          ))}
+          {(() => {
+            const order = narrow ? [...PLANS].sort((a, b) => Number(b.highlighted) - Number(a.highlighted)) : PLANS;
+            let shown = 0;
+            return order.map((p) => (
+              <PlanCard key={p.id} plan={p} open={open} filter={filter} step={inFamily(p, filter) ? shown++ : 0} />
+            ));
+          })()}
         </ul>
       </WaitlistProvider>
       <p className={styles.terms}>ทุกแพ็กเกจจ่ายทีละเดือน ไม่ตัดเงินอัตโนมัติ · ราคานี้ยังไม่มี VAT</p>
