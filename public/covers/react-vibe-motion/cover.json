@@ -1,0 +1,12 @@
+{
+  "slug": "react-vibe-motion",
+  "tool": "DeepSeek Harness image_generate (gpt-image-2)",
+  "date": "2026-11-17",
+  "source": "generated",
+  "reference": "docs/covers/mascots.png",
+  "master": "cover.jpg",
+  "og": "og.jpg",
+  "width": 1600,
+  "height": 900,
+  "prompt": "Kub the cat and Kode the dog build a simple flow diagram on a big cream paper board: one rounded box on top, curved soft-brown paper ribbons branching to five small blank coloured boxes, round mustard dots travelling along the ribbons; Kub on a stool presses a box, Kode holds a ribbon. Character sheet and style from docs/covers.md (flat hand-drawn cartoon, ink outlines, cream paper, no text, no logos, no 3D)."
+}
