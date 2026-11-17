@@ -66,6 +66,23 @@ fn platform_name(p: Platform) -> &'static str {
     }
 }
 
+/// Query for `GET /v1/connect/{platform}` (OpenAPI 1.630.3). Facebook needs a
+/// Page choice after OAuth; instead of carrying Meta's temporary user token
+/// through our own picker, Facebook uses Zernio's hosted Page picker (standard
+/// mode), which then redirects with `accountId` like every other platform, so
+/// `complete` verifies it the same way. Everything else stays headless.
+fn connect_query<'a>(
+    platform: Platform,
+    profile: &'a str,
+    callback_url: &'a str,
+) -> Vec<(&'static str, &'a str)> {
+    let mut q = vec![("profileId", profile), ("redirect_url", callback_url)];
+    if platform != Platform::Facebook {
+        q.push(("headless", "true"));
+    }
+    q
+}
+
 /// Ids go into URL paths, so only plain id characters are accepted.
 fn path_id(r: &ProviderRef) -> Result<&str> {
     let ok = (1..=64).contains(&r.0.len())
@@ -324,6 +341,15 @@ impl Zernio {
                 }
                 psd
             }
+            // OpenAPI 1.630.3 FacebookPlatformData: a Page Reel (vertical 9:16,
+            // 3 to 60 s). The designed cover is the Reel's custom thumbnail
+            // (mediaItems[].thumbnail works on feed videos and Reels).
+            Platform::Facebook => {
+                if let Some(c) = cover_url {
+                    media["thumbnail"] = json!(c);
+                }
+                json!({"contentType": "reel"})
+            }
             _ => json!({}),
         };
         let mut body = json!({
@@ -370,11 +396,7 @@ impl ConnectProvider for Zernio {
                 Method::Get,
                 self.url(
                     &format!("/v1/connect/{name}"),
-                    &[
-                        ("profileId", &profile.0),
-                        ("redirect_url", callback_url),
-                        ("headless", "true"),
-                    ],
+                    &connect_query(platform, &profile.0, callback_url),
                 ),
                 None,
                 None,

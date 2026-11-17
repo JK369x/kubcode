@@ -106,6 +106,19 @@ fn limits(platform: Platform) -> Limits {
             private_allowed: false,
             portrait_9_16: true,
         },
+        // Facebook Page Reels through Zernio (docs: Facebook media requirements):
+        // one vertical 9:16 video, 60 s max, 4 GB; caption limit 63,206 but we
+        // keep the composer's 5,000. Pages publish public only.
+        Platform::Facebook => Limits {
+            title_max: None,
+            title_required: false,
+            description_max: 5_000,
+            tags_total_max: None,
+            video_max_bytes: 4 * 1024 * MIB,
+            video_max_seconds: Some(60.0),
+            private_allowed: false,
+            portrait_9_16: true,
+        },
         // Platforms not opened yet get conservative limits; each one gets its
         // own row (and tests) when it is added.
         _ => Limits {

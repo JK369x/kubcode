@@ -149,7 +149,7 @@ export function SocialSection({ roadmap = false, pricing = false }: { roadmap?: 
       <ul className={styles.soon} aria-label="ยังไม่เปิดใช้">
         <li>
           <PlatformLogo platform="facebook" size={18} tone="muted" decorative />
-          <span>Facebook</span>
+          <span>ตอบคอมเมนต์บน Facebook</span>
           <Badge variant="outline" className="text-muted-foreground">
             เร็ว ๆ นี้
           </Badge>

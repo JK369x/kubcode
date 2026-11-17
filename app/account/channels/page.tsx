@@ -41,7 +41,7 @@ export default async function ChannelsPage({ searchParams }: Props) {
       tone="social"
       eyebrow="kubcode Social"
       title="ช่องที่เชื่อมไว้"
-      accent="YouTube · Instagram · TikTok"
+      accent="YouTube · Instagram · TikTok · Facebook"
       actions={
         view.state === "ready" && view.channels.some((c) => c.status === "active") ? (
           <>

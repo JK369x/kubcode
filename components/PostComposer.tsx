@@ -209,7 +209,7 @@ export function PostComposer({ channels }: { channels: ComposerChannel[] }) {
         />
         <FilePick
           id="cover"
-          label="ภาพปก (PNG หรือ JPG ไม่เกิน 2 MB) จำเป็นสำหรับ YouTube, Instagram และ TikTok"
+          label="ภาพปก (PNG หรือ JPG ไม่เกิน 2 MB) จำเป็นสำหรับ YouTube, Instagram, TikTok และ Facebook"
           accept="image/png,image/jpeg"
           icon={<ImageUp aria-hidden className="size-5" />}
           stage={stage.cover}

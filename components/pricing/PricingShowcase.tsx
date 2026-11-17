@@ -156,15 +156,11 @@ function PlanCard({ plan, open, filter }: { plan: Plan; open: boolean; filter: F
       </div>
       {isSocial && (
         <ul className={styles.platforms} aria-label="แพลตฟอร์มที่เชื่อมได้">
-          {(["youtube", "instagram", "tiktok"] as const).map((p) => (
+          {(["youtube", "instagram", "tiktok", "facebook"] as const).map((p) => (
             <li key={p}>
               <PlatformLogo platform={p} size={18} />
             </li>
           ))}
-          <li className={styles.fbSoon}>
-            <PlatformLogo platform="facebook" size={16} tone="muted" decorative />
-            <span>Facebook เร็ว ๆ นี้</span>
-          </li>
         </ul>
       )}
       {plan.id === "social" && !soon && <ChannelCalculator plan={plan} />}

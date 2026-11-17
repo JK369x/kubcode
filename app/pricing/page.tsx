@@ -40,7 +40,7 @@ const PLATFORMS: readonly { id: Platform; name: string; state: "ok" | "soon"; no
   { id: "youtube", name: "YouTube", state: "ok", noteTh: "ตั้งเวลาโพสต์ Shorts และวิดีโอ" },
   { id: "instagram", name: "Instagram", state: "ok", noteTh: "ตั้งเวลา Reels · คอมเมนต์คีย์เวิร์ด → DM" },
   { id: "tiktok", name: "TikTok", state: "ok", noteTh: "ตั้งเวลาโพสต์ · ตอบคอมเมนต์แบบสาธารณะ" },
-  { id: "facebook", name: "Facebook", state: "soon", noteTh: "อยู่ในแผนงาน" },
+  { id: "facebook", name: "Facebook", state: "ok", noteTh: "ตั้งเวลา Reels ลงเพจ (ตอบคอมเมนต์อัตโนมัติเร็ว ๆ นี้)" },
 ];
 
 export const FAQ: readonly { q: string; a: React.ReactNode }[] = [

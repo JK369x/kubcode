@@ -71,6 +71,7 @@ async function main() {
     const ig = await ch("instagram", "Ploy Makes", "ploy.makes", "active");
     const tt = await ch("tiktok", "Ploy Makes", "ploymakes", "active");
     await ch("youtube", "Ploy Makes", "ploymakes", "needs_reconnect");
+    const fb = await ch("facebook", "Ploy Makes Page", "ploymakespage", "active");
     // Two confirmed posts: one scheduled to IG + TikTok, one published on IG and rejected on TikTok.
     const asset = async (clip: string, kind: "video" | "cover") =>
       (
@@ -104,6 +105,7 @@ async function main() {
     await post("web-fixture-2", "เบื้องหลังการทำ Podcast Shorts ตอนใหม่", [
       { c: ig, platform: "instagram", status: "scheduled", at: "1 day" },
       { c: tt, platform: "tiktok", status: "scheduled", at: "1 day" },
+      { c: fb, platform: "facebook", status: "scheduled", at: "1 day" },
     ]);
     }
     await db.pool.query(

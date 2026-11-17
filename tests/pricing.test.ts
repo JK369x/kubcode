@@ -92,11 +92,11 @@ test("pricing: coming-soon plans can never be bought, even with billing on", () 
   }
 });
 
-test("pricing never says Facebook works and links to the roadmap", () => {
+test("pricing says Facebook Pages post Reels, comment replies there are still coming, and links to the roadmap", () => {
   const h = html(Pricing);
   const t = text(h);
-  assert.match(t, /Facebook ยังไม่รองรับ/);
-  assert.doesNotMatch(t, /Facebook รองรับแล้ว/);
+  assert.match(t, /Facebook\s*รองรับแล้ว/);
+  assert.match(t, /ตั้งเวลา Reels ลงเพจ \(ตอบคอมเมนต์อัตโนมัติเร็ว ๆ นี้\)/);
   for (const p of PLANS) for (const f of p.features) assert.doesNotMatch(f, /Facebook/);
   assert.match(h, /href="\/roadmap"[^>]*>ดูแผนที่จะมา →</);
 });
@@ -163,9 +163,8 @@ test("pricing design (owner pick A): product switch, family marks, real platform
   const h = html(Pricing);
   assert.match(h, /role="radiogroup"[^>]*aria-label="ดูแพ็กเกจของ"/);
   for (const name of ["kubcode Studio", "kubcode Social"]) assert.match(h, new RegExp(name));
-  for (const p of ["youtube", "instagram", "tiktok"]) assert.match(h, new RegExp(`data-platform="${p}"[^>]*data-tone="brand"`));
-  assert.match(h, /data-platform="facebook"[^>]*data-tone="muted"/);
-  assert.match(text(h), /Facebook เร็ว ๆ นี้/);
+  for (const p of ["youtube", "instagram", "tiktok", "facebook"]) assert.match(h, new RegExp(`data-platform="${p}"[^>]*data-tone="brand"`));
+  assert.doesNotMatch(text(h), /Facebook เร็ว ๆ นี้/);
   assert.match(h, /aria-label="คำนวณราคาตามจำนวนช่อง"/);
   assert.match(h, /<caption[^>]*>เทียบสิ่งที่ได้ในแต่ละแพ็กเกจ<\/caption>/);
   assert.match(h, /data-slot="accordion-trigger"[^>]*>ยกเลิกยังไง/);
