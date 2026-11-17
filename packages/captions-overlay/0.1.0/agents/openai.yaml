@@ -1,0 +1,4 @@
+interface:
+  display_name: "Captions Overlay"
+  short_description: "Thai-first keyword captions with a small English line"
+  default_prompt: "Use $captions-overlay to caption this clip in Thai with one highlighted keyword per phrase and a small English line, timed to the narration."

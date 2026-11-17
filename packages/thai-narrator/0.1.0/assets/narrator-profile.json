@@ -1,0 +1,29 @@
+{
+  "id": "your-voice",
+  "reference": "voice-reference.wav",
+  "reference_sha256": null,
+  "reference_text": "<พิมพ์ประโยคที่พูดในไฟล์ voice-reference.wav ให้ตรงทุกคำ>",
+  "source": "Supplied by you: your own recording or a voice you have the right to use. kubcode does not ship a voice.",
+  "model_repository": "mlx-community/VoxCPM2-4bit",
+  "model_revision": "dc9e5c187858da5f4a13dc4c247e297339216381",
+  "parameters": {
+    "seed_base": 43,
+    "max_tokens": 600,
+    "inference_timesteps": 10,
+    "cfg_value": 2
+  },
+  "normalization": {
+    "integrated_lufs": -17,
+    "true_peak_dbfs": -2.5,
+    "loudness_range": 9,
+    "sample_rate": 48000,
+    "channels": 1
+  },
+  "display_name": "เสียงบรรยายไทยของคุณ",
+  "aliases": [
+    "Thai Narrator",
+    "thai-narrator"
+  ],
+  "generation_workflow": "original-direct-voxcpm2",
+  "display_name_en": "Thai Calm Narrator"
+}

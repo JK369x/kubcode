@@ -1,0 +1,4 @@
+interface:
+  display_name: "Thai Narrator"
+  short_description: "Consistent Thai narration from your own reference voice, offline"
+  default_prompt: "Use $thai-narrator to voice these Thai lines and report each line duration."

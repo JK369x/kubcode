@@ -65,6 +65,34 @@ const GUIDES: Readonly<Record<string, readonly GuideStep[]>> = {
     { text: "ตอบคำถามของช้างให้ครบ แล้วเขียนสเปกต่อด้วย /egm:egm-draft", code: "/egm:egm-draft" },
     { text: "ให้ปลาทองรีวิวสเปก เลือกเองว่าข้อไหนจะแก้ แล้วค่อยสั่งให้ลงมือสร้าง", code: "/egm:egm-review design_draft.md" },
   ],
+  "low-poly-urban": [
+    { text: "เข้าสู่ระบบ แล้วกด “ดาวน์โหลด skill” ในกล่องดาวน์โหลด (ไฟล์ .zip)" },
+    { text: "คัดลอก SKILL.md, references/ และ agents/ ไปไว้ในโฟลเดอร์ skill และเก็บ example/city ไว้เป็นต้นแบบโปรเจกต์", code: "~/.claude/skills/low-poly-urban/" },
+    { text: "ติดตั้ง Node 18+, HyperFrames และ FFmpeg", code: "npx hyperframes --help" },
+    {
+      text: "เปิด Claude Code หรือ OpenCode แล้ววางคำสั่งนี้ เปลี่ยน ... เป็นเรื่องที่อยากทำ",
+      prompt: "ใช้ low-poly-urban ทำคลิป 9:16 ยาว 20 วินาที เรื่อง ... พร้อมซับไทย",
+    },
+  ],
+  "thai-narrator": [
+    { text: "เข้าสู่ระบบ แล้วกด “ดาวน์โหลด skill” แล้วแตกไฟล์ไว้ในโฟลเดอร์ skill", code: "~/.claude/skills/thai-narrator/" },
+    { text: "ต้องใช้ Mac ชิป Apple Silicon, Python 3.11+ และ FFmpeg (Windows/Linux สร้างเสียงด้วยชุดนี้ไม่ได้)" },
+    { text: "อัดเสียงตัวเอง 5–15 วินาที บันทึกเป็น assets/voice-reference.wav แล้วพิมพ์ประโยคที่พูดลงใน reference_text (ใช้เสียงที่คุณมีสิทธิ์เท่านั้น)" },
+    { text: "ทำตามขั้น Setup ใน SKILL.md: สร้าง venv ติดตั้งแพ็กเกจ และดาวน์โหลดโมเดล VoxCPM2 จาก Hugging Face", code: "python3 scripts/narrate.py --check" },
+    {
+      text: "เปิด Claude Code หรือ OpenCode แล้ววางคำสั่งนี้ พร้อมบทพากย์ของคุณ",
+      prompt: "ใช้ thai-narrator อ่านบทพากย์นี้ แล้วบอกความยาวแต่ละบรรทัด",
+    },
+  ],
+  "captions-overlay": [
+    { text: "เข้าสู่ระบบ แล้วกด “ดาวน์โหลด skill” แล้วแตกไฟล์ไว้ในโฟลเดอร์ skill", code: "~/.claude/skills/captions-overlay/" },
+    { text: "ติดตั้ง FFmpeg (ฝังซับลงไฟล์) หรือ HyperFrames (ทำซับเป็นคลิปในโปรเจกต์)", code: "ffmpeg -version" },
+    {
+      text: "เปิด Claude Code หรือ OpenCode แล้ววางคำสั่งนี้ พร้อมแนบคลิปและไฟล์เสียงพากย์",
+      prompt: "ใช้ captions-overlay ใส่ซับไทยไฮไลต์คำสำคัญ + อังกฤษ ให้คลิปนี้ ตามไฟล์เสียงพากย์",
+    },
+    { text: "เช็กภาพนิ่งทุกช่วงซับว่าไม่ทับหน้าคนหรือปุ่มของแพลตฟอร์ม ก่อนเผยแพร่" },
+  ],
 };
 
 /** The steps for a skill: its own guide, or three plain steps. */

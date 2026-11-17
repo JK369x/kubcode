@@ -84,6 +84,33 @@ export const PACKAGES: readonly SkillPackage[] = [
     maxKb: 266,
     agents: ["claude-code"],
   }),
+  pkg({
+    slug: "low-poly-urban",
+    version: "0.1.0",
+    licence: "MIT",
+    credit: "kubcode.dev; three.js (MIT), VT323 and Chakra Petch (SIL OFL 1.1), GSAP (Standard No Charge licence)",
+    approval: { by: "owner", date: "2026-11-17" },
+    maxKb: 1611,
+    agents: ["claude-code", "opencode"],
+  }),
+  pkg({
+    slug: "thai-narrator",
+    version: "0.1.0",
+    licence: "MIT",
+    credit: "kubcode.dev; no voice included (bring your own reference); VoxCPM2 weights not bundled, download from Hugging Face under their terms",
+    approval: { by: "owner", date: "2026-11-17" },
+    maxKb: 16,
+    agents: ["claude-code", "opencode"],
+  }),
+  pkg({
+    slug: "captions-overlay",
+    version: "0.1.0",
+    licence: "MIT",
+    credit: "kubcode.dev; Chakra Petch (SIL OFL 1.1)",
+    approval: { by: "owner", date: "2026-11-17" },
+    maxKb: 108,
+    agents: ["claude-code", "opencode"],
+  }),
 ];
 
 /**
