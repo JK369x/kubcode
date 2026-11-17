@@ -1,0 +1,19 @@
+<!doctype html><html><head><meta charset="utf-8"><style>
+@font-face{font-family:Anuphan;font-weight:600;src:url(../fonts/anuphan-thai-600-normal.woff2) format("woff2");unicode-range:U+0E01-0E5B,U+200C-200D,U+25CC}
+@font-face{font-family:Anuphan;font-weight:600;src:url(../fonts/anuphan-latin-600-normal.woff2) format("woff2")}
+@font-face{font-family:Anuphan;font-weight:700 900;src:url(../fonts/anuphan-thai-700-normal.woff2) format("woff2");unicode-range:U+0E01-0E5B,U+200C-200D,U+25CC}
+@font-face{font-family:Anuphan;font-weight:700 900;src:url(../fonts/anuphan-latin-700-normal.woff2) format("woff2")}
+html,body{margin:0;background:#000}canvas{display:block}</style></head>
+<body><span style="font:700 10px Anuphan;position:absolute;opacity:0">กขค Aa</span><span style="font:600 10px Anuphan;position:absolute;opacity:0">กขค Aa</span>
+<canvas id="c" width="1080" height="1920"></canvas>
+<script type="module">
+import { render, DURATION, FPS } from "./scene.js";
+await document.fonts.load("700 40px Anuphan", "กข Aa"); await document.fonts.load("600 40px Anuphan", "กข Aa");
+const ctx = document.getElementById("c").getContext("2d", { willReadFrequently: true });
+window.__frame = (t) => render(ctx, t);
+window.__meta = { DURATION, FPS };
+const q = new URLSearchParams(location.search);
+if (q.has("play")) { const t0 = performance.now(); const loop = () => { render(ctx, ((performance.now() - t0) / 1000) % DURATION); requestAnimationFrame(loop); }; loop(); }
+else render(ctx, Number(q.get("t") ?? 1));
+window.__ready = true;
+</script></body></html>

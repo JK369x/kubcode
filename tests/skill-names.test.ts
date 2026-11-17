@@ -5,6 +5,7 @@ import { loadContent } from "../lib/content";
 
 const catalogNames: Record<string, string> = {
   "growkaz-stickman": "Stickman Cinema",
+  "stickman-canvas": "Stickman Canvas",
   "thai-survival": "Survival Stories",
   "freshstack-what-if": "What If Lab",
   "deep-sea-docs": "Deep Sea Docs",

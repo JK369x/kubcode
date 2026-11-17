@@ -118,6 +118,27 @@ export const rawSkills: readonly Skill[] = [
     ],
   },
   {
+    slug: "stickman-canvas",
+    name: "Stickman Canvas",
+    category: "video",
+    description:
+      "ตัวละครเส้นสีดำแบบภาพยนตร์ แสงขอบตัว ไฟเวที หน้าใหญ่เต็มจอ ฟรีซเฟรม ตัวเลขวิ่ง วาดด้วยโค้ดทุกเฟรม",
+    version: "0.1.0",
+    status: "selected",
+    approvalScope: "เจ้าของเว็บอนุมัติแนวภาพและตัวอย่าง 16 วินาที เมื่อ 17 พ.ย. 2026 เสียงและเรื่องใหม่ตรวจแยก",
+    requirements: [
+      "Node 20+ · FFmpeg",
+      "Playwright / Chromium",
+      "ไม่ต้องใช้ API key",
+    ],
+    useCases: ["story"],
+    visual: "stickman-canvas",
+    story: "money-tip",
+    cost: "no-key",
+    rights: "uncleared",
+    examples: [],
+  },
+  {
     slug: "thai-survival",
     name: "Survival Stories",
     category: "video",

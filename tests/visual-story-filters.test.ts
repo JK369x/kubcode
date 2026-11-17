@@ -85,11 +85,13 @@ test("clip.json agrees with the series map (when the studio is on this machine)"
   }
 });
 
-test("the published set did not change, and nothing from thai-survival or growkaz is shown", () => {
-  assert.equal(SHOWCASE_ALLOWLIST.length, 18);
+test("the published set: nothing from thai-survival or growkaz; stickman-canvas only as our own kubcode study", () => {
+  assert.equal(SHOWCASE_ALLOWLIST.length, 19);
   const text = JSON.stringify(SHOWCASE_ALLOWLIST) + readFileSync("lib/showcase.json", "utf8");
   assert.doesNotMatch(text, /thai-survival|growkaz/);
-  for (const c of PUBLISHED) assert.ok(!["flat-room", "stickman-canvas"].includes(c.visual), c.id);
+  for (const c of PUBLISHED) assert.ok(c.visual !== "flat-room", c.id);
+  // Owner 2026-11-17: our own clean-room Stickman Canvas replaces the reference-only kit on the site.
+  assert.deepEqual(PUBLISHED.filter((c) => c.visual === "stickman-canvas").map((c) => c.id), ["stickman-canvas-study"]);
 });
 
 /* ------------------------------------------------------ catalogue skills */

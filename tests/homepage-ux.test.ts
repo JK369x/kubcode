@@ -79,7 +79,7 @@ const slugsFor = (useCase: string) => filterSkills(skills, "", useCase).map((s) 
 
 test("filters are by what the creator wants to make, each one non-empty", () => {
   assert.deepEqual(useCases.map((u) => u.label), ["ทั้งหมด", "การ์ตูนเล่าเรื่อง", "คลิปสั้นจากพอดแคสต์", "เสียงพากย์และซับไทย", "ช่วยออกแบบแอป"]);
-  assert.deepEqual(slugsFor("story"), ["deep-sea-docs", "freshstack-what-if", "growkaz-stickman", "low-poly-urban", "make-short", "thai-survival"]);
+  assert.deepEqual(slugsFor("story"), ["deep-sea-docs", "freshstack-what-if", "growkaz-stickman", "low-poly-urban", "make-short", "stickman-canvas", "thai-survival"]);
   assert.deepEqual(slugsFor("podcast"), ["podcast-tool-short"]);
   assert.deepEqual(slugsFor("voice-captions"), ["captions-overlay", "thai-narrator"]);
   assert.equal(slugsFor("all").length, skills.length);
@@ -128,7 +128,7 @@ const withClip = skills.filter((s) => showcaseForSkill(s.slug)).map((s) => s.slu
 const without = skills.filter((s) => !showcaseForSkill(s.slug)).map((s) => s.slug);
 
 test("only skills with an approved clip get a full card, and every one can play it", () => {
-  assert.equal(withClip.length, 3);
+  assert.equal(withClip.length, 4);
   const cards = [...grid.matchAll(/<article\b[^>]*data-skill="([^"]+)"[\s\S]*?<\/article>/g)];
   assert.deepEqual(cards.map((m) => m[1]).sort(), [...withClip].sort());
   for (const [card, slug] of cards) {

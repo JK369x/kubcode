@@ -40,7 +40,7 @@
     "stickman-canvas": {
       "th": "สติกแมน Canvas",
       "en": "Stickman Canvas",
-      "kit": "styles/growkaz-stickman",
+      "kit": "packages/stickman-canvas/0.1.0",
       "renderer": "Canvas 2D + headless Chrome"
     },
     "sitcom-toon": {
@@ -224,6 +224,10 @@
     "us-antarctica": [
       "footage-reframe",
       "mystery"
+    ],
+    "stickman-canvas": [
+      "stickman-canvas",
+      "money-tip"
     ]
   }
 }
