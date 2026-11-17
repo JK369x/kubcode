@@ -148,7 +148,7 @@
   margin-top: 28px;
 }
 .identityCard {
-  grid-column: span 2;
+  min-width: 0;
 }
 .row {
   display: flex;
@@ -307,4 +307,185 @@
   .membership {
     padding: 18px;
   }
+}
+
+/* ---------- signed-in dashboard (owner 2026-11-16) ---------- */
+.dashHead {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 18px 22px;
+  padding: 8px 0 22px;
+  border-bottom: 1px solid var(--border);
+}
+.bigAvatar {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #7c3aed, #c8215a);
+  color: #fff;
+  font-size: 30px;
+  font-weight: 600;
+}
+.dashWho {
+  flex: 1 1 320px;
+  min-width: 0;
+}
+.dashEyebrow {
+  margin: 0;
+  color: var(--link);
+  font: 600 13px/1.5 Archivo, Anuphan, sans-serif;
+  letter-spacing: 0.04em;
+}
+.dashTitle {
+  margin: 2px 0 6px;
+  font-size: clamp(28px, 3.2vw, 40px);
+  font-weight: 600;
+  line-height: 1.25;
+  overflow-wrap: anywhere;
+}
+.dashMeta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 14px;
+  margin: 0;
+  color: var(--muted-foreground);
+  font-size: 14px;
+}
+.dashActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+.stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 12px;
+  margin: 22px 0 0;
+  padding: 0;
+  list-style: none;
+}
+.stats li {
+  display: grid;
+  gap: 2px;
+  padding: 16px 18px;
+  border: 1px solid var(--input);
+  border-radius: 18px;
+  background: var(--card);
+}
+.statNum {
+  font: 600 30px/1.1 Archivo, Anuphan, sans-serif;
+}
+.statLabel {
+  color: var(--muted-foreground);
+  font-size: 14px;
+}
+.dashGrid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.7fr) minmax(0, 1fr);
+  gap: 18px;
+  align-items: start;
+  margin-top: 18px;
+}
+.dashMain,
+.dashSide {
+  display: grid;
+  gap: 18px;
+  min-width: 0;
+}
+.cardHead .headLink {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  min-height: 36px;
+  margin-left: auto;
+  color: var(--link);
+  font-size: 14px;
+  font-weight: 600;
+  text-decoration: none;
+}
+.headLink:hover {
+  text-decoration: underline;
+}
+.headLink svg {
+  width: 16px;
+  height: 16px;
+}
+.recent {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.recent li {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: 10px;
+  align-items: center;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--background);
+}
+.recentLogos {
+  display: inline-flex;
+  gap: 4px;
+}
+.recentText {
+  overflow: hidden;
+  font-size: 14px;
+  font-weight: 500;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.recentStatus {
+  display: inline-flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 4px;
+}
+@media (max-width: 960px) {
+  .dashGrid {
+    grid-template-columns: 1fr;
+  }
+}
+@media (max-width: 560px) {
+  .bigAvatar {
+    width: 56px;
+    height: 56px;
+    font-size: 24px;
+  }
+  .dashActions {
+    width: 100%;
+  }
+  .dashActions > * {
+    flex: 1;
+  }
+  .recent li {
+    grid-template-columns: auto minmax(0, 1fr);
+  }
+  .recentStatus {
+    grid-column: 1 / -1;
+    justify-content: flex-start;
+  }
+}
+/* Primary action: the same Studio purple as the header's "สร้างโพสต์". */
+.primary.primary {
+  background: #7c3aed;
+  color: #fff;
+}
+.primary.primary:hover {
+  background: #6d28d9;
+  color: #fff;
+}
+:global(:root[data-theme="light"]) .primary.primary {
+  background: #6d28d9;
+}
+:global(:root[data-theme="light"]) .primary.primary:hover {
+  background: #5b21b6;
 }

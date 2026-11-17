@@ -51,21 +51,27 @@ test("signed in without an allowed picture: the first letter on purple, never th
   assert.match(out, />ส</);
 });
 
-test("menu items: display name, settings link and sign-out (source; Radix renders them on open)", () => {
+test("avatar menu keeps only the account: name, บัญชี, การชำระเงิน (billing on), ตั้งค่าบัญชี, then sign-out", () => {
   const src = require("node:fs").readFileSync("components/AccountMenu.tsx", "utf8") as string;
-  assert.match(src, /<DropdownMenuLabel[^>]*>\s*\{name\}/);
-  assert.match(src, /<DropdownMenuItem asChild>\s*<Link href="\/account\/settings">ตั้งค่าบัญชี<\/Link>/);
-  assert.match(src, /<DropdownMenuItem onSelect=\{onSignOut\}>ออกจากระบบ<\/DropdownMenuItem>/);
+  const menu = src.slice(src.indexOf("<DropdownMenuContent"), src.indexOf("</DropdownMenuContent>"));
+  assert.match(menu, /<DropdownMenuLabel[^>]*>\s*\{name\}/);
+  assert.match(menu, /<Link href="\/account">\s*<LayoutDashboard aria-hidden="true" \/> บัญชี\s*<\/Link>/);
+  assert.match(menu, /\{caps\?\.billing && \(\s*<DropdownMenuItem asChild>\s*<Link href="\/account\/billing">/);
+  assert.match(menu, /<Link href="\/account\/settings">\s*<Settings2 aria-hidden="true" \/> ตั้งค่าบัญชี/);
+  assert.match(menu, /<DropdownMenuItem onSelect=\{onSignOut\}>\s*<LogOut aria-hidden="true" \/> ออกจากระบบ/);
+  // Owner 2026-11-16: the work is not hidden in the avatar menu.
+  assert.doesNotMatch(menu, /\/account\/posts|\/account\/channels|สร้างโพสต์/);
+  const order = ["บัญชี", "การชำระเงิน", "ตั้งค่าบัญชี", "ออกจากระบบ"].map((k) => menu.indexOf(k));
+  assert.deepEqual([...order].sort((a, b) => a - b), order);
 });
 
-test("menu links follow capabilities: บัญชี always; channels/posts only with publishing; billing only when billing is on", () => {
+test("work actions sit in the header for members who may publish", () => {
   const src = require("node:fs").readFileSync("components/AccountMenu.tsx", "utf8") as string;
-  assert.match(src, /<Link href="\/account">บัญชี<\/Link>/);
-  assert.match(src, /\{caps\?\.publishing && \(\s*<DropdownMenuItem asChild>\s*<Link href="\/account\/channels">ช่องและการโพสต์<\/Link>/);
-  assert.match(src, /\{caps\?\.billing && \(\s*<DropdownMenuItem asChild>\s*<Link href="\/account\/billing">การชำระเงิน<\/Link>/);
-  // Order: บัญชี, ช่องและการโพสต์, การชำระเงิน, ตั้งค่าบัญชี, ออกจากระบบ.
-  assert.match(src, /\{caps\?\.publishing && \(\s*<DropdownMenuItem asChild>\s*<Link href="\/account\/posts">โพสต์ของฉัน<\/Link>/);
-  const order = ["บัญชี</Link>", "ช่องและการโพสต์", "โพสต์ของฉัน", "การชำระเงิน", "ตั้งค่าบัญชี", "ออกจากระบบ"].map((k) => src.indexOf(k));
-  assert.deepEqual([...order].sort((a, b) => a - b), order);
-  assert.ok(order.every((i) => i > 0));
+  assert.match(src, /export function WorkActions\(\{ caps \}/);
+  assert.match(src, /if \(!caps\?\.publishing\) return null;/);
+  assert.match(src, /WORK_LINKS\.map/);
+  assert.match(src, /<Link href="\/account\/posts\/new" className=\{styles\.create\}/);
+  assert.match(src, /\{user \? <WorkActions caps=\{caps\} \/> : null\}/);
+  const { WORK_LINKS } = require("../lib/main-links") as typeof import("../lib/main-links");
+  assert.deepEqual(WORK_LINKS.map((l) => [l.href, l.label]), [["/account", "แดชบอร์ด"], ["/account/posts", "โพสต์ของฉัน"], ["/account/channels", "ช่อง"]]);
 });

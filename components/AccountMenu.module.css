@@ -66,3 +66,80 @@
 .avatar:focus-visible {
   outline: none;
 }
+
+/* Work actions in the header (owner 2026-11-16). */
+.root {
+  gap: 4px;
+}
+.work {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  margin-right: 6px;
+}
+.workLink {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  padding: 0 12px;
+  border-radius: 999px;
+  color: var(--foreground);
+  font-size: 14px;
+  font-weight: 500;
+  text-decoration: none;
+  white-space: nowrap;
+}
+.workLink:hover {
+  background: var(--muted);
+}
+.workLink[aria-current="page"] {
+  color: var(--link);
+  font-weight: 600;
+}
+.workLink:focus-visible,
+.create:focus-visible {
+  outline: 3px solid var(--ring);
+  outline-offset: 2px;
+}
+/* Primary: the Studio purple (white text 5.7:1 dark / 7.1:1 light). */
+.create {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 40px;
+  margin-left: 6px;
+  padding: 0 16px;
+  border-radius: 999px;
+  background: #7c3aed;
+  color: #fff;
+  font-size: 14px;
+  font-weight: 600;
+  text-decoration: none;
+  white-space: nowrap;
+}
+:global(:root[data-theme="light"]) .create {
+  background: #6d28d9;
+}
+.create:hover {
+  background: #6d28d9;
+  color: #fff;
+}
+:global(:root[data-theme="light"]) .create:hover {
+  background: #5b21b6;
+}
+.create svg {
+  width: 16px;
+  height: 16px;
+}
+/* Narrow desktops: drop the text links, keep the primary action. */
+@media (max-width: 1100px) {
+  .workLink {
+    display: none;
+  }
+}
+/* Phones: the sheet carries the work links and the create action. */
+@media (max-width: 560px) {
+  .work {
+    display: none;
+  }
+}

@@ -315,13 +315,30 @@ header.header {
   content: ".";
   color: var(--purple);
 }
+.header-nav {
+  flex: 1;
+  justify-content: space-between;
+  min-width: 0;
+}
+.header-links,
+.header-end {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
 .header-links {
-  display: contents;
+  margin-left: 12px;
+}
+.header-theme {
+  display: inline-flex;
+  margin-left: 4px;
+  padding-left: 8px;
+  border-left: 1px solid var(--border);
 }
 .header nav {
   display: flex;
   align-items: center;
-  gap: 28px;
+  gap: 12px;
   font-size: 14px;
 }
 /* The phone menu button (MobileNav) hides itself above 560px with a utility. */
@@ -337,17 +354,78 @@ header.header {
   color: var(--purple);
 }
 
-.theme-toggle {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  min-width: 44px;
-  min-height: 44px;
-  padding: 8px 12px;
+/* Theme switch (owner 2026-11-16): a 40px icon button, sun ↔ moon. The moon
+   is the sun's disc with a "bite" sliding over it; the rays shrink away. */
+.theme-switch {
+  display: inline-grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  border: 1px solid transparent;
   border-radius: 999px;
-  font-size: 12px;
-  background: var(--surface);
+  background: transparent;
+  color: var(--muted-foreground);
+  transition:
+    background-color 0.18s ease,
+    color 0.18s ease;
+}
+.theme-switch:hover:not(:disabled) {
+  border-color: transparent;
+  background: var(--muted);
+  color: var(--foreground);
+}
+.theme-switch:focus-visible {
+  outline: 3px solid var(--ring);
+  outline-offset: 2px;
+}
+.theme-switch-row {
+  display: inline-flex;
+  gap: 8px;
+  width: auto;
+  min-height: 44px;
+  padding: 0 14px;
+  border-color: var(--input);
+  color: var(--foreground);
+  font-size: 14px;
+}
+.theme-switch-icon {
+  overflow: visible;
+}
+.theme-switch-disc {
+  transform-origin: 12px 12px;
+  transition: r 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.theme-switch-bite {
+  transition:
+    cx 0.35s cubic-bezier(0.16, 1, 0.3, 1),
+    cy 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.theme-switch-rays {
+  transform-origin: 12px 12px;
+  transition:
+    opacity 0.25s ease,
+    transform 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+}
+/* Light theme now: show the moon (what a press switches to), as the old toggle did. */
+.theme-switch[data-theme-now="light"] .theme-switch-disc {
+  r: 8px;
+}
+.theme-switch[data-theme-now="light"] .theme-switch-bite {
+  cx: 17px;
+  cy: 7px;
+}
+.theme-switch[data-theme-now="light"] .theme-switch-rays {
+  opacity: 0;
+  transform: rotate(-45deg) scale(0.6);
+}
+@media (prefers-reduced-motion: reduce) {
+  .theme-switch,
+  .theme-switch-disc,
+  .theme-switch-bite,
+  .theme-switch-rays {
+    transition: none;
+  }
 }
 /* The home page spans the whole window, so the hero aura and the style
    shelf can bleed edge to edge at any width (owner, 2026-11-12: 1920/2560
@@ -1419,10 +1497,6 @@ p[role="status"]:empty {
   }
 }
 @media (max-width: 850px) {
-  .header nav {
-    gap: 18px;
-    font-size: 12px;
-  }
   .opening {
     align-items: start;
   }
@@ -1478,7 +1552,8 @@ p[role="status"]:empty {
   .header nav {
     gap: 6px;
   }
-  .header .header-links {
+  .header .header-links,
+  .header .header-theme {
     display: none;
   }
 

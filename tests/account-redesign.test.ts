@@ -4,16 +4,20 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 
 const read = (f: string) => readFileSync(f, "utf8");
-const labels = (src: string) => [...src.matchAll(/(?:label: |<Link href="\/account[^"]*">)"?([^"<]+)"?/g)].map((m) => m[1].trim());
 
-test("P2-5: account section strip uses exactly the header menu's names and links", () => {
-  const menu = read("components/AccountMenu.tsx");
+test("P2-5: account section strip uses the header's names (work links + avatar menu)", () => {
   const shell = read("components/site/AccountShell.tsx");
-  const menuDoors = [...menu.matchAll(/<Link href="(\/account[^"]*)">([^<]+)<\/Link>/g)].map((m) => [m[1], m[2]]);
   const shellDoors = [...shell.matchAll(/href: "(\/account[^"]*)", label: "([^"]+)"/g)].map((m) => [m[1], m[2]]);
-  assert.deepEqual(shellDoors, menuDoors);
-  assert.ok(labels(shell).length > 0);
-  // Same gating as the menu: publishing doors and billing follow capabilities.
+  assert.deepEqual(shellDoors, [
+    ["/account", "แดชบอร์ด"],
+    ["/account/posts", "โพสต์ของฉัน"],
+    ["/account/channels", "ช่อง"],
+    ["/account/billing", "การชำระเงิน"],
+    ["/account/settings", "ตั้งค่าบัญชี"],
+  ]);
+  const links = read("lib/main-links.ts");
+  for (const [href, label] of shellDoors.slice(0, 3)) assert.ok(links.includes(`{ href: "${href}", label: "${label}" }`), label);
+  // Same gating as the header: publishing doors and billing follow capabilities.
   assert.match(shell, /d\.id === "billing" \? caps\?\.billing : caps\?\.publishing/);
 });
 

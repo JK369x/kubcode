@@ -15,11 +15,11 @@ import { getBillingPage, purchaseNote, thaiDateTime } from "@/lib/billing/view";
 export const dynamic = "force-dynamic";
 export const metadata: Metadata = { title: "การชำระเงิน — kubcode", robots: { index: false, follow: false } };
 
-const STANDING: Record<string, { label: string; variant: "ok" | "warn" | "secondary" }> = {
+const STANDING: Record<string, { label: string; variant: "ok" | "warn" | "neutral" }> = {
   active: { label: "ใช้งานอยู่", variant: "ok" },
   grace: { label: "หมดอายุ · ช่วงผ่อนผัน 3 วัน", variant: "warn" },
   lapsed: { label: "หมดอายุ · ช่องถูกพัก", variant: "warn" },
-  none: { label: "ยังไม่มีแพ็กเกจ", variant: "secondary" },
+  none: { label: "ยังไม่มีแพ็กเกจ", variant: "neutral" },
   exempt: { label: "บัญชีเจ้าของเว็บ (ไม่ต้องชำระ)", variant: "ok" },
 };
 
