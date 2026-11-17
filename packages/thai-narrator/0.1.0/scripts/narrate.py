@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Generate Thai narration with the bundled, approved synthetic voice."""
+"""Generate Thai narration from your own reference voice with VoxCPM2 (MLX)."""
 import argparse
 import hashlib
 import importlib.util
@@ -30,8 +30,8 @@ def reference_path(profile):
         if candidate.is_file():
             return candidate
     raise FileNotFoundError(
-        "Narrator reference WAV not found: keep assets/" + name + " from the package "
-        "or set NARRATOR_REFERENCE_PATH."
+        "Reference WAV not found: put your own 5–15 s recording at assets/" + name + " "
+        "(or set NARRATOR_REFERENCE_PATH) and its exact transcript in reference_text."
     )
 
 
@@ -39,8 +39,11 @@ def profile_plan():
     profile = json.loads((SKILL / "assets/narrator-profile.json").read_text())
     reference = reference_path(profile)
     digest = hashlib.sha256(reference.read_bytes()).hexdigest()
-    if digest != profile["reference_sha256"]:
-        raise ValueError("Approved voice reference checksum mismatch; do not substitute a voice.")
+    pinned = profile.get("reference_sha256")
+    if pinned and digest != pinned:
+        raise ValueError("Reference checksum mismatch: the pinned voice changed; update reference_sha256 on purpose.")
+    if profile["reference_text"].startswith("<"):
+        raise ValueError("Set reference_text in assets/narrator-profile.json to the exact words spoken in your WAV.")
     hub = Path(os.environ.get("HF_HUB_CACHE", str(Path(os.environ.get("HF_HOME", str(Path.home() / ".cache/huggingface"))) / "hub")))
     default_model = hub / ("models--" + profile["model_repository"].replace("/", "--")) / "snapshots" / profile["model_revision"]
     model = Path(os.environ.get("NARRATOR_MODEL_PATH") or os.environ.get("JK_MODEL_PATH") or str(default_model)).expanduser()

@@ -262,7 +262,7 @@ export const rawSkills: readonly Skill[] = [
     name: "Thai Calm Narrator",
     category: "audio",
     description:
-      "เสียงบรรยายไทยสังเคราะห์ ใช้ shared voice เพียงแหล่งเดียว ไม่ใช่เสียงบันทึกของเจ้าของเว็บ",
+      "เสียงบรรยายไทยเสียงเดียวกันทุกบรรทัด จากเสียงตัวอย่างสั้น ๆ ที่คุณอัดเอง (ชุดดาวน์โหลดไม่มีเสียงแถม)",
     version: "portable bundle",
     status: "local",
     approvalScope:

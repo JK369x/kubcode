@@ -97,9 +97,9 @@ export const PACKAGES: readonly SkillPackage[] = [
     slug: "thai-narrator",
     version: "0.1.0",
     licence: "MIT",
-    credit: "kubcode.dev (original synthetic voice); VoxCPM2 weights not bundled, download from Hugging Face under their terms",
+    credit: "kubcode.dev; no voice included (bring your own reference); VoxCPM2 weights not bundled, download from Hugging Face under their terms",
     approval: { by: "owner", date: "2026-11-17" },
-    maxKb: 660,
+    maxKb: 16,
     agents: ["claude-code", "opencode"],
   }),
   pkg({

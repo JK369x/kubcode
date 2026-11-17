@@ -1,9 +1,9 @@
 {
-  "id": "approved-calm-male-v1",
-  "reference": "narrator-reference.wav",
-  "reference_sha256": "37bbd18ea77e97a0072289b8ef30f5d2721367de9de15e5982d4b88af53869d0",
-  "reference_text": "ใต้ผืนน้ำแข็งที่ดูเงียบสงบ มีทะเลสาบซ่อนอยู่จริง แต่เรื่องลึกลับที่เราได้ยินกัน มีหลักฐานแค่ไหน",
-  "source": "Original synthetic voice designed locally with VoxCPM2 from a warm calm Thai male description; approved by the user. No recorded person was used for the initial voice design.",
+  "id": "your-voice",
+  "reference": "voice-reference.wav",
+  "reference_sha256": null,
+  "reference_text": "<พิมพ์ประโยคที่พูดในไฟล์ voice-reference.wav ให้ตรงทุกคำ>",
+  "source": "Supplied by you: your own recording or a voice you have the right to use. kubcode does not ship a voice.",
   "model_repository": "mlx-community/VoxCPM2-4bit",
   "model_revision": "dc9e5c187858da5f4a13dc4c247e297339216381",
   "parameters": {
@@ -19,10 +19,9 @@
     "sample_rate": 48000,
     "channels": 1
   },
-  "display_name": "ผู้บรรยายไทย สุขุม",
+  "display_name": "เสียงบรรยายไทยของคุณ",
   "aliases": [
-    "ผู้บรรยายไทย สุขุม",
-    "Thai Calm Narrator",
+    "Thai Narrator",
     "thai-narrator"
   ],
   "generation_workflow": "original-direct-voxcpm2",
