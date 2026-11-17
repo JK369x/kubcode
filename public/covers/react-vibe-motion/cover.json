@@ -1,12 +1,12 @@
 {
   "slug": "react-vibe-motion",
-  "tool": "DeepSeek Harness image_generate (gpt-image-2)",
+  "tool": "HTML layout rendered with headless Chrome (docs/covers/real/react-vibe-motion/cover.html)",
   "date": "2026-11-17",
-  "source": "generated",
-  "reference": "docs/covers/mascots.png",
+  "source": "own-screenshot",
+  "content": "Our own render on 2026-11-17: React Vibe's Branch Flow (siddhantmani/reactvibe public/Motion/BranchFlow/BranchFlow.tsx, README says MIT) copied into a fresh Vite 7.3 + React 19.2 + Tailwind 4.3 project and screenshotted in headless Chrome 2.6 s into the animation, plus our own grep/build output. One sample icon in that file draws a third-party brand logo; in our render it was replaced by a plain dot so the cover carries no third-party logo. No React Vibe site UI or logo.",
   "master": "cover.jpg",
   "og": "og.jpg",
   "width": 1600,
   "height": 900,
-  "prompt": "Kub the cat and Kode the dog build a simple flow diagram on a big cream paper board: one rounded box on top, curved soft-brown paper ribbons branching to five small blank coloured boxes, round mustard dots travelling along the ribbons; Kub on a stool presses a box, Kode holds a ribbon. Character sheet and style from docs/covers.md (flat hand-drawn cartoon, ink outlines, cream paper, no text, no logos, no 3D)."
+  "fonts": "Anuphan and Archivo (SIL OFL, @fontsource)"
 }
