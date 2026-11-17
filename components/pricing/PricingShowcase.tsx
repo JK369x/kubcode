@@ -1,6 +1,6 @@
 "use client";
 import Link from "next/link";
-import { useEffect, useState, type CSSProperties } from "react";
+import { useEffect, useRef, useState, type CSSProperties } from "react";
 import {
   Check,
   Clapperboard,
@@ -31,6 +31,46 @@ type Filter = ProductFamily | "all";
 const MAX_CHANNELS = 50;
 
 const ICONS = { gift: Gift, messages: MessagesSquare, clapperboard: Clapperboard, layers: Layers } as const;
+
+/**
+ * Price count-up (owner 2026-11-17): the number runs from its previous value
+ * (0 on load) to the target in ~0.7 s. Server HTML and screen readers get the
+ * final text; reduced motion shows it at once.
+ */
+function CountUp({ value, text }: { value: number; text: string }) {
+  const [shown, setShown] = useState<number | null>(null);
+  const from = useRef(0);
+  useEffect(() => {
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      from.current = value;
+      setShown(null);
+      return;
+    }
+    const start = performance.now();
+    const a = from.current;
+    let raf = 0;
+    const tick = (t: number) => {
+      const k = Math.min(1, (t - start) / 700);
+      const eased = 1 - Math.pow(1 - k, 3);
+      setShown(Math.round(a + (value - a) * eased));
+      if (k < 1) raf = requestAnimationFrame(tick);
+      else {
+        from.current = value;
+        setShown(null);
+      }
+    };
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  }, [value]);
+  if (shown === null) return <>{text}</>;
+  const live = text.replace(/[\d,]+/, shown.toLocaleString("en-US"));
+  return (
+    <>
+      <span aria-hidden="true">{live}</span>
+      <span className="sr-only">{text}</span>
+    </>
+  );
+}
 
 function FamilyMark({ family }: { family: ProductFamily }) {
   const Icon = family === "studio" ? Clapperboard : MessagesSquare;
@@ -88,9 +128,11 @@ function ChannelCalculator({ plan }: { plan: Plan }) {
   const total = monthlyTotal(plan, n);
   return (
     <div className={styles.calc} role="group" aria-label="คำนวณราคาตามจำนวนช่อง">
-      <span className={styles.calcLabel}>ลองคิดราคา</span>
       <span className={styles.calcTotal}>
-        <b>{thb(total)}</b> ต่อเดือน
+        <b>
+          <CountUp value={total} text={thb(total)} />
+        </b>{" "}
+        ต่อเดือน
       </span>
       <div className={styles.stepper}>
         <Button type="button" variant="outline" size="icon-sm" className="rounded-full" aria-label="ลดจำนวนช่อง" disabled={n <= 1} onClick={() => setN((x) => Math.max(1, x - 1))}>
@@ -131,12 +173,12 @@ function PlanCard({ plan, open, filter }: { plan: Plan; open: boolean; filter: F
           <Sparkles aria-hidden="true" /> แนะนำ
         </span>
       )}
-      <CardHeader className="flex-col items-start gap-3">
-        <span className={styles.planIcon} data-family={plan.families[0] ?? "free"} aria-hidden="true">
+      <CardHeader className="flex-row items-start gap-3">
+        <span className={cn(styles.planIcon, "shrink-0")} data-family={plan.families[0] ?? "free"} aria-hidden="true">
           <Icon />
         </span>
-        <div className="grid gap-1.5">
-          <h2 id={titleId} className="m-0 text-[22px] leading-[1.35] font-semibold">
+        <div className="grid min-w-0 gap-1.5">
+          <h2 id={titleId} className="m-0 text-[20px] leading-[1.3] font-semibold">
             {plan.nameTh} <span className="font-brand text-[15px] font-medium text-muted-foreground">{plan.nameEn}</span>
           </h2>
           <div className="flex flex-wrap gap-1.5">
@@ -153,7 +195,10 @@ function PlanCard({ plan, open, filter }: { plan: Plan; open: boolean; filter: F
       </CardHeader>
       <p className={styles.fit}>{look.fitTh}</p>
       <div className={cn(styles.price, soon && styles.priceSoon)}>
-        <span className={styles.amount}>{price.amount}</span> <span className={styles.unit}>{price.unit}</span>
+        <span className={styles.amount}>
+          <CountUp value={plan.priceThb} text={price.amount} />
+        </span>{" "}
+        <span className={styles.unit}>{price.unit}</span>
         {extra && <span className={styles.extra}>{extra}</span>}
       </div>
       {isSocial && (
@@ -213,13 +258,15 @@ export function PricingShowcase({ open }: { open: boolean }) {
     <div className={styles.stage} data-filter={filter}>
       <div className={styles.aura} aria-hidden="true" />
       <header className={styles.hero}>
-        <p className={styles.eyebrow}>ราคา · จ่ายทีละเดือน</p>
+        <Link href="/roadmap" className={styles.roadmapPill}>
+          <Map aria-hidden="true" />
+          <span>ดูแผนที่จะมา</span>
+          <ArrowRight aria-hidden="true" />
+        </Link>
         <h1 className={styles.title}>
           เริ่มฟรี <span className={styles.titleAccent}>จ่ายเฉพาะส่วนที่ใช้</span>
         </h1>
-        <p className={styles.lead}>
-          ทำคลิปด้วย skill ฟรีได้เลย อยากให้ kubcode โพสต์และตอบคอมเมนต์ให้ จ่ายตามจำนวนช่องที่เชื่อม ทีละเดือน ไม่ตัดเงินอัตโนมัติ
-        </p>
+        <p className={styles.lead}>skill ทำคลิปใช้ฟรี · ให้ kubcode โพสต์และตอบคอมเมนต์ จ่ายตามช่อง ทีละเดือน ไม่ตัดเงินอัตโนมัติ</p>
         <ToggleGroup
           type="single"
           value={filter}
@@ -258,16 +305,6 @@ export function PricingShowcase({ open }: { open: boolean }) {
         </ul>
       </WaitlistProvider>
       <p className={styles.terms}>ทุกแพ็กเกจจ่ายทีละเดือน ไม่ตัดเงินอัตโนมัติ · ราคานี้ยังไม่มี VAT</p>
-      <Link href="/roadmap" className={styles.roadmapCard}>
-        <span className={styles.roadmapIcon} aria-hidden="true">
-          <Map />
-        </span>
-        <span className={styles.roadmapText}>
-          <strong>ดูแผนที่จะมา</strong>
-          <span>ฟีเจอร์ที่กำลังทำ และกดรอรับแจ้งเตือนเมื่อเปิด</span>
-        </span>
-        <ArrowRight className={styles.roadmapArrow} aria-hidden="true" />
-      </Link>
     </div>
   );
 }
