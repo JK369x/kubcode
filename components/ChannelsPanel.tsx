@@ -137,12 +137,20 @@ export function ChannelsPanel({ channels, notice, automations = false }: Props) 
                       {p.label}
                     </span>
                     <strong className={own.handle}>{who(c)}</strong>
-                    <Badge variant={c.status === "active" ? "ok" : "warn"}>{STATUS[c.status]}</Badge>
+                    {c.paused ? (
+                      <Badge variant="warn">พักไว้ (แพ็กเกจ)</Badge>
+                    ) : (
+                      <Badge variant={c.status === "active" ? "ok" : "warn"}>{STATUS[c.status]}</Badge>
+                    )}
                     {c.handle && c.displayName !== c.handle ? <span className={own.meta}>{c.displayName}</span> : null}
                     {c.connectedAt ? <span className={own.meta}>ตั้งแต่ {date(c.connectedAt)}</span> : null}
                   </div>
                   <div className={own.rowActions}>
-                    {automations && AUTOMATABLE.has(c.platform) && c.status === "active" ? (
+                    {c.paused ? (
+                      <Button asChild variant="outline">
+                        <Link href="/account/billing">ต่ออายุแพ็กเกจ</Link>
+                      </Button>
+                    ) : automations && AUTOMATABLE.has(c.platform) && c.status === "active" ? (
                       <Button asChild variant="outline">
                         <Link href={`/account/channels/${c.id}/automations`}>ตั้งค่าตอบคอมเมนต์อัตโนมัติ</Link>
                       </Button>

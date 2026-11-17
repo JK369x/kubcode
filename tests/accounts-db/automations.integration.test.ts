@@ -279,18 +279,20 @@ async function paid(workspace: string, slots: number, paidUntil: Date | null) {
   );
 }
 
-test("paid members use channels and automations: active and grace yes; expired, never-paid and 0 slots no", async () => {
+test("paid members use channels and automations; a lapsed member still sees their channels and can disconnect; never-paid sees nothing", async () => {
   const { createPgChannelStore } = await import("../../lib/channels/store");
   const channels = createPgChannelStore(db.appPool);
   const day = 86_400_000;
-  const cases: Array<[string, number | null, number, boolean]> = [
-    ["active pass", 10 * day, 2, true],
-    ["inside the 3-day grace", -1 * day, 2, true],
-    ["past grace (expired)", -4 * day, 2, false],
-    ["0 slots", 10 * day, 0, false],
-    ["never paid", null, 0, false],
+  // [label, paid_until offset, slots, may use (connect/post/rules), may see own channels + disconnect]
+  const cases: Array<[string, number | null, number, boolean, boolean]> = [
+    ["active pass", 10 * day, 2, true, true],
+    ["inside the 3-day grace", -1 * day, 2, true, true],
+    ["past grace (expired)", -4 * day, 2, false, true],
+    ["lapsed (sweep set slots 0)", -30 * day, 0, false, true],
+    ["0 slots", 10 * day, 0, false, true],
+    ["never paid", null, 0, false, false],
   ];
-  for (const [label, offset, slots, allowed] of cases) {
+  for (const [label, offset, slots, allowed, sees] of cases) {
     const m = await member({ owner: false });
     if (offset !== null || slots > 0) await paid(m.workspace, slots, offset === null ? null : new Date(Date.now() + offset));
     const ig = await channel(m.workspace);
@@ -298,7 +300,8 @@ test("paid members use channels and automations: active and grace yes; expired, 
     assert.deepEqual(await store.member(m.s), want, `automations: ${label}`);
     assert.deepEqual(await channels.member(m.s), want, `channels: ${label}`);
     const list = await channels.channels(m.s);
-    assert.equal(list.ok, allowed, `channel list: ${label}`);
+    assert.equal(list.ok, sees, `channel list: ${label}`);
+    assert.equal((await channels.member(m.s, true)).ok, sees, `disconnect gate: ${label}`);
     const rule = await store.create(m.s, ig, RULE);
     assert.equal(rule.ok, allowed, `create rule: ${label}`);
   }

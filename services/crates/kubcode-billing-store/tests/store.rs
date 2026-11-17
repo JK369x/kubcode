@@ -701,3 +701,99 @@ async fn disputes_flag_win_or_revoke_and_the_owner_is_never_touched() {
     assert!(db.open_pauses(ows).await.is_empty());
     db.drop().await;
 }
+
+#[tokio::test]
+#[ignore = "needs KUBCODE_TEST_DATABASE_URL"]
+async fn a_first_checkout_creates_the_workspace_once() {
+    let db = db().await;
+    let user: Uuid = db
+        .owner
+        .query_one(
+            "INSERT INTO kubcode_accounts.users DEFAULT VALUES RETURNING id",
+            &[],
+        )
+        .await
+        .unwrap()
+        .get(0);
+    let (a, b) = (db.billing().await, db.billing().await);
+    assert!(a.payer(user).await.unwrap().is_none(), "no workspace yet");
+    // Two first checkouts at once (two tabs) end with one workspace.
+    let (pa, pb) = tokio::join!(a.payer_or_create(user), b.payer_or_create(user));
+    let (pa, pb) = (pa.unwrap().unwrap(), pb.unwrap().unwrap());
+    assert_eq!(pa.workspace, pb.workspace);
+    assert!(!pa.exempt);
+    let n: i64 = db
+        .owner
+        .query_one(
+            "SELECT count(*) FROM kubcode_accounts.workspace_members WHERE user_id = $1",
+            &[&user],
+        )
+        .await
+        .unwrap()
+        .get(0);
+    assert_eq!(n, 1);
+    // An existing workspace is reused, never replaced.
+    let (owner, ws) = db.member(false).await;
+    assert_eq!(
+        a.payer_or_create(owner).await.unwrap().unwrap().workspace,
+        ws
+    );
+    // A suspended user gets none.
+    db.owner
+        .execute(
+            "UPDATE kubcode_accounts.users SET status = 'suspended' WHERE id = $1",
+            &[&user],
+        )
+        .await
+        .unwrap();
+    let other: Uuid = db
+        .owner
+        .query_one(
+            "INSERT INTO kubcode_accounts.users (status) VALUES ('suspended') RETURNING id",
+            &[],
+        )
+        .await
+        .unwrap()
+        .get(0);
+    assert!(a.payer_or_create(other).await.unwrap().is_none());
+    db.drop().await;
+}
+
+#[tokio::test]
+#[ignore = "needs KUBCODE_TEST_DATABASE_URL"]
+async fn a_channel_disconnected_after_its_pause_holds_no_slot() {
+    let db = db().await;
+    let (user, ws) = db.member(false).await;
+    let gone = db.channel(ws, 60).await;
+    let mut st = db.billing().await;
+    let t0 = now();
+    // Lapsed long ago: the old channel is paused, then the publishing Lambda
+    // revokes its connection after 14 days (it cannot touch the pause row).
+    db.owner
+        .execute(
+            "INSERT INTO kubcode_accounts.billing_channel_pauses (channel_id, reason, paused_at) VALUES ($1, 'lapsed', $2)",
+            &[&gone, &(t0 - Duration::days(20))],
+        )
+        .await
+        .unwrap();
+    db.owner
+        .execute(
+            "UPDATE kubcode_accounts.channel_connections SET status = 'revoked', revoked_at = now() WHERE channel_id = $1",
+            &[&gone],
+        )
+        .await
+        .unwrap();
+    // Renews 2 slots and connects two new channels.
+    let q = month_pass(&st.entitlement(ws, false, t0).await.unwrap(), 2, t0).unwrap();
+    let p = st.create_purchase(ws, user, &q).await.unwrap();
+    st.fulfil(p, None, None, false, t0).await.unwrap();
+    let (b, c) = (db.channel(ws, 1).await, db.channel(ws, 0).await);
+    let o = st
+        .sweep_workspace(ws, t0 + Duration::minutes(1))
+        .await
+        .unwrap();
+    assert_eq!(o.paused, 0, "the dead channel must not push a live one out");
+    let open = db.open_pauses(ws).await;
+    assert!(!open.contains(&b) && !open.contains(&c), "{open:?}");
+    db.drop().await;
+}

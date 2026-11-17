@@ -104,6 +104,8 @@ struct Mem {
     /// Per purchase: (refunded total, dispute, revoked).
     after: HashMap<Uuid, (i64, Option<kubcode_billing::refund::Dispute>, bool)>,
     revokes: u32,
+    /// Workspaces swept right after a payment.
+    swept: Vec<Uuid>,
 }
 
 #[derive(Clone, Default)]
@@ -129,6 +131,22 @@ fn spans(m: &Mem, ws: Uuid) -> Vec<PaidSpan> {
 impl BillingStore for MemStore {
     async fn payer(&self, user: Uuid) -> Result<Option<Payer>, StoreError> {
         Ok(self.0.lock().unwrap().payers.get(&user).cloned())
+    }
+    async fn sweep_one(&mut self, ws: Uuid, _now: OffsetDateTime) -> Result<(), StoreError> {
+        self.0.lock().unwrap().swept.push(ws);
+        Ok(())
+    }
+    async fn payer_or_create(&self, user: Uuid) -> Result<Option<Payer>, StoreError> {
+        let mut m = self.0.lock().unwrap();
+        Ok(Some(
+            m.payers
+                .entry(user)
+                .or_insert_with(|| Payer {
+                    workspace: Uuid::new_v4(),
+                    exempt: false,
+                })
+                .clone(),
+        ))
     }
     async fn entitlement(
         &self,
@@ -621,6 +639,11 @@ async fn webhook_completed_grants_once_and_a_replay_grants_nothing() {
     let (body, sig) = signed_event("event_completed.json", p.id);
     assert_eq!(h.hook(&body, Some(sig.clone())).await.0, 200);
     assert_eq!(h.grants(), 1);
+    assert_eq!(
+        h.store.0.lock().unwrap().swept.len(),
+        1,
+        "paused channels resume right after paying"
+    );
     assert_eq!(h.store.0.lock().unwrap().purchases[0].status, Status::Paid);
     assert_eq!(
         h.store.0.lock().unwrap().pi[&p.id],
@@ -629,6 +652,11 @@ async fn webhook_completed_grants_once_and_a_replay_grants_nothing() {
     // Same event again (Stripe retry / `stripe events resend`).
     assert_eq!(h.hook(&body, Some(sig)).await.0, 200);
     assert_eq!(h.grants(), 1, "no double credit");
+    assert_eq!(
+        h.store.0.lock().unwrap().swept.len(),
+        1,
+        "a replay sweeps nothing"
+    );
 }
 
 #[tokio::test]

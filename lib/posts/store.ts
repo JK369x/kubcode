@@ -5,7 +5,7 @@ import type { Pool, PoolClient } from "pg";
 import { getPool, withTransaction } from "../accounts/db";
 import { lockMember } from "../accounts/member";
 import type { SessionClaims } from "../accounts/session";
-import { canUsePublishing, publishingStanding } from "../channels/access";
+import { canSeeOwnPublishing, publishingStanding } from "../channels/access";
 
 export type DeliveryView = {
   id: string;
@@ -31,7 +31,7 @@ export interface PostStore {
 async function read(c: PoolClient, s: SessionClaims, limit: number): Promise<PostsResult> {
   const m = await lockMember(c, s);
   if (!m) return { ok: false, code: "NOT_SIGNED_IN" };
-  if (!canUsePublishing(await publishingStanding(c, m))) return { ok: false, code: "FORBIDDEN" };
+  if (!canSeeOwnPublishing(await publishingStanding(c, m))) return { ok: false, code: "FORBIDDEN" };
   const { rows } = await c.query<{
     post_id: string; description: string; created_at: Date;
     id: string; channel_id: string; display_name: string; platform: string; status: DeliveryView["status"];

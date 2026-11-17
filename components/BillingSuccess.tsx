@@ -5,12 +5,13 @@ import { CheckCircle2, Loader2, MessageSquareReply, Plug, Send } from "lucide-re
 import { Button } from "@/components/ui/button";
 import { send } from "@/lib/interactions/client";
 
-type State = "checking" | "granted" | "waiting" | "closed" | "error";
+type State = "checking" | "granted" | "waiting" | "closed" | "review" | "error";
 const TEXT: Record<State, string> = {
   checking: "กำลังตรวจสอบการชำระเงินกับ Stripe…",
   granted: "ชำระเงินสำเร็จ แพ็กเกจของคุณพร้อมใช้แล้ว",
   waiting: "ยังไม่ได้รับยืนยันการชำระเงิน ถ้าจ่ายด้วยพร้อมเพย์ อาจใช้เวลาสักครู่ หน้านี้จะตรวจซ้ำให้อัตโนมัติ",
   closed: "รายการนี้ไม่สำเร็จหรือหมดเวลาแล้ว ไม่มีการเรียกเก็บเงิน",
+  review: "เราได้รับการชำระเงินแล้ว แต่รายการนี้ต้องให้เจ้าหน้าที่ตรวจสอบก่อนเปิดแพ็กเกจ ไม่ต้องจ่ายซ้ำ เราจะติดต่อกลับ",
   error: "ตรวจสอบไม่สำเร็จ ถ้าชำระเงินแล้ว ระบบจะยืนยันให้อัตโนมัติภายในไม่กี่นาที",
 };
 
@@ -26,8 +27,12 @@ export function BillingSuccess({ sessionId }: { sessionId: string }) {
       if (!r.ok) return setState("error");
       if (r.result === "granted" || r.result === "already_paid") return setState("granted");
       if (r.result === "closed") return setState("closed");
-      setState("waiting");
-      if (++tries < 10) setTimeout(check, 4000);
+      // Paid at Stripe but flagged (amount mismatch, or paid after the purchase closed).
+      if (r.result === "refused" || r.result === "stale" || r.result === "unknown") return setState("review");
+      if (++tries < 10) {
+        setState("waiting");
+        setTimeout(check, 4000);
+      } else setState("error");
     };
     void check();
     return () => {
@@ -46,7 +51,7 @@ export function BillingSuccess({ sessionId }: { sessionId: string }) {
         <span>{TEXT[state]}</span>
       </p>
       {/* Next step right after paying (UX audit P0-2): one primary action. */}
-      {state !== "closed" && (
+      {granted && (
         <section aria-labelledby="next-h" className="grid gap-3">
           <h2 id="next-h" className="m-0 text-[18px] font-semibold">
             ขั้นต่อไป
@@ -65,7 +70,7 @@ export function BillingSuccess({ sessionId }: { sessionId: string }) {
         </section>
       )}
       <div className="flex flex-wrap gap-3">
-        {state !== "closed" && (
+        {granted && (
           <Button asChild size="lg" className="rounded-full font-semibold">
             <Link href="/account/channels#channels-add">เชื่อมช่องแรก</Link>
           </Button>
