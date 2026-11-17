@@ -147,8 +147,12 @@ export function PostComposer({ channels }: { channels: ComposerChannel[] }) {
     setBusy(false);
     if (!r.ok) return toast.error(r.message);
     const name = (id: string) => channels.find((c) => c.id === id)?.displayName ?? "ช่อง";
-    const failed = r.deliveries.filter((d) => d.status === "rejected" || d.status === "failed").map((d) => ({ name: name(d.channelId), codes: d.codes }));
-    setDone({ delivered: r.already ? chosen.length : r.deliveries.length - failed.length, failed });
+    const bad = (d: { status: string }) => d.status === "rejected" || d.status === "failed";
+    const failed = r.deliveries.filter(bad).map((d) => ({ name: name(d.channelId), codes: d.codes }));
+    // A chosen channel with no delivery was never posted (an earlier attempt stopped part way).
+    const got = new Set(r.deliveries.map((d) => d.channelId));
+    for (const c of chosen) if (!got.has(c.id)) failed.push({ name: c.displayName, codes: ["not_sent"] });
+    setDone({ delivered: r.deliveries.filter((d) => !bad(d)).length, failed });
     router.refresh();
   }
 

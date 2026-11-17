@@ -47,6 +47,8 @@ struct State {
     own_posts: Vec<crate::ports::OwnPost>,
     /// How many times `account_posts` was called.
     own_post_reads: usize,
+    /// `Inbox::ready` refuses this many more times (our rate limit full).
+    refuse_ready: u32,
     next: u64,
 }
 
@@ -96,6 +98,11 @@ impl FakeProvider {
 
     pub fn inject(&self, fault: Fault) {
         self.with(|s| s.fault = Some(fault));
+    }
+
+    /// The next `n` `Inbox::ready` calls refuse, as our rate limiter does.
+    pub fn refuse_ready(&self, n: u32) {
+        self.with(|s| s.refuse_ready = n);
     }
 
     /// The next private reply answers `outcome` instead of `Sent`.
@@ -315,12 +322,15 @@ impl Publisher for FakeProvider {
     }
 
     async fn cancel(&self, _conn: &ConnectionRef, post: &ProviderRef) -> Result<()> {
-        self.with(|s| {
-            if let Some(st) = s.posts.get_mut(post) {
+        // Like Zernio: a post that already went out cannot be cancelled.
+        self.with(|s| match s.posts.get_mut(post) {
+            Some(DeliveryStatus::Published) => Err(rejected("already_published")),
+            Some(st) => {
                 *st = DeliveryStatus::Cancelled;
+                Ok(())
             }
-        });
-        Ok(())
+            None => Ok(()),
+        })
     }
 
     async fn status(&self, _conn: &ConnectionRef, post: &ProviderRef) -> Result<DeliveryState> {
@@ -408,6 +418,21 @@ impl EventSource for FakeProvider {
 
 #[async_trait]
 impl Inbox for FakeProvider {
+    async fn ready(&self) -> Result<()> {
+        self.with(|s| {
+            if s.refuse_ready == 0 {
+                return Ok(());
+            }
+            s.refuse_ready -= 1;
+            Err(PublishError::new(
+                ErrorClass::RateLimited {
+                    retry_after_secs: 30,
+                },
+                "client_rate_limited",
+            ))
+        })
+    }
+
     async fn private_reply(
         &self,
         _account: &ProviderRef,

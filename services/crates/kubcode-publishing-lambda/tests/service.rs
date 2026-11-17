@@ -407,7 +407,7 @@ async fn comments_become_one_dm_per_person_per_post() {
     let mut store = db.store().await;
     let fake = Arc::new(FakeProvider::default());
     let (reg, mut cfg) = (registry(&fake), cfg());
-    cfg.dm_cap_per_month = 3;
+    cfg.dm_cap_per_month = 4;
     let mut s = svc(&mut store, &reg, &cfg);
     let owner = db.user(true).await;
     let ig = connect(&mut s, &fake, owner, Platform::Instagram).await;
@@ -490,6 +490,16 @@ async fn comments_become_one_dm_per_person_per_post() {
         "no public reply after a failed DM"
     );
 
+    // Our own rate limit full: nothing sent, nothing claimed, the comment
+    // stays pending, and the next run sends it (not a lost "maybe sent").
+    fake.refuse_ready(1);
+    let (h, b) = comment("cr", "pr", "a1", "ขอลิงก์", false);
+    s.webhook(ProviderKind::Zernio, &h, &b).await;
+    assert!(s.work().await.unwrap().is_empty(), "left pending");
+    assert_eq!(fake.inbox_calls().len(), 3, "no call reached the provider");
+    assert_eq!(s.work().await.unwrap(), vec![("cr".to_owned(), "dm_sent")]);
+    assert_eq!(fake.inbox_calls().len(), 5, "the DM and its public reply");
+
     // No clear answer: may be out, never retried.
     fake.answer_next_private(PrivateReply::Unknown);
     let (h, b) = comment("c6", "p3", "a1", "ขอลิงก์", false);
@@ -499,9 +509,9 @@ async fn comments_become_one_dm_per_person_per_post() {
         vec![("c6".to_owned(), "dm_unknown")]
     );
     assert!(s.work().await.unwrap().is_empty());
-    assert_eq!(fake.inbox_calls().len(), 4);
+    assert_eq!(fake.inbox_calls().len(), 6);
 
-    // The cap counts sent and unknown DMs (2 of 3 used): one more, then stop.
+    // The cap counts sent and unknown DMs (3 of 4 used): one more, then stop.
     for (id, post) in [("c7", "p4"), ("c8", "p5")] {
         let (h, b) = comment(id, post, "a9", "ขอลิงก์", false);
         s.webhook(ProviderKind::Zernio, &h, &b).await;
@@ -982,6 +992,61 @@ async fn billing_paused_channels_take_no_posts_and_disconnect_after_14_days() {
         "the channel is kept"
     );
     assert_eq!(s.billing_sweep().await.unwrap(), (0, 0));
+    db.drop().await;
+}
+
+#[tokio::test]
+#[ignore = "needs KUBCODE_TEST_DATABASE_URL; run with --ignored"]
+async fn one_post_that_already_went_out_does_not_stop_the_billing_sweep() {
+    let db = db().await;
+    let mut store = db.store().await;
+    let fake = Arc::new(FakeProvider::default());
+    let (reg, cfg) = (registry(&fake), cfg());
+    let mut s = svc(&mut store, &reg, &cfg);
+    let owner = db.user(true).await;
+    let yt = connect(&mut s, &fake, owner, Platform::YouTube).await;
+    let yt2 = connect(&mut s, &fake, owner, Platform::YouTube).await;
+    let (video, cover) = assets(&mut s, owner, true).await;
+    let req = request(video, cover, &[yt, yt2]);
+    let out = s.schedule(owner, req.clone(), digest(&req)).await.unwrap();
+    let (first, second) = (
+        out.deliveries[0].delivery.unwrap(),
+        out.deliveries[1].delivery.unwrap(),
+    );
+    // Zernio already published the first one, but no webhook told us: our
+    // row is still Scheduled and it is the first row the sweep picks.
+    let first_ref = s
+        .store
+        .delivery(first)
+        .await
+        .unwrap()
+        .unwrap()
+        .provider_ref
+        .unwrap();
+    fake.set_post_status(&first_ref, DeliveryStatus::Published);
+    let paused_at = s.now - Duration::days(14);
+    for ch in [yt, yt2] {
+        db.owner
+            .execute(
+                "INSERT INTO kubcode_accounts.billing_channel_pauses (channel_id, reason, paused_at) VALUES ($1, 'lapsed', $2)",
+                &[&ch.0, &paused_at],
+            )
+            .await
+            .unwrap();
+    }
+    // The sweep skips the published one and still cancels the other and
+    // disconnects both channels.
+    let (cancelled, disconnected) = s.billing_sweep().await.unwrap();
+    assert_eq!((cancelled, disconnected), (1, 2));
+    assert_eq!(
+        s.store.delivery(second).await.unwrap().unwrap().status,
+        DeliveryStatus::Cancelled
+    );
+    assert_ne!(
+        s.store.delivery(first).await.unwrap().unwrap().status,
+        DeliveryStatus::Cancelled,
+        "never marked cancelled: it went out"
+    );
     db.drop().await;
 }
 

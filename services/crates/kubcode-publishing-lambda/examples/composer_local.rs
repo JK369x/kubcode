@@ -45,6 +45,7 @@ impl Uploader for LocalUploads {
         key: &str,
         content_type: &str,
         sha: &[u8; 32],
+        _bytes: u64,
         _now: u64,
     ) -> Option<PresignedPut> {
         Some(PresignedPut {

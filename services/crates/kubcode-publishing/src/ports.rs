@@ -231,7 +231,15 @@ pub fn caption_line(text: &str) -> String {
 /// Replies to comments: the comment → DM engine's capability.
 #[async_trait]
 pub trait Inbox: Send + Sync {
-    /// A plain-text DM to the comment's author.
+    /// Takes the request slot for the next `private_reply`, before the DM is
+    /// claimed. Err means nothing was sent and nothing may be claimed: the
+    /// comment stays pending for the next run. A DM the provider never saw
+    /// must not be recorded as "maybe sent".
+    async fn ready(&self) -> Result<()> {
+        Ok(())
+    }
+    /// A plain-text DM to the comment's author. Call `ready` first: the slot
+    /// it took is used here.
     async fn private_reply(
         &self,
         account: &ProviderRef,

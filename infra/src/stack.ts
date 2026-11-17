@@ -288,6 +288,15 @@ export function createStack(cfg: StackConfig) {
           filter: {},
           abortIncompleteMultipartUpload: { daysAfterInitiation: 7 },
         },
+        // Clip media is copied to the provider when a post is scheduled, so
+        // the S3 copy is only needed for a while (a retry, a second post of
+        // the same clip). Bounds storage from uploads that were never posted.
+        {
+          id: "expire-clip-media",
+          status: "Enabled",
+          filter: { prefix: "clips/" },
+          expiration: { days: 30 },
+        },
       ],
     },
     opts,
