@@ -2,7 +2,7 @@
 // active or inside the 3-day grace (ADR 0008).
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { canUsePublishing } from "../lib/channels/access";
+import { canSeeOwnPublishing, canUsePublishing } from "../lib/channels/access";
 
 const now = new Date("2026-11-16T03:00:00Z");
 const at = (days: number) => new Date(now.getTime() + days * 86_400_000);
@@ -14,4 +14,11 @@ test("owner always; paid active or grace; never expired, 0 slots or never paid",
   assert.equal(canUsePublishing({ owner: false, slots: 1, paidUntil: at(-3.01) }, now), false, "past grace");
   assert.equal(canUsePublishing({ owner: false, slots: 0, paidUntil: at(5) }, now), false);
   assert.equal(canUsePublishing({ owner: false, slots: 0, paidUntil: null }, now), false);
+});
+
+test("seeing one's own channels/posts and disconnecting: also after a lapse, never without ever paying", () => {
+  assert.equal(canSeeOwnPublishing({ owner: false, slots: 0, paidUntil: at(-30) }, now), true, "lapsed: slots 0, paid_until kept");
+  assert.equal(canSeeOwnPublishing({ owner: false, slots: 1, paidUntil: at(5) }, now), true);
+  assert.equal(canSeeOwnPublishing({ owner: true, slots: 0, paidUntil: null }, now), true);
+  assert.equal(canSeeOwnPublishing({ owner: false, slots: 0, paidUntil: null }, now), false, "never paid");
 });

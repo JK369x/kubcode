@@ -17,6 +17,16 @@ export function canUsePublishing(s: PublishingStanding, now: Date = new Date()):
 }
 
 /**
+ * Pure rule for reading one's own channels and posts, and disconnecting a
+ * channel: anyone who may publish, and also a member whose pass has lapsed
+ * (ADR 0008: paused, "nothing is deleted"), so they can still see what is
+ * paused and disconnect before the 14-day auto-disconnect. Never paid: no.
+ */
+export function canSeeOwnPublishing(s: PublishingStanding, now: Date = new Date()): boolean {
+  return canUsePublishing(s, now) || s.paidUntil !== null;
+}
+
+/**
  * Reads the member's standing inside the caller's transaction. Sets
  * kubcode.user_id (RLS) as a side effect, which every caller needs anyway.
  */

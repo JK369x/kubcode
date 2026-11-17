@@ -1,9 +1,10 @@
 //! Browser uploads from the web composer (docs/design/publishing-core.md,
 //! web composer): a SigV4 query-presigned S3 `PutObject` for ONE key that
 //! this Lambda chose (`clips/<workspace>/<clip>/<sha256>.<ext>`). The
-//! signature binds the key, the content type, SSE-S3 and the object's
-//! SHA-256 (`x-amz-checksum-sha256`, base64), so S3 refuses any other body,
-//! size or key. Short-lived (15 minutes). No network here.
+//! signature binds the key, the content type, the exact size
+//! (`content-length`), SSE-S3 and the object's SHA-256
+//! (`x-amz-checksum-sha256`, base64), so S3 refuses any other body, size or
+//! key. Short-lived (15 minutes). No network here.
 
 use base64::Engine;
 use hmac::{Hmac, Mac};
@@ -31,6 +32,8 @@ pub struct PutSpec<'a> {
     pub content_type: &'a str,
     /// Raw 32-byte SHA-256 of the file (the asset's registered hash).
     pub sha256: &'a [u8; 32],
+    /// The size the quota checked. Signed, so a bigger body is refused.
+    pub bytes: u64,
     pub now: u64,
 }
 
@@ -40,6 +43,7 @@ pub fn presign_put(creds: &Creds<'_>, p: &PutSpec<'_>) -> PresignedPut {
     let checksum = base64::engine::general_purpose::STANDARD.encode(p.sha256);
     // Signed headers, lowercase, sorted.
     let mut signed: Vec<(&str, String)> = vec![
+        ("content-length", p.bytes.to_string()),
         ("content-type", p.content_type.to_owned()),
         ("host", p.host.to_owned()),
         ("x-amz-checksum-sha256", checksum.clone()),
@@ -96,9 +100,11 @@ pub fn presign_put(creds: &Creds<'_>, p: &PutSpec<'_>) -> PresignedPut {
             "https://{}{path}?{canonical_query}&X-Amz-Signature={signature}",
             p.host
         ),
+        // The browser sets Host and Content-Length itself (XHR refuses both);
+        // Content-Length is the file's real size, which the signature pins.
         headers: signed
             .into_iter()
-            .filter(|(k, _)| *k != "host")
+            .filter(|(k, _)| *k != "host" && *k != "content-length")
             .map(|(k, v)| (k.to_owned(), v))
             .collect(),
     }
@@ -148,6 +154,7 @@ mod tests {
             key: "clips/00000000-0000-0000-0000-000000000001/web-abc/ab.mp4",
             content_type: "video/mp4",
             sha256: sha,
+            bytes: 10_000_000,
             now: 1_794_800_000,
         }
     }
@@ -163,7 +170,8 @@ mod tests {
         let p = presign_put(&creds, &spec(&sha));
         assert!(p.url.starts_with("https://kubcode-media-test.s3.ap-southeast-1.amazonaws.com/clips/00000000-0000-0000-0000-000000000001/web-abc/ab.mp4?"));
         assert!(p.url.contains("X-Amz-Expires=900"));
-        assert!(p.url.contains("X-Amz-SignedHeaders=content-type%3Bhost%3Bx-amz-checksum-sha256%3Bx-amz-sdk-checksum-algorithm%3Bx-amz-server-side-encryption"));
+        // content-length is signed: S3 refuses a body of any other size.
+        assert!(p.url.contains("X-Amz-SignedHeaders=content-length%3Bcontent-type%3Bhost%3Bx-amz-checksum-sha256%3Bx-amz-sdk-checksum-algorithm%3Bx-amz-server-side-encryption"));
         assert!(p.url.contains("X-Amz-Security-Token=tok"));
         assert!(!p.url.contains("FIXTURE-ONLY-secret"));
         let h: std::collections::HashMap<_, _> = p.headers.iter().cloned().collect();
@@ -173,9 +181,23 @@ mod tests {
             h["x-amz-checksum-sha256"],
             base64::engine::general_purpose::STANDARD.encode([7u8; 32])
         );
-        // Another hash or key gives another signature.
+        // content-length is signed (S3 refuses any other size), and left to
+        // the browser, which sends the file's real size (XHR forbids setting it).
+        assert!(p
+            .url
+            .contains("X-Amz-SignedHeaders=content-length%3Bcontent-type%3B"));
+        assert!(!h.contains_key("content-length"));
+        // Another hash, key or size gives another signature.
         let other = presign_put(&creds, &spec(&[8u8; 32]));
         assert_ne!(p.url, other.url);
+        let bigger = presign_put(
+            &creds,
+            &PutSpec {
+                bytes: 5_000_000_000,
+                ..spec(&sha)
+            },
+        );
+        assert_ne!(p.url, bigger.url);
         assert_eq!(
             amz_timestamps(0),
             ("19700101T000000Z".into(), "19700101".into())

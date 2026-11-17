@@ -29,6 +29,7 @@ impl Uploader for FakeUploads {
         key: &str,
         content_type: &str,
         sha: &[u8; 32],
+        _bytes: u64,
         _now: u64,
     ) -> Option<PresignedPut> {
         Some(PresignedPut {
@@ -231,6 +232,26 @@ async fn upload_schedule_status_and_cancel_from_the_web() {
         (json!(true), json!(post))
     );
     assert_eq!(fake.post_count(), posts_before);
+    // ...with the real deliveries, so the composer never counts a channel
+    // that has no delivery row.
+    let mut again_channels: Vec<_> = again["result"]["deliveries"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .map(|d| {
+            (
+                d["channel"].as_str().unwrap().to_owned(),
+                d["status"].as_str().unwrap().to_owned(),
+            )
+        })
+        .collect();
+    again_channels.sort();
+    let mut want = vec![
+        (tt.0.to_string(), "scheduled".to_owned()),
+        (yt.0.to_string(), "scheduled".to_owned()),
+    ];
+    want.sort();
+    assert_eq!(again_channels, want);
 
     // Another member cannot see or cancel it.
     let stranger = db.user(false).await;

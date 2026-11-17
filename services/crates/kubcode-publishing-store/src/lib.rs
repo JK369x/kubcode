@@ -1575,6 +1575,23 @@ impl Store {
 
     /// HMAC replay guard shared with the connect Lambda (table from 0004):
     /// false when the nonce was already used. Old nonces are pruned.
+    /// Drops webhook dedupe rows older than `keep` (Zernio retries for about
+    /// two days, so anything older can never be a duplicate). At most
+    /// `limit` rows per call, oldest first, on the received_at index.
+    pub async fn prune_provider_events(&self, keep: Duration, limit: i64) -> Result<u64> {
+        Ok(self
+            .c
+            .execute(
+                "DELETE FROM kubcode_accounts.provider_events
+                  WHERE (provider, event_id) IN (
+                    SELECT provider, event_id FROM kubcode_accounts.provider_events
+                     WHERE received_at < now() - $1::bigint * interval '1 second'
+                     ORDER BY received_at LIMIT $2)",
+                &[&keep.whole_seconds(), &limit],
+            )
+            .await?)
+    }
+
     pub async fn use_nonce(&self, nonce_hash: &[u8; 32]) -> Result<bool> {
         self.c
             .execute(

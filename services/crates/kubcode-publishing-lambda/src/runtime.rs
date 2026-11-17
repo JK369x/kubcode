@@ -254,6 +254,7 @@ impl crate::http::Uploader for S3Uploader {
         key: &str,
         content_type: &str,
         sha256: &[u8; 32],
+        bytes: u64,
         now: u64,
     ) -> Option<crate::upload::PresignedPut> {
         if !key_ok(key) {
@@ -274,6 +275,7 @@ impl crate::http::Uploader for S3Uploader {
                 key,
                 content_type,
                 sha256,
+                bytes,
                 now,
             },
         ))

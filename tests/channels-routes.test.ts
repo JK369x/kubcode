@@ -236,6 +236,17 @@ test("callback: forwards the provider's parameters (not ours) and maps the Lambd
 
 // ------------------------------------------------------------ disconnect
 
+test("a lapsed member may still disconnect (read gate), but not connect (paid gate)", async () => {
+  const asked: Array<boolean | undefined> = [];
+  const lapsed: Partial<ChannelStore> = {
+    member: async (_s, read) => (asked.push(read), read ? { ok: true, userId: UID } : { ok: false, code: "FORBIDDEN" }),
+  };
+  const l = lambda({ ok: true });
+  assert.equal((await handleChannelDisconnect(await post(`/api/channels/${CHANNEL}/disconnect`, {}), CHANNEL, deps(lapsed, { fetch: l.fetch }))).status, 200);
+  assert.equal((await handleChannelConnect(await post("/api/channels/connect", { platform: "youtube" }), deps(lapsed))).status, 403);
+  assert.deepEqual(asked, [true, false]);
+});
+
 test("disconnect: checks the id, asks the Lambda with the member's id and reports ok", async () => {
   assert.equal((await handleChannelDisconnect(await post(`/api/channels/x/disconnect`, {}), "not-a-uuid", deps(untouchable))).status, 400);
   const l = lambda({ ok: true });

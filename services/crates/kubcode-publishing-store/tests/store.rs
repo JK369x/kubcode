@@ -878,3 +878,49 @@ async fn a_finished_connect_cannot_pass_the_paid_slots() {
     assert_eq!(db.channel_count(ws).await, 1);
     db.drop().await;
 }
+
+#[tokio::test]
+#[ignore = "needs KUBCODE_TEST_DATABASE_URL; run with --ignored"]
+async fn old_webhook_ids_are_pruned_and_recent_ones_kept() {
+    let db = db().await;
+    let s = db.worker().await;
+    for (id, days) in [("old-1", 40), ("old-2", 31), ("new-1", 2)] {
+        db.owner
+            .execute(
+                "INSERT INTO kubcode_accounts.provider_events (provider, event_id, body_sha256, event_type, received_at)
+                 VALUES ('zernio', $1, sha256($1::text::bytea), 'comment.received', now() - make_interval(days => $2))",
+                &[&id, &days],
+            )
+            .await
+            .unwrap();
+    }
+    // Bounded: one row per call here.
+    assert_eq!(
+        s.prune_provider_events(Duration::days(30), 1)
+            .await
+            .unwrap(),
+        1
+    );
+    assert_eq!(
+        s.prune_provider_events(Duration::days(30), 100)
+            .await
+            .unwrap(),
+        1
+    );
+    assert_eq!(
+        s.prune_provider_events(Duration::days(30), 100)
+            .await
+            .unwrap(),
+        0
+    );
+    let left: Vec<String> = db
+        .owner
+        .query("SELECT event_id FROM kubcode_accounts.provider_events", &[])
+        .await
+        .unwrap()
+        .iter()
+        .map(|r| r.get(0))
+        .collect();
+    assert_eq!(left, vec!["new-1".to_owned()]);
+    db.drop().await;
+}

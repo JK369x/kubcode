@@ -122,6 +122,10 @@ fn posts_cache_put(key: PostsKey, now: OffsetDateTime, posts: Vec<OwnPost>) {
 /// Deliveries the worker asks the provider about per run (every minute).
 pub const RECONCILE_PER_RUN: i64 = 5;
 
+/// `handle_comment` outcome: our rate limit refused before anything was sent
+/// or claimed; the comment stays pending for the next worker run.
+const NOT_YET: &str = "rate_limited_retry";
+
 /// Comment stats are reused this long per channel (warm Lambda only), so
 /// opening the page repeatedly does not repeat ~18 provider reads.
 pub const STATS_CACHE_TTL: Duration = Duration::minutes(5);
@@ -1280,16 +1284,21 @@ impl Service<'_> {
             }
             if let (Some(post_ref), Some(profile)) = (&row.provider_ref, &row.profile) {
                 let publisher = Arc::clone(&self.providers(row.provider)?.publisher);
-                publisher
-                    .cancel(
-                        &ConnectionRef {
-                            platform: row.platform,
-                            profile: profile.clone(),
-                            account: row.account.clone(),
-                        },
-                        post_ref,
-                    )
-                    .await?;
+                let conn = ConnectionRef {
+                    platform: row.platform,
+                    profile: profile.clone(),
+                    account: row.account.clone(),
+                };
+                // One failed cancel must not stop the sweep: the same row
+                // comes first every run. Already published: leave it for
+                // reconcile() to mark Published. Anything else: retry next run.
+                if let Err(f) = publisher.cancel(&conn, post_ref).await {
+                    println!(
+                        "[publishing] billing_sweep cancel_skipped code={}",
+                        f.code.as_str()
+                    );
+                    continue;
+                }
             }
             self.store
                 .transition(d, DeliveryStatus::Cancelled, Some("channel_paused"))
@@ -1305,6 +1314,7 @@ impl Service<'_> {
             let Ok(ch) = self.own_channel(ws, channel).await else {
                 continue;
             };
+            let mut all = true;
             for c in self.store.connections(channel).await? {
                 if c.status == kubcode_publishing::domain::ConnectionStatus::Revoked {
                     continue;
@@ -1313,16 +1323,25 @@ impl Service<'_> {
                 let Some(profile) = self.store.profile(ws, c.provider).await? else {
                     continue;
                 };
-                set.connect
-                    .disconnect(&ConnectionRef {
-                        platform: ch.platform,
-                        profile,
-                        account: c.provider_ref.clone(),
-                    })
-                    .await?;
+                let conn = ConnectionRef {
+                    platform: ch.platform,
+                    profile,
+                    account: c.provider_ref.clone(),
+                };
+                // Skip, do not stop: the next run retries this channel.
+                if let Err(f) = set.connect.disconnect(&conn).await {
+                    println!(
+                        "[publishing] billing_sweep disconnect_skipped code={}",
+                        f.code.as_str()
+                    );
+                    all = false;
+                    continue;
+                }
                 self.store.revoke_connection(c.id).await?;
             }
-            disconnected += 1;
+            if all {
+                disconnected += 1;
+            }
         }
         Ok((cancelled, disconnected))
     }
@@ -1332,6 +1351,11 @@ impl Service<'_> {
         let mut done = Vec::new();
         for c in self.store.pending_comments(WORK_BATCH).await? {
             let outcome = self.handle_comment(&c).await?;
+            if outcome == NOT_YET {
+                // Rate limited: stays pending; the rest of the batch would be too.
+                log_comment(Some(c.channel), outcome);
+                break;
+            }
             self.store.finish_comment(c.id, outcome).await?;
             log_comment(Some(c.channel), outcome);
             done.push((c.comment_id.clone(), outcome));
@@ -1386,6 +1410,11 @@ impl Service<'_> {
         let used = self.store.dms_this_month(c.channel, self.now).await?;
         if used >= i64::from(self.cfg.dm_cap_per_month) {
             return Ok("cap_reached");
+        }
+        // Our own rate limit (or its store) refused: nothing was sent, so
+        // claim nothing and leave the comment for the next run.
+        if inbox.ready().await.is_err() {
+            return Ok(NOT_YET);
         }
         let Some(ledger) = self.store.claim_dm(c, rule.id).await? else {
             return Ok("duplicate");
@@ -1469,6 +1498,10 @@ impl Service<'_> {
                     .await?;
                 if used >= i64::from(self.cfg.dm_cap_per_month) {
                     return Ok("cap_reached");
+                }
+                // Same as DMs: a refused slot claims nothing.
+                if inbox.ready().await.is_err() {
+                    return Ok(NOT_YET);
                 }
                 match self.store.claim_dm(c, rule.id).await? {
                     Some(l) => l,

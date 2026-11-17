@@ -24,6 +24,8 @@ use crate::webhook::Event;
 #[async_trait]
 pub trait BillingStore: Send {
     async fn payer(&self, user: Uuid) -> Result<Option<Payer>, StoreError>;
+    /// `payer`, creating the member's workspace on their first checkout.
+    async fn payer_or_create(&self, user: Uuid) -> Result<Option<Payer>, StoreError>;
     async fn entitlement(
         &self,
         ws: Uuid,
@@ -54,6 +56,9 @@ pub trait BillingStore: Send {
         ev: AfterPayment,
         now: OffsetDateTime,
     ) -> Result<AfterOutcome, StoreError>;
+    /// One workspace's sweep, right after a payment, so paused channels
+    /// resume now instead of at the next hourly sweep.
+    async fn sweep_one(&mut self, ws: Uuid, now: OffsetDateTime) -> Result<(), StoreError>;
     /// The daily sweep: (workspaces, paused, resumed, disconnect_due).
     async fn sweep(
         &mut self,
@@ -65,6 +70,12 @@ pub trait BillingStore: Send {
 impl BillingStore for Store {
     async fn payer(&self, user: Uuid) -> Result<Option<Payer>, StoreError> {
         Store::payer(self, user).await
+    }
+    async fn payer_or_create(&self, user: Uuid) -> Result<Option<Payer>, StoreError> {
+        Store::payer_or_create(self, user).await
+    }
+    async fn sweep_one(&mut self, ws: Uuid, now: OffsetDateTime) -> Result<(), StoreError> {
+        Store::sweep_workspace(self, ws, now).await.map(|_| ())
     }
     async fn entitlement(
         &self,
@@ -238,7 +249,7 @@ impl<S: BillingStore, T: Transport + ?Sized> Service<'_, S, T> {
     ) -> Result<Value, Refusal> {
         let payer = self
             .store
-            .payer(user)
+            .payer_or_create(user)
             .await?
             .ok_or(Refusal("no_workspace"))?;
         let ent = self
@@ -346,7 +357,14 @@ impl<S: BillingStore, T: Transport + ?Sized> Service<'_, S, T> {
                     )
                     .await?
                 {
-                    Fulfilled::Granted(_) => Applied::Granted,
+                    Fulfilled::Granted(_) => {
+                        // The payment is committed; a failed resume is only
+                        // late (the hourly sweep retries), so it is not an error.
+                        if self.store.sweep_one(p.workspace, self.now).await.is_err() {
+                            eprintln!("[billing] resume_after_payment failed");
+                        }
+                        Applied::Granted
+                    }
                     Fulfilled::AlreadyPaid => Applied::AlreadyPaid,
                 }
             }
