@@ -67,7 +67,7 @@ function NavigationMenuContent({ className, ...props }: React.ComponentProps<typ
     <NavigationMenuPrimitive.Content
       data-slot="navigation-menu-content"
       className={cn(
-        "absolute top-full right-0 z-50 mt-2 w-max overflow-hidden rounded-[18px] border border-input bg-popover p-2 text-popover-foreground shadow-[0_24px_60px_-24px_rgb(0_0_0/0.55)] data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95 data-[state=closed]:animate-out data-[state=closed]:fade-out-0 motion-reduce:animate-none",
+        "absolute top-full left-0 z-50 mt-2 w-max overflow-hidden rounded-[18px] border border-input bg-popover p-2 text-popover-foreground shadow-[0_24px_60px_-24px_rgb(0_0_0/0.55)] data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95 data-[state=closed]:animate-out data-[state=closed]:fade-out-0 motion-reduce:animate-none",
         className
       )}
       {...props}

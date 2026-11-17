@@ -4,7 +4,7 @@
    1240px column. */
 .main {
   width: 100%;
-  padding: 48px 0 96px;
+  padding: 8px 0 96px;
   overflow-x: clip;
 }
 .main > * {

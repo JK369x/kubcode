@@ -295,6 +295,12 @@ svg {
   vertical-align: middle;
 }
 header.header {
+  /* Its own layer above the page: the hero aura (blurred, drawn up behind the
+     header) must not tint the nav, and the "เรียนรู้" menu must open above
+     the hero's toggles (z-index 5). */
+  position: relative;
+  z-index: 40;
+  isolation: isolate;
   max-width: 1440px;
   margin: 0 auto;
   height: 82px;

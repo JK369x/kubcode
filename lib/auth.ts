@@ -248,7 +248,7 @@ export function buildAuthOptions(config: AuthConfig, accounts?: AccountsRuntime)
 export type AccountView =
   | { state: "unconfigured" }
   | { state: "signed-out"; providers: AuthReadiness }
-  | { state: "signed-in"; user: PublicUser };
+  | { state: "signed-in"; user: PublicUser; picture?: string | null };
 
 export async function getAccountView(env: AuthEnv = process.env): Promise<AccountView> {
   const result = readAuthConfig(env);
@@ -272,7 +272,10 @@ export async function getAccountView(env: AuthEnv = process.env): Promise<Accoun
     }
     const session = await getServerSession(options);
     const user = publicUserFromSession(session);
-    return user ? { state: "signed-in", user } : { state: "signed-out", providers: readiness };
+    // The avatar rides next to the public user (it never joins PublicUser,
+    // whose whitelist is pinned by tests); allowlisted provider hosts only.
+    const picture = safeAvatarUrl((session as { user?: { image?: unknown } } | null)?.user?.image);
+    return user ? { state: "signed-in", user, picture } : { state: "signed-out", providers: readiness };
   } catch {
     console.error("[auth] SESSION_READ_FAILED");
     return { state: "signed-out", providers: readiness };
