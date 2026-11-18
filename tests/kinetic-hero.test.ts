@@ -248,14 +248,22 @@ test("previews never autoplay or download before someone hovers or focuses", () 
   assert.match(readFileSync("components/VisualShelf.module.css", "utf8"), /\.media \{[^}]*aspect-ratio: 9 \/ 16/);
 });
 
-test("the row loops: copies are hidden from assistive tech and keyboard", () => {
+test("the row loops: copies are hidden from assistive tech, but not inert (the mouse must work on them)", () => {
   const html = renderHero();
   const copies = allItems(html).filter((i) => /data-copy/.test(i.attrs));
   assert.ok(copies.length >= SHELF.length, "the loop has a second half");
   for (const copy of copies) {
     assert.match(copy.attrs, /aria-hidden="true"/);
-    assert.match(copy.attrs, /inert=""/);
+    // inert blocks hover and clicks too: hovering a copy showed no actions (owner, 2026-11-18).
+    assert.doesNotMatch(copy.attrs, /\binert\b/);
   }
+  // Their links and buttons stay out of the tab order (rendered with tabindex -1).
+  for (const copy of copies) for (const m of copy.body.matchAll(/<(a|button)\b([^>]*)>/g)) {
+    if (/\bdisabled\b/.test(m[2])) continue;
+    assert.match(m[2], /tabindex="-1"/, `focusable ${m[1]} in a loop copy`);
+  }
+  for (const card of cards(html))
+    for (const m of card.body.matchAll(/<(a|button)\b([^>]*)>/g)) assert.doesNotMatch(m[2], /tabindex="-1"/, "originals stay in the tab order");
 });
 
 test("a pause control stops the slide; it is a real toggle with a Thai name", () => {
