@@ -87,21 +87,25 @@ export function CardActions({
   entry,
   signedIn,
   available,
+  skipTab = false,
 }: {
   entry: ShelfEntry;
   signedIn: boolean | undefined;
   /** undefined until the server has answered. */
   available?: boolean;
+  /** A loop copy: mouse only, Tab skips its controls. */
+  skipTab?: boolean;
 }) {
+  const tab = skipTab ? -1 : undefined;
   const style = SHOWCASE_VISUALS[entry.visual];
   const { clip } = entry;
   if (style?.skill) {
     return (
       <div className={styles.actions}>
         <Button asChild className={cn(ACTION, ON_MEDIA_PRIMARY, styles.action)}>
-          <a href={`/skills/${style.skill}`}>ดู template</a>
+          <a href={`/skills/${style.skill}`} tabIndex={tab}>ดู template</a>
         </Button>
-        <SkillDownload skill={style.skill} signedIn={signedIn} available={available} />
+        <SkillDownload skill={style.skill} signedIn={signedIn} available={available} tab={tab} />
       </div>
     );
   }
@@ -109,7 +113,7 @@ export function CardActions({
   return (
     <div className={styles.actions}>
       <Button asChild className={cn(ACTION, ON_MEDIA_PRIMARY, styles.action)}>
-        <a href={clip.link.url} target="_blank" rel="noopener noreferrer">
+        <a href={clip.link.url} target="_blank" rel="noopener noreferrer" tabIndex={tab}>
           ดูคลิป
           <ArrowUpRight size={14} aria-hidden="true" />
           <span className="sr-only">บน {PLATFORM[clip.link.platform]} (เปิดแท็บใหม่)</span>
@@ -123,7 +127,7 @@ export function CardActions({
  * The card's download control (ADR 0002). A skill with no approved package
  * says it is coming for everyone, since signing in would not help.
  */
-function SkillDownload({ skill, signedIn, available }: { skill: string; signedIn: boolean | undefined; available?: boolean }) {
+function SkillDownload({ skill, signedIn, available, tab }: { skill: string; signedIn: boolean | undefined; available?: boolean; tab?: number }) {
   const [working, setWorking] = useState(false);
   const phase = downloadPhase({ hasPackage: approvedPackageFor(skill) !== null, signedIn, available, working });
 
@@ -139,7 +143,7 @@ function SkillDownload({ skill, signedIn, available }: { skill: string; signedIn
   if (phase === "signin" || phase === "checking") {
     return (
       <Button asChild variant="outline" className={cn(ACTION, ON_SCRIM, styles.lock)}>
-        <a href="/account" title="สมัครหรือเข้าสู่ระบบก่อนดาวน์โหลด">
+        <a href="/account" title="สมัครหรือเข้าสู่ระบบก่อนดาวน์โหลด" tabIndex={tab}>
           <LockKeyhole size={14} aria-hidden="true" />
           <span className="sr-only">เข้าสู่ระบบเพื่อดาวน์โหลด</span>
           <span aria-hidden="true">ดาวน์โหลด</span>
@@ -161,6 +165,7 @@ function SkillDownload({ skill, signedIn, available }: { skill: string; signedIn
       className={cn(ACTION, ON_SCRIM, "border-[#d1b9ff] hover:enabled:bg-[#d1b9ff] hover:enabled:text-[#291640]", styles.download)}
       disabled={phase === "working"}
       aria-busy={phase === "working"}
+      tabIndex={tab}
       onClick={phase === "ready" ? onClick : undefined}
     >
       <Download size={14} aria-hidden="true" />
@@ -240,7 +245,10 @@ function Card({
     <li
       className={styles.card}
       data-visual={entry.visual}
-      {...(copy ? { "data-copy": "", "aria-hidden": true, inert: true } : {})}
+      // Loop copies are what is on screen most of the time, so the mouse must
+      // work on them (not `inert`, which also blocks hover and clicks). They
+      // stay out of the accessibility tree, and their controls out of the tab order.
+      {...(copy ? { "data-copy": "", "aria-hidden": true } : {})}
       onPointerEnter={(e: PointerEvent<HTMLLIElement>) => e.pointerType !== "touch" && play(e.currentTarget)}
       onPointerLeave={(e: PointerEvent<HTMLLIElement>) => stop(e.currentTarget)}
       onFocus={(e: FocusEvent<HTMLLIElement>) => play(e.currentTarget)}
@@ -276,7 +284,7 @@ function Card({
         <MadeByBadge madeBy={clip.madeBy} />
         <div className={styles.overlay}>
           {style.detail && <p className={styles.detail}>{style.detail}</p>}
-          <CardActions entry={entry} signedIn={signedIn} available={available} />
+          <CardActions entry={entry} signedIn={signedIn} available={available} skipTab={copy} />
         </div>
       </div>
       <p className={styles.name}>{name.th}</p>
