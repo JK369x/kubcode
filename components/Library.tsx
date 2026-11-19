@@ -171,6 +171,7 @@ function NoClipItem({ skill }: { skill: Skill }) {
 export function Library({
   articles,
   styleTools,
+  madeByTools,
   links = { pricing: false, roadmap: false },
 }: {
   articles: ArticleTeaser[];
@@ -178,6 +179,8 @@ export function Library({
   links?: { pricing: boolean; roadmap: boolean };
   /** Homepage style cards' tools with logos (see lib/showcase styleToolsFrom). */
   styleTools?: Readonly<Record<string, readonly StyleTool[]>>;
+  /** Agent and model logos for the cards' "made by" badge (lib/showcase madeByToolsFrom). */
+  madeByTools?: Readonly<Record<string, StyleTool>>;
 }) {
   const [filter, setFilter] = useState<HomeFilter>(NO_FILTER);
   const { query, useCase } = filter;
@@ -236,6 +239,7 @@ export function Library({
       <KineticHero
         pricing={links.pricing}
         styleTools={styleTools}
+        madeByTools={madeByTools}
         skills={skills}
         activeSlug={selected ?? ""}
         onSelectSkill={selectSkill}

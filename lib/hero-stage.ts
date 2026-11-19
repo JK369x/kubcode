@@ -2,7 +2,7 @@
 // ~/Studio/work/kubcode-hero-options/DECISION.md): which clips the picker
 // shows, in what order, and the colours of each clip's aura.
 import type { ShowcaseItem } from "./showcase";
-import { SHOWCASE_AGENTS } from "./showcase-allowlist";
+import { SHOWCASE_AGENTS, SHOWCASE_MODELS } from "./showcase-allowlist";
 import { STORY_FORMATS, VISUAL_STYLES } from "./taxonomy";
 
 /**
@@ -46,6 +46,8 @@ export type HeroClip = {
   visualTh: string;
   storyTh: string;
   agent: string;
+  /** /tools slug whose logo stands for who made it (model page, else agent). */
+  agentTool: string;
   deep: string;
   accent: string;
 };
@@ -63,6 +65,7 @@ export function heroClips(items: readonly ShowcaseItem[]): HeroClip[] {
       visualTh: VISUAL_STYLES[c.visual]?.th ?? c.visual,
       storyTh: STORY_FORMATS[c.story]?.th ?? c.story,
       agent: SHOWCASE_AGENTS[c.madeBy.agent] ?? c.madeBy.agent,
+      agentTool: SHOWCASE_MODELS[c.madeBy.model]?.tool ?? c.madeBy.agent,
       deep,
       accent,
     }];

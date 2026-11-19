@@ -89,6 +89,17 @@ export const SHOWCASE_AGENTS: Readonly<Record<string, string>> = {
 
 export type ShowcaseMadeBy = { agent: string; model: string };
 
+/**
+ * How a model id shows on the card: a short name, and the /tools page whose
+ * logo stands for it (the model's own page when it has one, else its agent's).
+ * The logo rules of those pages apply: no Anthropic or OpenAI marks (monogram).
+ */
+export const SHOWCASE_MODELS: Readonly<Record<string, { name: string; tool: string }>> = {
+  "claude-opus-5-5": { name: "Opus 5.5", tool: "claude-code" },
+  "gpt-6.1-sol": { name: "GPT-6.1 Sol", tool: "codex-cli" },
+  "glm-5.3-flash-free": { name: "GLM-5.3 Flash", tool: "glm-5-3-flash" },
+};
+
 export type ShowcaseAllowEntry = {
   id: string;
   source: string;

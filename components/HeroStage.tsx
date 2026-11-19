@@ -3,6 +3,8 @@ import { useCallback, useEffect, useRef, useState, type CSSProperties } from "re
 import Image from "next/image";
 import { ArrowRight, BadgeCheck, CalendarClock, Check, ChevronLeft, ChevronRight, Clapperboard, MessageCircle, MessagesSquare, Pause, Play } from "lucide-react";
 import { commonPrefix, graphemes, headlinePhrase, type HeroClip } from "@/lib/hero-stage";
+import { ToolLogo } from "./ToolLogo";
+import type { StyleTool } from "@/lib/showcase";
 import { Button } from "@/components/ui/button";
 import { Toggle } from "@/components/ui/toggle";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
@@ -155,7 +157,18 @@ function Layer({ clip, on, play, priority }: { clip: HeroClip; on: boolean; play
  * active preview plays, only while visible; reduced motion / Save-Data show
  * posters only. Only the next clip's poster is preloaded.
  */
-export function HeroStage({ clips, headingId, pricing = false }: { clips: readonly HeroClip[]; headingId: string; pricing?: boolean }) {
+export function HeroStage({
+  clips,
+  headingId,
+  pricing = false,
+  madeByTools = {},
+}: {
+  clips: readonly HeroClip[];
+  headingId: string;
+  pricing?: boolean;
+  /** Agent and model logos (lib/showcase madeByToolsFrom). */
+  madeByTools?: Readonly<Record<string, StyleTool>>;
+}) {
   const [product, setProduct] = useState<ProductId>("studio");
   const copy = PRODUCTS[product];
   // ?product=studio|social, read after hydration so the static page stays one HTML.
@@ -411,7 +424,13 @@ export function HeroStage({ clips, headingId, pricing = false }: { clips: readon
           <div className={styles.meta}>
             <strong>{clip.label}</strong>
             <p>
-              {clip.visualTh} · {clip.storyTh} · ทำด้วย <b>{by}</b>
+              {clip.visualTh} · {clip.storyTh} · ทำด้วย{" "}
+              <b className={styles.by}>
+                {madeByTools[clip.agentTool] && (
+                  <ToolLogo slug={clip.agentTool} logo={madeByTools[clip.agentTool].logo} size="icon" morph={false} />
+                )}
+                {by}
+              </b>
             </p>
           </div>
           <p className={styles.eyebrow} id={`${headingId}-picks`}>
