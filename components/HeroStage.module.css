@@ -512,6 +512,24 @@
   color: var(--foreground);
   font-weight: 500;
 }
+/* "ทำด้วย <logo> Claude": the maker's logo where allowed, else its monogram. */
+.by {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  vertical-align: middle;
+}
+.by :global(.tool-logo-icon) {
+  width: 22px;
+  height: 22px;
+  padding: 3px;
+  border-radius: 6px;
+}
+.by :global(.tool-logo-icon.is-monogram) {
+  padding: 0;
+  font-size: 12px;
+  white-space: nowrap;
+}
 .picks.picks {
   display: grid;
   grid-template-columns: 1fr 1fr;

@@ -19,6 +19,7 @@ export function KineticHero({
   onSelectSkill,
   clips = SHOWCASE,
   styleTools,
+  madeByTools,
   children,
   pricing = false,
 }: {
@@ -29,6 +30,7 @@ export function KineticHero({
   clips?: readonly ShowcaseItem[];
   /** Each visual style's tools with logos, resolved on the server (lib/showcase styleToolsFrom). */
   styleTools?: Readonly<Record<string, readonly StyleTool[]>>;
+  madeByTools?: Readonly<Record<string, StyleTool>>;
   /** Search / browse actions owned by the page (query state stays there). */
   children?: ReactNode;
   /** /pricing ships in this build (lib/site-routes hasPage). */
@@ -50,7 +52,7 @@ export function KineticHero({
       aria-labelledby={headingId}
       data-media={hasClips ? "clips" : "none"}
     >
-      {stage.length > 0 && <HeroStage clips={stage} headingId={headingId} pricing={pricing} />}
+      {stage.length > 0 && <HeroStage clips={stage} headingId={headingId} pricing={pricing} madeByTools={madeByTools} />}
       <div className={styles.copy}>
         {stage.length > 0 ? null : hasClips ? (
           <>
@@ -102,7 +104,7 @@ export function KineticHero({
         )}
       </div>
 
-      {hasClips && <VisualShelf items={clips} styleTools={styleTools} />}
+      {hasClips && <VisualShelf items={clips} styleTools={styleTools} madeByTools={madeByTools} />}
     </section>
   );
 }

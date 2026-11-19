@@ -9,7 +9,7 @@ import { STORY_FORMATS, VISUAL_STYLES, type StoryKey } from "@/lib/taxonomy";
 import { ToolLogo } from "./ToolLogo";
 import { SkeletonImage } from "./SkeletonImage";
 import { playPreview as play, stopPreview as stop } from "./hoverPreview";
-import { SHOWCASE_AGENTS, SHOWCASE_VISUALS, type ShowcaseCredit, type ShowcaseMadeBy } from "@/lib/showcase-allowlist";
+import { SHOWCASE_AGENTS, SHOWCASE_MODELS, SHOWCASE_VISUALS, type ShowcaseCredit, type ShowcaseMadeBy } from "@/lib/showcase-allowlist";
 import styles from "./VisualShelf.module.css";
 import { toast } from "@/components/ui/toaster";
 import { Button } from "@/components/ui/button";
@@ -185,15 +185,25 @@ export function StoryLabel({ story, className = styles.story }: { story: StoryKe
   );
 }
 
-/** Which agent and model made the clip: a small label on the poster. */
-function MadeByBadge({ madeBy }: { madeBy: ShowcaseMadeBy }) {
+/**
+ * Which agent and model made the clip: a small pill on the poster with the
+ * real logo where its maker allows one (the /tools page's logo, else its
+ * monogram), the agent name and a short model name.
+ */
+function MadeByBadge({ madeBy, logos }: { madeBy: ShowcaseMadeBy; logos: Readonly<Record<string, StyleTool>> }) {
   const agent = SHOWCASE_AGENTS[madeBy.agent] ?? madeBy.agent;
+  const model = SHOWCASE_MODELS[madeBy.model];
+  // One mark per badge: the model's own logo when it has a page (GLM), else the agent's.
+  const mark = (model && logos[model.tool]) ?? logos[madeBy.agent];
   return (
     <p className={styles.madeBy}>
-      <span className="sr-only">สร้างด้วย </span>
-      <span className={styles.agent}>{agent}</span>
-      <span className="sr-only"> โมเดล </span>
-      <span className={styles.model} lang="en">{madeBy.model}</span>
+      {mark && <ToolLogo slug={mark.slug} logo={mark.logo} size="icon" morph={false} />}
+      <span className={styles.madeByText}>
+        <span className="sr-only">สร้างด้วย </span>
+        <span className={styles.agent}>{agent}</span>
+        <span className="sr-only"> โมเดล </span>
+        <span className={styles.model} lang="en">{model?.name ?? madeBy.model}</span>
+      </span>
     </p>
   );
 }
@@ -223,6 +233,7 @@ function ToolIcons({ tools }: { tools: readonly StyleTool[] }) {
 function Card({
   entry,
   tools,
+  madeByTools,
   signedIn,
   available,
   eager,
@@ -231,6 +242,7 @@ function Card({
 }: {
   entry: ShelfEntry;
   tools: readonly StyleTool[];
+  madeByTools: Readonly<Record<string, StyleTool>>;
   signedIn: boolean | undefined;
   available: boolean | undefined;
   eager: boolean;
@@ -281,7 +293,7 @@ function Card({
         )}
         <StoryLabel story={clip.story} />
         <ToolIcons tools={tools} />
-        <MadeByBadge madeBy={clip.madeBy} />
+        <MadeByBadge madeBy={clip.madeBy} logos={madeByTools} />
         <div className={styles.overlay}>
           {style.detail && <p className={styles.detail}>{style.detail}</p>}
           <CardActions entry={entry} signedIn={signedIn} available={available} skipTab={copy} />
@@ -311,10 +323,13 @@ function Card({
 export function VisualShelf({
   items,
   styleTools = {},
+  madeByTools = {},
 }: {
   items: readonly ShowcaseItem[];
   /** Each visual style's tools with their logos, resolved on the server. */
   styleTools?: Readonly<Record<string, readonly StyleTool[]>>;
+  /** Agent and model logos for the "made by" badge (lib/showcase madeByToolsFrom). */
+  madeByTools?: Readonly<Record<string, StyleTool>>;
 }) {
   const [paused, setPaused] = useState(false);
   const signedIn = useSignedIn();
@@ -338,6 +353,7 @@ export function VisualShelf({
               key={`${entry.visual}-${i}`}
               entry={entry}
               tools={styleTools[entry.visual] ?? []}
+              madeByTools={madeByTools}
               signedIn={signedIn}
               available={available[SHOWCASE_VISUALS[entry.visual]?.skill ?? ""]}
               eager={i < 6}

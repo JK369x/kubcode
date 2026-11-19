@@ -15,11 +15,12 @@ NodeModule._extensions[".css"] = (m) => {
   m.exports = new Proxy({}, { get: (_t, key) => (key === "__esModule" ? false : String(key)) });
 };
 
-const { SHOWCASE_ALLOWLIST, SHOWCASE_AGENTS } = require("../lib/showcase-allowlist") as typeof import("../lib/showcase-allowlist");
+const { SHOWCASE_ALLOWLIST, SHOWCASE_AGENTS, SHOWCASE_MODELS } = require("../lib/showcase-allowlist") as typeof import("../lib/showcase-allowlist");
 const { SHOWCASE_MANIFEST } = require("../lib/showcase-manifest") as typeof import("../lib/showcase-manifest");
-const { publishedShowcase, cartoonShowcase, visualShelf } = require("../lib/showcase") as typeof import("../lib/showcase");
+const { publishedShowcase, cartoonShowcase, visualShelf, madeByToolsFrom } = require("../lib/showcase") as typeof import("../lib/showcase");
 const { VisualShelf } = require("../components/VisualShelf") as typeof import("../components/VisualShelf");
 const { classifySource } = require("../lib/taxonomy") as typeof import("../lib/taxonomy");
+const { getContent } = require("../lib/content") as typeof import("../lib/content");
 
 const madeBy = (id: string) => SHOWCASE_ALLOWLIST.find((e) => e.id === id)?.madeBy;
 
@@ -64,10 +65,28 @@ test("sitcom cards use the designed episode covers, and the manifest says so", (
 
 test("shelf cards show the cover clip's agent and model", () => {
   const items = cartoonShowcase(publishedShowcase("local-study"));
-  const html = renderToStaticMarkup(createElement(VisualShelf, { items }));
+  const madeByTools = madeByToolsFrom(getContent().tools);
+  const html = renderToStaticMarkup(createElement(VisualShelf, { items, madeByTools }));
   for (const { clip } of visualShelf(items)) {
     const by = clip.madeBy!;
     assert.ok(html.includes(`>${SHOWCASE_AGENTS[by.agent]}<`), `${clip.id}: agent name`);
-    assert.ok(html.includes(`>${by.model}<`), `${clip.id}: model id`);
+    // A short, readable model name, not the raw id (owner 2026-11-19).
+    assert.ok(SHOWCASE_MODELS[by.model], `${clip.id}: ${by.model} has a display name`);
+    assert.ok(html.includes(`>${SHOWCASE_MODELS[by.model].name}<`), `${clip.id}: model name`);
   }
+});
+
+test("the made-by badge uses the real logo only where its maker allows one", () => {
+  const tools = madeByToolsFrom(getContent().tools);
+  // GLM and OpenCode have logos we may use; Claude and Codex stay monograms (their brand rules).
+  assert.equal(tools["glm-5-3-flash"].logo.kind, "image");
+  assert.equal(tools["opencode"].logo.kind, "image");
+  assert.equal(tools["claude-code"].logo.kind, "monogram");
+  assert.equal(tools["codex-cli"].logo.kind, "monogram");
+  const items = cartoonShowcase(publishedShowcase("local-study"));
+  const html = renderToStaticMarkup(createElement(VisualShelf, { items, madeByTools: tools }));
+  const badges = [...html.matchAll(/<p class="[^"]*madeBy[^"]*">([\s\S]*?)<\/p>/g)].map((m) => m[1]);
+  assert.ok(badges.length > 0);
+  for (const b of badges) assert.match(b, /class="tool-logo tool-logo-icon/, "every badge has a logo tile");
+  for (const b of badges) assert.doesNotMatch(b, /anthropic|openai/i, "no Anthropic or OpenAI marks");
 });

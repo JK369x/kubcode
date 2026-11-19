@@ -1,5 +1,5 @@
 import { isPublishable, MEDIA_POLICY, PUBLISHED_MEDIA, type MediaPolicy } from "./publication";
-import { SHOWCASE_ALLOWLIST, SHOWCASE_VISUALS, type ShowcaseCredit, type ShowcaseMadeBy } from "./showcase-allowlist";
+import { SHOWCASE_AGENTS, SHOWCASE_ALLOWLIST, SHOWCASE_MODELS, SHOWCASE_VISUALS, type ShowcaseCredit, type ShowcaseMadeBy } from "./showcase-allowlist";
 import type { StoryKey, VisualKey } from "./taxonomy";
 import type { Logo, Tool } from "./content";
 import { SHOWCASE_MANIFEST } from "./showcase-manifest";
@@ -89,6 +89,12 @@ export function visualShelf(items: readonly ShowcaseItem[]): ShelfEntry[] {
 
 /** A tool as a visual-style card shows it: a small logo with the product name. */
 export type StyleTool = { slug: string; name: string; logo: Logo };
+
+/** Agent and model logos for the "made by" badge, keyed by /tools slug (server side). */
+export function madeByToolsFrom(tools: readonly Tool[]): Record<string, StyleTool> {
+  const slugs = new Set([...Object.keys(SHOWCASE_AGENTS), ...Object.values(SHOWCASE_MODELS).map((m) => m.tool)]);
+  return Object.fromEntries(tools.filter((t) => slugs.has(t.slug)).map((t) => [t.slug, { slug: t.slug, name: t.name, logo: t.logo }]));
+}
 
 /**
  * Each visual style's tools, resolved against the /tools pages (server side,
