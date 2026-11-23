@@ -42,3 +42,11 @@ test("header: อัปเดต first in the links, เริ่มใช้ง
   assert.match(readFileSync("components/MobileNav.tsx", "utf8"), /href="\/roadmap#shipped-h"[\s\S]*?อัปเดต/);
 });
 
+
+test("the ใหม่ chip uses the brand primary tokens, not a hard-coded colour (owner 2026-11-23)", () => {
+  const css = readFileSync("components/UpdatesBadge.module.css", "utf8");
+  const chip = css.match(/\.chip \{([^}]*)\}/)?.[1] ?? "";
+  assert.match(chip, /background: var\(--primary\);/);
+  assert.match(chip, /color: var\(--primary-foreground\);/);
+  assert.doesNotMatch(css, /#[0-9a-f]{3,8}\b/i, "no raw hex colours in the updates button");
+});
