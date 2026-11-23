@@ -608,9 +608,13 @@ fn segment(v: &str) -> Option<&str> {
 
 #[async_trait]
 impl Analytics for Zernio {
-    async fn probe(&self, profile: &ProviderRef) -> Result<AnalyticsProbe> {
+    async fn probe(&self, profile: &ProviderRef, from: &str, to: &str) -> Result<AnalyticsProbe> {
         let id = path_id(profile)?;
-        let url = self.url("/v1/analytics/dashboard", &[("profileId", id)]);
+        // fromDate and toDate are required: without them Zernio answers 400.
+        let url = self.url(
+            "/v1/analytics/dashboard",
+            &[("profileId", id), ("fromDate", from), ("toDate", to)],
+        );
         let r = self.send(Method::Get, url, None, None).await?;
         let fields = match &r.body {
             Value::Object(m) => m.keys().take(32).cloned().collect(),

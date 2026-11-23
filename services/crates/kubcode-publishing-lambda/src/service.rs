@@ -343,7 +343,12 @@ impl Service<'_> {
             .analytics
             .clone()
             .ok_or_else(|| Fail::new("no_analytics"))?;
-        Ok(analytics.probe(&profile).await?)
+        let day = |t: time::OffsetDateTime| {
+            let t = t.to_offset(time::UtcOffset::UTC);
+            format!("{:04}-{:02}-{:02}", t.year(), u8::from(t.month()), t.day())
+        };
+        let (from, to) = (day(self.now - Duration::days(7)), day(self.now));
+        Ok(analytics.probe(&profile, &from, &to).await?)
     }
 
     async fn own_channel(&self, ws: WorkspaceId, channel: ChannelId) -> Result<ChannelRow> {
