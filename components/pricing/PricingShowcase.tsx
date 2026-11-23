@@ -308,7 +308,7 @@ export function PricingShowcase({ open }: { open: boolean }) {
           {/* UX audit P1-3: on phones the recommended plan comes first, in
               DOM order too (reading order matches what is seen). */}
           {(() => {
-            const order = narrow ? [...PLANS].sort((a, b) => Number(b.highlighted) - Number(a.highlighted)) : PLANS;
+            const order = narrow ? PLANS.toSorted((a, b) => Number(b.highlighted) - Number(a.highlighted)) : PLANS;
             let shown = 0;
             return order.map((p) => (
               <PlanCard key={p.id} plan={p} open={open} filter={filter} step={inFamily(p, filter) ? shown++ : 0} />

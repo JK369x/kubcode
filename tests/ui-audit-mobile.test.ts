@@ -45,7 +45,7 @@ test("P1-3 / P2-2: Social pricing link from home; reassurance under the Social C
   const show = read("components/pricing/PricingShowcase.tsx");
   assert.match(show, /ยกเลิกได้ทุกเมื่อ · ไม่ตัดเงินอัตโนมัติ/);
   assert.match(show, /matchMedia\("\(max-width: 680px\)"\)/);
-  assert.match(show, /sort\(\(a, b\) => Number\(b\.highlighted\) - Number\(a\.highlighted\)\)/);
+  assert.match(show, /toSorted\(\(a, b\) => Number\(b\.highlighted\) - Number\(a\.highlighted\)\)/);
 });
 
 test("contrast: selected clip card sub text in light mode and the demo DM blue stay ≥ 4.5:1", () => {

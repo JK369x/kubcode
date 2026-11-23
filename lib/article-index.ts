@@ -6,7 +6,7 @@ export type CategoryChip = { key: string | null; label: string; count: number; h
 
 /** Newest first (by `updated`), then by title for a stable order. */
 export function sortArticles(articles: Article[]): Article[] {
-  return [...articles].sort((x, y) => y.updated.localeCompare(x.updated) || x.title.localeCompare(y.title, "th"));
+  return articles.toSorted((x, y) => y.updated.localeCompare(x.updated) || x.title.localeCompare(y.title, "th"));
 }
 
 /**

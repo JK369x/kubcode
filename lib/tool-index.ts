@@ -11,7 +11,7 @@ const stepOf = (c: ToolCategory) => TOOL_CATEGORIES.indexOf(c) + 1;
 
 /** Production order (stage), then name. */
 export function sortTools(tools: Tool[]): Tool[] {
-  return [...tools].sort((x, y) => stepOf(x.category) - stepOf(y.category) || x.name.localeCompare(y.name, "en"));
+  return tools.toSorted((x, y) => stepOf(x.category) - stepOf(y.category) || x.name.localeCompare(y.name, "en"));
 }
 
 /**
