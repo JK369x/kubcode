@@ -7,22 +7,23 @@
   width: 32px;
   height: 32px;
 }
+/* "เริ่มใช้งาน": the header's one bright action (solid brand primary). */
 .signIn {
   display: inline-flex;
   align-items: center;
-  min-height: 36px;
-  padding: 0 16px;
+  min-height: 40px;
+  padding: 0 18px;
   border-radius: 999px;
-  background: var(--selected);
-  color: var(--selected-ink);
-  font-size: 13px;
-  font-weight: 500;
+  background: var(--primary);
+  color: var(--primary-foreground);
+  font-size: 14px;
+  font-weight: 600;
   text-decoration: none;
   white-space: nowrap;
 }
 .signIn:hover {
-  background: var(--purple);
-  color: var(--action-hover-ink);
+  background: var(--primary-hover);
+  color: var(--primary-hover-foreground);
 }
 /* 32px avatar inside a 44px touch target. */
 .avatar {

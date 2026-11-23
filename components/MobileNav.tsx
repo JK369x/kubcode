@@ -2,7 +2,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
-import { CreditCard, LayoutDashboard, Menu, Plus, Radio, Send } from "lucide-react";
+import { CreditCard, LayoutDashboard, Menu, Plus, Radio, Send, Sparkles } from "lucide-react";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { LEARN_ICONS } from "@/components/site/HeaderNav";
 import { Button } from "@/components/ui/button";
@@ -93,6 +93,10 @@ export function MobileNav() {
           <Link href={PRICING_LINK.href} aria-current={isCurrent(PRICING_LINK.href, path) ? "page" : undefined} className={row}>
             <CreditCard aria-hidden className="size-5 text-muted-foreground" />
             {PRICING_LINK.label}
+          </Link>
+          <Link href="/roadmap#shipped-h" aria-current={isCurrent("/roadmap", path) ? "page" : undefined} className={row}>
+            <Sparkles aria-hidden className="size-5 text-muted-foreground" />
+            อัปเดต
           </Link>
         </nav>
         <div className="mt-auto flex items-center justify-between border-t border-border px-5 py-4 text-[15px]">

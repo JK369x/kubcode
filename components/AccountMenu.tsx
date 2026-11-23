@@ -45,10 +45,12 @@ export function AccountMenuView({
   onSignOut: () => void;
 }) {
   if (user === undefined) return <span className={styles.placeholder} aria-hidden="true" />;
+  // Owner 2026-11-23: no "เข้าสู่ระบบ" in the header; one bright start button.
+  // /account signs people up or in with Google / LINE.
   if (user === null)
     return (
       <Link className={styles.signIn} href="/account">
-        เข้าสู่ระบบ
+        เริ่มใช้งาน
       </Link>
     );
   const name = user.name?.trim() || "สมาชิก";

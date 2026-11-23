@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { MarkUpdatesSeen } from "@/components/UpdatesBadge";
 import Link from "next/link";
 import {
   ArrowRight,
@@ -174,6 +175,7 @@ export default function Roadmap() {
 
   return (
     <main id="main" className={s.page}>
+      <MarkUpdatesSeen />
       <WaitlistProvider>
         <header className={`${s.hero} ${s.column}`}>
           <div className={s.aura} />
