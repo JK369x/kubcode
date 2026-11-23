@@ -18,7 +18,8 @@ const { Library } = require("../components/Library") as typeof import("../compon
 const { SHOWCASE_VISUALS } = require("../lib/showcase-allowlist") as typeof import("../lib/showcase-allowlist");
 const { VISUAL_STYLES } = require("../lib/taxonomy") as typeof import("../lib/taxonomy");
 type VisualKey = import("../lib/taxonomy").VisualKey;
-const html = renderToStaticMarkup(createElement(Library, { articles: [] }));
+// Studio-mode hero (Social is the default since 2026-11-23; ?product=studio shows this).
+const html = renderToStaticMarkup(createElement(Library, { articles: [], initialProduct: "studio" }));
 const hero = html.slice(0, html.indexOf("</section>"));
 const start = html.match(/<section[^>]*id="get-started"[^>]*>([\s\S]*?)<\/section>/)?.[1] ?? "";
 

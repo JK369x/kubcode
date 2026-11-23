@@ -39,7 +39,9 @@ test("P0-5: sign-in card comes right after the headline in DOM order; lead is po
 });
 
 test("P1-3 / P2-2: Social pricing link from home; reassurance under the Social CTA; recommended first on phones", () => {
-  assert.match(read("components/HeroStage.tsx"), /product === "social" \? "\/pricing\?for=social" : "\/pricing"/);
+  // Social's main button is its plan (owner 2026-11-23); Studio's pricing link stays unfiltered.
+  assert.match(read("lib/products.ts"), /cta: \{ label: "ดูแพ็กเกจ Social", href: "\/pricing\?for=social" \}/);
+  assert.match(read("components/HeroStage.tsx"), /<a href="\/pricing">ดูราคา<\/a>/);
   const show = read("components/pricing/PricingShowcase.tsx");
   assert.match(show, /ยกเลิกได้ทุกเมื่อ · ไม่ตัดเงินอัตโนมัติ/);
   assert.match(show, /matchMedia\("\(max-width: 680px\)"\)/);

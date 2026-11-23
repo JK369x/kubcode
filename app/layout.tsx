@@ -15,9 +15,9 @@ import "./globals.css";
 import { CANONICAL_ORIGIN } from "@/lib/auth-policy";
 export const metadata: Metadata = {
   metadataBase: new URL(CANONICAL_ORIGIN),
-  title: "kubcode — คลังทักษะและงานทดลอง",
+  title: "kubcode — ตั้งเวลาโพสต์และตอบคอมเมนต์อัตโนมัติ",
   description:
-    "ดูคลิปจริงของแต่ละสไตล์ โหลดชุดคำสั่งฟรี แล้วทำคลิปแนวเดียวกันในคอมของคุณ พร้อมบทความและข้อมูลเครื่องมือ",
+    "เชื่อมช่องครั้งเดียว ตั้งเวลาโพสต์ลง YouTube, Instagram และ TikTok จากที่เดียว แล้วให้ระบบตอบคนที่คอมเมนต์คีย์เวิร์ด พร้อมสกิลทำคลิปด้วย AI",
 };
 export default function Layout({ children }: { children: React.ReactNode }) {
   return (

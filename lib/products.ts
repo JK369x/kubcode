@@ -44,10 +44,14 @@ export const PRODUCTS: Readonly<Record<ProductId, ProductCopy>> = {
       "Instagram: คอมเมนต์คีย์เวิร์ด ได้ DM พร้อมลิงก์",
       "TikTok: ตอบใต้คอมเมนต์คีย์เวิร์ดแบบสาธารณะ",
     ],
-    cta: { label: "เชื่อมช่องของคุณ", href: "/account/channels" },
+    // Billing is not open yet: the main button shows the plan (owner 2026-11-23).
+    cta: { label: "ดูแพ็กเกจ Social", href: "/pricing?for=social" },
   },
 };
 
-/** ?product=studio|social; anything else is the default (studio). */
+/** The product the site leads with (owner 2026-11-23: Social first, Studio second). */
+export const DEFAULT_PRODUCT: ProductId = "social";
+
+/** ?product=studio|social; anything else is the default (social). */
 export const productFromSearch = (search: string): ProductId =>
-  new URLSearchParams(search).get("product") === "social" ? "social" : "studio";
+  new URLSearchParams(search).get("product") === "studio" ? "studio" : DEFAULT_PRODUCT;

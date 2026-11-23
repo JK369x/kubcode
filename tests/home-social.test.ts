@@ -41,13 +41,14 @@ test("a logo names its platform unless the text next to it already does", () => 
   assert.match(renderToStaticMarkup(createElement(PlatformLogo, { platform: "facebook", tone: "muted" })), /text-muted-foreground/);
 });
 
-test("product switch: names in one config, ?product=social links to Social, default Studio", () => {
+test("product switch: names in one config, Social is the default (owner 2026-11-23), ?product=studio for Studio", () => {
   assert.equal(PRODUCTS.studio.name, "kubcode Studio");
   assert.equal(PRODUCTS.social.name, "kubcode Social");
-  assert.equal(PRODUCTS.social.cta.href, "/account/channels");
+  // Billing is not open: Social's main button shows the plan.
+  assert.equal(PRODUCTS.social.cta.href, "/pricing?for=social");
   assert.equal(PRODUCTS.studio.cta.href, "#get-started");
-  assert.equal(productFromSearch("?product=social"), "social");
-  for (const q of ["", "?product=studio", "?product=x", "?product=<b>"]) assert.equal(productFromSearch(q), "studio");
+  assert.equal(productFromSearch("?product=studio"), "studio");
+  for (const q of ["", "?product=social", "?product=x", "?product=<b>"]) assert.equal(productFromSearch(q), "social");
   // Honest points: IG = DM, TikTok = public reply.
   assert.ok(PRODUCTS.social.points.some((p) => /Instagram.*DM/.test(p)));
   assert.ok(PRODUCTS.social.points.some((p) => /TikTok.*สาธารณะ/.test(p)));
@@ -131,4 +132,25 @@ test("Social accent gradient: white text ≥ 4.5:1 at every point; gradient text
   // Studio stays solid purple; switching crossfades the gradient layer (≤ 200 ms), none under reduced motion.
   assert.match(css, /--hero-solid: #7c3aed;/);
   assert.match(css, /\.productTab\.productTab::before \{[\s\S]*?transition: opacity 0\.18s ease;/);
+});
+
+test("Social leads the homepage: Social tab first and selected, its section before the clip shelf (owner 2026-11-23)", () => {
+  const { Library } = require("../components/Library") as typeof import("../components/Library");
+  const html = renderToStaticMarkup(createElement(Library, { articles: [] }));
+  const tabs = [...html.matchAll(/data-product="(social|studio)"[^>]*data-radix-collection-item/g)].map((m) => m[1]);
+  assert.deepEqual(tabs, ["social", "studio"], "Social tab first");
+  assert.match(html, /role="radio" aria-checked="true"[^>]*data-product="social"/, "Social selected");
+  const h1 = html.match(/<h1\b[^>]*>([\s\S]*?)<\/h1>/)?.[1] ?? "";
+  assert.match(h1, /คลิปเสร็จแล้ว/);
+  // Primary: the Social plan; secondary: connect a channel.
+  const copy = html.slice(html.indexOf("<h1"), html.indexOf("socialChip"));
+  assert.match(copy, /data-variant="default"[^>]*>ดูแพ็กเกจ Social|href="\/pricing\?for=social"[^>]*data-variant="default"/);
+  assert.match(copy, /href="\/account\/channels"[^>]*>เชื่อมช่องของคุณ/);
+  const social = html.indexOf('id="social-heading"');
+  const shelf = html.indexOf('aria-label="ตัวอย่างคลิป แนวภาพละหนึ่งคลิป"');
+  const catalog = html.indexOf('id="skill-index"');
+  assert.ok(social > 0 && shelf > social && catalog > shelf, "hero → Social section → clip shelf → skills");
+  // Site title and social card lead with Social.
+  assert.match(readFileSync("app/layout.tsx", "utf8"), /title: "kubcode — ตั้งเวลาโพสต์และตอบคอมเมนต์อัตโนมัติ"/);
+  assert.match(readFileSync("app/opengraph-image.tsx", "utf8"), /ตั้งเวลาโพสต์และตอบคอมเมนต์อัตโนมัติ/);
 });

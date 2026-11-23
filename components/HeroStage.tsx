@@ -12,7 +12,7 @@ import { cn } from "@/lib/utils";
 import styles from "./HeroStage.module.css";
 import { PLATFORMS, PlatformLogo } from "./PlatformLogo";
 import { SOCIAL_SCREENS, SocialStage } from "./SocialStage";
-import { PRODUCTS, productFromSearch, type ProductId } from "@/lib/products";
+import { DEFAULT_PRODUCT, PRODUCTS, productFromSearch, type ProductId } from "@/lib/products";
 
 const AUTO_MS = 6000;
 const SOCIAL_MS = 4000;
@@ -162,21 +162,24 @@ export function HeroStage({
   headingId,
   pricing = false,
   madeByTools = {},
+  initialProduct = DEFAULT_PRODUCT,
 }: {
   clips: readonly HeroClip[];
   headingId: string;
   pricing?: boolean;
   /** Agent and model logos (lib/showcase madeByToolsFrom). */
   madeByTools?: Readonly<Record<string, StyleTool>>;
+  /** Server-rendered product before ?product= is read (tests render Studio with it). */
+  initialProduct?: ProductId;
 }) {
-  const [product, setProduct] = useState<ProductId>("studio");
+  const [product, setProduct] = useState<ProductId>(initialProduct);
   const copy = PRODUCTS[product];
   // ?product=studio|social, read after hydration so the static page stays one HTML.
   useEffect(() => setProduct(productFromSearch(window.location.search)), []);
   const chooseProduct = (p: ProductId) => {
     setProduct(p);
     const url = new URL(window.location.href);
-    if (p === "studio") url.searchParams.delete("product");
+    if (p === DEFAULT_PRODUCT) url.searchParams.delete("product");
     else url.searchParams.set("product", p);
     window.history.replaceState(window.history.state, "", url);
   };
@@ -278,7 +281,7 @@ export function HeroStage({
       <div className={styles.aura} aria-hidden="true" />
       <div className={styles.grid}>
         <div className={styles.copy}>
-          {/* Owner 2026-11-13: two product families; ?product=studio|social. */}
+          {/* Owner 2026-11-13: two product families; 2026-11-23: Social leads, ?product=studio for Studio. */}
           <ToggleGroup
             type="single"
             value={product}
@@ -286,18 +289,18 @@ export function HeroStage({
             aria-label="เลือกผลิตภัณฑ์"
             className={styles.products}
           >
-            <ToggleGroupItem value="studio" data-product="studio" className={styles.productTab}>
-              <Clapperboard aria-hidden="true" />
-              <span>
-                <b>Studio</b>
-                <span className={styles.tabLong}> · {PRODUCTS.studio.tab}</span>
-              </span>
-            </ToggleGroupItem>
             <ToggleGroupItem value="social" data-product="social" className={styles.productTab}>
               <MessagesSquare aria-hidden="true" />
               <span>
                 <b>Social</b>
                 <span className={styles.tabLong}> · {PRODUCTS.social.tab}</span>
+              </span>
+            </ToggleGroupItem>
+            <ToggleGroupItem value="studio" data-product="studio" className={styles.productTab}>
+              <Clapperboard aria-hidden="true" />
+              <span>
+                <b>Studio</b>
+                <span className={styles.tabLong}> · {PRODUCTS.studio.tab}</span>
               </span>
             </ToggleGroupItem>
           </ToggleGroup>
@@ -327,9 +330,14 @@ export function HeroStage({
                 <ArrowRight aria-hidden="true" />
               </a>
             </Button>
-            {pricing ? (
+            {product === "social" ? (
+              // The primary already shows the Social plan; the second step is connecting a channel.
               <Button asChild size="lg" variant="outline" className="rounded-full bg-background/40 px-6 text-base">
-                <a href={product === "social" ? "/pricing?for=social" : "/pricing"}>ดูราคา</a>
+                <a href="/account/channels">เชื่อมช่องของคุณ</a>
+              </Button>
+            ) : pricing ? (
+              <Button asChild size="lg" variant="outline" className="rounded-full bg-background/40 px-6 text-base">
+                <a href="/pricing">ดูราคา</a>
               </Button>
             ) : product === "studio" ? (
               <Button asChild size="lg" variant="outline" className="rounded-full bg-background/40 px-6 text-base">

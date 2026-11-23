@@ -18,7 +18,8 @@ const { Library } = require("../components/Library") as typeof import("../compon
 const { SiteFooter } = require("../components/SiteFooter") as typeof import("../components/SiteFooter");
 
 const text = (html: string) => html.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim();
-const home = renderToStaticMarkup(createElement(Library, { articles: [] }));
+// Studio-mode hero (Social is the default since 2026-11-23; ?product=studio shows this).
+const home = renderToStaticMarkup(createElement(Library, { articles: [], initialProduct: "studio" }));
 const hero = home.slice(0, home.indexOf("</section>"));
 
 /* ------------------------------------------------------------- footer */
@@ -64,7 +65,10 @@ test("hero has exactly one primary action and no search box", () => {
   }
   assert.match(links[0], /href="#get-started"/);
   assert.match(text(links[0]), /^เริ่มทำคลิปแรก/);
-  assert.doesNotMatch(hero, /<input\b/, "search lives in the catalogue, not the hero");
+  // The Social demo (its own section, shown before the shelf since 2026-11-23) has
+  // inputs; the hero itself has none.
+  const heroOnly = hero.slice(0, hero.indexOf('id="social-heading"') >= 0 ? hero.indexOf('id="social-heading"') : undefined);
+  assert.doesNotMatch(heroOnly, /<input\b/, "search lives in the catalogue, not the hero");
   assert.doesNotMatch(hero, /ดูคลังทั้งหมด/);
 });
 

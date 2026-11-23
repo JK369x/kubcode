@@ -28,6 +28,7 @@ import {
   type HomeFilter,
 } from "@/lib/facets";
 import { ClipResults } from "./ClipResults";
+import type { ProductId } from "@/lib/products";
 import { SocialSection } from "./SocialSection";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { Button } from "@/components/ui/button";
@@ -172,6 +173,7 @@ export function Library({
   articles,
   styleTools,
   madeByTools,
+  initialProduct,
   links = { pricing: false, roadmap: false },
 }: {
   articles: ArticleTeaser[];
@@ -181,6 +183,8 @@ export function Library({
   styleTools?: Readonly<Record<string, readonly StyleTool[]>>;
   /** Agent and model logos for the cards' "made by" badge (lib/showcase madeByToolsFrom). */
   madeByTools?: Readonly<Record<string, StyleTool>>;
+  /** Hero product before ?product= is read; defaults to Social (lib/products). */
+  initialProduct?: ProductId;
 }) {
   const [filter, setFilter] = useState<HomeFilter>(NO_FILTER);
   const { query, useCase } = filter;
@@ -240,6 +244,8 @@ export function Library({
         pricing={links.pricing}
         styleTools={styleTools}
         madeByTools={madeByTools}
+        initialProduct={initialProduct}
+        beforeShelf={<SocialSection pricing={links.pricing} roadmap={links.roadmap} />}
         skills={skills}
         activeSlug={selected ?? ""}
         onSelectSkill={selectSkill}
@@ -285,7 +291,6 @@ export function Library({
           </Preview>
         </div>
       </div>
-      <SocialSection pricing={links.pricing} roadmap={links.roadmap} />
       <section
         className="catalog-section"
         id="skill-index"
