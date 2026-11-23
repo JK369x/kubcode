@@ -89,7 +89,7 @@ function interop(expectDenied: boolean): void {
         console.log("[wrap-key] PASS: Decrypt is AccessDenied for this caller, as expected");
         return;
       }
-      throw new Error(`kms decrypt failed: ${stderr.split("\n").find((l) => l.trim()) ?? "unknown error"}`);
+      throw new Error(`kms decrypt failed: ${stderr.split("\n").find((l) => l.trim()) ?? "unknown error"}`, { cause: error });
     }
     if (expectDenied) throw new Error("FAIL: this caller CAN decrypt with the wrap key; only kubcode-lambda-* roles should");
     const plaintext = Buffer.from((JSON.parse(out) as { Plaintext: string }).Plaintext, "base64");

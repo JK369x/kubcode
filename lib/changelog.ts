@@ -15,6 +15,13 @@ export type ChangelogEntry = {
 export const CHANGELOG: readonly ChangelogEntry[] = [
   {
     date: "2026-11-23",
+    pr: 141,
+    titleTh: "ปุ่มอัปเดตบนเมนู",
+    detailTh: "ปุ่ม อัปเดต บอกว่ามีอะไรใหม่ที่คุณยังไม่ได้ดู และปุ่ม เริ่มใช้งาน สำหรับคนที่ยังไม่มีบัญชี",
+    href: "/roadmap#shipped-h",
+  },
+  {
+    date: "2026-11-23",
     pr: 139,
     titleTh: "แดชบอร์ด Social",
     detailTh: "ดูโพสต์ที่ตั้งเวลาไว้ ที่เผยแพร่แล้ว และคอมเมนต์ที่ kubcode ตอบให้ แยกตามช่อง",
@@ -86,5 +93,5 @@ export const CHANGELOG: readonly ChangelogEntry[] = [
 export const ROADMAP_STATS = {
   asOf: "2026-11-23",
   /** PRs merged into main in November 2026 (git log origin/main). */
-  prsThisMonth: 124,
+  prsThisMonth: 125,
 } as const;
