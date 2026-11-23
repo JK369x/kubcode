@@ -25,7 +25,11 @@ async fn an_answer_gives_field_names_not_values() {
             "dataAsOf": "2026-11-22T23:10:00.000Z"
         }),
     );
-    let p = h.zernio.probe(&ProviderRef(PROFILE.into())).await.unwrap();
+    let p = h
+        .zernio
+        .probe(&ProviderRef(PROFILE.into()), "2026-11-16", "2026-11-23")
+        .await
+        .unwrap();
     assert_eq!((p.status, p.code.as_deref()), (200, None));
     let mut f = p.fields.clone();
     f.sort();
@@ -69,7 +73,11 @@ async fn a_refusal_gives_its_status_and_code() {
         403,
         json!({"error": "Analytics add-on required", "code": "analytics_addon_required"}),
     );
-    let p = h.zernio.probe(&ProviderRef(PROFILE.into())).await.unwrap();
+    let p = h
+        .zernio
+        .probe(&ProviderRef(PROFILE.into()), "2026-11-16", "2026-11-23")
+        .await
+        .unwrap();
     assert_eq!(p.status, 403);
     assert!(p.code.is_some(), "a code for the refusal");
     assert!(p.fields.contains(&"error".to_owned()));
@@ -78,6 +86,10 @@ async fn a_refusal_gives_its_status_and_code() {
 #[tokio::test]
 async fn a_bad_profile_ref_is_refused_before_any_call() {
     let h = Harness::default();
-    assert!(h.zernio.probe(&ProviderRef("../x".into())).await.is_err());
+    assert!(h
+        .zernio
+        .probe(&ProviderRef("../x".into()), "2026-11-16", "2026-11-23")
+        .await
+        .is_err());
     assert!(h.fake.log().is_empty());
 }

@@ -92,10 +92,16 @@ fn run(args: &[String]) -> Result<(), String> {
                 .filter_map(|f| f.as_str())
                 .collect();
             println!("Zernio analytics: HTTP {}", a["status"]);
-            match a["code"].as_str() {
-                Some(code) => println!("ปฏิเสธ: {code} (อาจต้องเปิด Analytics add-on)"),
-                None => println!("ใช้ได้ ข้อมูลที่ได้: {}", fields.join(", ")),
-            }
+            // Status meanings from Zernio's docs (GET /v1/analytics/dashboard).
+            let why = match a["status"].as_u64() {
+                Some(200..=299) => format!("ใช้ได้ ข้อมูลที่ได้: {}", fields.join(", ")),
+                Some(402) => "แพ็กเกจ Zernio ยังไม่มี analytics: ต้องเปิด Analytics add-on (แผนเก่า) หรือย้ายไปแผนคิดตามจำนวนบัญชี".into(),
+                Some(403) => "เข้า profile นี้ไม่ได้ หรือเกินจำนวน profile ของแพ็กเกจ".into(),
+                Some(404) => "ไม่พบ profile นี้ด้วย API key นี้".into(),
+                Some(429) => "เรียกถี่เกินไป รอสักครู่แล้วลองใหม่".into(),
+                _ => format!("คำขอไม่ถูกต้องหรือมีปัญหาอื่น: {}", a["code"].as_str().unwrap_or("?")),
+            };
+            println!("{why}");
             Ok(())
         }
         Some("whoami") => {

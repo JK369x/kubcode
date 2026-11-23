@@ -241,7 +241,8 @@ pub struct AnalyticsProbe {
 /// Read-only analytics (dashboard numbers). Probe only for now.
 #[async_trait]
 pub trait Analytics: Send + Sync {
-    async fn probe(&self, profile: &ProviderRef) -> Result<AnalyticsProbe>;
+    /// `from`/`to` are UTC days (YYYY-MM-DD, inclusive); the provider requires both.
+    async fn probe(&self, profile: &ProviderRef, from: &str, to: &str) -> Result<AnalyticsProbe>;
 }
 
 /// Replies to comments: the comment → DM engine's capability.
