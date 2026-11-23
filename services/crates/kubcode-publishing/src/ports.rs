@@ -228,6 +228,22 @@ pub fn caption_line(text: &str) -> String {
         .collect()
 }
 
+/// What the provider's analytics answered for one profile: the HTTP status,
+/// its error code if refused, and the names of the fields it returned. Never
+/// metric values: this only tells whether analytics is available to us.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct AnalyticsProbe {
+    pub status: u16,
+    pub code: Option<String>,
+    pub fields: Vec<String>,
+}
+
+/// Read-only analytics (dashboard numbers). Probe only for now.
+#[async_trait]
+pub trait Analytics: Send + Sync {
+    async fn probe(&self, profile: &ProviderRef) -> Result<AnalyticsProbe>;
+}
+
 /// Replies to comments: the comment → DM engine's capability.
 #[async_trait]
 pub trait Inbox: Send + Sync {

@@ -27,7 +27,8 @@ import { Badge } from "@/components/ui/badge";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { getBillingPage, thaiDateTime } from "@/lib/billing/view";
 import { getChannelsView } from "@/lib/channels/view";
-import { getPostsView } from "@/lib/posts/view";
+import { getDashboardView, getPostsView } from "@/lib/posts/view";
+import { SocialActivity, SocialStats } from "@/components/SocialActivity";
 import { avatarInitial } from "@/lib/avatar";
 import { Button } from "@/components/ui/button";
 import { getAccountView } from "@/lib/auth";
@@ -244,6 +245,9 @@ export default async function Account({ searchParams }: Props) {
   const standing = ready ? STANDING[ready.standing] : null;
   const list = channels?.state === "ready" ? channels.channels.filter((c) => c.status !== "disconnected") : null;
   const posts = caps?.publishing ? await getPostsView(process.env, () => cookies()) : null;
+  // Exact counts from our own records (posts, matched comments, answers sent).
+  const dash = caps?.publishing ? await getDashboardView(process.env, () => cookies()) : null;
+  const activity = dash?.state === "ready" ? dash.activity : null;
   const recent = posts?.state === "ready" ? posts.posts.slice(0, 3) : null;
   const user = view.user;
   const display = user.name?.trim() || (user.email ? user.email.split("@")[0] : "สมาชิก");
@@ -287,28 +291,16 @@ export default async function Account({ searchParams }: Props) {
       {ready && <BillingBanner view={ready} />}
       {caps && <Onboarding />}
 
-      {caps?.publishing && list && (
+      {activity ? (
+        <SocialStats activity={activity} />
+      ) : caps?.publishing && list ? (
         <ul className={styles.stats} aria-label="ภาพรวม">
           <li>
             <span className={styles.statNum}>{activeChannels}</span>
             <span className={styles.statLabel}>ช่องที่ใช้งานได้</span>
           </li>
-          <li>
-            <span className={styles.statNum}>{recent?.reduce((n, p) => n + p.deliveries.filter((d) => d.status === "scheduled").length, 0) ?? 0}</span>
-            <span className={styles.statLabel}>โพสต์ที่ตั้งเวลาไว้</span>
-          </li>
-          <li>
-            <span className={styles.statNum}>{recent?.reduce((n, p) => n + p.deliveries.filter((d) => d.status === "published").length, 0) ?? 0}</span>
-            <span className={styles.statLabel}>เผยแพร่แล้ว (ล่าสุด)</span>
-          </li>
-          {ready && ready.standing !== "exempt" && (
-            <li>
-              <span className={styles.statNum}>{ready.slots}</span>
-              <span className={styles.statLabel}>ช่องที่จ่ายแล้ว</span>
-            </li>
-          )}
         </ul>
-      )}
+      ) : null}
 
       <div className={styles.dashGrid}>
         <div className={styles.dashMain}>
@@ -338,6 +330,7 @@ export default async function Account({ searchParams }: Props) {
               )}
             </section>
           )}
+          {activity && <SocialActivity activity={activity} />}
           {recent && (
             <section className={styles.card} aria-labelledby="recent-h">
               <div className={styles.cardHead}>

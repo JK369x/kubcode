@@ -37,6 +37,9 @@ pub enum Command {
         delivery: Uuid,
         check: String,
     },
+    /// Whether the provider's analytics answers for the owner's profile
+    /// (status and field names only, no metric values).
+    AnalyticsProbe,
 }
 
 fn err(f: Fail) -> Value {
@@ -179,6 +182,9 @@ pub async fn run(svc: &mut Service<'_>, event: Value, bucket: &str) -> Value {
             .cancel(owner, DeliveryId(delivery))
             .await
             .map(|()| json!({"ok": true})),
+        Command::AnalyticsProbe => svc.analytics_probe(owner).await.map(|p| {
+            json!({"ok": true, "status": p.status, "code": p.code, "fields": p.fields})
+        }),
         Command::CoverCheck { delivery, check } => svc
             .record_cover_check(owner, DeliveryId(delivery), &check)
             .await

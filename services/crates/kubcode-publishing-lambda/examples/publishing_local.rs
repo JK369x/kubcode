@@ -335,6 +335,7 @@ async fn main() {
             connect,
             publisher: z.clone(),
             inbox: Some(z),
+            analytics: None,
             // Webhooks are not part of the local loop: nothing verifies.
             events: Arc::new(ZernioEvents::new(Vec::new())),
         }),

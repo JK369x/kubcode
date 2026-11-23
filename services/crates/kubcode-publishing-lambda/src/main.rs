@@ -81,7 +81,8 @@ impl Env {
             ProviderSet {
                 connect: z.clone(),
                 publisher: z.clone(),
-                inbox: Some(z),
+                inbox: Some(z.clone()),
+                analytics: Some(z),
                 events: Arc::new(ZernioEvents::new(s.webhook_secrets.clone())),
             }
         });

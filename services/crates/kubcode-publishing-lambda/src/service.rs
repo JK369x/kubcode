@@ -39,6 +39,8 @@ pub struct ProviderSet {
     pub events: Arc<dyn EventSource>,
     /// Comment replies (comment → DM); None for a provider without them.
     pub inbox: Option<Arc<dyn Inbox>>,
+    /// Read-only analytics; None for a provider without them.
+    pub analytics: Option<Arc<dyn kubcode_publishing::ports::Analytics>>,
 }
 
 /// The providers this build can use. Native adapters join here in phase 2.
@@ -322,6 +324,26 @@ impl Service<'_> {
         self.reg
             .get(kind)
             .ok_or_else(|| Fail::new("provider_not_configured"))
+    }
+
+    /// Asks the provider's analytics for the user's own workspace profile:
+    /// tells whether dashboard numbers are available on our plan.
+    pub async fn analytics_probe(
+        &mut self,
+        user: Uuid,
+    ) -> Result<kubcode_publishing::ports::AnalyticsProbe> {
+        let ws = self.store.owner_workspace(user).await?;
+        let profile = self
+            .store
+            .profile(ws, ProviderKind::Zernio)
+            .await?
+            .ok_or_else(|| Fail::new("no_profile"))?;
+        let analytics = self
+            .providers(ProviderKind::Zernio)?
+            .analytics
+            .clone()
+            .ok_or_else(|| Fail::new("no_analytics"))?;
+        Ok(analytics.probe(&profile).await?)
     }
 
     async fn own_channel(&self, ws: WorkspaceId, channel: ChannelId) -> Result<ChannelRow> {

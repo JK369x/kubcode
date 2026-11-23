@@ -152,6 +152,7 @@ pub fn registry(fake: &Arc<FakeProvider>) -> Registry {
             publisher: fake.clone(),
             events: fake.clone(),
             inbox: Some(fake.clone()),
+            analytics: None,
         }),
     }
 }
