@@ -4,6 +4,7 @@ import { ArrowDown, Play } from "lucide-react";
 import type { Skill } from "@/lib/catalog";
 import { cartoonShowcase, publishedShowcase, type ShowcaseItem, type StyleTool } from "@/lib/showcase";
 import { VisualShelf } from "./VisualShelf";
+import type { ProductId } from "@/lib/products";
 import { HeroStage } from "./HeroStage";
 import { heroClips } from "@/lib/hero-stage";
 import styles from "./KineticHero.module.css";
@@ -20,6 +21,8 @@ export function KineticHero({
   clips = SHOWCASE,
   styleTools,
   madeByTools,
+  beforeShelf,
+  initialProduct,
   children,
   pricing = false,
 }: {
@@ -31,6 +34,9 @@ export function KineticHero({
   /** Each visual style's tools with logos, resolved on the server (lib/showcase styleToolsFrom). */
   styleTools?: Readonly<Record<string, readonly StyleTool[]>>;
   madeByTools?: Readonly<Record<string, StyleTool>>;
+  /** Shown between the hero and the clip shelf (Social leads, owner 2026-11-23). */
+  beforeShelf?: ReactNode;
+  initialProduct?: ProductId;
   /** Search / browse actions owned by the page (query state stays there). */
   children?: ReactNode;
   /** /pricing ships in this build (lib/site-routes hasPage). */
@@ -52,7 +58,7 @@ export function KineticHero({
       aria-labelledby={headingId}
       data-media={hasClips ? "clips" : "none"}
     >
-      {stage.length > 0 && <HeroStage clips={stage} headingId={headingId} pricing={pricing} madeByTools={madeByTools} />}
+      {stage.length > 0 && <HeroStage clips={stage} headingId={headingId} pricing={pricing} madeByTools={madeByTools} initialProduct={initialProduct} />}
       <div className={styles.copy}>
         {stage.length > 0 ? null : hasClips ? (
           <>
@@ -104,6 +110,7 @@ export function KineticHero({
         )}
       </div>
 
+      {beforeShelf}
       {hasClips && <VisualShelf items={clips} styleTools={styleTools} madeByTools={madeByTools} />}
     </section>
   );

@@ -48,7 +48,7 @@ test("typewriter types ทำแนว<แนวเรื่อง> by Thai grap
 });
 
 test("server render: one h1, typed span hidden from screen readers, full phrase for them; picker is a radio group", () => {
-  const html = renderToStaticMarkup(createElement(HeroStage, { clips: CLIPS, headingId: "h" }));
+  const html = renderToStaticMarkup(createElement(HeroStage, { clips: CLIPS, headingId: "h", initialProduct: "studio" }));
   assert.equal((html.match(/<h1\b/g) || []).length, 1);
   assert.match(html, /<span[^>]*aria-hidden="true"[^>]*>ทำแนวซอมบี้คอนโด<\/span><span class="sr-only">ทำแนวซอมบี้คอนโด<\/span>/);
   // Two radio groups: the product switch (Studio / Social) and the clip picker.

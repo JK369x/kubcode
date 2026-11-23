@@ -296,7 +296,7 @@ test("no-examples skills keep their own honest no-media copy", () => {
 
 test("hero shows the approved clips as one card per visual style", () => {
   const html = render(
-    createElement(KineticHero, { skills, activeSlug: "", onSelectSkill: () => {} }),
+    createElement(KineticHero, { skills, activeSlug: "", onSelectSkill: () => {}, initialProduct: "studio" }),
   );
   assert.match(html, /เห็นคลิปไหนถูกใจ/, "phone-stage hero (owner 2026-11-11)");
   assert.match(html, /role="radiogroup"[^>]*aria-labelledby="[^"]*-picks"/, "clip picker");
