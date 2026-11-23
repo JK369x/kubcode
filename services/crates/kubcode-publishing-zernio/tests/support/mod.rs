@@ -329,7 +329,8 @@ impl Transport for FakeZernio {
         // Inbox calls and an account's post list answer what a test scripted.
         let inbox = url.path().starts_with("/api/v1/inbox/")
             || url.path().starts_with("/v1/inbox/")
-            || (url.path().contains("/v1/accounts/") && url.path().ends_with("/posts"));
+            || (url.path().contains("/v1/accounts/") && url.path().ends_with("/posts"))
+            || url.path().contains("/v1/analytics/");
         let scripted = if inbox {
             self.with(|s| s.next_inbox.take())
         } else {

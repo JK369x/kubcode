@@ -338,6 +338,7 @@ async fn main() {
                 publisher: fake.clone(),
                 events: fake.clone(),
                 inbox: Some(fake.clone()),
+                analytics: None,
             }),
         },
         fake,

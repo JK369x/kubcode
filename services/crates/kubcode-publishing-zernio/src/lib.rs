@@ -14,9 +14,9 @@ use kubcode_publishing::domain::{MediaKind, Platform, ProviderKind, ProviderRef,
 use kubcode_publishing::errors::{ErrorClass, PublishError, Result};
 use kubcode_publishing::events::IncomingComment;
 use kubcode_publishing::ports::{
-    Accepted, CallbackParams, Checked, ConnectProvider, ConnectStart, ConnectedAccount,
-    ConnectionHealth, ConnectionRef, DeliveryState, Inbox, MediaSource, OwnPost, PrivateReply,
-    Publisher, WorkspaceCtx,
+    Accepted, Analytics, AnalyticsProbe, CallbackParams, Checked, ConnectProvider, ConnectStart,
+    ConnectedAccount, ConnectionHealth, ConnectionRef, DeliveryState, Inbox, MediaSource, OwnPost,
+    PrivateReply, Publisher, WorkspaceCtx,
 };
 use kubcode_publishing::validate::{DeliveryDraft, Violation};
 use serde_json::{json, Value};
@@ -604,6 +604,34 @@ fn segment(v: &str) -> Option<&str> {
         && v.bytes()
             .all(|b| b.is_ascii_alphanumeric() || b == b'_' || b == b'-');
     ok.then_some(v)
+}
+
+#[async_trait]
+impl Analytics for Zernio {
+    async fn probe(&self, profile: &ProviderRef) -> Result<AnalyticsProbe> {
+        let id = path_id(profile)?;
+        let url = self.url("/v1/analytics/dashboard", &[("profileId", id)]);
+        let r = self.send(Method::Get, url, None, None).await?;
+        let fields = match &r.body {
+            Value::Object(m) => m.keys().take(32).cloned().collect(),
+            _ => Vec::new(),
+        };
+        let code = if (200..300).contains(&r.status) {
+            None
+        } else {
+            Some(
+                map_error(r.status, r.retry_after, &r.body)
+                    .code
+                    .as_str()
+                    .to_owned(),
+            )
+        };
+        Ok(AnalyticsProbe {
+            status: r.status,
+            code,
+            fields,
+        })
+    }
 }
 
 #[async_trait]

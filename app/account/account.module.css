@@ -496,3 +496,44 @@
 :global(:root[data-theme="light"]) .primary.primary:hover {
   background: #5b21b6;
 }
+
+/* Social dashboard: per-channel answers (components/SocialActivity). */
+.stats li[data-tone="warn"] .statNum {
+  color: var(--warning, #f5a524);
+}
+.activity {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+.activity th,
+.activity td {
+  padding: 9px 8px;
+  border-bottom: 1px solid var(--border);
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+.activity thead th {
+  color: var(--muted-foreground);
+  font-size: 13px;
+  font-weight: 500;
+}
+.activity th:first-child {
+  text-align: left;
+}
+.activity tbody th {
+  font-weight: 500;
+}
+.activityName {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.activityCap {
+  color: var(--muted-foreground);
+  font-size: 13px;
+}

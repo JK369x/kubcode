@@ -9,6 +9,7 @@ import { readPublishingConfig } from "../channels/config";
 import { getChannelStore } from "../channels/store";
 import type { ComposerChannel } from "@/components/PostComposer";
 import { getPostStore, type PostView } from "./store";
+import { getDashboardStore, type DashboardActivity } from "../dashboard/store";
 
 type Gate = { state: "disabled" } | { state: "unavailable" } | { state: "signed-out" } | { state: "forbidden" };
 
@@ -61,6 +62,22 @@ export async function getPostsView(env: AuthEnv, getCookies: () => Promise<Cooki
     return { state: "ready", posts: r.posts };
   } catch (error) {
     logDbFailure("POSTS_VIEW", error);
+    return { state: "unavailable" };
+  }
+}
+
+export async function getDashboardView(
+  env: AuthEnv,
+  getCookies: () => Promise<CookieSource>,
+): Promise<Gate | { state: "ready"; activity: DashboardActivity }> {
+  const g = await session(env, getCookies);
+  if ("gate" in g) return g.gate as Gate;
+  try {
+    const r = await getDashboardStore(g.url).activity(g.s);
+    if (!r.ok) return { state: r.code === "FORBIDDEN" ? "forbidden" : "signed-out" };
+    return { state: "ready", activity: r.activity };
+  } catch (error) {
+    logDbFailure("DASHBOARD_VIEW", error);
     return { state: "unavailable" };
   }
 }

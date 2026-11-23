@@ -6,6 +6,7 @@
 //!     (TikTok and Instagram: public only, so pass --visibility public)
 //!   kubcode status <post-id>
 //!   kubcode cancel <delivery-id>
+//!   kubcode analytics-probe   (does Zernio analytics answer on our plan?)
 //!
 //! Clips are read from $KUBCODE_STUDIO (default ~/Studio/clips). AWS calls use
 //! your AWS_PROFILE; the ops key comes from the Keychain vault (macOS asks for
@@ -46,7 +47,7 @@ fn studio() -> PathBuf {
 
 fn usage() -> ExitCode {
     eprintln!(
-        "ใช้: kubcode whoami | push <clip-id> | schedule <clip-id> --channel <id> --at <เวลา RFC 3339> [--visibility private] | status <post-id> | cancel <delivery-id>"
+        "ใช้: kubcode whoami | push <clip-id> | schedule <clip-id> --channel <id> --at <เวลา RFC 3339> [--visibility private] | status <post-id> | cancel <delivery-id> | analytics-probe"
     );
     ExitCode::from(2)
 }
@@ -82,6 +83,21 @@ fn run(args: &[String]) -> Result<(), String> {
         }
     };
     match args.first().map(String::as_str) {
+        Some("analytics-probe") => {
+            let a = call(aws, keys, &json!({"op": "analytics_probe"}), now())?;
+            let fields: Vec<&str> = a["fields"]
+                .as_array()
+                .into_iter()
+                .flatten()
+                .filter_map(|f| f.as_str())
+                .collect();
+            println!("Zernio analytics: HTTP {}", a["status"]);
+            match a["code"].as_str() {
+                Some(code) => println!("ปฏิเสธ: {code} (อาจต้องเปิด Analytics add-on)"),
+                None => println!("ใช้ได้ ข้อมูลที่ได้: {}", fields.join(", ")),
+            }
+            Ok(())
+        }
         Some("whoami") => {
             let a = call(aws, keys, &json!({"op": "whoami"}), now())?;
             println!("workspace {}", a["workspace"].as_str().unwrap_or("?"));
