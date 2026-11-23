@@ -19,9 +19,10 @@ const { AccountMenuView } = require("../components/AccountMenu") as typeof impor
 const html = (props: Parameters<typeof AccountMenuView>[0]) => renderToStaticMarkup(createElement(AccountMenuView, props));
 const noop = () => {};
 
-test("signed out: a compact เข้าสู่ระบบ link to /account and no member link", () => {
+test("signed out: one bright เริ่มใช้งาน link to /account, no เข้าสู่ระบบ (owner 2026-11-23), no member link", () => {
   const out = html({ user: null, onSignOut: noop });
-  assert.match(out, /<a[^>]*href="\/account"[^>]*>เข้าสู่ระบบ<\/a>/);
+  assert.match(out, /<a[^>]*href="\/account"[^>]*>เริ่มใช้งาน<\/a>/);
+  assert.doesNotMatch(out, /เข้าสู่ระบบ/);
   assert.doesNotMatch(out, /พื้นที่สมาชิก/);
 });
 

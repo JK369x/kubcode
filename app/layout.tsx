@@ -2,6 +2,7 @@ import { ThemeToggle } from "@/components/ThemeToggle";
 import { AccountMenu } from "@/components/AccountMenu";
 import { MobileNav } from "@/components/MobileNav";
 import { HeaderNav } from "@/components/site/HeaderNav";
+import { UpdatesBadge } from "@/components/UpdatesBadge";
 import { SiteFooter } from "@/components/SiteFooter";
 import { Toaster } from "@/components/ui/toaster";
 import type { Metadata } from "next";
@@ -49,6 +50,8 @@ export default function Layout({ children }: { children: React.ReactNode }) {
               (≤560px): logo, account, menu; the sheet mirrors this. */}
           <nav aria-label="หลัก" className="header-nav">
             <span className="header-links">
+              {/* Owner 2026-11-23: "อัปเดต · N ใหม่" first, like "New drops". */}
+              <UpdatesBadge />
               <HeaderNav />
             </span>
             <span className="header-end">
