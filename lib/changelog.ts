@@ -93,5 +93,5 @@ export const CHANGELOG: readonly ChangelogEntry[] = [
 export const ROADMAP_STATS = {
   asOf: "2026-11-23",
   /** PRs merged into main in November 2026 (git log origin/main). */
-  prsThisMonth: 125,
+  prsThisMonth: 126,
 } as const;

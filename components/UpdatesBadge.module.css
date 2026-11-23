@@ -1,5 +1,6 @@
-/* Header "อัปเดต · N ใหม่" (owner 2026-11-23). Outlined pill; the chip uses
- * the success green on the dark ink so it reads as "new" in both themes. */
+/* Header "อัปเดต · N ใหม่" (owner 2026-11-23). Outlined pill; the chip is the
+ * brand primary (MASTER.md: selected / one primary action), never an
+ * off-brand colour, so it follows the theme. */
 .updates {
   display: inline-flex;
   align-items: center;
@@ -38,8 +39,8 @@
   min-height: 24px;
   padding: 0 9px;
   border-radius: 999px;
-  background: #c9f27a;
-  color: #1b2a06;
+  background: var(--primary);
+  color: var(--primary-foreground);
   font-size: 12px;
   font-weight: 600;
 }
