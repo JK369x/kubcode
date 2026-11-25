@@ -104,8 +104,15 @@ test("changelog and stats match git history when it is available", (t) => {
     return;
   }
   for (const e of CHANGELOG) assert.equal(merged.get(e.pr), e.date, `#${e.pr} merged on ${e.date}`);
-  const november = [...merged.entries()].filter(([, d]) => d >= "2026-11-01" && d <= ROADMAP_STATS.asOf);
-  assert.equal(november.length, ROADMAP_STATS.prsThisMonth, "PRs merged in November up to asOf");
+  // PRs merged before asOf are final; on asOf itself more can merge after the
+  // stat was written (each merge would otherwise break the next PR's CI).
+  const november = [...merged.values()].filter((d) => d >= "2026-11-01");
+  const before = november.filter((d) => d < ROADMAP_STATS.asOf).length;
+  const through = november.filter((d) => d <= ROADMAP_STATS.asOf).length;
+  assert.ok(
+    ROADMAP_STATS.prsThisMonth > before && ROADMAP_STATS.prsThisMonth <= through,
+    `PRs merged in November up to asOf: ${ROADMAP_STATS.prsThisMonth} should be in (${before}, ${through}]`,
+  );
 });
 
 test("pricing still sells nothing from the roadmap", () => {

@@ -15,10 +15,10 @@ import styles from "./SocialSection.module.css";
  * link and the comment and the DM update. Purely local: no network, the text
  * is rendered by React (escaped) and capped in length.
  *
- * Every claim is live today: scheduling to YouTube / Instagram / TikTok
- * (lib/channels/config CONNECTABLE); Instagram keyword → DM and TikTok
- * keyword → public reply (lib/automations AUTOMATION_PLATFORMS). Facebook and
- * the kubcode MCP are marked as not available and never implied working.
+ * Every claim is live today: scheduling to YouTube / Instagram / TikTok /
+ * Facebook Page (lib/channels/config CONNECTABLE); Instagram keyword → DM and
+ * TikTok keyword → public reply (lib/automations AUTOMATION_PLATFORMS).
+ * Facebook comment replies and the kubcode MCP are marked as not available.
  */
 export const KEYWORD_MAX = 20;
 export const LINK_MAX = 48;
@@ -44,13 +44,12 @@ export function SocialSection({ roadmap = false, pricing = false }: { roadmap?: 
   return (
     <section className={styles.section} aria-labelledby="social-heading">
       <div className={styles.head}>
-        <p className={styles.eyebrow}>kubcode Social</p>
+        <p className={styles.eyebrow}>ลองเลย</p>
+        {/* Owner review 2026-11-23: the hero already says what Social does;
+            this section shows it working instead of repeating it. */}
         <h2 id="social-heading" className={styles.title}>
-          คลิปเสร็จแล้ว ให้ kubcode โพสต์และตอบคอมเมนต์ให้
+          ลองตั้งคีย์เวิร์ด ดูว่าลูกค้าได้อะไร
         </h2>
-        <p className={styles.lead}>
-          เชื่อมช่องครั้งเดียว ตั้งเวลาโพสต์ลงทุกแพลตฟอร์มจากที่เดียว แล้วให้ระบบตอบคนที่คอมเมนต์คีย์เวิร์ดที่คุณตั้งไว้
-        </p>
       </div>
 
       <div className={styles.demo}>
@@ -148,8 +147,9 @@ export function SocialSection({ roadmap = false, pricing = false }: { roadmap?: 
 
       <ul className={styles.soon} aria-label="ยังไม่เปิดใช้">
         <li>
-          <PlatformLogo platform="facebook" size={18} tone="muted" decorative />
-          <span>ตอบคอมเมนต์บน Facebook</span>
+          <PlatformLogo platform="facebook" size={18} decorative />
+          {/* Posting Reels to a Facebook Page is live (#121); only comment replies are not yet. */}
+          <span>Facebook Page: ตั้งเวลาโพสต์ได้แล้ว · ตอบคอมเมนต์อัตโนมัติ</span>
           <Badge variant="outline" className="text-muted-foreground">
             เร็ว ๆ นี้
           </Badge>

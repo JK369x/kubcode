@@ -13,6 +13,7 @@ export type ChangelogEntry = {
 };
 
 export const CHANGELOG: readonly ChangelogEntry[] = [
+
   {
     date: "2026-11-23",
     pr: 141,

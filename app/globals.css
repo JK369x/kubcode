@@ -3007,3 +3007,11 @@ img[data-img-state="loading"] {
   }
 }
 } /* @layer legacy */
+
+/* Copy-prompt button (components/CopyButton): stays a 32px icon, with a 44px
+   hit area so it is easy to tap (UI/UX review 2026-11-23). */
+.code-copy::before {
+  content: "";
+  position: absolute;
+  inset: -6px;
+}

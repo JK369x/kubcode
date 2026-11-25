@@ -595,7 +595,8 @@
   }
 }
 
-/* Phones: headline, lead, phone, picker row, then the CTA. */
+/* Phones: headline, lead, the CTA (above the fold, owner review 2026-11-23),
+   then the phone, the picker row and the points. */
 @media (max-width: 759px) {
   .grid {
     display: flex;
@@ -622,7 +623,7 @@
     text-align: center;
   }
   .points {
-    order: 5;
+    order: 6;
     justify-self: center;
     margin: 16px auto 0;
     font-size: 14px;
@@ -640,29 +641,29 @@
     font-size: 15px;
     text-align: center;
   }
-  .stageWrap {
+  .actions {
     order: 3;
+    justify-content: center;
+    margin-top: 18px;
+  }
+  .stageWrap {
+    order: 4;
     margin: 20px 0 14px;
   }
   .side {
-    order: 4;
-  }
-  .actions {
     order: 5;
-    justify-content: center;
-    margin-top: 20px;
   }
   .actions > * {
     flex: 1 1 100%;
   }
   .social {
-    order: 7;
+    order: 8;
     justify-content: center;
     margin-top: 8px;
     font-size: 13px;
   }
   .works {
-    order: 6;
+    order: 7;
     justify-content: center;
     margin-top: 10px;
     font-size: 13px;
